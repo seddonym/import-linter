@@ -39,7 +39,7 @@ setup(
     zip_safe=False,
     classifiers=[
         # complete classifier list: http://pypi.python.org/pypi?%3Aaction=list_classifiers
-        'Development Status :: 1 - Planning',
+        'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: Unix',
@@ -51,5 +51,13 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Utilities',
     ],
-    install_requires=[],
+    install_requires=[
+        'click>=6,<8',
+        'grimp==1.0b8',
+    ],
+    entry_points={
+        'console_scripts': [
+            'importlinter = importlinter.cmdline:main',
+        ],
+    },
 )
