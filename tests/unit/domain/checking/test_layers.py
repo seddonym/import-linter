@@ -11,27 +11,27 @@ from tests.adaptors.graph import FakeGraph
     (
         (
             (
-                ('high', 'medium'),
-                ('high', 'low'),
-                ('medium', 'low'),
+                ('mypackage.high', 'mypackage.medium'),
+                ('mypackage.high', 'mypackage.low'),
+                ('mypackage.medium', 'mypackage.low'),
             ),
             True,
         ),
         (
             (
-                ('medium', 'high'),
+                ('mypackage.medium', 'mypackage.high'),
             ),
             False,
         ),
         (
             (
-                ('low', 'high'),
+                ('mypackage.low', 'mypackage.high'),
             ),
             False,
         ),
         (
             (
-                ('low', 'medium'),
+                ('mypackage.low', 'mypackage.medium'),
             ),
             False,
         ),
@@ -58,3 +58,4 @@ def test_layer_contract_passes(package_chains, is_valid):
     contract_check = check_contract(contract=contract, graph=graph)
 
     assert contract_check.is_valid == is_valid
+
