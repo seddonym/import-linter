@@ -9,3 +9,7 @@ class LayerContract(Contract):
         self.name = name
         self.containers = containers
         self.layers = layers
+
+
+class IndependenceContract(Contract):
+    ...
