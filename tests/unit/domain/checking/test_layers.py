@@ -7,40 +7,63 @@ from tests.adaptors.graph import FakeGraph
 
 
 @pytest.mark.parametrize(
-    'package_chains, is_valid',
+    'shortest_chains, is_valid',
     (
         (
-            (
-                ('mypackage.high', 'mypackage.medium'),
-                ('mypackage.high', 'mypackage.low'),
-                ('mypackage.medium', 'mypackage.low'),
-            ),
+            {
+                ('high.green', 'medium.orange'): (
+                    ('high.green', 'medium.orange'),
+                ),
+                ('high.green', 'low.white.gamma'): (
+                    ('high.green', 'low.white.gamma'),
+                ),
+                ('medium.orange', 'low.white'): (
+                    ('medium.orange', 'low.white'),
+                ),
+            },
             True,
         ),
         (
-            (
-                ('mypackage.medium', 'mypackage.high'),
-            ),
+            {
+                ('medium.orange', 'high.green'): (
+                    ('medium.orange', 'high.green'),
+                ),
+            },
             False,
         ),
         (
-            (
-                ('mypackage.low', 'mypackage.high'),
-            ),
+            {
+                ('low.white.gamma', 'high.yellow.alpha'): (
+                    ('low.white.gamma', 'high.yellow.alpha'),
+                ),
+            },
             False,
         ),
         (
-            (
-                ('mypackage.low', 'mypackage.medium'),
-            ),
+            {
+                ('low.white.gamma', 'medium.red'): (
+                    ('low.white.gamma', 'medium.red'),
+                ),
+            },
             False,
         ),
     )
 )
-def test_layer_contract_single_containers(package_chains, is_valid):
+def test_layer_contract_single_containers(shortest_chains, is_valid):
     graph = FakeGraph(
         root_package='mypackage',
-        package_chains=package_chains,
+        descendants={
+            'high': {
+                'green', 'blue', 'yellow', 'yellow.alpha',
+            },
+            'medium': {
+                'orange', 'red', 'orange.beta',
+            },
+            'low': {
+                'black', 'white', 'white.gamma',
+            },
+        },
+        shortest_chains=shortest_chains,
     )
 
     contract = LayerContract(
@@ -61,46 +84,99 @@ def test_layer_contract_single_containers(package_chains, is_valid):
 
 
 @pytest.mark.parametrize(
-    'package_chains, is_valid',
+    'shortest_chains, is_valid',
     (
         (
-            (
-                ('mypackage.one.high', 'mypackage.one.medium'),
-                ('mypackage.one.high', 'mypackage.one.low'),
-                ('mypackage.one.medium', 'mypackage.one.low'),
-                ('mypackage.two.high', 'mypackage.two.medium'),
-                ('mypackage.two.high', 'mypackage.two.low'),
-                ('mypackage.two.medium', 'mypackage.two.low'),
-                ('mypackage.three.high', 'mypackage.three.medium'),
-                ('mypackage.three.high', 'mypackage.three.low'),
-                ('mypackage.three.medium', 'mypackage.three.low'),
-            ),
+            {
+                ('one.high.green', 'one.medium.orange'): (
+                    ('one.high.green', 'one.medium.orange'),
+                ),
+                ('one.high.green', 'one.low.white.gamma'): (
+                    ('one.high.green', 'one.low.white.gamma'),
+                ),
+                ('one.medium.orange', 'one.low.white'): (
+                    ('one.medium.orange', 'one.low.white'),
+                ),
+                ('two.high.red.alpha', 'two.medium.green.beta'): (
+                    'two.high.red.alpha', 'two.medium.green.beta'
+                ),
+                ('two.high.red.alpha', 'two.low.blue.gamma'): (
+                    'two.high.red.alpha', 'two.low.blue.gamma'
+                ),
+                ('two.medium.green.beta', 'two.low.blue.gamma'): (
+                    'two.medium.green.beta', 'two.low.blue.gamma'
+                ),
+                ('three.high.white', 'three.medium.purple'): (
+                    'three.high.white', 'three.medium.purple'
+                ),
+                ('three.high.white', 'three.low.cyan'): (
+                    'three.high.white', 'three.low.cyan'
+                ),
+                ('three.medium.purple', 'three.low.cyan'): (
+                    'three.medium.purple', 'three.low.cyan'
+                ),
+            },
             True,
         ),
         (
-            (
-                ('mypackage.two.medium', 'mypackage.one.high'),
-            ),
+            {
+                ('two.medium.green.beta', 'one.high.green'): (
+                    'two.medium.green.beta', 'one.high.green',
+                ),
+            },
             True,
         ),
         (
-            (
-                ('mypackage.three.low', 'mypackage.two.high'),
-            ),
+            {
+                    ('three.low.cyan', 'two.high.red.alpha'): (
+                    'three.low.cyan', 'two.high.red.alpha'
+                ),
+            },
             True,
         ),
         (
-            (
-                ('mypackage.two.medium', 'mypackage.two.high'),
-            ),
+            {
+                ('two.medium.green.beta', 'two.high.red.alpha'): (
+                    'two.medium.green.beta', 'two.high.red.alpha'
+                ),
+            },
             False,
         ),
     )
 )
-def test_layer_contract_multiple_containers(package_chains, is_valid):
+def test_layer_contract_multiple_containers(shortest_chains, is_valid):
     graph = FakeGraph(
         root_package='mypackage',
-        package_chains=package_chains,
+        descendants={
+            'one.high': {
+                'green', 'blue', 'yellow', 'yellow.alpha',
+            },
+            'one.medium': {
+                'orange', 'red', 'orange.beta',
+            },
+            'one.low': {
+                'black', 'white', 'white.gamma',
+            },
+            'two.high': {
+                'red', 'red.alpha',
+            },
+            'two.medium': {
+                'green', 'green.beta',
+            },
+            'two.low': {
+                'blue', 'blue.gamma',
+            },
+            'three.high': {
+                'white',
+            },
+            'three.medium': {
+                'purple',
+            },
+            'three.low': {
+                'cyan',
+            },
+        },
+        shortest_chains=shortest_chains,
     )
 
     contract = LayerContract(

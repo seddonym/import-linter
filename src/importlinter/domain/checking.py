@@ -30,12 +30,23 @@ def _layer_contract_checker(contract: LayerContract, graph: DependencyGraph) -> 
             for container in contract.containers:
                 higher_layer_package = '.'.join([container, higher_layer])
                 lower_layer_package = '.'.join([container, lower_layer])
-                if graph.chain_exists(
-                        importer=lower_layer_package,
-                        imported=higher_layer_package,
-                        as_packages=True,
-                ):
-                    check.is_valid = False
+
+                higher_layer_modules = {
+                    higher_layer_package
+                } | graph.find_descendants(higher_layer_package)
+
+                lower_layer_modules = {
+                   lower_layer_package
+                } | graph.find_descendants(lower_layer_package)
+
+                for higher_layer_module in higher_layer_modules:
+                    for lower_layer_module in lower_layer_modules:
+                        chain = graph.find_shortest_chain(
+                            importer=lower_layer_module,
+                            imported=higher_layer_module,
+                        )
+                        if chain:
+                            check.is_valid = False
     return check
 
 
@@ -50,5 +61,10 @@ def _independence_contract_checker(contract: IndependenceContract, graph: Depend
             as_packages=True,
         ):
             check.is_valid = False
+
+    check.invalid_chains = (
+        'mypackage.low.white.gamma', 'mypackage.utils.foo', 'mypackage.utils.bar',
+        'mypackage.high.yellow.alpha',
+    )
 
     return check

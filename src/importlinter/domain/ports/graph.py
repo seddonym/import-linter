@@ -1,7 +1,12 @@
+from typing import Optional, Tuple, Set
 import abc
 
 
 class DependencyGraph(abc.ABC):
     @abc.abstractmethod
-    def chain_exists(self, importer: str, imported: str, as_packages: bool = False) -> bool:
+    def find_descendants(self, module: str) -> Set[str]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def find_shortest_chain(self, importer: str, imported: str) -> Optional[Tuple[str, ...]]:
         raise NotImplementedError
