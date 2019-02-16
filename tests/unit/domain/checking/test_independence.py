@@ -5,34 +5,50 @@ from importlinter.domain.checking import check_contract
 
 from tests.adaptors.graph import FakeGraph
 
-# TODO finish
-@pytest.mark.skip
+
 @pytest.mark.parametrize(
     'package_chains, is_valid',
     (
         (
             (
-                ('mypackage.blue', 'medium'),
-                ('high', 'low'),
-                ('medium', 'low'),
+                ('mypackage.blue', 'mypackage.orange'),
+                ('mypackage.brown', 'mypackage.blue'),
             ),
             True,
         ),
         (
             (
-                ('medium', 'high'),
+                ('mypackage.blue', 'mypackage.green'),
             ),
             False,
         ),
         (
             (
-                ('low', 'high'),
+                ('mypackage.green', 'mypackage.blue'),
             ),
             False,
         ),
         (
             (
-                ('low', 'medium'),
+                ('mypackage.blue', 'mypackage.yellow'),
+            ),
+            False,
+        ),
+        (
+            (
+                ('mypackage.yellow', 'mypackage.blue'),
+            ),
+            False,
+        ),
+        (
+            (
+                ('mypackage.green', 'mypackage.yellow'),
+            ),
+            False,
+        ),
+        (
+            (
+                ('mypackage.yellow', 'mypackage.green'),
             ),
             False,
         ),
