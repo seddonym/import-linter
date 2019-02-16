@@ -33,7 +33,7 @@ class FakeGraph(DependencyGraph):
         except KeyError:
             return set()
         else:
-            return {'.'.join([module, d]) for d in descendants_without_root}
+            return set(['.'.join([module, d]) for d in descendants_without_root])
 
     def find_shortest_chain(self, importer: str, imported: str) -> Optional[Tuple[str, ...]]:
         try:
@@ -43,7 +43,7 @@ class FakeGraph(DependencyGraph):
         except KeyError:
             return None
         else:
-            return (self._add_root(m) for m in chain_without_root)
+            return tuple([self._add_root(m) for m in chain_without_root])
 
     def _remove_root(self, module: str) -> str:
         assert module.startswith(self.root_package)

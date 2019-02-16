@@ -214,13 +214,13 @@ def test_layer_contract_broken_details():
         },
         shortest_chains={
             ('low.white.gamma', 'high.yellow.alpha'): (
-                ('low.white.gamma', 'utils.foo', 'utils.bar', 'high.yellow.alpha'),
+                'low.white.gamma', 'utils.foo', 'utils.bar', 'high.yellow.alpha',
             ),
             ('medium.orange.beta', 'high.blue'): (
-                ('medium.orange.beta', 'high.blue'),
+                'medium.orange.beta', 'high.blue',
             ),
             ('low.black', 'medium.red'): (
-                ('low.black', 'utils.baz', 'medium.red'),
+                'low.black', 'utils.baz', 'medium.red',
             ),
         }
     )
@@ -241,7 +241,8 @@ def test_layer_contract_broken_details():
 
     assert contract_check.is_valid is False
 
-    assert contract_check.invalid_chains == (
-        'mypackage.low.white.gamma', 'mypackage.utils.foo', 'mypackage.utils.bar',
-        'mypackage.high.yellow.alpha',
-    )
+    assert contract_check.invalid_chains == {
+        ('mypackage.low.white.gamma', 'mypackage.utils.foo', 'mypackage.utils.bar', 'mypackage.high.yellow.alpha'),
+        ('mypackage.medium.orange.beta', 'mypackage.high.blue'),
+        ('mypackage.low.black', 'mypackage.utils.baz', 'mypackage.medium.red'),
+    }

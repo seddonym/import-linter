@@ -24,6 +24,7 @@ def _get_checker(contract):
 def _layer_contract_checker(contract: LayerContract, graph: DependencyGraph) -> ContractCheck:
     check = ContractCheck()
     check.is_valid = True
+    check.invalid_chains = set()
 
     for index, higher_layer in enumerate(contract.layers):
         for lower_layer in contract.layers[index + 1:]:
@@ -47,6 +48,7 @@ def _layer_contract_checker(contract: LayerContract, graph: DependencyGraph) -> 
                         )
                         if chain:
                             check.is_valid = False
+                            check.invalid_chains.add(chain)
     return check
 
 
@@ -62,9 +64,5 @@ def _independence_contract_checker(contract: IndependenceContract, graph: Depend
         ):
             check.is_valid = False
 
-    check.invalid_chains = (
-        'mypackage.low.white.gamma', 'mypackage.utils.foo', 'mypackage.utils.bar',
-        'mypackage.high.yellow.alpha',
-    )
 
     return check
