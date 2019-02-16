@@ -54,7 +54,7 @@ from tests.adaptors.graph import FakeGraph
         ),
     )
 )
-def test_layer_contract_passes(package_chains, is_valid):
+def test_independence_contract(package_chains, is_valid):
     graph = FakeGraph(
         root_package='mypackage',
         package_chains=package_chains,
@@ -62,7 +62,7 @@ def test_layer_contract_passes(package_chains, is_valid):
 
     contract = IndependenceContract(
         name='Independence contract',
-        independent_packages=(
+        modules=(
             'mypackage.blue',
             'mypackage.green',
             'mypackage.yellow',

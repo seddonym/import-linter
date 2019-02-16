@@ -37,7 +37,7 @@ from tests.adaptors.graph import FakeGraph
         ),
     )
 )
-def test_layer_contract_passes_single_containers(package_chains, is_valid):
+def test_layer_contract_single_containers(package_chains, is_valid):
     graph = FakeGraph(
         root_package='mypackage',
         package_chains=package_chains,
@@ -97,7 +97,7 @@ def test_layer_contract_passes_single_containers(package_chains, is_valid):
         ),
     )
 )
-def test_layer_contract_passes_multiple_containers(package_chains, is_valid):
+def test_layer_contract_multiple_containers(package_chains, is_valid):
     graph = FakeGraph(
         root_package='mypackage',
         package_chains=package_chains,

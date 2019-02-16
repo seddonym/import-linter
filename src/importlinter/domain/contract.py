@@ -12,4 +12,6 @@ class LayerContract(Contract):
 
 
 class IndependenceContract(Contract):
-    ...
+    def __init__(self, name: str, modules: Iterable[str]) -> None:
+        self.name = name
+        self.modules = modules
