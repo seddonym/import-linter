@@ -120,3 +120,52 @@ def test_layer_contract_multiple_containers(package_chains, is_valid):
     contract_check = check_contract(contract=contract, graph=graph)
 
     assert contract_check.is_valid == is_valid
+
+
+def test_layer_contract_broken_details():
+    graph = FakeGraph(
+        root_package='mypackage',
+        descendants={
+            'high': (
+                'green', 'blue', 'yellow', 'yellow.alpha',
+            ),
+            'medium': (
+                'orange', 'red', 'orange.beta',
+            ),
+            'low': (
+                'black', 'white', 'white.gamma',
+            ),
+        },
+        shortest_chains={
+            ('low.white.gamma', 'high.yellow.alpha'): (
+                ('low.white.gamma', 'utils.foo', 'utils.bar', 'high.yellow.alpha'),
+            ),
+            ('medium.orange.beta', 'high.blue'): (
+                ('medium.orange.beta', 'high.blue'),
+            ),
+            ('low.black', 'medium.red'): (
+                ('low.black', 'utils.baz', 'medium.red'),
+            ),
+        }
+    )
+
+    contract = LayerContract(
+        name='Layer contract',
+        containers=(
+            'mypackage',
+        ),
+        layers=(
+            'high',
+            'medium',
+            'low',
+        ),
+    )
+
+    contract_check = check_contract(contract=contract, graph=graph)
+
+    assert contract_check.is_valid is False
+
+    assert contract_check.invalid_chains == (
+        'mypackage.low.white.gamma', 'mypackage.utils.foo', 'mypackage.utils.bar',
+        'mypackage.high.yellow.alpha',
+    )
