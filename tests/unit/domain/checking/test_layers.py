@@ -12,13 +12,13 @@ from tests.adaptors.graph import FakeGraph
         (
             {
                 ('high.green', 'medium.orange'): (
-                    ('high.green', 'medium.orange'),
+                    'high.green', 'medium.orange',
                 ),
                 ('high.green', 'low.white.gamma'): (
-                    ('high.green', 'low.white.gamma'),
+                    'high.green', 'low.white.gamma',
                 ),
                 ('medium.orange', 'low.white'): (
-                    ('medium.orange', 'low.white'),
+                    'medium.orange', 'low.white',
                 ),
             },
             True,
@@ -26,7 +26,7 @@ from tests.adaptors.graph import FakeGraph
         (
             {
                 ('medium.orange', 'high.green'): (
-                    ('medium.orange', 'high.green'),
+                    'medium.orange', 'high.green',
                 ),
             },
             False,
@@ -34,7 +34,7 @@ from tests.adaptors.graph import FakeGraph
         (
             {
                 ('low.white.gamma', 'high.yellow.alpha'): (
-                    ('low.white.gamma', 'high.yellow.alpha'),
+                    'low.white.gamma', 'high.yellow.alpha',
                 ),
             },
             False,
@@ -42,7 +42,7 @@ from tests.adaptors.graph import FakeGraph
         (
             {
                 ('low.white.gamma', 'medium.red'): (
-                    ('low.white.gamma', 'medium.red'),
+                    'low.white.gamma', 'medium.red',
                 ),
             },
             False,
@@ -89,13 +89,13 @@ def test_layer_contract_single_containers(shortest_chains, is_valid):
         (
             {
                 ('one.high.green', 'one.medium.orange'): (
-                    ('one.high.green', 'one.medium.orange'),
+                    'one.high.green', 'one.medium.orange',
                 ),
                 ('one.high.green', 'one.low.white.gamma'): (
-                    ('one.high.green', 'one.low.white.gamma'),
+                    'one.high.green', 'one.low.white.gamma',
                 ),
                 ('one.medium.orange', 'one.low.white'): (
-                    ('one.medium.orange', 'one.low.white'),
+                    'one.medium.orange', 'one.low.white',
                 ),
                 ('two.high.red.alpha', 'two.medium.green.beta'): (
                     'two.high.red.alpha', 'two.medium.green.beta'
@@ -128,7 +128,7 @@ def test_layer_contract_single_containers(shortest_chains, is_valid):
         ),
         (
             {
-                    ('three.low.cyan', 'two.high.red.alpha'): (
+                ('three.low.cyan', 'two.high.red.alpha'): (
                     'three.low.cyan', 'two.high.red.alpha'
                 ),
             },
