@@ -56,13 +56,19 @@ def _independence_contract_checker(contract: IndependenceContract, graph: Depend
     check = ContractCheck()
     check.is_valid = True
 
-    for module_1, module_2 in permutations(contract.modules, r=2):
-        if graph.chain_exists(
-            importer=module_1,
-            imported=module_2,
-            as_packages=True,
-        ):
-            check.is_valid = False
+    all_modules_for_each_subpackage = {}
 
+    for module in contract.modules:
+        all_modules_for_each_subpackage[module] = {
+           module
+        } | graph.find_descendants(module)
 
+    for subpackage_1, subpackage_2 in permutations(contract.modules, r=2):
+        for importer_module in all_modules_for_each_subpackage[subpackage_1]:
+            for imported_module in all_modules_for_each_subpackage[subpackage_2]:
+                if graph.find_shortest_chain(
+                    importer=importer_module,
+                    imported=imported_module,
+                ):
+                    check.is_valid = False
     return check

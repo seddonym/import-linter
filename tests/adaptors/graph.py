@@ -21,12 +21,6 @@ class FakeGraph(DependencyGraph):
         self._fake_descendants = descendants
         self._fake_shortest_chains = shortest_chains
 
-    # def chain_exists(self, importer: str, imported: str, as_packages: bool = False) -> bool:
-    #     assert as_packages is False
-    #     for downstream, upstream in self._package_chains:
-    #         if importer == downstream and imported == upstream:
-    #             return True
-    #     return False
     def find_descendants(self, module: str) -> Set[str]:
         try:
             descendants_without_root = self._fake_descendants[self._remove_root(module)]
