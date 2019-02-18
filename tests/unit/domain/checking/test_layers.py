@@ -1,7 +1,7 @@
 import pytest
 
 from importlinter.domain.contract import LayerContract
-from importlinter.domain.checking import check_contract
+from importlinter.domain.checking import check_contract, InvalidContract
 
 from tests.adaptors.graph import FakeGraph
 
@@ -247,3 +247,106 @@ def test_layer_contract_broken_details():
         ('mypackage.medium.orange.beta', 'mypackage.high.blue'),
         ('mypackage.low.black', 'mypackage.utils.baz', 'mypackage.medium.red'),
     }
+
+
+@pytest.mark.parametrize(
+    'ignore_imports, invalid_chains',
+    (
+        (
+            # Ignore from each chain - should be valid.
+            (
+                ('utils.baz', 'medium.orange'),
+                ('low.white.gamma', 'utils.foo'),
+            ),
+            set(),
+        ),
+        (
+            # Ignore only one chain - should return the other.
+            (
+                ('low.white.gamma', 'utils.foo'),
+            ),
+            {
+                ('low.black', 'utils.baz', 'medium.orange'),
+            }
+        ),
+        (
+            # Multiple ignore from same path - should allow it.
+            (
+                ('low.white.gamma', 'utils.foo'),
+                ('utils.bar', 'high.yellow.alpha'),
+            ),
+            {
+                ('low.black', 'utils.baz', 'medium.orange'),
+            }
+        ),
+        (
+            # Ignore from nonexistent module - should error.
+            (
+                ('nonexistent.foo', 'utils.foo'),
+            ),
+            InvalidContract(),
+        ),
+        (
+            # Ignore from nonexistent module - should error.
+            (
+                ('utils.foo', 'nonexistent.foo'),
+            ),
+            InvalidContract(),
+        ),
+    ),
+)
+def test_ignore_imports(ignore_imports, invalid_chains):
+    graph = FakeGraph(
+        root_package='mypackage',
+        descendants={
+            'high': (
+                'green', 'blue', 'yellow', 'yellow.alpha',
+            ),
+            'medium': (
+                'orange',
+            ),
+            'low': (
+                'black', 'white', 'white.gamma',
+            ),
+        },
+        shortest_chains={
+            ('low.white.gamma', 'high.yellow.alpha'): (
+                'low.white.gamma', 'utils.foo', 'utils.bar', 'high.yellow.alpha',
+            ),
+            ('low.black', 'medium.orange'): (
+                'low.black', 'utils.baz', 'medium.orange',
+            ),
+        }
+    )
+
+    contract = LayerContract(
+        name='Layer contract',
+        containers=(
+            'mypackage',
+        ),
+        layers=(
+            'high',
+            'medium',
+            'low',
+        ),
+        ignore_imports=ignore_imports,
+    )
+
+    if isinstance(invalid_chains, Exception):
+        with pytest.raises(invalid_chains.__class__):
+            check_contract(contract=contract, graph=graph)
+            return
+    else:
+        contract_check = check_contract(contract=contract, graph=graph)
+
+    if invalid_chains:
+        assert False is contract_check.is_valid
+        absolute_invalid_chains = {
+            tuple(
+                (f'mypackage.{m}' for m in chain)
+            )
+            for chain in invalid_chains
+        }
+        assert absolute_invalid_chains == contract_check.invalid_chains
+    else:
+        assert True is contract_check.is_valid

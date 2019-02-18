@@ -1,7 +1,20 @@
+from typing import Iterable
 from itertools import permutations
 
+from .typing import DirectImportTuple
+from .valueobjects import DirectImport
 from .contract import Contract, LayerContract, IndependenceContract
 from .ports.graph import DependencyGraph
+
+
+class InvalidContract(Exception):
+    """
+    Exception if a contract itself is invalid.
+
+    N. B. This is not the same thing as if a contract is violated; this is raised if the contract
+    is not suitable for checking in the first place.
+    """
+    pass
 
 
 class ContractCheck:
@@ -24,6 +37,10 @@ def _get_checker(contract):
 def _layer_contract_checker(contract: LayerContract, graph: DependencyGraph) -> ContractCheck:
     check = ContractCheck()
     check.is_valid = True
+
+    direct_imports_to_ignore = _tuples_to_direct_imports(contract.ignore_imports)
+    removed_imports = _pop_imports(graph, direct_imports_to_ignore)
+
     check.invalid_chains = set()
 
     for index, higher_layer in enumerate(contract.layers):
@@ -49,10 +66,15 @@ def _layer_contract_checker(contract: LayerContract, graph: DependencyGraph) -> 
                         if chain:
                             check.is_valid = False
                             check.invalid_chains.add(chain)
+
+    _add_imports(graph, removed_imports)
+
     return check
 
 
-def _independence_contract_checker(contract: IndependenceContract, graph: DependencyGraph) -> ContractCheck:
+def _independence_contract_checker(
+    contract: IndependenceContract, graph: DependencyGraph
+) -> ContractCheck:
     check = ContractCheck()
     check.is_valid = True
     check.invalid_chains = set()
@@ -75,3 +97,35 @@ def _independence_contract_checker(contract: IndependenceContract, graph: Depend
                     check.is_valid = False
                     check.invalid_chains.add(chain)
     return check
+
+
+def _tuples_to_direct_imports(import_tuples: Iterable[DirectImportTuple]) -> DirectImport:
+    direct_imports = []
+    for importer, imported in import_tuples:
+        direct_imports.append(
+            DirectImport(importer=importer, imported=imported),
+        )
+    return direct_imports
+
+
+def _pop_imports(graph: DependencyGraph, imports: Iterable[DirectImport]) -> Iterable[DirectImport]:
+    direct_imports = []
+    for importer, imported in direct_imports:
+        try:
+            existing_direct_imports_dict = graph.get_import_details(importer=importer, imported=imported)
+        except ValueError: # TODO: what's the exception?
+            raise InvalidContract('Ignored import {} not present in the graph.')
+        direct_imports.append(details)
+        graph.remove_import(importer=importer, imported=imported)
+    return direct_imports
+
+
+def _add_imports(graph: DependencyGraph, import_details: Iterable[DirectImport]) -> None:
+    for details in import_details:
+        graph.add_import(
+            importer=details['importer'],
+            imported=details['imported'],
+            line_number=details['line_number'],
+            line_contents=details['line_contents'],
+        )
+
