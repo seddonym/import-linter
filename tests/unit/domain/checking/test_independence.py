@@ -7,66 +7,82 @@ from tests.adaptors.graph import FakeGraph
 
 
 @pytest.mark.parametrize(
-    'shortest_chains, is_valid',
+    'shortest_chains, invalid_chains',
     (
         (
             {
                 ('blue', 'orange'): ('blue', 'orange'),
                 ('brown', 'blue'): ('brown', 'blue'),
             },
-            True,
+            set(),
         ),
         (
             {
                 ('blue', 'green'): ('blue', 'green'),
             },
-            False,
+            {
+                ('blue', 'green'),
+            },
         ),
         (
             {
-                ('blue.beta.foo', 'green'): ('blue.beta.foo', 'green'),
+                ('blue.beta.foo', 'green'): ('blue.beta.foo', 'orange.omega', 'green'),
             },
-            False,
+            {
+                ('blue.beta.foo', 'orange.omega', 'green'),
+            },
         ),
         (
             {
                 ('green', 'blue.beta.foo'): ('green', 'blue.beta.foo'),
             },
-            False,
+            {
+                ('green', 'blue.beta.foo'),
+            }
         ),
         (
             {
                 ('blue', 'yellow'): ('blue', 'yellow'),
             },
-            False,
+            {
+                ('blue', 'yellow'),
+            },
         ),
         (
             {
                 ('blue.beta.foo', 'yellow.gamma'): ('blue.beta.foo', 'yellow.gamma'),
             },
-            False,
+            {
+                ('blue.beta.foo', 'yellow.gamma'),
+            },
         ),
         (
             {
                 ('yellow', 'blue'): ('yellow', 'blue'),
             },
-            False,
+            {
+                ('yellow', 'blue'),
+            },
         ),
         (
             {
                 ('green', 'yellow'): ('green', 'yellow'),
             },
-            False,
+            {
+                ('green', 'yellow'),
+            },
         ),
         (
             {
                 ('yellow', 'green'): ('yellow', 'green'),
             },
-            False,
+            {
+                ('yellow', 'green'),
+            },
         ),
     )
 )
-def test_independence_contract(shortest_chains, is_valid):
+def test_independence_contract(shortest_chains, invalid_chains):
     graph = FakeGraph(
         root_package='mypackage',
         descendants={
@@ -75,7 +91,6 @@ def test_independence_contract(shortest_chains, is_valid):
         },
         shortest_chains=shortest_chains,
     )
-    # TODO - test for invalid chains
     contract = IndependenceContract(
         name='Independence contract',
         modules=(
@@ -87,4 +102,14 @@ def test_independence_contract(shortest_chains, is_valid):
 
     contract_check = check_contract(contract=contract, graph=graph)
 
-    assert contract_check.is_valid == is_valid
+    if invalid_chains:
+        assert False is contract_check.is_valid
+        absolute_invalid_chains = {
+            tuple(
+                (f'mypackage.{m}' for m in chain)
+            )
+            for chain in invalid_chains
+        }
+        assert absolute_invalid_chains == contract_check.invalid_chains
+    else:
+        assert True is contract_check.is_valid

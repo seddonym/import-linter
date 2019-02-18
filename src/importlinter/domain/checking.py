@@ -55,6 +55,7 @@ def _layer_contract_checker(contract: LayerContract, graph: DependencyGraph) -> 
 def _independence_contract_checker(contract: IndependenceContract, graph: DependencyGraph) -> ContractCheck:
     check = ContractCheck()
     check.is_valid = True
+    check.invalid_chains = set()
 
     all_modules_for_each_subpackage = {}
 
@@ -66,9 +67,11 @@ def _independence_contract_checker(contract: IndependenceContract, graph: Depend
     for subpackage_1, subpackage_2 in permutations(contract.modules, r=2):
         for importer_module in all_modules_for_each_subpackage[subpackage_1]:
             for imported_module in all_modules_for_each_subpackage[subpackage_2]:
-                if graph.find_shortest_chain(
+                chain = graph.find_shortest_chain(
                     importer=importer_module,
                     imported=imported_module,
-                ):
+                )
+                if chain:
                     check.is_valid = False
+                    check.invalid_chains.add(chain)
     return check
