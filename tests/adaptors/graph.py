@@ -1,6 +1,6 @@
 from typing import Optional, Tuple, Dict, Set
 
-from importlinter.domain.ports.graph import DependencyGraph
+from importlinter.domain.ports.graph import ImportGraph
 
 
 # A two-tuple representing a chain of imports between two modules.
@@ -10,7 +10,7 @@ TwoChain = Tuple[str, str]
 Chain = Tuple[str, ...]
 
 
-class FakeGraph(DependencyGraph):
+class FakeGraph(ImportGraph):
     def __init__(
             self,
             root_package: str,

@@ -4,7 +4,7 @@ from itertools import permutations
 from .typing import DirectImportTuple
 from .valueobjects import DirectImport
 from .contract import Contract, LayerContract, IndependenceContract
-from .ports.graph import DependencyGraph
+from .ports.graph import ImportGraph
 
 
 class InvalidContract(Exception):
@@ -21,7 +21,7 @@ class ContractCheck:
     ...
 
 
-def check_contract(contract: Contract, graph: DependencyGraph) -> ContractCheck:
+def check_contract(contract: Contract, graph: ImportGraph) -> ContractCheck:
     checker = _get_checker(contract)
     check = checker(contract, graph)
     return check
@@ -34,69 +34,11 @@ def _get_checker(contract):
     }[contract.__class__]
 
 
-def _layer_contract_checker(contract: LayerContract, graph: DependencyGraph) -> ContractCheck:
-    check = ContractCheck()
-    check.is_valid = True
-
-    direct_imports_to_ignore = _tuples_to_direct_imports(contract.ignore_imports)
-    removed_imports = _pop_imports(graph, direct_imports_to_ignore)
-
-    check.invalid_chains = set()
-
-    for index, higher_layer in enumerate(contract.layers):
-        for lower_layer in contract.layers[index + 1:]:
-            for container in contract.containers:
-                higher_layer_package = '.'.join([container, higher_layer])
-                lower_layer_package = '.'.join([container, lower_layer])
-
-                higher_layer_modules = {
-                    higher_layer_package
-                } | graph.find_descendants(higher_layer_package)
-
-                lower_layer_modules = {
-                   lower_layer_package
-                } | graph.find_descendants(lower_layer_package)
-
-                for higher_layer_module in higher_layer_modules:
-                    for lower_layer_module in lower_layer_modules:
-                        chain = graph.find_shortest_chain(
-                            importer=lower_layer_module,
-                            imported=higher_layer_module,
-                        )
-                        if chain:
-                            check.is_valid = False
-                            check.invalid_chains.add(chain)
-
-    _add_imports(graph, removed_imports)
-
-    return check
+def _layer_contract_checker(contract: LayerContract, graph: ImportGraph) -> ContractCheck:
 
 
-def _independence_contract_checker(
-    contract: IndependenceContract, graph: DependencyGraph
-) -> ContractCheck:
-    check = ContractCheck()
-    check.is_valid = True
-    check.invalid_chains = set()
 
-    all_modules_for_each_subpackage = {}
-
-    for module in contract.modules:
-        all_modules_for_each_subpackage[module] = {
-           module
-        } | graph.find_descendants(module)
-
-    for subpackage_1, subpackage_2 in permutations(contract.modules, r=2):
-        for importer_module in all_modules_for_each_subpackage[subpackage_1]:
-            for imported_module in all_modules_for_each_subpackage[subpackage_2]:
-                chain = graph.find_shortest_chain(
-                    importer=importer_module,
-                    imported=imported_module,
-                )
-                if chain:
-                    check.is_valid = False
-                    check.invalid_chains.add(chain)
-    return check
+def _independence_contract_checker
 
 
 def _tuples_to_direct_imports(import_tuples: Iterable[DirectImportTuple]) -> DirectImport:
@@ -106,26 +48,3 @@ def _tuples_to_direct_imports(import_tuples: Iterable[DirectImportTuple]) -> Dir
             DirectImport(importer=importer, imported=imported),
         )
     return direct_imports
-
-
-def _pop_imports(graph: DependencyGraph, imports: Iterable[DirectImport]) -> Iterable[DirectImport]:
-    direct_imports = []
-    for importer, imported in direct_imports:
-        try:
-            existing_direct_imports_dict = graph.get_import_details(importer=importer, imported=imported)
-        except ValueError: # TODO: what's the exception?
-            raise InvalidContract('Ignored import {} not present in the graph.')
-        direct_imports.append(details)
-        graph.remove_import(importer=importer, imported=imported)
-    return direct_imports
-
-
-def _add_imports(graph: DependencyGraph, import_details: Iterable[DirectImport]) -> None:
-    for details in import_details:
-        graph.add_import(
-            importer=details['importer'],
-            imported=details['imported'],
-            line_number=details['line_number'],
-            line_contents=details['line_contents'],
-        )
-

@@ -2,7 +2,7 @@ from typing import Optional, Tuple, Set, Dict, List, Union
 import abc
 
 
-class DependencyGraph(abc.ABC):
+class ImportGraph(abc.ABC):
     @abc.abstractmethod
     def find_descendants(self, module: str) -> Set[str]:
         raise NotImplementedError
