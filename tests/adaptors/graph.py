@@ -45,3 +45,7 @@ class FakeGraph(ImportGraph):
 
     def _add_root(self, module: str) -> str:
         return '.'.join([self.root_package, module])
+
+
+class FakeGraphBuilder:
+    ...

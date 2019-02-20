@@ -2,8 +2,8 @@ from typing import Iterable
 from itertools import permutations
 
 from .typing import DirectImportTuple
-from .valueobjects import DirectImport
-from .contract import Contract, LayerContract, IndependenceContract
+from .imports import DirectImport
+from .contract import Contract
 from .ports.graph import ImportGraph
 
 
@@ -25,20 +25,6 @@ def check_contract(contract: Contract, graph: ImportGraph) -> ContractCheck:
     checker = _get_checker(contract)
     check = checker(contract, graph)
     return check
-
-
-def _get_checker(contract):
-    return {
-        LayerContract: _layer_contract_checker,
-        IndependenceContract: _independence_contract_checker,
-    }[contract.__class__]
-
-
-def _layer_contract_checker(contract: LayerContract, graph: ImportGraph) -> ContractCheck:
-
-
-
-def _independence_contract_checker
 
 
 def _tuples_to_direct_imports(import_tuples: Iterable[DirectImportTuple]) -> DirectImport:

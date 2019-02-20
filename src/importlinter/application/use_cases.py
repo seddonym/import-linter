@@ -3,7 +3,7 @@ from typing import Iterable
 from ..domain.contract import Contract
 from .user_options import UserOptions
 from .ports.report import Report
-from .ports.graph import Graph
+from ..domain.ports.graph import ImportGraph
 from .app_config import settings
 
 
@@ -11,7 +11,7 @@ class AlreadyReportedError(Exception):
     pass
 
 
-def analyse_and_report():
+def check_contracts_and_print_report():
     """
     Analyse whether a Python package follows a set of contracts, and report on the results.
 
@@ -28,38 +28,32 @@ def analyse_and_report():
             contracts=user_options.contracts,
         )
     except Exception as e:
-        _report_exception(e)
+        _print_exception(e)
         raise AlreadyReportedError
 
-    _render_report(report)
+    _print_report(report)
 
     if report.contains_failures:
         raise AlreadyReportedError
 
 
 def _read_user_options() -> UserOptions:
-    return UserOptions(
-        root_package_name='grimp',
-        contracts=(
-            Contract(),
-            Contract(),
-        )
-    )
+    return settings.READ_USER_OPTIONS()
 
 
-def _build_graph(root_package_name: str) -> Graph:
+def _build_graph(root_package_name: str) -> ImportGraph:
     return settings.BUILD_GRAPH(root_package_name)
 
 
-def _report_exception(exception: Exception) -> None:
+def _print_exception(exception: Exception) -> None:
     settings.REPORT_EXCEPTION(exception)
 
 
-def _build_report(graph: Graph, contracts: Iterable[Contract]) -> Report:
+def _build_report(graph: ImportGraph, contracts: Iterable[Contract]) -> Report:
     report = Report(graph=graph)
     for contract in contracts:
         ...
 
 
-def _render_report(report: Report) -> None:
-    settings.RENDER_REPORT(report=report)
+def _print_report(report: Report) -> None:
+    settings.OUTPUT_REPORT(report=report)

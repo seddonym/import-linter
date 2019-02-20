@@ -1,0 +1,6 @@
+class Reporter:
+    ...
+
+
+class ExceptionReporter:
+    ...
