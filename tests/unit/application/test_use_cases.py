@@ -13,8 +13,7 @@ def test_check_contracts_and_print_report():
     settings.configure(
         USER_OPTION_READER=FakeUserOptionReader(),
         GRAPH_BUILDER=FakeGraphBuilder(),
-        EXCEPTION_PRINTER=FakePrinter(),
-        REPORT_PRINTER=FakePrinter(),
+        PRINTER=FakePrinter(),
     )
     settings.USER_OPTION_READER.set_options(
         UserOptions(
@@ -33,7 +32,7 @@ def test_check_contracts_and_print_report():
 
     result = check_contracts_and_print_report()
 
-    settings.REPORT_PRINTER.pop_and_assert("""
+    settings.PRINTER.pop_and_assert("""
         =============
         Import Linter
         =============

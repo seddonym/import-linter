@@ -10,8 +10,7 @@ from .adapters.user_options import UserOptionReader
 settings.configure(
     USER_OPTION_READER=UserOptionReader(),
     GRAPH_BUILDER=GraphBuilder(),
-    EXCEPTION_PRINTER=ConsolePrinter(),
-    REPORT_PRINTER=ConsolePrinter(),
+    PRINTER=ConsolePrinter(),
 )
 
 EXIT_STATUS_SUCCESS = 0

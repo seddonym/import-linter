@@ -5,6 +5,7 @@ from .user_options import UserOptions
 from .ports.reporting import Report
 from ..domain.ports.graph import ImportGraph
 from .app_config import settings
+from .rendering import render_report
 
 
 class AlreadyReportedError(Exception):
@@ -65,7 +66,7 @@ def _build_graph(root_package_name: str) -> ImportGraph:
 
 
 def _print_exception(exception: Exception) -> None:
-    settings.EXCEPTION_PRINTER(exception)
+    settings.PRINTER(exception)
 
 
 def _build_report(graph: ImportGraph, contracts: Iterable[Contract]) -> Report:
@@ -76,4 +77,7 @@ def _build_report(graph: ImportGraph, contracts: Iterable[Contract]) -> Report:
 
 
 def _print_report(report: Report) -> None:
-    settings.REPORT_PRINTER.print(report=report)
+    render_report(
+        printer=settings.PRINTER,
+        report=report,
+    )

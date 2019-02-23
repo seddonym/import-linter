@@ -1,9 +1,7 @@
 import abc
 
-from .reporting import Report
-
 
 class Printer(abc.ABC):
     @abc.abstractmethod
-    def print(self, report: Report) -> None:
+    def print(self, string: str) -> None:
         raise NotImplementedError
