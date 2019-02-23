@@ -1,6 +1,6 @@
-from typing import Optional, Tuple, Dict, Set
+from typing import Optional, Tuple, Union, Set, List, Dict
 
-from importlinter.domain.ports.graph import ImportGraph
+from importlinter.domain.ports.graph import ImportGraph, GraphBuilder
 
 
 # A two-tuple representing a chain of imports between two modules.
@@ -13,13 +13,13 @@ Chain = Tuple[str, ...]
 class FakeGraph(ImportGraph):
     def __init__(
             self,
-            root_package: str,
-            descendants: Dict[str, Set[str]],
-            shortest_chains: Dict[TwoChain, Chain],
+            root_package_name: str,
+            descendants: Dict[str, Set[str]] = None,
+            shortest_chains: Dict[TwoChain, Chain] = None,
     ) -> None:
-        self.root_package = root_package
-        self._fake_descendants = descendants
-        self._fake_shortest_chains = shortest_chains
+        self.root_package_name = root_package_name
+        self._fake_descendants = descendants if descendants else {}
+        self._fake_shortest_chains = shortest_chains if shortest_chains else {}
 
     def find_descendants(self, module: str) -> Set[str]:
         try:
@@ -39,13 +39,32 @@ class FakeGraph(ImportGraph):
         else:
             return tuple([self._add_root(m) for m in chain_without_root])
 
+    def get_import_details(
+            self,
+            *,
+            importer: str,
+            imported: str
+    ) -> List[Dict[str, Union[str, int]]]:
+        raise NotImplementedError
+
+    def add_import(
+            self, *,
+            importer: str,
+            imported: str,
+            line_number: Optional[int] = None,
+            line_contents: Optional[str] = None
+    ) -> None:
+        raise NotImplementedError
+
     def _remove_root(self, module: str) -> str:
-        assert module.startswith(self.root_package)
-        return module[len(self.root_package) + 1:]
+        assert module.startswith(self.root_package_name)
+        return module[len(self.root_package_name) + 1:]
 
     def _add_root(self, module: str) -> str:
-        return '.'.join([self.root_package, module])
+        return '.'.join([self.root_package_name, module])
 
 
-class FakeGraphBuilder:
-    ...
+class FakeGraphBuilder(GraphBuilder):
+    def set_graph(self, graph: ImportGraph) -> None:
+        self._graph = graph
+

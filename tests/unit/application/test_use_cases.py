@@ -5,7 +5,7 @@ from importlinter.application.use_cases import check_contracts_and_print_report,
 from tests.adaptors.user_options import FakeUserOptionReader
 from tests.adaptors.graph import FakeGraphBuilder, FakeGraph
 from tests.adaptors.printing import FakePrinter
-from tests.helpers.contracts import AlwaysFailsContract, AlwaysPassesContract
+from tests.helpers.contracts import AlwaysPassesContract
 
 
 def test_check_contracts_and_print_report():
@@ -15,9 +15,9 @@ def test_check_contracts_and_print_report():
         EXCEPTION_PRINTER=FakePrinter(),
         REPORT_PRINTER=FakePrinter(),
     )
-    settings.USER_OPTION_READER.set_user_options(
+    settings.USER_OPTION_READER.set_options(
         UserOptions(
-            root_package_name='grimp',
+            root_package_name='mypackage',
             contracts=(
                 AlwaysPassesContract(name='Contract foo'),
                 AlwaysPassesContract(name='Contract bar'),
@@ -26,13 +26,13 @@ def test_check_contracts_and_print_report():
     )
     settings.GRAPH_BUILDER.set_graph(
         FakeGraph(
-            root_package_name='foo',
+            root_package_name='mypackage',
         )
     )
 
     result = check_contracts_and_print_report()
 
-    assert settings.REPORT_PRINTER.pop_stream() == """
+    settings.REPORT_PRINTER.pop_and_assert("""
         =============
         Import Linter
         =============
@@ -48,7 +48,7 @@ def test_check_contracts_and_print_report():
         Contract bar KEPT
 
         Contracts: 2 kept, 0 broken.
-    """
+    """)
 
     assert result == SUCCESS
 

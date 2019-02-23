@@ -32,3 +32,9 @@ class ImportGraph(abc.ABC):
 
     def remove_import(self, *, importer: str, imported: str) -> None:
         raise NotImplementedError
+
+
+class GraphBuilder(abc.ABC):
+    @abc.abstractmethod
+    def set_graph(self, graph: ImportGraph) -> None:
+        raise NotImplementedError
