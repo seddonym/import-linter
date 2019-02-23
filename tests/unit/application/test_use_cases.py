@@ -3,7 +3,8 @@ from importlinter.application.user_options import UserOptions
 from importlinter.application.use_cases import check_contracts_and_print_report, SUCCESS
 
 from tests.adapters.user_options import FakeUserOptionReader
-from tests.adapters.graph import FakeGraphBuilder, FakeGraph
+from tests.adapters.graph import FakeGraph
+from tests.adapters.building import FakeGraphBuilder
 from tests.adapters.printing import FakePrinter
 from tests.helpers.contracts import AlwaysPassesContract
 

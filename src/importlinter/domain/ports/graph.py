@@ -32,7 +32,3 @@ class ImportGraph(abc.ABC):
 
     def remove_import(self, *, importer: str, imported: str) -> None:
         raise NotImplementedError
-
-
-class GraphBuilder(abc.ABC):
-    ...

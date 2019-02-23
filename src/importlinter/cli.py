@@ -2,7 +2,7 @@ import click
 
 from .application.use_cases import check_contracts_and_print_report, AlreadyReportedError
 from .application.app_config import settings
-from .adapters.graph import GraphBuilder
+from .adapters.building import GraphBuilder
 from .adapters.printing import ConsolePrinter
 from .adapters.user_options import UserOptionReader
 

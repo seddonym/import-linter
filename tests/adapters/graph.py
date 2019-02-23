@@ -1,6 +1,6 @@
 from typing import Optional, Tuple, Union, Set, List, Dict
 
-from importlinter.domain.ports.graph import ImportGraph, GraphBuilder
+from importlinter.domain.ports.graph import ImportGraph
 
 
 # A two-tuple representing a chain of imports between two modules.
@@ -62,8 +62,3 @@ class FakeGraph(ImportGraph):
 
     def _add_root(self, module: str) -> str:
         return '.'.join([self.root_package_name, module])
-
-
-class FakeGraphBuilder(GraphBuilder):
-    def set_graph(self, graph: ImportGraph) -> None:
-        self._graph = graph
