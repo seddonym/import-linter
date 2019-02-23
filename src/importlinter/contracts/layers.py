@@ -31,19 +31,19 @@ class LayersContract(Contract):
 
         check.invalid_chains = set()
 
-        for index, higher_layer in enumerate( self.layers):
-            for lower_layer in  self.layers[index + 1:]:
+        for index, higher_layer in enumerate(self.layers):
+            for lower_layer in self.layers[index + 1:]:
                 for container in self.containers:
                     higher_layer_package = '.'.join([container, higher_layer])
                     lower_layer_package = '.'.join([container, lower_layer])
 
                     higher_layer_modules = {
-                                               higher_layer_package
-                                           } | graph.find_descendants(higher_layer_package)
+                        higher_layer_package
+                    } | graph.find_descendants(higher_layer_package)
 
                     lower_layer_modules = {
-                                              lower_layer_package
-                                          } | graph.find_descendants(lower_layer_package)
+                        lower_layer_package
+                    } | graph.find_descendants(lower_layer_package)
 
                     for higher_layer_module in higher_layer_modules:
                         for lower_layer_module in lower_layer_modules:

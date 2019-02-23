@@ -1,6 +1,6 @@
 from importlinter.application.app_config import settings
 from importlinter.application.user_options import UserOptions
-from importlinter.application.use_cases import check_contracts_and_print_report, SUCCESS, FAILURE
+from importlinter.application.use_cases import check_contracts_and_print_report, SUCCESS
 
 from tests.adaptors.user_options import FakeUserOptionReader
 from tests.adaptors.graph import FakeGraphBuilder, FakeGraph
@@ -36,7 +36,7 @@ def test_check_contracts_and_print_report():
         =============
         Import Linter
         =============
-        
+
         ---------
         Contracts
         ---------
@@ -51,4 +51,3 @@ def test_check_contracts_and_print_report():
     """)
 
     assert result == SUCCESS
-

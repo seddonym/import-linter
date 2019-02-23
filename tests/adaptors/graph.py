@@ -67,4 +67,3 @@ class FakeGraph(ImportGraph):
 class FakeGraphBuilder(GraphBuilder):
     def set_graph(self, graph: ImportGraph) -> None:
         self._graph = graph
-

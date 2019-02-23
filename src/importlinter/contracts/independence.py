@@ -23,7 +23,7 @@ class IndependenceContract(Contract):
 
         for module in self.modules:
             all_modules_for_each_subpackage[module] = {
-               module
+                module
             } | graph.find_descendants(module)
 
         for subpackage_1, subpackage_2 in permutations(self.modules, r=2):

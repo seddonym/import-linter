@@ -1,8 +1,8 @@
 import pytest
 
-from importlinter.contracts.independence import IndependenceContract
-
-from tests.adaptors.graph import FakeGraph
+# from importlinter.contracts.independence import IndependenceContract
+#
+# from tests.adaptors.graph import FakeGraph
 
 
 @pytest.mark.skip
