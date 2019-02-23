@@ -5,12 +5,11 @@
 # from .ports.reporting import Report
 # from ..domain.ports.graph import ImportGraph
 # from .app_config import settings
-#
-#
-# class AlreadyReportedError(Exception):
-#     pass
-#
-#
+
+
+class AlreadyReportedError(Exception):
+    pass
+
 
 SUCCESS, FAILURE = 'SUCCESS', 'FAILURE'
 

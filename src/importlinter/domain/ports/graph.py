@@ -35,6 +35,4 @@ class ImportGraph(abc.ABC):
 
 
 class GraphBuilder(abc.ABC):
-    @abc.abstractmethod
-    def set_graph(self, graph: ImportGraph) -> None:
-        raise NotImplementedError
+    ...

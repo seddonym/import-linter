@@ -1,4 +1,4 @@
-from typing import Optional, Iterable
+from typing import Optional, Iterable, List
 
 from importlinter.domain.contract import Contract
 from importlinter.domain.checking import ContractCheck
@@ -14,7 +14,7 @@ class LayersContract(Contract):
         self,
         name: str,
         containers: Iterable[Module],
-        layers: Iterable[str],
+        layers: List[str],
         ignore_imports: Optional[Iterable[DirectImport]] = None,
     ) -> None:
         self.name = name
@@ -34,22 +34,21 @@ class LayersContract(Contract):
         for index, higher_layer in enumerate(self.layers):
             for lower_layer in self.layers[index + 1:]:
                 for container in self.containers:
-                    higher_layer_package = '.'.join([container, higher_layer])
-                    lower_layer_package = '.'.join([container, lower_layer])
+                    higher_layer_package = Module('.'.join([container.name, higher_layer]))
+                    lower_layer_package = Module('.'.join([container.name, lower_layer]))
 
-                    higher_layer_modules = {
-                        higher_layer_package
-                    } | graph.find_descendants(higher_layer_package)
+                    descendants = set(
+                        map(Module, graph.find_descendants(higher_layer_package.name)))
+                    higher_layer_modules = {higher_layer_package} | descendants
 
-                    lower_layer_modules = {
-                        lower_layer_package
-                    } | graph.find_descendants(lower_layer_package)
+                    descendants = set(map(Module, graph.find_descendants(lower_layer_package.name)))
+                    lower_layer_modules = {lower_layer_package} | descendants
 
                     for higher_layer_module in higher_layer_modules:
                         for lower_layer_module in lower_layer_modules:
                             chain = graph.find_shortest_chain(
-                                importer=lower_layer_module,
-                                imported=higher_layer_module,
+                                importer=lower_layer_module.name,
+                                imported=higher_layer_module.name,
                             )
                             if chain:
                                 check.is_valid = False

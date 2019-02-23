@@ -3,7 +3,7 @@ import pytest
 from importlinter.contracts.layers import LayersContract
 from importlinter.domain.checking import check_contract, InvalidContract
 
-from tests.adaptors.graph import FakeGraph
+from tests.adapters.graph import FakeGraph
 
 
 @pytest.mark.skip
