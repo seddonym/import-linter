@@ -3,7 +3,7 @@ from .ports.printing import Printer
 
 
 def render_report(report: Report, printer: Printer) -> None:
-    printer.print("""
+    printer.print_heading("""
     =============
     Import Linter
     =============
