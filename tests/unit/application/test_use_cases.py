@@ -79,7 +79,7 @@ class TestCheckContractsAndPrintReport:
             ----------------
             
             
-            Contract bar
+            Contract foo
             ------------
             
             

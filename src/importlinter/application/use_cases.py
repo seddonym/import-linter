@@ -72,7 +72,8 @@ def _print_exception(exception: Exception) -> None:
 def _build_report(graph: ImportGraph, contracts: Iterable[Contract]) -> Report:
     report = Report(graph=graph)
     for contract in contracts:
-        ...
+        check = contract.check(graph)
+        report.add_contract_check(contract, check)
     return report
 
 

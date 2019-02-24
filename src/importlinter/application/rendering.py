@@ -9,11 +9,31 @@ def render_report(report: Report, printer: Printer) -> None:
     _print_heading(printer, "Contracts", HEADING_LEVEL_TWO)
     _print_heading(printer, "Analyzed 23 files, 44 dependencies.", HEADING_LEVEL_THREE)
 
-    printer.print("Contract foo KEPT")
-    printer.print("Contract bar KEPT")
+    for contract, contract_check in report.get_contracts_and_checks():
+        result_text = 'KEPT' if contract_check.is_valid else 'BROKEN'
+        printer.print(f"{contract.name} {result_text}")
     _new_line(printer)
 
-    printer.print("Contracts: 2 kept, 0 broken.")
+    printer.print(f"Contracts: {report.kept_count} kept, {report.broken_count} broken.")
+
+    if report.broken_count:
+        _new_line(printer)
+        _render_broken_contracts_details(printer, report)
+
+
+
+def _render_broken_contracts_details(printer: Printer, report: Report) -> None:
+    _print_heading(printer, 'Broken contracts', HEADING_LEVEL_TWO, style=ERROR)
+    _new_line(printer)
+
+    for contract, check in report.get_contracts_and_checks():
+        if check.is_valid:
+            continue
+        _print_heading(printer, contract.name, HEADING_LEVEL_THREE, style=ERROR)
+
+        _new_line(printer)
+
+        contract.report_failure(printer)
 
 
 ERROR = 'error'
