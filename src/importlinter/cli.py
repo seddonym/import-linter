@@ -3,14 +3,14 @@ import click
 from .application.use_cases import check_contracts_and_print_report, AlreadyReportedError
 from .application.app_config import settings
 from .adapters.building import GraphBuilder
-from .adapters.printing import ConsolePrinter
+from .adapters.printing import ClickPrinter
 from .adapters.user_options import UserOptionReader
 
 
 settings.configure(
     USER_OPTION_READER=UserOptionReader(),
     GRAPH_BUILDER=GraphBuilder(),
-    PRINTER=ConsolePrinter(),
+    PRINTER=ClickPrinter(),
 )
 
 EXIT_STATUS_SUCCESS = 0

@@ -32,7 +32,8 @@ def test_check_contracts_and_print_report():
 
     result = check_contracts_and_print_report()
 
-    settings.PRINTER.pop_and_assert("""
+    settings.PRINTER.pop_and_assert(
+        """
         =============
         Import Linter
         =============
@@ -48,6 +49,7 @@ def test_check_contracts_and_print_report():
         Contract bar KEPT
 
         Contracts: 2 kept, 0 broken.
-    """)
+        """
+    )
 
     assert result == SUCCESS
