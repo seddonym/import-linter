@@ -1,7 +1,7 @@
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.ports.graph import ImportGraph
 from importlinter.domain.imports import Module
-from importlinter.application.ports.printing import Printer
+from importlinter.application import output
 
 
 class AlwaysPassesContract(Contract):
@@ -10,7 +10,7 @@ class AlwaysPassesContract(Contract):
             kept=True,
         )
 
-    def render_broken_contract(self, check: 'ContractCheck', printer: Printer) -> None:
+    def render_broken_contract(self, check: 'ContractCheck') -> None:
         # No need to implement, will never fail.
         raise NotImplementedError
 
@@ -21,8 +21,8 @@ class AlwaysFailsContract(Contract):
             kept=False,
         )
 
-    def render_broken_contract(self, check: 'ContractCheck', printer: Printer) -> None:
-        printer.print('This contract will always fail.')
+    def render_broken_contract(self, check: 'ContractCheck') -> None:
+        output.print('This contract will always fail.')
 
 
 class ForbiddenImportContract(Contract):
@@ -50,11 +50,11 @@ class ForbiddenImportContract(Contract):
             }
         )
 
-    def render_broken_contract(self, check: 'ContractCheck', printer: Printer) -> None:
-        printer.print(f'{self.importer} is not allowed to import {self.imported}:')
-        printer.print()
+    def render_broken_contract(self, check: 'ContractCheck') -> None:
+        output.print(f'{self.importer} is not allowed to import {self.imported}:')
+        output.print()
         for details in check.metadata['forbidden_import_details']:
             line_number = details['line_number']
             line_contents = details['line_contents']
-            # TODO - this should use indent cursor
-            printer.print(f'    {self.importer}:{line_number}: {line_contents}')
+            output.indent_cursor()
+            output.print(f'{self.importer}:{line_number}: {line_contents}')

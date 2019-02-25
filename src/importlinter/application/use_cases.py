@@ -52,7 +52,6 @@ def check_contracts_and_print_report():
     #     raise AlreadyReportedError
 
 
-
 def _read_user_options() -> UserOptions:
     return settings.USER_OPTION_READER.read()
 
@@ -75,6 +74,5 @@ def _build_report(graph: ImportGraph, contracts: Iterable[Contract]) -> Report:
 
 def _print_report(report: Report) -> None:
     render_report(
-        printer=settings.PRINTER,
         report=report,
     )

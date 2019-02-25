@@ -15,6 +15,8 @@ from tests.helpers.contracts import (
 
 
 class TestCheckContractsAndPrintReport:
+    printer = FakePrinter()
+
     def test_all_successful(self):
         self._configure(
             contracts=[
@@ -160,7 +162,7 @@ class TestCheckContractsAndPrintReport:
             ----------------------
 
             mypackage.foo is not allowed to import mypackage.bar:
-            
+
                 mypackage.foo:8: from mypackage import bar
                 mypackage.foo:16: from mypackage.bar import something
             """
@@ -174,7 +176,7 @@ class TestCheckContractsAndPrintReport:
         settings.configure(
             USER_OPTION_READER=FakeUserOptionReader(),
             GRAPH_BUILDER=FakeGraphBuilder(),
-            PRINTER=FakePrinter(),
+            PRINTER=self.printer,
         )
         settings.USER_OPTION_READER.set_options(
             UserOptions(

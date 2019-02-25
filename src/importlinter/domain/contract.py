@@ -2,7 +2,6 @@ from typing import Any, Optional, Dict
 import abc
 
 from .ports.graph import ImportGraph
-from importlinter.application.ports.printing import Printer
 
 
 class Contract(abc.ABC):
@@ -14,7 +13,7 @@ class Contract(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def render_broken_contract(self, check: 'ContractCheck', printer: Printer) -> None:
+    def render_broken_contract(self, check: 'ContractCheck') -> None:
         raise NotImplementedError
 
 
