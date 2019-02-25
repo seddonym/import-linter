@@ -30,6 +30,7 @@ class Report:
             self.kept_count += 1
         else:
             self.broken_count += 1
+            self.contains_failures = True
 
     def get_contracts_and_checks(self) -> Iterator[Tuple[Contract, ContractCheck]]:
         for contract in self.contracts:

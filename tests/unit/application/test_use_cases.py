@@ -1,7 +1,7 @@
 from typing import List, Optional
 from importlinter.application.app_config import settings
 from importlinter.application.user_options import UserOptions
-from importlinter.application.use_cases import check_contracts_and_print_report, SUCCESS
+from importlinter.application.use_cases import check_contracts_and_print_report, SUCCESS, FAILURE
 from importlinter.domain.contract import Contract
 from importlinter.domain.imports import Module
 
@@ -57,7 +57,7 @@ class TestCheckContractsAndPrintReport:
 
         result = check_contracts_and_print_report()
 
-        assert result == SUCCESS
+        assert result == FAILURE
 
         settings.PRINTER.pop_and_assert(
             """
@@ -130,7 +130,7 @@ class TestCheckContractsAndPrintReport:
 
         result = check_contracts_and_print_report()
 
-        assert result == SUCCESS
+        assert result == FAILURE
 
         settings.PRINTER.pop_and_assert(
             """
