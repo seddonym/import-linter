@@ -103,15 +103,26 @@ class TestCheckContractsAndPrintReport:
                     'line_number': 8,
                     'line_contents': 'from mypackage import bar',
                 },
+                {
+                    'importer': 'mypackage.foo',
+                    'imported': 'mypackage.bar',
+                    'line_number': 16,
+                    'line_contents': 'from mypackage.bar import something',
+                },
             ),
         )
         self._configure(
             contracts=[
                 AlwaysPassesContract(name='Contract foo'),
                 ForbiddenImportContract(
-                    name='Forbidden contract',
+                    name='Forbidden contract one',
                     importer=Module('mypackage.foo'),
                     imported=Module('mypackage.bar'),
+                ),
+                ForbiddenImportContract(
+                    name='Forbidden contract two',
+                    importer=Module('mypackage.foo'),
+                    imported=Module('mypackage.baz'),
                 ),
             ],
             graph=graph,
@@ -135,21 +146,23 @@ class TestCheckContractsAndPrintReport:
             ------------------------------------
 
             Contract foo KEPT
-            Forbidden contract BROKEN
+            Forbidden contract one BROKEN
+            Forbidden contract two KEPT
 
-            Contracts: 1 kept, 1 broken.
+            Contracts: 2 kept, 1 broken.
 
 
             ----------------
             Broken contracts
             ----------------
 
-            Forbidden contract
-            ------------------
+            Forbidden contract one
+            ----------------------
 
             mypackage.foo is not allowed to import mypackage.bar:
             
                 mypackage.foo:8: from mypackage import bar
+                mypackage.foo:16: from mypackage.bar import something
             """
         )
 

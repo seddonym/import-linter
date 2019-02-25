@@ -45,10 +45,9 @@ class ForbiddenImportContract(Contract):
 
     def report_failure(self, check: ContractCheck, printer: Printer) -> None:
         printer.print(f'{self.importer} is not allowed to import {self.imported}:')
+        printer.print()
         for details in check.forbidden_import_details:
             line_number = details['line_number']
             line_contents = details['line_contents']
-
-            printer.print()
             # TODO - this should use indent cursor
             printer.print(f'    {self.importer}:{line_number}: {line_contents}')
