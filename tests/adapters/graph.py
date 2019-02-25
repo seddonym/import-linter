@@ -12,16 +12,18 @@ Chain = Tuple[str, ...]
 
 class FakeGraph(ImportGraph):
     def __init__(
-            self,
-            root_package_name: str,
-            descendants: Dict[str, Set[str]] = None,
-            shortest_chains: Dict[TwoChain, Chain] = None,
-            module_count: int = 0,
-            import_count: int = 0,
+        self,
+        root_package_name: str,
+        descendants: Dict[str, Set[str]] = None,
+        shortest_chains: Dict[TwoChain, Chain] = None,
+        import_details: List[Dict[str, Union[str, int]]] = None,
+        module_count: int = 99,
+        import_count: int = 999,
     ) -> None:
         self.root_package_name = root_package_name
         self._fake_descendants = descendants if descendants else {}
         self._fake_shortest_chains = shortest_chains if shortest_chains else {}
+        self._import_details = import_details if import_details else []
         self._module_count = module_count
         self._import_count = import_count
 
@@ -57,12 +59,16 @@ class FakeGraph(ImportGraph):
             return tuple([self._add_root(m) for m in chain_without_root])
 
     def get_import_details(
-            self,
-            *,
-            importer: str,
-            imported: str
+        self,
+        *,
+        importer: str,
+        imported: str,
     ) -> List[Dict[str, Union[str, int]]]:
-        raise NotImplementedError
+        matching_details = []
+        for detail in self._import_details:
+            if (detail['importer'], detail['imported']) == (importer, imported):
+                matching_details.append(detail)
+        return matching_details
 
     def add_import(
             self, *,

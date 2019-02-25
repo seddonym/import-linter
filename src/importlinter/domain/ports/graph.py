@@ -33,6 +33,18 @@ class ImportGraph(abc.ABC):
         importer: str,
         imported: str
     ) -> List[Dict[str, Union[str, int]]]:
+        """
+        Returns a list of the details of every direct import between two modules, in the form:
+        [
+            {
+                'importer': 'mypackage.importer',
+                'imported': 'mypackage.imported',
+                'line_number': 5,
+                'line_contents': 'from mypackage import imported',
+            },
+            (additional imports here)
+        ]
+        """
         raise NotImplementedError
 
     @abc.abstractmethod

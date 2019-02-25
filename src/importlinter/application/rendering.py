@@ -22,21 +22,19 @@ def render_report(report: Report, printer: Printer) -> None:
 
     if report.broken_count:
         _new_line(printer)
+        _new_line(printer)
         _render_broken_contracts_details(printer, report)
 
 
 def _render_broken_contracts_details(printer: Printer, report: Report) -> None:
     _print_heading(printer, 'Broken contracts', HEADING_LEVEL_TWO, style=ERROR)
-    _new_line(printer)
 
     for contract, check in report.get_contracts_and_checks():
         if check.is_valid:
             continue
         _print_heading(printer, contract.name, HEADING_LEVEL_THREE, style=ERROR)
 
-        _new_line(printer)
-
-        contract.report_failure(printer)
+        contract.report_failure(check, printer)
 
 
 ERROR = 'error'

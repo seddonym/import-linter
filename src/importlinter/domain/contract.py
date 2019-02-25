@@ -14,7 +14,7 @@ class Contract(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def report_failure(self, printer: Printer) -> None:
+    def report_failure(self, check: 'ContractCheck', printer: Printer) -> None:
         raise NotImplementedError
 
 

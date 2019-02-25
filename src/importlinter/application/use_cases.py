@@ -50,11 +50,7 @@ def check_contracts_and_print_report():
     # except Exception as e:
     #     _print_exception(e)
     #     raise AlreadyReportedError
-    #
-    # _print_report(report)
-    #
-    # if report.contains_failures:
-    #     raise AlreadyReportedError
+
 
 
 def _read_user_options() -> UserOptions:

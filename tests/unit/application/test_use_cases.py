@@ -1,14 +1,17 @@
-from typing import List
+from typing import List, Optional
 from importlinter.application.app_config import settings
 from importlinter.application.user_options import UserOptions
 from importlinter.application.use_cases import check_contracts_and_print_report, SUCCESS
 from importlinter.domain.contract import Contract
+from importlinter.domain.imports import Module
 
 from tests.adapters.user_options import FakeUserOptionReader
 from tests.adapters.graph import FakeGraph
 from tests.adapters.building import FakeGraphBuilder
 from tests.adapters.printing import FakePrinter
-from tests.helpers.contracts import AlwaysPassesContract, AlwaysFailsContract
+from tests.helpers.contracts import (
+    AlwaysPassesContract, AlwaysFailsContract, ForbiddenImportContract,
+)
 
 
 class TestCheckContractsAndPrintReport:
@@ -74,20 +77,87 @@ class TestCheckContractsAndPrintReport:
 
             Contracts: 1 kept, 1 broken.
 
+
             ----------------
             Broken contracts
             ----------------
 
-
             Contract foo
             ------------
-
 
             This contract will always fail.
             """
         )
 
-    def _configure(self, contracts: List[Contract]):
+    def test_forbidden_import(self):
+        """
+        Tests the ForbiddenImportContract - a simple contract that
+        looks at the graph.
+        """
+        graph = FakeGraph(
+            root_package_name='mypackage',
+            import_details=(
+                {
+                    'importer': 'mypackage.foo',
+                    'imported': 'mypackage.bar',
+                    'line_number': 8,
+                    'line_contents': 'from mypackage import bar',
+                },
+            ),
+        )
+        self._configure(
+            contracts=[
+                AlwaysPassesContract(name='Contract foo'),
+                ForbiddenImportContract(
+                    name='Forbidden contract',
+                    importer=Module('mypackage.foo'),
+                    imported=Module('mypackage.bar'),
+                ),
+            ],
+            graph=graph,
+        )
+
+        result = check_contracts_and_print_report()
+
+        assert result == SUCCESS
+
+        settings.PRINTER.pop_and_assert(
+            """
+            =============
+            Import Linter
+            =============
+
+            ---------
+            Contracts
+            ---------
+
+            Analyzed 99 files, 999 dependencies.
+            ------------------------------------
+
+            Contract foo KEPT
+            Forbidden contract BROKEN
+
+            Contracts: 1 kept, 1 broken.
+
+
+            ----------------
+            Broken contracts
+            ----------------
+
+            Forbidden contract
+            ------------------
+
+            mypackage.foo is not allowed to import mypackage.bar:
+            
+                mypackage.foo:8: from mypackage import bar
+            """
+        )
+
+    def _configure(
+        self,
+        contracts: List[Contract],
+        graph: Optional[FakeGraph] = None,
+    ):
         settings.configure(
             USER_OPTION_READER=FakeUserOptionReader(),
             GRAPH_BUILDER=FakeGraphBuilder(),
@@ -99,10 +169,10 @@ class TestCheckContractsAndPrintReport:
                 contracts=contracts,
             )
         )
-        settings.GRAPH_BUILDER.set_graph(
-            FakeGraph(
+        if graph is None:
+            graph = FakeGraph(
                 root_package_name='mypackage',
                 module_count=23,
                 import_count=44,
             )
-        )
+        settings.GRAPH_BUILDER.set_graph(graph)
