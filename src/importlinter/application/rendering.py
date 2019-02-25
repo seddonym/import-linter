@@ -21,7 +21,6 @@ def render_report(report: Report, printer: Printer) -> None:
         _render_broken_contracts_details(printer, report)
 
 
-
 def _render_broken_contracts_details(printer: Printer, report: Report) -> None:
     _print_heading(printer, 'Broken contracts', HEADING_LEVEL_TWO, style=ERROR)
     _new_line(printer)

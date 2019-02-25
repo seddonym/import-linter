@@ -1,7 +1,6 @@
 from typing import Optional, Iterable, List
 
-from importlinter.domain.contract import Contract
-from importlinter.domain.checking import ContractCheck
+from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.imports import DirectImport, Module
 from importlinter.domain.ports.graph import ImportGraph
 from importlinter.domain import helpers

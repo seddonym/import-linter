@@ -1,8 +1,7 @@
 from typing import Iterable, Dict, Set
 from itertools import permutations
 
-from importlinter.domain.contract import Contract
-from importlinter.domain.checking import ContractCheck
+from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.imports import Module
 from importlinter.domain.ports.graph import ImportGraph
 

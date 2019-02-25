@@ -29,17 +29,17 @@ class TestCheckContractsAndPrintReport:
             =============
             Import Linter
             =============
-    
+
             ---------
             Contracts
             ---------
-    
+
             Analyzed 23 files, 44 dependencies.
             -----------------------------------
-    
+
             Contract foo KEPT
             Contract bar KEPT
-    
+
             Contracts: 2 kept, 0 broken.
             """
         )
@@ -77,12 +77,12 @@ class TestCheckContractsAndPrintReport:
             ----------------
             Broken contracts
             ----------------
-            
-            
+
+
             Contract foo
             ------------
-            
-            
+
+
             This contract will always fail.
             """
         )

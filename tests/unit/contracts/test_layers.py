@@ -1,9 +1,9 @@
 import pytest
 
-from importlinter.contracts.layers import LayersContract
-from importlinter.domain.checking import check_contract, InvalidContract
+# from importlinter.contracts.layers import LayersContract
+from importlinter.domain.contract import InvalidContract
 
-from tests.adapters.graph import FakeGraph
+# from tests.adapters.graph import FakeGraph
 
 
 @pytest.mark.skip
@@ -51,37 +51,38 @@ from tests.adapters.graph import FakeGraph
     )
 )
 def test_layer_contract_single_containers(shortest_chains, is_valid):
-    graph = FakeGraph(
-        root_package='mypackage',
-        descendants={
-            'high': {
-                'green', 'blue', 'yellow', 'yellow.alpha',
-            },
-            'medium': {
-                'orange', 'red', 'orange.beta',
-            },
-            'low': {
-                'black', 'white', 'white.gamma',
-            },
-        },
-        shortest_chains=shortest_chains,
-    )
+    pass
+    # graph = FakeGraph(
+    #     root_package='mypackage',
+    #     descendants={
+    #         'high': {
+    #             'green', 'blue', 'yellow', 'yellow.alpha',
+    #         },
+    #         'medium': {
+    #             'orange', 'red', 'orange.beta',
+    #         },
+    #         'low': {
+    #             'black', 'white', 'white.gamma',
+    #         },
+    #     },
+    #     shortest_chains=shortest_chains,
+    # )
+    #
+    # contract = LayersContract(
+    #     name='Layer contract',
+    #     containers=(
+    #         'mypackage',
+    #     ),
+    #     layers=(
+    #         'high',
+    #         'medium',
+    #         'low',
+    #     ),
+    # )
 
-    contract = LayersContract(
-        name='Layer contract',
-        containers=(
-            'mypackage',
-        ),
-        layers=(
-            'high',
-            'medium',
-            'low',
-        ),
-    )
-
-    contract_check = check_contract(contract=contract, graph=graph)
-
-    assert contract_check.is_valid == is_valid
+    # contract_check = check_contract(contract=contract, graph=graph)
+    #
+    # assert contract_check.is_valid == is_valid
 
 
 @pytest.mark.skip
@@ -147,109 +148,111 @@ def test_layer_contract_single_containers(shortest_chains, is_valid):
     )
 )
 def test_layer_contract_multiple_containers(shortest_chains, is_valid):
-    graph = FakeGraph(
-        root_package='mypackage',
-        descendants={
-            'one.high': {
-                'green', 'blue', 'yellow', 'yellow.alpha',
-            },
-            'one.medium': {
-                'orange', 'red', 'orange.beta',
-            },
-            'one.low': {
-                'black', 'white', 'white.gamma',
-            },
-            'two.high': {
-                'red', 'red.alpha',
-            },
-            'two.medium': {
-                'green', 'green.beta',
-            },
-            'two.low': {
-                'blue', 'blue.gamma',
-            },
-            'three.high': {
-                'white',
-            },
-            'three.medium': {
-                'purple',
-            },
-            'three.low': {
-                'cyan',
-            },
-        },
-        shortest_chains=shortest_chains,
-    )
+    pass
+    # graph = FakeGraph(
+    #     root_package='mypackage',
+    #     descendants={
+    #         'one.high': {
+    #             'green', 'blue', 'yellow', 'yellow.alpha',
+    #         },
+    #         'one.medium': {
+    #             'orange', 'red', 'orange.beta',
+    #         },
+    #         'one.low': {
+    #             'black', 'white', 'white.gamma',
+    #         },
+    #         'two.high': {
+    #             'red', 'red.alpha',
+    #         },
+    #         'two.medium': {
+    #             'green', 'green.beta',
+    #         },
+    #         'two.low': {
+    #             'blue', 'blue.gamma',
+    #         },
+    #         'three.high': {
+    #             'white',
+    #         },
+    #         'three.medium': {
+    #             'purple',
+    #         },
+    #         'three.low': {
+    #             'cyan',
+    #         },
+    #     },
+    #     shortest_chains=shortest_chains,
+    # )
+    #
+    # contract = LayersContract(
+    #     name='Layer contract',
+    #     containers=(
+    #         'mypackage.one',
+    #         'mypackage.two',
+    #         'mypackage.three',
+    #     ),
+    #     layers=(
+    #         'high',
+    #         'medium',
+    #         'low',
+    #     ),
+    # )
 
-    contract = LayersContract(
-        name='Layer contract',
-        containers=(
-            'mypackage.one',
-            'mypackage.two',
-            'mypackage.three',
-        ),
-        layers=(
-            'high',
-            'medium',
-            'low',
-        ),
-    )
-
-    contract_check = check_contract(contract=contract, graph=graph)
-
-    assert contract_check.is_valid == is_valid
+    # contract_check = check_contract(contract=contract, graph=graph)
+    #
+    # assert contract_check.is_valid == is_valid
 
 
 @pytest.mark.skip
 def test_layer_contract_broken_details():
-    graph = FakeGraph(
-        root_package='mypackage',
-        descendants={
-            'high': (
-                'green', 'blue', 'yellow', 'yellow.alpha',
-            ),
-            'medium': (
-                'orange', 'red', 'orange.beta',
-            ),
-            'low': (
-                'black', 'white', 'white.gamma',
-            ),
-        },
-        shortest_chains={
-            ('low.white.gamma', 'high.yellow.alpha'): (
-                'low.white.gamma', 'utils.foo', 'utils.bar', 'high.yellow.alpha',
-            ),
-            ('medium.orange.beta', 'high.blue'): (
-                'medium.orange.beta', 'high.blue',
-            ),
-            ('low.black', 'medium.red'): (
-                'low.black', 'utils.baz', 'medium.red',
-            ),
-        }
-    )
+    pass
+    # graph = FakeGraph(
+    #     root_package='mypackage',
+    #     descendants={
+    #         'high': (
+    #             'green', 'blue', 'yellow', 'yellow.alpha',
+    #         ),
+    #         'medium': (
+    #             'orange', 'red', 'orange.beta',
+    #         ),
+    #         'low': (
+    #             'black', 'white', 'white.gamma',
+    #         ),
+    #     },
+    #     shortest_chains={
+    #         ('low.white.gamma', 'high.yellow.alpha'): (
+    #             'low.white.gamma', 'utils.foo', 'utils.bar', 'high.yellow.alpha',
+    #         ),
+    #         ('medium.orange.beta', 'high.blue'): (
+    #             'medium.orange.beta', 'high.blue',
+    #         ),
+    #         ('low.black', 'medium.red'): (
+    #             'low.black', 'utils.baz', 'medium.red',
+    #         ),
+    #     }
+    # )
+    #
+    # contract = LayersContract(
+    #     name='Layer contract',
+    #     containers=(
+    #         'mypackage',
+    #     ),
+    #     layers=(
+    #         'high',
+    #         'medium',
+    #         'low',
+    #     ),
+    # )
 
-    contract = LayersContract(
-        name='Layer contract',
-        containers=(
-            'mypackage',
-        ),
-        layers=(
-            'high',
-            'medium',
-            'low',
-        ),
-    )
+    # contract_check = check_contract(contract=contract, graph=graph)
+    #
+    # assert contract_check.is_valid is False
 
-    contract_check = check_contract(contract=contract, graph=graph)
-
-    assert contract_check.is_valid is False
-
-    assert contract_check.invalid_chains == {
-        ('mypackage.low.white.gamma', 'mypackage.utils.foo', 'mypackage.utils.bar',
-         'mypackage.high.yellow.alpha'),
-        ('mypackage.medium.orange.beta', 'mypackage.high.blue'),
-        ('mypackage.low.black', 'mypackage.utils.baz', 'mypackage.medium.red'),
-    }
+    # assert contract_check.invalid_chains == {
+    #     ('mypackage.low.white.gamma', 'mypackage.utils.foo', 'mypackage.utils.bar',
+    #      'mypackage.high.yellow.alpha'),
+    #     ('mypackage.medium.orange.beta', 'mypackage.high.blue'),
+    #     ('mypackage.low.black', 'mypackage.utils.baz', 'mypackage.medium.red'),
+    # }
 
 
 @pytest.mark.skip
@@ -300,57 +303,58 @@ def test_layer_contract_broken_details():
     ),
 )
 def test_ignore_imports(ignore_imports, invalid_chains):
-    graph = FakeGraph(
-        root_package='mypackage',
-        descendants={
-            'high': (
-                'green', 'blue', 'yellow', 'yellow.alpha',
-            ),
-            'medium': (
-                'orange',
-            ),
-            'low': (
-                'black', 'white', 'white.gamma',
-            ),
-        },
-        shortest_chains={
-            ('low.white.gamma', 'high.yellow.alpha'): (
-                'low.white.gamma', 'utils.foo', 'utils.bar', 'high.yellow.alpha',
-            ),
-            ('low.black', 'medium.orange'): (
-                'low.black', 'utils.baz', 'medium.orange',
-            ),
-        }
-    )
-
-    contract = LayersContract(
-        name='Layer contract',
-        containers=(
-            'mypackage',
-        ),
-        layers=(
-            'high',
-            'medium',
-            'low',
-        ),
-        ignore_imports=ignore_imports,
-    )
-
-    if isinstance(invalid_chains, Exception):
-        with pytest.raises(invalid_chains.__class__):
-            check_contract(contract=contract, graph=graph)
-            return
-    else:
-        contract_check = check_contract(contract=contract, graph=graph)
-
-    if invalid_chains:
-        assert False is contract_check.is_valid
-        absolute_invalid_chains = {
-            tuple(
-                (f'mypackage.{m}' for m in chain)
-            )
-            for chain in invalid_chains
-        }
-        assert absolute_invalid_chains == contract_check.invalid_chains
-    else:
-        assert True is contract_check.is_valid
+    pass
+    # graph = FakeGraph(
+    #     root_package='mypackage',
+    #     descendants={
+    #         'high': (
+    #             'green', 'blue', 'yellow', 'yellow.alpha',
+    #         ),
+    #         'medium': (
+    #             'orange',
+    #         ),
+    #         'low': (
+    #             'black', 'white', 'white.gamma',
+    #         ),
+    #     },
+    #     shortest_chains={
+    #         ('low.white.gamma', 'high.yellow.alpha'): (
+    #             'low.white.gamma', 'utils.foo', 'utils.bar', 'high.yellow.alpha',
+    #         ),
+    #         ('low.black', 'medium.orange'): (
+    #             'low.black', 'utils.baz', 'medium.orange',
+    #         ),
+    #     }
+    # )
+    #
+    # contract = LayersContract(
+    #     name='Layer contract',
+    #     containers=(
+    #         'mypackage',
+    #     ),
+    #     layers=(
+    #         'high',
+    #         'medium',
+    #         'low',
+    #     ),
+    #     ignore_imports=ignore_imports,
+    # )
+    #
+    # if isinstance(invalid_chains, Exception):
+    #     with pytest.raises(invalid_chains.__class__):
+    #         check_contract(contract=contract, graph=graph)
+    #         return
+    # else:
+    #     contract_check = check_contract(contract=contract, graph=graph)
+    #
+    # if invalid_chains:
+    #     assert False is contract_check.is_valid
+    #     absolute_invalid_chains = {
+    #         tuple(
+    #             (f'mypackage.{m}' for m in chain)
+    #         )
+    #         for chain in invalid_chains
+    #     }
+    #     assert absolute_invalid_chains == contract_check.invalid_chains
+    # else:
+    #     assert True is contract_check.is_valid
