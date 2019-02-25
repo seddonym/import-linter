@@ -26,7 +26,7 @@ class Report:
     def add_contract_check(self, contract: Contract, contract_check: ContractCheck) -> None:
         self.contracts.append(contract)
         self._check_map[contract] = contract_check
-        if contract_check.is_valid:
+        if contract_check.kept:
             self.kept_count += 1
         else:
             self.broken_count += 1

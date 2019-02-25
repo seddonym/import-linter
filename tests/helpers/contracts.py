@@ -6,22 +6,22 @@ from importlinter.application.ports.printing import Printer
 
 class AlwaysPassesContract(Contract):
     def check(self, graph: ImportGraph) -> ContractCheck:
-        contract_check = ContractCheck()
-        contract_check.is_valid = True
-        return contract_check
+        return ContractCheck(
+            kept=True,
+        )
 
-    def report_failure(self, check: ContractCheck, printer: Printer) -> None:
+    def render_broken_contract(self, check: 'ContractCheck', printer: Printer) -> None:
         # No need to implement, will never fail.
         raise NotImplementedError
 
 
 class AlwaysFailsContract(Contract):
     def check(self, graph: ImportGraph) -> ContractCheck:
-        contract_check = ContractCheck()
-        contract_check.is_valid = False
-        return contract_check
+        return ContractCheck(
+            kept=False,
+        )
 
-    def report_failure(self, check: ContractCheck, printer: Printer) -> None:
+    def render_broken_contract(self, check: 'ContractCheck', printer: Printer) -> None:
         printer.print('This contract will always fail.')
 
 
@@ -31,22 +31,29 @@ class ForbiddenImportContract(Contract):
     two modules.
     """
     def __init__(self, name: str, importer: Module, imported: Module) -> None:
+        # TODO - should this get the root package name?
+        # TODO - should this be where we validate the contract?
+        # TODO - should this receive just a dict of primitives from the config?
         self.name = name
         self.importer = importer
         self.imported = imported
 
     def check(self, graph: ImportGraph) -> ContractCheck:
-        contract_check = ContractCheck()
-        contract_check.forbidden_import_details = graph.get_import_details(
+        forbidden_import_details = graph.get_import_details(
             importer=self.importer.name, imported=self.imported.name)
-        import_exists = bool(contract_check.forbidden_import_details)
-        contract_check.is_valid = not import_exists
-        return contract_check
+        import_exists = bool(forbidden_import_details)
 
-    def report_failure(self, check: ContractCheck, printer: Printer) -> None:
+        return ContractCheck(
+            kept=not import_exists,
+            metadata={
+                'forbidden_import_details': forbidden_import_details,
+            }
+        )
+
+    def render_broken_contract(self, check: 'ContractCheck', printer: Printer) -> None:
         printer.print(f'{self.importer} is not allowed to import {self.imported}:')
         printer.print()
-        for details in check.forbidden_import_details:
+        for details in check.metadata['forbidden_import_details']:
             line_number = details['line_number']
             line_contents = details['line_contents']
             # TODO - this should use indent cursor

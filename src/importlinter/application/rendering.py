@@ -14,7 +14,7 @@ def render_report(report: Report, printer: Printer) -> None:
                    HEADING_LEVEL_THREE)
 
     for contract, contract_check in report.get_contracts_and_checks():
-        result_text = 'KEPT' if contract_check.is_valid else 'BROKEN'
+        result_text = 'KEPT' if contract_check.kept else 'BROKEN'
         printer.print(f"{contract.name} {result_text}")
     _new_line(printer)
 
@@ -30,11 +30,11 @@ def _render_broken_contracts_details(printer: Printer, report: Report) -> None:
     _print_heading(printer, 'Broken contracts', HEADING_LEVEL_TWO, style=ERROR)
 
     for contract, check in report.get_contracts_and_checks():
-        if check.is_valid:
+        if check.kept:
             continue
         _print_heading(printer, contract.name, HEADING_LEVEL_THREE, style=ERROR)
 
-        contract.report_failure(check, printer)
+        contract.render_broken_contract(check, printer)
 
 
 ERROR = 'error'

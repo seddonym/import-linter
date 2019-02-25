@@ -1,4 +1,4 @@
-from typing import Set, Tuple, Optional
+from typing import Any, Optional, Dict
 import abc
 
 from .ports.graph import ImportGraph
@@ -14,7 +14,7 @@ class Contract(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def report_failure(self, check: 'ContractCheck', printer: Printer) -> None:
+    def render_broken_contract(self, check: 'ContractCheck', printer: Printer) -> None:
         raise NotImplementedError
 
 
@@ -29,6 +29,13 @@ class InvalidContract(Exception):
 
 
 class ContractCheck:
-    def __init__(self) -> None:
-        self.invalid_chains: Set[Tuple[str, ...]]
-        self.is_valid: Optional[bool] = None
+    """
+    Data class to store the result of checking a contract.
+    """
+    def __init__(
+        self,
+        kept: bool,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        self.kept = kept
+        self.metadata = metadata if metadata else {}
