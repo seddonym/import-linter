@@ -7,7 +7,11 @@ from .ports.printing import Printer
 def render_report(report: Report, printer: Printer) -> None:
     _print_heading(printer, "Import Linter", HEADING_LEVEL_ONE)
     _print_heading(printer, "Contracts", HEADING_LEVEL_TWO)
-    _print_heading(printer, "Analyzed 23 files, 44 dependencies.", HEADING_LEVEL_THREE)
+    file_count = report.module_count
+    dependency_count = report.import_count
+    _print_heading(printer,
+                   f"Analyzed {file_count} files, {dependency_count} dependencies.",
+                   HEADING_LEVEL_THREE)
 
     for contract, contract_check in report.get_contracts_and_checks():
         result_text = 'KEPT' if contract_check.is_valid else 'BROKEN'

@@ -102,5 +102,7 @@ class TestCheckContractsAndPrintReport:
         settings.GRAPH_BUILDER.set_graph(
             FakeGraph(
                 root_package_name='mypackage',
+                module_count=23,
+                import_count=44,
             )
         )

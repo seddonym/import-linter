@@ -16,10 +16,27 @@ class FakeGraph(ImportGraph):
             root_package_name: str,
             descendants: Dict[str, Set[str]] = None,
             shortest_chains: Dict[TwoChain, Chain] = None,
+            module_count: int = 0,
+            import_count: int = 0,
     ) -> None:
         self.root_package_name = root_package_name
         self._fake_descendants = descendants if descendants else {}
         self._fake_shortest_chains = shortest_chains if shortest_chains else {}
+        self._module_count = module_count
+        self._import_count = import_count
+
+    @property
+    def modules(self) -> Set[str]:
+        """
+        The names of all the modules in the graph.
+        """
+        return {str(m) for m in range(self._module_count)}
+
+    def count_imports(self) -> int:
+        """
+        Return the number of imports in the graph.
+        """
+        return self._import_count
 
     def find_descendants(self, module: str) -> Set[str]:
         try:

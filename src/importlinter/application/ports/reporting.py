@@ -20,6 +20,8 @@ class Report:
         self._check_map: Dict[Contract, ContractCheck] = {}
         self.broken_count = 0
         self.kept_count = 0
+        self.module_count = len(graph.modules)
+        self.import_count = graph.count_imports()
 
     def add_contract_check(self, contract: Contract, contract_check: ContractCheck) -> None:
         self.contracts.append(contract)

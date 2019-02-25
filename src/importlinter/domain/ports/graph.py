@@ -3,6 +3,21 @@ import abc
 
 
 class ImportGraph(abc.ABC):
+    @property
+    @abc.abstractmethod
+    def modules(self) -> Set[str]:
+        """
+        The names of all the modules in the graph.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def count_imports(self) -> int:
+        """
+        Return the number of imports in the graph.
+        """
+        raise NotImplementedError
+
     @abc.abstractmethod
     def find_descendants(self, module: str) -> Set[str]:
         raise NotImplementedError
