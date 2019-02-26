@@ -173,8 +173,7 @@ class TestCheckContractsAndPrintReport:
         contracts: List[Contract],
         graph: Optional[FakeGraph] = None,
     ):
-        reader = FakeUserOptionReader()
-        reader.set_options(
+        reader = FakeUserOptionReader(
             UserOptions(
                 root_package_name='mypackage',
                 contracts=contracts,

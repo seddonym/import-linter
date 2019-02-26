@@ -4,10 +4,7 @@ from importlinter.application.ports.user_options import UserOptionReader
 
 
 class FakeUserOptionReader(UserOptionReader):
-    def __init__(self):
-        self._user_options = None
-
-    def set_options(self, user_options: UserOptions) -> None:
+    def __init__(self, user_options: UserOptions):
         self._user_options = user_options
 
     def read_options(self) -> UserOptions:
