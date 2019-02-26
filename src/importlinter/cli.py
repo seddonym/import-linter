@@ -8,7 +8,7 @@ from .adapters.user_options import UserOptionReader
 
 
 settings.configure(
-    USER_OPTION_READER=UserOptionReader(),
+    USER_OPTION_READERS=[UserOptionReader()],
     GRAPH_BUILDER=GraphBuilder(),
     PRINTER=ClickPrinter(),
 )

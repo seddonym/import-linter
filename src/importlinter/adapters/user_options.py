@@ -3,5 +3,5 @@ from importlinter.application.ports import user_options as ports
 
 
 class UserOptionReader(ports.UserOptionReader):
-    def set_options(self, user_options: UserOptions) -> None:
+    def read_options(self) -> UserOptions:
         raise NotImplementedError

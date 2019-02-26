@@ -10,5 +10,5 @@ class FakeUserOptionReader(UserOptionReader):
     def set_options(self, user_options: UserOptions) -> None:
         self._user_options = user_options
 
-    def read(self):
+    def read_options(self) -> UserOptions:
         return self._user_options

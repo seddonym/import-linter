@@ -53,7 +53,11 @@ def check_contracts_and_print_report():
 
 
 def _read_user_options() -> UserOptions:
-    return settings.USER_OPTION_READER.read()
+    for reader in settings.USER_OPTION_READERS:
+        options = reader.read_options()
+        if options:
+            return options
+    raise RuntimeError('Could not read any configuration.')
 
 
 def _build_graph(root_package_name: str) -> ImportGraph:

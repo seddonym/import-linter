@@ -173,16 +173,17 @@ class TestCheckContractsAndPrintReport:
         contracts: List[Contract],
         graph: Optional[FakeGraph] = None,
     ):
-        settings.configure(
-            USER_OPTION_READER=FakeUserOptionReader(),
-            GRAPH_BUILDER=FakeGraphBuilder(),
-            PRINTER=self.printer,
-        )
-        settings.USER_OPTION_READER.set_options(
+        reader = FakeUserOptionReader()
+        reader.set_options(
             UserOptions(
                 root_package_name='mypackage',
                 contracts=contracts,
             )
+        )
+        settings.configure(
+            USER_OPTION_READERS=[reader],
+            GRAPH_BUILDER=FakeGraphBuilder(),
+            PRINTER=self.printer,
         )
         if graph is None:
             graph = FakeGraph(
