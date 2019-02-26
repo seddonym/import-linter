@@ -5,8 +5,9 @@ from .ports.graph import ImportGraph
 
 
 class Contract(abc.ABC):
-    def __init__(self, name: str) -> None:
-        self.name = name
+    @abc.abstractmethod
+    def __init__(self, session_options: Dict[str, Any], contract_options: Dict[str, Any]) -> None:
+        raise NotImplementedError
 
     @abc.abstractmethod
     def check(self, graph: ImportGraph) -> 'ContractCheck':

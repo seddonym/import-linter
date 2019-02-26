@@ -1,4 +1,5 @@
-from typing import Iterable
+from typing import Type
+import importlib
 
 from ..domain.contract import Contract
 from .user_options import UserOptions
@@ -24,11 +25,11 @@ def check_contracts_and_print_report():
     """
     user_options = _read_user_options()
     graph = _build_graph(
-        root_package_name=user_options.root_package_name,
+        root_package_name=user_options.session_options['root_package_name'],
     )
     report = _build_report(
         graph=graph,
-        contracts=user_options.contracts,
+        user_options=user_options,
     )
 
     _print_report(report)
@@ -68,9 +69,12 @@ def _print_exception(exception: Exception) -> None:
     settings.PRINTER(exception)
 
 
-def _build_report(graph: ImportGraph, contracts: Iterable[Contract]) -> Report:
+def _build_report(graph: ImportGraph, user_options: UserOptions) -> Report:
     report = Report(graph=graph)
-    for contract in contracts:
+    for contract_options in user_options.contracts_options:
+        contract_class = _get_contract_class(contract_options['class'])
+        contract = contract_class(session_options=user_options.session_options,
+                                  contract_options=contract_options)
         check = contract.check(graph)
         report.add_contract_check(contract, check)
     return report
@@ -80,3 +84,14 @@ def _print_report(report: Report) -> None:
     render_report(
         report=report,
     )
+
+
+def _get_contract_class(contract_class_string: str) -> Type[Contract]:
+    components = contract_class_string.split('.')
+    contract_class_name = components[-1]
+    module_name = '.'.join(components[:-1])
+    module = importlib.import_module(module_name)
+    contract_class = getattr(module, contract_class_name)
+    if not issubclass(contract_class, Contract):
+        raise TypeError(f'{contract_class} is not a subclass of Contract.')
+    return contract_class

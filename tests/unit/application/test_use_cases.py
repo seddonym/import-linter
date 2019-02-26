@@ -1,17 +1,12 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from importlinter.application.app_config import settings
 from importlinter.application.user_options import UserOptions
 from importlinter.application.use_cases import check_contracts_and_print_report, SUCCESS, FAILURE
-from importlinter.domain.contract import Contract
-from importlinter.domain.imports import Module
 
 from tests.adapters.user_options import FakeUserOptionReader
 from tests.adapters.graph import FakeGraph
 from tests.adapters.building import FakeGraphBuilder
 from tests.adapters.printing import FakePrinter
-from tests.helpers.contracts import (
-    AlwaysPassesContract, AlwaysFailsContract, ForbiddenImportContract,
-)
 
 
 class TestCheckContractsAndPrintReport:
@@ -19,9 +14,15 @@ class TestCheckContractsAndPrintReport:
 
     def test_all_successful(self):
         self._configure(
-            contracts=[
-                AlwaysPassesContract(name='Contract foo'),
-                AlwaysPassesContract(name='Contract bar'),
+            contracts_options=[
+                {
+                    'class': 'tests.helpers.contracts.AlwaysPassesContract',
+                    'name': 'Contract foo',
+                },
+                {
+                    'class': 'tests.helpers.contracts.AlwaysPassesContract',
+                    'name': 'Contract bar',
+                },
             ]
         )
 
@@ -51,9 +52,15 @@ class TestCheckContractsAndPrintReport:
 
     def test_one_failure(self):
         self._configure(
-            contracts=[
-                AlwaysFailsContract(name='Contract foo'),
-                AlwaysPassesContract(name='Contract bar'),
+            contracts_options=[
+                {
+                    'class': 'tests.helpers.contracts.AlwaysFailsContract',
+                    'name': 'Contract foo',
+                },
+                {
+                    'class': 'tests.helpers.contracts.AlwaysPassesContract',
+                    'name': 'Contract bar',
+                },
             ]
         )
 
@@ -98,7 +105,7 @@ class TestCheckContractsAndPrintReport:
         """
         graph = FakeGraph(
             root_package_name='mypackage',
-            import_details=(
+            import_details=[
                 {
                     'importer': 'mypackage.foo',
                     'imported': 'mypackage.bar',
@@ -111,21 +118,26 @@ class TestCheckContractsAndPrintReport:
                     'line_number': 16,
                     'line_contents': 'from mypackage.bar import something',
                 },
-            ),
+            ],
         )
         self._configure(
-            contracts=[
-                AlwaysPassesContract(name='Contract foo'),
-                ForbiddenImportContract(
-                    name='Forbidden contract one',
-                    importer=Module('mypackage.foo'),
-                    imported=Module('mypackage.bar'),
-                ),
-                ForbiddenImportContract(
-                    name='Forbidden contract two',
-                    importer=Module('mypackage.foo'),
-                    imported=Module('mypackage.baz'),
-                ),
+            contracts_options=[
+                {
+                    'class': 'tests.helpers.contracts.AlwaysPassesContract',
+                    'name': 'Contract foo',
+                },
+                {
+                    'class': 'tests.helpers.contracts.ForbiddenImportContract',
+                    'name': 'Forbidden contract one',
+                    'importer': 'mypackage.foo',
+                    'imported': 'mypackage.bar',
+                },
+                {
+                    'class': 'tests.helpers.contracts.ForbiddenImportContract',
+                    'name': 'Forbidden contract two',
+                    'importer': 'mypackage.foo',
+                    'imported': 'mypackage.baz',
+                },
             ],
             graph=graph,
         )
@@ -170,13 +182,15 @@ class TestCheckContractsAndPrintReport:
 
     def _configure(
         self,
-        contracts: List[Contract],
+        contracts_options: List[Dict[str, Any]],
         graph: Optional[FakeGraph] = None,
     ):
         reader = FakeUserOptionReader(
             UserOptions(
-                root_package_name='mypackage',
-                contracts=contracts,
+                session_options={
+                    'root_package_name': 'mypackage',
+                },
+                contracts_options=contracts_options,
             )
         )
         settings.configure(
