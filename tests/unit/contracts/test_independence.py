@@ -1,11 +1,10 @@
 import pytest
 
-# from importlinter.contracts.independence import IndependenceContract
-#
-# from tests.adapters.graph import FakeGraph
+from importlinter.contracts.independence import IndependenceContract
+
+from tests.adapters.graph import FakeGraph
 
 
-@pytest.mark.skip
 @pytest.mark.parametrize(
     'shortest_chains, invalid_chains',
     (
@@ -83,34 +82,38 @@ import pytest
     )
 )
 def test_independence_contract(shortest_chains, invalid_chains):
-    pass
-    # graph = FakeGraph(
-    #     root_package='mypackage',
-    #     descendants={
-    #         'blue': {'alpha', 'beta', 'beta.foo'},
-    #         'yellow': {'gamma', 'delta'},
-    #     },
-    #     shortest_chains=shortest_chains,
-    # )
-    # contract = IndependenceContract(
-    #     name='Independence contract',
-    #     modules=(
-    #         'mypackage.blue',
-    #         'mypackage.green',
-    #         'mypackage.yellow',
-    #     ),
-    # )
-    #
-    # contract_check = check_contract(contract=contract, graph=graph)
-    #
-    # if invalid_chains:
-    #     assert False is contract_check.is_valid
-    #     absolute_invalid_chains = {
-    #         tuple(
-    #             (f'mypackage.{m}' for m in chain)
-    #         )
-    #         for chain in invalid_chains
-    #     }
-    #     assert absolute_invalid_chains == contract_check.invalid_chains
-    # else:
-    #     assert True is contract_check.is_valid
+    graph = FakeGraph(
+        root_package_name='mypackage',
+        descendants={
+            'blue': {'alpha', 'beta', 'beta.foo'},
+            'yellow': {'gamma', 'delta'},
+        },
+        shortest_chains=shortest_chains,
+    )
+    contract = IndependenceContract(
+        name='Independence contract',
+        session_options={
+            'root_package_name': 'mypackage',
+        },
+        contract_options={
+            'modules': (
+                'mypackage.blue',
+                'mypackage.green',
+                'mypackage.yellow',
+            ),
+        },
+    )
+
+    contract_check = contract.check(graph=graph)
+
+    if invalid_chains:
+        assert not contract_check.kept
+        absolute_invalid_chains = {
+            tuple(
+                (f'mypackage.{m}' for m in chain)
+            )
+            for chain in invalid_chains
+        }
+        assert absolute_invalid_chains == contract_check.metadata['invalid_chains']
+    else:
+        assert contract_check.kept

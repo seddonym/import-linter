@@ -1,4 +1,4 @@
-from typing import Iterable, Dict, Set
+from typing import Dict, Set, Any
 from itertools import permutations
 
 from importlinter.domain.contract import Contract, ContractCheck
@@ -9,14 +9,18 @@ from importlinter.domain.ports.graph import ImportGraph
 class IndependenceContract(Contract):
     type_name = 'independence'
 
-    def __init__(self, name: str, modules: Iterable[Module]) -> None:
-        self.name = name
-        self.modules = modules
+    def __init__(
+        self,
+        name: str,
+        session_options: Dict[str, Any],
+        contract_options: Dict[str, Any],
+    ) -> None:
+        super().__init__(name, session_options, contract_options)
+        self.modules = list(map(Module, contract_options['modules']))
 
     def check(self, graph: ImportGraph) -> ContractCheck:
-        check = ContractCheck()
-        check.is_valid = True
-        check.invalid_chains = set()
+        is_kept = True
+        invalid_chains = set()
 
         all_modules_for_each_subpackage: Dict[Module, Set[Module]] = {}
 
@@ -32,6 +36,9 @@ class IndependenceContract(Contract):
                         imported=imported_module.name,
                     )
                     if chain:
-                        check.is_valid = False
-                        check.invalid_chains.add(chain)
-        return check
+                        is_kept = False
+                        invalid_chains.add(chain)
+        return ContractCheck(kept=is_kept, metadata={'invalid_chains': invalid_chains})
+
+    def render_broken_contract(self, check: 'ContractCheck') -> None:
+        raise NotImplementedError
