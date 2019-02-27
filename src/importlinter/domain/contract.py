@@ -5,9 +5,15 @@ from .ports.graph import ImportGraph
 
 
 class Contract(abc.ABC):
-    @abc.abstractmethod
-    def __init__(self, session_options: Dict[str, Any], contract_options: Dict[str, Any]) -> None:
-        raise NotImplementedError
+    def __init__(
+        self,
+        name: str,
+        session_options: Dict[str, Any],
+        contract_options: Dict[str, Any],
+    ) -> None:
+        self.name = name
+        self.session_options = session_options
+        self.contract_options = contract_options
 
     @abc.abstractmethod
     def check(self, graph: ImportGraph) -> 'ContractCheck':

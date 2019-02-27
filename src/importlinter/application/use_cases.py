@@ -73,8 +73,10 @@ def _build_report(graph: ImportGraph, user_options: UserOptions) -> Report:
     report = Report(graph=graph)
     for contract_options in user_options.contracts_options:
         contract_class = _get_contract_class(contract_options['class'])
-        contract = contract_class(session_options=user_options.session_options,
-                                  contract_options=contract_options)
+        contract = contract_class(
+            name=contract_options['name'],
+            session_options=user_options.session_options,
+            contract_options=contract_options)
         check = contract.check(graph)
         report.add_contract_check(contract, check)
     return report

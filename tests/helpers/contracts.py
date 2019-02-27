@@ -7,9 +7,6 @@ from importlinter.application import output
 
 
 class AlwaysPassesContract(Contract):
-    def __init__(self, session_options: Dict[str, Any], contract_options: Dict[str, Any]) -> None:
-        raise NotImplementedError
-
     def check(self, graph: ImportGraph) -> ContractCheck:
         return ContractCheck(
             kept=True,
@@ -21,9 +18,6 @@ class AlwaysPassesContract(Contract):
 
 
 class AlwaysFailsContract(Contract):
-    def __init__(self, session_options: Dict[str, Any], contract_options: Dict[str, Any]) -> None:
-        raise NotImplementedError
-
     def check(self, graph: ImportGraph) -> ContractCheck:
         return ContractCheck(
             kept=False,
@@ -38,15 +32,17 @@ class ForbiddenImportContract(Contract):
     Contract that defines a single forbidden import between
     two modules.
     """
-    def __init__(self, session_options: Dict[str, Any], contract_options: Dict[str, Any]) -> None:
-        raise NotImplementedError
-    # def __init__(self, name: str, importer: Module, imported: Module) -> None:
-    #     # TODO - should this get the root package name?
-    #     # TODO - should this be where we validate the contract?
-    #     # TODO - should this receive just a dict of primitives from the config?
-    #     self.name = name
-    #     self.importer = importer
-    #     self.imported = imported
+
+    def __init__(
+            self,
+            name: str,
+            session_options: Dict[str, Any],
+            contract_options: Dict[str, Any],
+    ) -> None:
+        super().__init__(name, session_options, contract_options)
+        # TODO - should this be where we validate the contract?
+        self.importer = Module(self.contract_options['importer'])
+        self.imported = Module(self.contract_options['imported'])
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         forbidden_import_details = graph.get_import_details(
