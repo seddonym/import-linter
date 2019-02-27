@@ -4,24 +4,30 @@ from importlinter.domain.ports.graph import ImportGraph
 from importlinter.domain.imports import DirectImport
 
 
+class MissingImport(Exception):
+    pass
+
+
 def pop_imports(
-        graph: ImportGraph, imports: Iterable[DirectImport]
+    graph: ImportGraph, imports: Iterable[DirectImport]
 ) -> List[Dict[str, Union[str, int]]]:
     """
     Removes the supplied direct imports from the graph.
 
     Returns:
         The list of import details that were removed, including any additional metadata.
+
+    Raises:
+        MissingImport if the import is not present in the graph.
     """
     removed_imports: List[Dict[str, Union[str, int]]] = []
     for import_to_remove in imports:
-        try:
-            import_details = graph.get_import_details(
-                importer=import_to_remove.importer.name,
-                imported=import_to_remove.imported.name)
-        except ValueError:  # TODO: what's the exception?
-            raise RuntimeError('Ignored import {} not present in the graph.')
-            removed_imports.extend(import_details)
+        import_details = graph.get_import_details(
+            importer=import_to_remove.importer.name,
+            imported=import_to_remove.imported.name)
+        if not import_details:
+            raise MissingImport('Ignored import {} not present in the graph.')
+        removed_imports.extend(import_details)
         graph.remove_import(importer=import_to_remove.importer.name,
                             imported=import_to_remove.imported.name)
     return removed_imports

@@ -26,6 +26,7 @@ class FakeGraph(ImportGraph):
         self._import_details = import_details if import_details else []
         self._module_count = module_count
         self._import_count = import_count
+        self._removed_imports: List[Tuple[TwoChain]] = []
 
     @property
     def modules(self) -> Set[str]:
@@ -77,7 +78,13 @@ class FakeGraph(ImportGraph):
             line_number: Optional[int] = None,
             line_contents: Optional[str] = None
     ) -> None:
-        raise NotImplementedError
+        pass
+
+    def remove_import(self, *, importer: str, imported: str) -> None:
+        self._fake_shortest_chains = dict([
+            (ends, chain) for ends, chain in self._fake_shortest_chains.items()
+            if not self._import_is_in_chain(importer, imported, chain)
+        ])
 
     def _remove_root(self, module: str) -> str:
         assert module.startswith(self.root_package_name)
@@ -85,3 +92,9 @@ class FakeGraph(ImportGraph):
 
     def _add_root(self, module: str) -> str:
         return '.'.join([self.root_package_name, module])
+
+    def _import_is_in_chain(self, importer: str, imported: str, chain: Chain) -> bool:
+        for pair in [chain[i:i + 2] for i in range(len(chain))]:
+            if (importer, imported) == pair:
+                return True
+        return False

@@ -1,9 +1,10 @@
-from typing import Optional, Iterable, List
+from typing import Dict, List, Any, Tuple
 
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.imports import DirectImport, Module
 from importlinter.domain.ports.graph import ImportGraph
 from importlinter.domain import helpers
+from importlinter.application import output
 
 
 class LayersContract(Contract):
@@ -12,29 +13,28 @@ class LayersContract(Contract):
     def __init__(
         self,
         name: str,
-        containers: Iterable[Module],
-        layers: List[str],
-        ignore_imports: Optional[Iterable[DirectImport]] = None,
+        session_options: Dict[str, Any],
+        contract_options: Dict[str, Any],
     ) -> None:
-        self.name = name
-        self.containers = containers
-        self.layers = layers
-        self.ignore_imports = ignore_imports if ignore_imports else tuple()
+        super().__init__(name, session_options, contract_options)
+        self.containers: List[str] = self.contract_options['containers']
+        self.layers: List[str] = self.contract_options['layers']
+        self.ignore_imports: List[DirectImport] = (
+            self._tuples_to_direct_imports(self.contract_options.get('ignore_imports', []))
+        )
 
     def check(self, graph: ImportGraph) -> ContractCheck:
-        check = ContractCheck()
-        check.is_valid = True
+        is_kept = True
+        invalid_chains = set()
 
         direct_imports_to_ignore = self.ignore_imports
         removed_imports = helpers.pop_imports(graph, direct_imports_to_ignore)
 
-        check.invalid_chains = set()
-
         for index, higher_layer in enumerate(self.layers):
             for lower_layer in self.layers[index + 1:]:
                 for container in self.containers:
-                    higher_layer_package = Module('.'.join([container.name, higher_layer]))
-                    lower_layer_package = Module('.'.join([container.name, lower_layer]))
+                    higher_layer_package = Module('.'.join([container, higher_layer]))
+                    lower_layer_package = Module('.'.join([container, lower_layer]))
 
                     descendants = set(
                         map(Module, graph.find_descendants(higher_layer_package.name)))
@@ -50,9 +50,20 @@ class LayersContract(Contract):
                                 imported=higher_layer_module.name,
                             )
                             if chain:
-                                check.is_valid = False
-                                check.invalid_chains.add(chain)
+                                is_kept = False
+                                invalid_chains.add(chain)
 
         helpers.add_imports(graph, removed_imports)
 
-        return check
+        return ContractCheck(kept=is_kept, metadata={'invalid_chains': invalid_chains})
+
+    def render_broken_contract(self, check: ContractCheck) -> None:
+        output.print('TODO')
+
+    def _tuples_to_direct_imports(
+            self, direct_import_tuples: List[Tuple[str, str]]
+    ) -> List[DirectImport]:
+        return [
+            DirectImport(importer=Module(importer), imported=Module(imported))
+            for importer, imported in direct_import_tuples
+        ]
