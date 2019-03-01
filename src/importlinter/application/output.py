@@ -87,10 +87,7 @@ class Output:
 
     @property
     def printer(self) -> Printer:
-        # Lazily load the printer from config.
-        if not hasattr(self, '_printer'):
-            self._printer = settings.PRINTER
-        return self._printer
+        return settings.PRINTER
 
 
 # Use prebound method pattern to provide a simple API.

@@ -10,8 +10,6 @@ from tests.adapters.printing import FakePrinter
 
 
 class TestCheckContractsAndPrintReport:
-    printer = FakePrinter()
-
     def test_all_successful(self):
         self._configure(
             contracts_options=[
@@ -196,7 +194,7 @@ class TestCheckContractsAndPrintReport:
         settings.configure(
             USER_OPTION_READERS=[reader],
             GRAPH_BUILDER=FakeGraphBuilder(),
-            PRINTER=self.printer,
+            PRINTER=FakePrinter(),
         )
         if graph is None:
             graph = FakeGraph(
