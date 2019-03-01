@@ -1,5 +1,7 @@
 from typing import Optional
 
+import click
+
 from importlinter.application.ports.printing import Printer
 
 
@@ -11,4 +13,4 @@ class ClickPrinter(Printer):
             color: Optional[str] = None,
             newline: bool = True
     ) -> None:
-        raise NotImplementedError
+        click.secho(text, bold=bold, fg=color, nl=newline)
