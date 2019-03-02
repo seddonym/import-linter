@@ -10,7 +10,7 @@ class UserOptionReader(ports.UserOptionReader):
             },
             contracts_options=[
                 {
-                    'name': 'Grimp contract',
+                    'name': 'Layer contract',
                     'class': 'importlinter.contracts.layers.LayersContract',
                     'containers': [
                        'grimp',
@@ -20,6 +20,17 @@ class UserOptionReader(ports.UserOptionReader):
                         'main',
                         'application',
                         'domain',
+                    ],
+                },
+                {
+                    'name': 'Independence contract',
+                    'class': 'importlinter.contracts.independence.IndependenceContract',
+                    'containers': [
+                        'grimp',
+                    ],
+                    'modules': [
+                        'grimp.main',
+                        'grimp.domain',
                     ],
                 },
             ],

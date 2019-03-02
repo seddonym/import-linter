@@ -21,7 +21,7 @@ class IndependenceContract(Contract):
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
-        invalid_chains = set()
+        invalid_chains = []
 
         all_modules_for_each_subpackage: Dict[Module, Set[Module]] = {}
 
@@ -30,6 +30,12 @@ class IndependenceContract(Contract):
             all_modules_for_each_subpackage[module] = {module} | descendants
 
         for subpackage_1, subpackage_2 in permutations(self.modules, r=2):
+
+            subpackage_chain_data = {
+                'upstream_module': subpackage_2.name,
+                'downstream_module': subpackage_1.name,
+                'chains': [],
+            }
             for importer_module in all_modules_for_each_subpackage[subpackage_1]:
                 for imported_module in all_modules_for_each_subpackage[subpackage_2]:
                     chain = graph.find_shortest_chain(
@@ -38,7 +44,20 @@ class IndependenceContract(Contract):
                     )
                     if chain:
                         is_kept = False
-                        invalid_chains.add(chain)
+                        chain_data = []
+                        for importer, imported in [(chain[i], chain[i + 1]) for i in range(len(chain) - 1)]:
+                            import_details = graph.get_import_details(importer=importer, imported=imported)
+                            line_numbers = tuple(j['line_number'] for j in import_details)
+                            chain_data.append(
+                                {
+                                    'importer': importer,
+                                    'imported': imported,
+                                    'line_numbers': line_numbers,
+                                },
+                            )
+                        subpackage_chain_data['chains'].append(chain_data)
+            if subpackage_chain_data['chains']:
+                invalid_chains.append(subpackage_chain_data)
         return ContractCheck(kept=is_kept, metadata={'invalid_chains': invalid_chains})
 
     def render_broken_contract(self, check: 'ContractCheck') -> None:

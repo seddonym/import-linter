@@ -258,7 +258,7 @@ def test_independence_contract(shortest_chains, expected_invalid_chains):
 
     contract_check = contract.check(graph=graph)
 
-    if invalid_chains:
+    if expected_invalid_chains:
         assert not contract_check.kept
 
         expected_metadata = {
@@ -268,17 +268,6 @@ def test_independence_contract(shortest_chains, expected_invalid_chains):
         }
 
         assert expected_metadata == contract_check.metadata
-
-
-
-
-        absolute_invalid_chains = {
-            tuple(
-                (f'mypackage.{m}' for m in chain)
-            )
-            for chain in invalid_chains
-        }
-        assert absolute_invalid_chains == contract_check.metadata['invalid_chains']
     else:
         assert contract_check.kept
 
