@@ -365,7 +365,7 @@ def test_layer_contract_populates_metadata():
 
 
 @pytest.mark.parametrize(
-    'ignore_imports, invalid_chains',
+    'ignore_imports, invalid_chain',
     (
         (
             # Ignore from each chain - should be valid.
@@ -373,16 +373,14 @@ def test_layer_contract_populates_metadata():
                 ('utils.baz', 'medium.orange'),
                 ('low.white.gamma', 'utils.foo'),
             ),
-            set(),
+            None,
         ),
         (
             # Ignore only one chain - should return the other.
             (
                 ('low.white.gamma', 'utils.foo'),
             ),
-            {
-                ('low.black', 'utils.baz', 'medium.orange'),
-            }
+            ['low.black', 'utils.baz', 'medium.orange'],
         ),
         (
             # Multiple ignore from same path - should allow it.
@@ -390,9 +388,7 @@ def test_layer_contract_populates_metadata():
                 ('low.white.gamma', 'utils.foo'),
                 ('utils.bar', 'high.yellow.alpha'),
             ),
-            {
-                ('low.black', 'utils.baz', 'medium.orange'),
-            }
+            ['low.black', 'utils.baz', 'medium.orange'],
         ),
         (
             # Ignore from nonexistent module - should error.
@@ -410,7 +406,7 @@ def test_layer_contract_populates_metadata():
         ),
     ),
 )
-def test_ignore_imports(ignore_imports, invalid_chains):
+def test_ignore_imports(ignore_imports, invalid_chain):
     graph = FakeGraph(
         root_package_name='mypackage',
         descendants={
@@ -437,19 +433,19 @@ def test_ignore_imports(ignore_imports, invalid_chains):
                 'importer': 'utils.baz',
                 'imported': 'medium.orange',
                 'line_number': 1,
-                'line_contents': 'TODO',
+                'line_contents': '-',
             },
             {
                 'importer': 'low.white.gamma',
                 'imported': 'utils.foo',
                 'line_number': 1,
-                'line_contents': 'TODO',
+                'line_contents': '-',
             },
             {
                 'importer': 'utils.bar',
                 'imported': 'high.yellow.alpha',
                 'line_number': 1,
-                'line_contents': 'TODO',
+                'line_contents': '-',
             },
         ],
     )
@@ -472,22 +468,24 @@ def test_ignore_imports(ignore_imports, invalid_chains):
         },
     )
 
-    if isinstance(invalid_chains, Exception):
-        with pytest.raises(invalid_chains.__class__):
+    if isinstance(invalid_chain, Exception):
+        with pytest.raises(invalid_chain.__class__):
             contract.check(graph=graph)
         return
     else:
         contract_check = contract.check(graph=graph)
 
-    if invalid_chains:
+    if invalid_chain:
         assert False is contract_check.kept
-        absolute_invalid_chains = {
-            tuple(
-                (f'mypackage.{m}' for m in chain)
-            )
-            for chain in invalid_chains
-        }
-        assert absolute_invalid_chains == contract_check.metadata['invalid_chains']
+        assert len(contract_check.metadata['invalid_chains']) == 1
+        chains_metadata = contract_check.metadata['invalid_chains'][0]
+        assert len(chains_metadata['chains']) == 1
+        chain_metadata = chains_metadata['chains'][0]
+        actual_chain = [chain_metadata[0]['importer']]
+        for direct_import in chain_metadata:
+            actual_chain.append(direct_import['imported'])
+        package = graph.root_package_name
+        assert [f'{package}.{n}' for n in invalid_chain] == actual_chain
     else:
         assert True is contract_check.kept
 
