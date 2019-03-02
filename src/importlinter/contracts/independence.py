@@ -4,6 +4,7 @@ from itertools import permutations
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.imports import Module
 from importlinter.domain.ports.graph import ImportGraph
+from importlinter.application import output
 
 
 class IndependenceContract(Contract):
@@ -41,4 +42,23 @@ class IndependenceContract(Contract):
         return ContractCheck(kept=is_kept, metadata={'invalid_chains': invalid_chains})
 
     def render_broken_contract(self, check: 'ContractCheck') -> None:
-        raise NotImplementedError
+        for chains_data in check.metadata['invalid_chains']:
+            downstream, upstream = chains_data['downstream_module'], chains_data['upstream_module']
+            output.print(f"{downstream} is not allowed to import {upstream}:")
+            output.new_line()
+
+            for chain in chains_data['chains']:
+                first_line = True
+                for direct_import in chain:
+                    importer, imported = direct_import['importer'], direct_import['imported']
+                    line_numbers = ', '.join(f'l.{n}' for n in direct_import['line_numbers'])
+                    import_string = f"{importer} -> {imported} ({line_numbers})"
+                    if first_line:
+                        output.print(f"-   {import_string}")
+                        first_line = False
+                    else:
+                        output.indent_cursor()
+                        output.print(import_string)
+                output.new_line()
+
+            output.new_line()

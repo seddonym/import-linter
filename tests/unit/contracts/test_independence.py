@@ -181,7 +181,7 @@ def test_render_broken_contract():
                             {
                                 'importer': 'mypackage.yellow.foo',
                                 'imported': 'mypackage.green.bar',
-                                'line_numbers': (15),
+                                'line_numbers': (15,),
                             },
                         ],
                     ],
@@ -203,7 +203,7 @@ def test_render_broken_contract():
         -   mypackage.blue.bar -> mypackage.yellow.baz (l.5)
 
 
-        mypackage.green is not allowed to import mypackage.yellow:
+        mypackage.yellow is not allowed to import mypackage.green:
 
         -   mypackage.yellow.foo -> mypackage.green.bar (l.15)
 
