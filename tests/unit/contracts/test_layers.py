@@ -2,8 +2,12 @@ import pytest
 
 from importlinter.contracts.layers import LayersContract
 from importlinter.domain.helpers import MissingImport
+from importlinter.domain.contract import ContractCheck
+from importlinter.application.rendering import render_report
+from importlinter.application.app_config import settings
 
 from tests.adapters.graph import FakeGraph
+from tests.adapters.printing import FakePrinter
 
 
 @pytest.mark.parametrize(
@@ -390,3 +394,108 @@ def test_ignore_imports(ignore_imports, invalid_chains):
         assert absolute_invalid_chains == contract_check.metadata['invalid_chains']
     else:
         assert True is contract_check.kept
+
+
+def test_render_broken_contract():
+    settings.configure(
+        PRINTER=FakePrinter(),
+    )
+    contract = LayersContract(
+        name='Layers contract',
+        session_options={
+            'root_package_name': 'mypackage',
+        },
+        contract_options={
+            'containers': [
+                'mypackage',
+            ],
+            'layers': [
+                'high',
+                'medium',
+                'low',
+            ],
+        },
+    )
+    check = ContractCheck(
+        kept=False,
+        metadata={
+            'invalid_chains': [
+                {
+                    'higher_layer': 'mypackage.high',
+                    'lower_layer': 'mypackage.low',
+                    'invalid_chains': [
+                        [
+                            {
+                                'importer': 'mypackage.low.blue',
+                                'imported': 'mypackage.utils.red',
+                                'line_numbers': (8, 16),
+                            },
+                            {
+                                'importer': 'mypackage.utils.red',
+                                'imported': 'mypackage.utils.yellow',
+                                'line_numbers': (1,),
+                            },
+                            {
+                                'importer': 'mypackage.utils.yellow',
+                                'imported': 'mypackage.high.green',
+                                'line_numbers': (3,),
+                            },
+                        ],
+                    ],
+                },
+                {
+                    'higher_layer': 'mypackage.medium',
+                    'lower_layer': 'mypackage.low',
+                    'invalid_chains': [
+                        [
+                            {
+                                'importer': 'mypackage.low.blue',
+                                'imported': 'mypackage.medium.yellow',
+                                'line_numbers': (6,),
+                            },
+                        ],
+                    ],
+                },
+                {
+                    'higher_layer': 'mypackage.high',
+                    'lower_layer': 'mypackage.medium',
+                    'invalid_chains': [
+                        [
+                            {
+                                'importer': 'mypackage.medium',
+                                'imported': 'mypackage.high.cyan.alpha',
+                                'line_numbers': (2,),
+                            },
+                        ],
+                    ],
+                },
+            ],
+        },
+    )
+
+    contract.render_broken_contract(check)
+
+    settings.PRINTER.pop_and_assert(
+        """
+        Layers contract
+        ---------------
+
+        mypackage.low is not allowed to import mypackage.high:
+
+        -   mypackage.low.blue -> mypackage.utils.red (l.8, l.16)
+            mypackage.utils.red ->  mypackage.utils.yellow (l.1)
+            mypackage.utils.yellow -> mypackage.high.green (l.3)
+        
+        -   mypackage.low.purple -> mypackage.high.brown (l.9)
+
+
+        mypackage.low is not allowed to import mypackage.medium:
+
+        -   mypackage.low.blue -> mypackage.medium.yellow (l.6)
+
+
+        mypackage.medium is not allowed to import mypackage.high:
+
+        -   mypackage.medium -> mypackage.high.cyan.alpha (l.2)
+        """
+    )
