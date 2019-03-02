@@ -25,7 +25,7 @@ class LayersContract(Contract):
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
-        invalid_chains = set()
+        invalid_chains = []
 
         direct_imports_to_ignore = self.ignore_imports
         removed_imports = helpers.pop_imports(graph, direct_imports_to_ignore)
@@ -43,6 +43,12 @@ class LayersContract(Contract):
                     descendants = set(map(Module, graph.find_descendants(lower_layer_package.name)))
                     lower_layer_modules = {lower_layer_package} | descendants
 
+                    layer_chain_data = {
+                        'higher_layer': higher_layer_package.name,
+                        'lower_layer': lower_layer_package.name,
+                        'chains': [],
+                    }
+
                     for higher_layer_module in higher_layer_modules:
                         for lower_layer_module in lower_layer_modules:
                             chain = graph.find_shortest_chain(
@@ -51,7 +57,21 @@ class LayersContract(Contract):
                             )
                             if chain:
                                 is_kept = False
-                                invalid_chains.add(chain)
+                                chain_data = []
+                                for importer, imported in [(chain[i], chain[i + 1]) for i in range(len(chain) - 1)]:
+                                    import_details = graph.get_import_details(importer=importer, imported=imported)
+                                    line_numbers = tuple(j['line_number'] for j in import_details)
+                                    chain_data.append(
+                                        {
+                                            'importer': importer,
+                                            'imported': imported,
+                                            'line_numbers': line_numbers,
+                                        },
+                                    )
+
+                                layer_chain_data['chains'].append(chain_data)
+                    if layer_chain_data['chains']:
+                        invalid_chains.append(layer_chain_data)
 
         helpers.add_imports(graph, removed_imports)
 

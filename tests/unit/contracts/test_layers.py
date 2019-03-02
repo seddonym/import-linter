@@ -235,7 +235,52 @@ def test_layer_contract_populates_metadata():
             ('low.black', 'medium.red'): (
                 'low.black', 'utils.baz', 'medium.red',
             ),
-        }
+        },
+        import_details=[
+            {
+                'importer': 'mypackage.low.white.gamma',
+                'imported': 'mypackage.utils.foo',
+                'line_number': 3,
+                'line_contents': '',
+            },
+            {
+                'importer': 'mypackage.utils.foo',
+                'imported': 'mypackage.utils.bar',
+                'line_number': 1,
+                'line_contents': '',
+            },
+            {
+                'importer': 'mypackage.utils.foo',
+                'imported': 'mypackage.utils.bar',
+                'line_number': 101,
+                'line_contents': '',
+            },
+            {
+                'importer': 'mypackage.utils.bar',
+                'imported': 'mypackage.high.yellow.alpha',
+                'line_number': 13,
+                'line_contents': '',
+            },
+            {
+                'importer': 'mypackage.medium.orange.beta',
+                'imported': 'mypackage.high.blue',
+                'line_number': 2,
+                'line_contents': '',
+            },
+            {
+                'importer': 'mypackage.low.black',
+                'imported': 'mypackage.utils.baz',
+                'line_number': 2,
+                'line_contents': '',
+            },
+            {
+                'importer': 'mypackage.utils.baz',
+                'imported': 'mypackage.medium.red',
+                'line_number': 3,
+                'line_contents': '',
+            },
+
+        ],
     )
 
     contract = LayersContract(
@@ -259,19 +304,25 @@ def test_layer_contract_populates_metadata():
 
     assert contract_check.kept is False
 
-    assert contract_check.metadata['invalid_chains'] == {
-        ('mypackage.low.white.gamma', 'mypackage.utils.foo', 'mypackage.utils.bar',
-         'mypackage.high.yellow.alpha'),
-        ('mypackage.medium.orange.beta', 'mypackage.high.blue'),
-        ('mypackage.low.black', 'mypackage.utils.baz', 'mypackage.medium.red'),
-    }
-
     assert contract_check.metadata == {
         'invalid_chains': [
             {
                 'higher_layer': 'mypackage.high',
+                'lower_layer': 'mypackage.medium',
+                'chains': [
+                    [
+                        {
+                            'importer': 'mypackage.medium.orange.beta',
+                            'imported': 'mypackage.high.blue',
+                            'line_numbers': (2,),
+                        },
+                    ],
+                ],
+            },
+            {
+                'higher_layer': 'mypackage.high',
                 'lower_layer': 'mypackage.low',
-                'invalid_chains': [
+                'chains': [
                     [
                         {
                             'importer': 'mypackage.low.white.gamma',
@@ -292,22 +343,9 @@ def test_layer_contract_populates_metadata():
                 ],
             },
             {
-                'higher_layer': 'mypackage.high',
-                'lower_layer': 'mypackage.medium',
-                'invalid_chains': [
-                    [
-                        {
-                            'importer': 'mypackage.medium.orange.beta',
-                            'imported': 'mypackage.high.blue',
-                            'line_numbers': (2,),
-                        },
-                    ],
-                ],
-            },
-            {
                 'higher_layer': 'mypackage.medium',
                 'lower_layer': 'mypackage.low',
-                'invalid_chains': [
+                'chains': [
                     [
                         {
                             'importer': 'mypackage.low.black',
