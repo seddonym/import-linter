@@ -9,21 +9,31 @@ from tests.adapters.printing import FakePrinter
 
 
 @pytest.mark.parametrize(
-    'shortest_chains, invalid_chains',
+    'shortest_chains, expected_invalid_chains',
     (
         (
             {
                 ('blue', 'orange'): ('blue', 'orange'),
                 ('brown', 'blue'): ('brown', 'blue'),
             },
-            set(),
+            [],
         ),
         (
             {
                 ('blue', 'green'): ('blue', 'green'),
             },
             {
-                ('blue', 'green'),
+                'upstream_module': 'mypackage.green',
+                'downstream_module': 'mypackage.blue',
+                'chains': [
+                    [
+                        {
+                            'importer': 'mypackage.blue',
+                            'imported': 'mypackage.green',
+                            'line_numbers': (10,),
+                        },
+                    ],
+                ],
             },
         ),
         (
@@ -31,7 +41,22 @@ from tests.adapters.printing import FakePrinter
                 ('blue.beta.foo', 'green'): ('blue.beta.foo', 'orange.omega', 'green'),
             },
             {
-                ('blue.beta.foo', 'orange.omega', 'green'),
+                'upstream_module': 'mypackage.green',
+                'downstream_module': 'mypackage.blue',
+                'chains': [
+                    [
+                        {
+                            'importer': 'mypackage.blue.beta.foo',
+                            'imported': 'mypackage.orange.omega',
+                            'line_numbers': (9, 109),
+                        },
+                        {
+                            'importer': 'mypackage.orange.omega',
+                            'imported': 'mypackage.green',
+                            'line_numbers': (1,),
+                        },
+                    ],
+                ],
             },
         ),
         (
@@ -39,15 +64,36 @@ from tests.adapters.printing import FakePrinter
                 ('green', 'blue.beta.foo'): ('green', 'blue.beta.foo'),
             },
             {
-                ('green', 'blue.beta.foo'),
-            }
+                'upstream_module': 'mypackage.blue',
+                'downstream_module': 'mypackage.green',
+                'chains': [
+                    [
+                        {
+                            'importer': 'mypackage.green',
+                            'imported': 'mypackage.blue.beta.foo',
+                            'line_numbers': (8,),
+                        },
+                    ],
+                ],
+            },
+
         ),
         (
             {
                 ('blue', 'yellow'): ('blue', 'yellow'),
             },
             {
-                ('blue', 'yellow'),
+                'upstream_module': 'mypackage.yellow',
+                'downstream_module': 'mypackage.blue',
+                'chains': [
+                    [
+                        {
+                            'importer': 'mypackage.blue',
+                            'imported': 'mypackage.yellow',
+                            'line_numbers': (3,),
+                        },
+                    ],
+                ],
             },
         ),
         (
@@ -55,7 +101,17 @@ from tests.adapters.printing import FakePrinter
                 ('blue.beta.foo', 'yellow.gamma'): ('blue.beta.foo', 'yellow.gamma'),
             },
             {
-                ('blue.beta.foo', 'yellow.gamma'),
+                'upstream_module': 'mypackage.yellow',
+                'downstream_module': 'mypackage.blue',
+                'chains': [
+                    [
+                        {
+                            'importer': 'mypackage.blue.beta.foo',
+                            'imported': 'mypackage.yellow.gamma',
+                            'line_numbers': (100,),
+                        },
+                    ],
+                ],
             },
         ),
         (
@@ -63,7 +119,17 @@ from tests.adapters.printing import FakePrinter
                 ('yellow', 'blue'): ('yellow', 'blue'),
             },
             {
-                ('yellow', 'blue'),
+                'upstream_module': 'mypackage.blue',
+                'downstream_module': 'mypackage.yellow',
+                'chains': [
+                    [
+                        {
+                            'importer': 'mypackage.yellow',
+                            'imported': 'mypackage.blue',
+                            'line_numbers': (4,),
+                        },
+                    ],
+                ],
             },
         ),
         (
@@ -71,7 +137,17 @@ from tests.adapters.printing import FakePrinter
                 ('green', 'yellow'): ('green', 'yellow'),
             },
             {
-                ('green', 'yellow'),
+                'upstream_module': 'mypackage.yellow',
+                'downstream_module': 'mypackage.green',
+                'chains': [
+                    [
+                        {
+                            'importer': 'mypackage.green',
+                            'imported': 'mypackage.yellow',
+                            'line_numbers': (6,),
+                        },
+                    ],
+                ],
             },
         ),
         (
@@ -79,19 +155,92 @@ from tests.adapters.printing import FakePrinter
                 ('yellow', 'green'): ('yellow', 'green'),
             },
             {
-                ('yellow', 'green'),
+                'upstream_module': 'mypackage.green',
+                'downstream_module': 'mypackage.yellow',
+                'chains': [
+                    [
+                        {
+                            'importer': 'mypackage.yellow',
+                            'imported': 'mypackage.green',
+                            'line_numbers': (10,),
+                        },
+                    ],
+                ],
             },
         ),
     )
 )
-def test_independence_contract(shortest_chains, invalid_chains):
+def test_independence_contract(shortest_chains, expected_invalid_chains):
     graph = FakeGraph(
         root_package_name='mypackage',
         descendants={
             'blue': {'alpha', 'beta', 'beta.foo'},
             'yellow': {'gamma', 'delta'},
         },
+        import_details=[
+            {
+                'importer': 'mypackage.blue',
+                'imported': 'mypackage.green',
+                'line_number': 10,
+                'line_contents': '-',
+            },
+            {
+                'importer': 'mypackage.blue.beta.foo',
+                'imported': 'mypackage.orange.omega',
+                'line_number': 9,
+                'line_contents': '-',
+            },
+            {
+                'importer': 'mypackage.blue.beta.foo',
+                'imported': 'mypackage.orange.omega',
+                'line_number': 109,
+                'line_contents': '-',
+            },
+            {
+                'importer': 'mypackage.orange.omega',
+                'imported': 'mypackage.green',
+                'line_number': 1,
+                'line_contents': '-',
+            },
+            {
+                'importer': 'mypackage.green',
+                'imported': 'mypackage.blue.beta.foo',
+                'line_number': 8,
+                'line_contents': '-',
+            },
+            {
+                'importer': 'mypackage.blue',
+                'imported': 'mypackage.yellow',
+                'line_number': 3,
+                'line_contents': '-',
+            },
+            {
+                'importer': 'mypackage.blue.beta.foo',
+                'imported': 'mypackage.yellow.gamma',
+                'line_number': 100,
+                'line_contents': '-',
+            },
+            {
+                'importer': 'mypackage.yellow',
+                'imported': 'mypackage.blue',
+                'line_number': 4,
+                'line_contents': '-',
+            },
+            {
+                'importer': 'mypackage.green',
+                'imported': 'mypackage.yellow',
+                'line_number': 6,
+                'line_contents': '-',
+            },
+            {
+                'importer': 'mypackage.yellow',
+                'imported': 'mypackage.green',
+                'line_number': 10,
+                'line_contents': '-',
+            },
+        ],
         shortest_chains=shortest_chains,
+
     )
     contract = IndependenceContract(
         name='Independence contract',
@@ -111,6 +260,18 @@ def test_independence_contract(shortest_chains, invalid_chains):
 
     if invalid_chains:
         assert not contract_check.kept
+
+        expected_metadata = {
+            'invalid_chains': [
+                expected_invalid_chains,
+            ],
+        }
+
+        assert expected_metadata == contract_check.metadata
+
+
+
+
         absolute_invalid_chains = {
             tuple(
                 (f'mypackage.{m}' for m in chain)
