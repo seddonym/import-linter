@@ -3,7 +3,6 @@ import pytest
 from importlinter.contracts.layers import LayersContract
 from importlinter.domain.helpers import MissingImport
 from importlinter.domain.contract import ContractCheck
-from importlinter.application.rendering import render_report
 from importlinter.application.app_config import settings
 
 from tests.adapters.graph import FakeGraph
@@ -212,7 +211,7 @@ def test_layer_contract_multiple_containers(shortest_chains, is_kept):
     assert contract_check.kept == is_kept
 
 
-def test_layer_contract_broken_details():
+def test_layer_contract_populates_metadata():
     graph = FakeGraph(
         root_package_name='mypackage',
         descendants={
@@ -265,6 +264,65 @@ def test_layer_contract_broken_details():
          'mypackage.high.yellow.alpha'),
         ('mypackage.medium.orange.beta', 'mypackage.high.blue'),
         ('mypackage.low.black', 'mypackage.utils.baz', 'mypackage.medium.red'),
+    }
+
+    assert contract_check.metadata == {
+        'invalid_chains': [
+            {
+                'higher_layer': 'mypackage.high',
+                'lower_layer': 'mypackage.low',
+                'invalid_chains': [
+                    [
+                        {
+                            'importer': 'mypackage.low.white.gamma',
+                            'imported': 'mypackage.utils.foo',
+                            'line_numbers': (3,),
+                        },
+                        {
+                            'importer': 'mypackage.utils.foo',
+                            'imported': 'mypackage.utils.bar',
+                            'line_numbers': (1, 101),
+                        },
+                        {
+                            'importer': 'mypackage.utils.bar',
+                            'imported': 'mypackage.high.yellow.alpha',
+                            'line_numbers': (13,),
+                        },
+                    ],
+                ],
+            },
+            {
+                'higher_layer': 'mypackage.high',
+                'lower_layer': 'mypackage.medium',
+                'invalid_chains': [
+                    [
+                        {
+                            'importer': 'mypackage.medium.orange.beta',
+                            'imported': 'mypackage.high.blue',
+                            'line_numbers': (2,),
+                        },
+                    ],
+                ],
+            },
+            {
+                'higher_layer': 'mypackage.medium',
+                'lower_layer': 'mypackage.low',
+                'invalid_chains': [
+                    [
+                        {
+                            'importer': 'mypackage.low.black',
+                            'imported': 'mypackage.utils.baz',
+                            'line_numbers': (2,),
+                        },
+                        {
+                            'importer': 'mypackage.utils.baz',
+                            'imported': 'mypackage.medium.red',
+                            'line_numbers': (3,),
+                        },
+                    ],
+                ],
+            },
+        ],
     }
 
 
@@ -423,7 +481,7 @@ def test_render_broken_contract():
                 {
                     'higher_layer': 'mypackage.high',
                     'lower_layer': 'mypackage.low',
-                    'invalid_chains': [
+                    'chains': [
                         [
                             {
                                 'importer': 'mypackage.low.blue',
@@ -441,12 +499,19 @@ def test_render_broken_contract():
                                 'line_numbers': (3,),
                             },
                         ],
+                        [
+                            {
+                                'importer': 'mypackage.low.purple',
+                                'imported': 'mypackage.high.brown',
+                                'line_numbers': (9,),
+                            },
+                        ],
                     ],
                 },
                 {
                     'higher_layer': 'mypackage.medium',
                     'lower_layer': 'mypackage.low',
-                    'invalid_chains': [
+                    'chains': [
                         [
                             {
                                 'importer': 'mypackage.low.blue',
@@ -459,7 +524,7 @@ def test_render_broken_contract():
                 {
                     'higher_layer': 'mypackage.high',
                     'lower_layer': 'mypackage.medium',
-                    'invalid_chains': [
+                    'chains': [
                         [
                             {
                                 'importer': 'mypackage.medium',
@@ -477,13 +542,10 @@ def test_render_broken_contract():
 
     settings.PRINTER.pop_and_assert(
         """
-        Layers contract
-        ---------------
-
         mypackage.low is not allowed to import mypackage.high:
 
         -   mypackage.low.blue -> mypackage.utils.red (l.8, l.16)
-            mypackage.utils.red ->  mypackage.utils.yellow (l.1)
+            mypackage.utils.red -> mypackage.utils.yellow (l.1)
             mypackage.utils.yellow -> mypackage.high.green (l.3)
         
         -   mypackage.low.purple -> mypackage.high.brown (l.9)
@@ -497,5 +559,7 @@ def test_render_broken_contract():
         mypackage.medium is not allowed to import mypackage.high:
 
         -   mypackage.medium -> mypackage.high.cyan.alpha (l.2)
+
+
         """
     )

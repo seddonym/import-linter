@@ -58,7 +58,26 @@ class LayersContract(Contract):
         return ContractCheck(kept=is_kept, metadata={'invalid_chains': invalid_chains})
 
     def render_broken_contract(self, check: ContractCheck) -> None:
-        output.print('TODO')
+        for chains_data in check.metadata['invalid_chains']:
+            higher_layer, lower_layer = chains_data['higher_layer'], chains_data['lower_layer']
+            output.print(f"{lower_layer} is not allowed to import {higher_layer}:")
+            output.new_line()
+
+            for chain in chains_data['chains']:
+                first_line = True
+                for direct_import in chain:
+                    importer, imported = direct_import['importer'], direct_import['imported']
+                    line_numbers = ', '.join(f'l.{n}' for n in direct_import['line_numbers'])
+                    import_string = f"{importer} -> {imported} ({line_numbers})"
+                    if first_line:
+                        output.print(f"-   {import_string}")
+                        first_line = False
+                    else:
+                        output.indent_cursor()
+                        output.print(import_string)
+                output.new_line()
+
+            output.new_line()
 
     def _tuples_to_direct_imports(
             self, direct_import_tuples: List[Tuple[str, str]]
