@@ -14,8 +14,8 @@ def find_any(filename: str) -> List[str]:
         List of absolute filenames that could be found.
     """
     filesystem = settings.FILE_SYSTEM
-    project_root_dir = filesystem.join(filesystem.dirname(__file__), '..', '..', '..')
-    candidate_filename = filesystem.join(project_root_dir, filename)
+    current_working_directory = filesystem.getcwd()
+    candidate_filename = filesystem.join(current_working_directory, filename)
 
     if filesystem.exists(candidate_filename):
         return [candidate_filename]

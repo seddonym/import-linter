@@ -2,7 +2,7 @@ from typing import Tuple
 import abc
 
 
-class AbstractFileSystem(abc.ABC):
+class FileSystem(abc.ABC):
     """
     Abstraction around file system calls.
     """
@@ -52,5 +52,19 @@ class AbstractFileSystem(abc.ABC):
     def exists(self, file_name: str) -> bool:
         """
         Return whether a file exists.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def abspath(self, file_name: str) -> str:
+        """
+        Return the absolute path of a file name relative to the current working directory.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def getcwd(self) -> str:
+        """
+        Return the current working directory.
         """
         raise NotImplementedError

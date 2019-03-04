@@ -1,13 +1,10 @@
 from typing import Tuple
 import os
 
-from importlinter.application.ports.filesystem import AbstractFileSystem
+from importlinter.application.ports import filesystem as ports
 
 
-class FileSystem(AbstractFileSystem):
-    """
-    Abstraction around file system calls.
-    """
+class FileSystem(ports.FileSystem):
     def dirname(self, filename: str) -> str:
         return os.path.dirname(filename)
 

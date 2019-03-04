@@ -2,11 +2,14 @@ from typing import List, Tuple, Any, Dict, Optional, Generator
 
 import yaml
 
-from grimp.application.ports.filesystem import AbstractFileSystem
+from importlinter.application.ports import filesystem as ports
 
 
-class FakeFileSystem(AbstractFileSystem):
-    def __init__(self, contents: str = None, content_map: Dict[str, str] = None) -> None:
+class FakeFileSystem(ports.FileSystem):
+    def __init__(
+        self, contents: str = None, content_map: Dict[str, str] = None,
+        working_directory: str = None
+    ) -> None:
         """
         Files can be declared as existing in the file system in two different ways, either
         in a contents string (which is a quick way of defining a lot of files), or in content_map
@@ -32,9 +35,13 @@ class FakeFileSystem(AbstractFileSystem):
                 {
                     '/path/to/foo/__init__.py': "from . import one",
                 }
+
+            working_directory: The path to be treated as the current working directory, e.g.
+                               '/path/to/directory'.
         """
         self.contents = self._parse_contents(contents)
         self.content_map = content_map if content_map else {}
+        self.working_directory = working_directory
 
     def dirname(self, filename: str) -> str:
         """
@@ -81,6 +88,15 @@ class FakeFileSystem(AbstractFileSystem):
 
     def join(self, *components: str) -> str:
         return '/'.join(components)
+
+    def abspath(self, file_name: str) -> str:
+        abs_components = []
+        for component in file_name.split('/'):
+            if component == '..':
+                abs_components.pop()
+            else:
+                abs_components.append(component)
+        return self.join(*abs_components)
 
     def split(self, file_name: str) -> Tuple[str, str]:
         components = file_name.split('/')
@@ -164,3 +180,8 @@ class FakeFileSystem(AbstractFileSystem):
             except KeyError:
                 return False
         return True
+
+    def getcwd(self) -> str:
+        if self.working_directory:
+            return self.working_directory
+        raise RuntimeError('No working directory specified.')
