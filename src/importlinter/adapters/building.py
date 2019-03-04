@@ -1,4 +1,4 @@
-import grimp
+import grimp  # type: ignore
 
 
 from importlinter.application.ports import building as ports

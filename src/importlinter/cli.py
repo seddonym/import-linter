@@ -5,13 +5,12 @@ from .application.app_config import settings
 from .adapters.building import GraphBuilder
 from .adapters.printing import ClickPrinter
 from .adapters.filesystem import FileSystem
-from .adapters.user_options import IniFileUserOptionReader, HardcodedUserOptionReader
+from .adapters.user_options import IniFileUserOptionReader
 
 
 settings.configure(
     USER_OPTION_READERS=[
         IniFileUserOptionReader(),
-        HardcodedUserOptionReader()
     ],
     GRAPH_BUILDER=GraphBuilder(),
     PRINTER=ClickPrinter(),

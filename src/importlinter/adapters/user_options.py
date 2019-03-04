@@ -1,45 +1,10 @@
-from typing import Optional
+from typing import Optional, Dict, Any
 import configparser
 
 from importlinter.application.user_options import UserOptions
 from importlinter.application.ports import user_options as ports
 from importlinter.application import file_finding
 from importlinter.application.app_config import settings
-
-
-class HardcodedUserOptionReader(ports.UserOptionReader):
-    def read_options(self) -> Optional[UserOptions]:
-        return UserOptions(
-            session_options = {
-                'root_package_name': 'grimp',
-            },
-            contracts_options=[
-                {
-                    'name': 'Layer contract',
-                    'class': 'importlinter.contracts.layers.LayersContract',
-                    'containers': [
-                       'grimp',
-                    ],
-                    'layers': [
-                        'adaptors',
-                        'main',
-                        'application',
-                        'domain',
-                    ],
-                },
-                {
-                    'name': 'Independence contract',
-                    'class': 'importlinter.contracts.independence.IndependenceContract',
-                    'containers': [
-                        'grimp',
-                    ],
-                    'modules': [
-                        'grimp.main',
-                        'grimp.domain',
-                    ],
-                },
-            ],
-        )
 
 
 class IniFileUserOptionReader(ports.UserOptionReader):
@@ -53,6 +18,7 @@ class IniFileUserOptionReader(ports.UserOptionReader):
             config.read_string(file_contents)
             if 'import-linter' in config.sections():
                 return self._build_from_config(config)
+        return None
 
     def _build_from_config(self, config: configparser.ConfigParser) -> UserOptions:
         session_options = dict(config['import-linter'])
@@ -60,8 +26,7 @@ class IniFileUserOptionReader(ports.UserOptionReader):
         for section_name in config.sections():
             if section_name.startswith('import-linter:'):
                 section = config[section_name]
-                contract_name = 'TODO'
-                section_dict = {}
+                section_dict: Dict[str, Any] = {}
                 for key, value in section.items():
                     if '\n' not in value:
                         section_dict[key] = value

@@ -48,7 +48,7 @@ class LayersContract(Contract):
                         'lower_layer': lower_layer_package.name,
                         'chains': [],
                     }
-
+                    assert isinstance(layer_chain_data['chains'], list)  # For type checker.
                     for higher_layer_module in higher_layer_modules:
                         for lower_layer_module in lower_layer_modules:
                             chain = graph.find_shortest_chain(
@@ -58,8 +58,11 @@ class LayersContract(Contract):
                             if chain:
                                 is_kept = False
                                 chain_data = []
-                                for importer, imported in [(chain[i], chain[i + 1]) for i in range(len(chain) - 1)]:
-                                    import_details = graph.get_import_details(importer=importer, imported=imported)
+                                for importer, imported in [
+                                    (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
+                                ]:
+                                    import_details = graph.get_import_details(importer=importer,
+                                                                              imported=imported)
                                     line_numbers = tuple(j['line_number'] for j in import_details)
                                     chain_data.append(
                                         {

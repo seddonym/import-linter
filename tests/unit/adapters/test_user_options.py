@@ -23,7 +23,7 @@ from tests.adapters.filesystem import FakeFileSystem
             [something]
             foo = 1
             bar = hello
-            
+
             [import-linter]
             foo = hello
             bar = 999
@@ -37,38 +37,38 @@ from tests.adapters.filesystem import FakeFileSystem
             ),
         ),
         (
-                """
-                [import-linter]
-                foo = hello
-                
-                [import-linter:contract:contract-one]
-                name=Contract One
-                key=value
-                multiple_values=
-                    one
-                    two
-                    three
-                
-                [import-linter:contract:contract-two];
-                name=Contract Two
-                baz=3
-                """,
-                UserOptions(
-                    session_options={
-                        'foo': 'hello',
+            """
+            [import-linter]
+            foo = hello
+
+            [import-linter:contract:contract-one]
+            name=Contract One
+            key=value
+            multiple_values=
+                one
+                two
+                three
+
+            [import-linter:contract:contract-two];
+            name=Contract Two
+            baz=3
+            """,
+            UserOptions(
+                session_options={
+                    'foo': 'hello',
+                },
+                contracts_options=[
+                    {
+                        'name': 'Contract One',
+                        'key': 'value',
+                        'multiple_values': ['one', 'two', 'three'],
                     },
-                    contracts_options=[
-                        {
-                            'name': 'Contract One',
-                            'key': 'value',
-                            'multiple_values': ['one', 'two', 'three'],
-                        },
-                        {
-                            'name': 'Contract Two',
-                            'baz': '3',
-                        }
-                    ],
-                ),
+                    {
+                        'name': 'Contract Two',
+                        'baz': '3',
+                    }
+                ],
+            ),
         ),
     )
 )

@@ -23,3 +23,9 @@ class FileSystem(ports.FileSystem):
 
     def exists(self, file_name: str) -> bool:
         return os.path.isfile(file_name)
+
+    def abspath(self, file_name: str) -> str:
+        return os.path.abspath(file_name)
+
+    def getcwd(self) -> str:
+        return os.getcwd()

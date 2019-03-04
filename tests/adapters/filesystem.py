@@ -90,7 +90,7 @@ class FakeFileSystem(ports.FileSystem):
         return '/'.join(components)
 
     def abspath(self, file_name: str) -> str:
-        abs_components = []
+        abs_components: List[str] = []
         for component in file_name.split('/'):
             if component == '..':
                 abs_components.pop()

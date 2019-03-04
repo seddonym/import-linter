@@ -583,7 +583,7 @@ def test_render_broken_contract():
         -   mypackage.low.blue -> mypackage.utils.red (l.8, l.16)
             mypackage.utils.red -> mypackage.utils.yellow (l.1)
             mypackage.utils.yellow -> mypackage.high.green (l.3)
-        
+
         -   mypackage.low.purple -> mypackage.high.brown (l.9)
 
 
