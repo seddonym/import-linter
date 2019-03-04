@@ -1,7 +1,7 @@
 from typing import Tuple
 import os
 
-from grimp.application.ports.filesystem import AbstractFileSystem
+from importlinter.application.ports.filesystem import AbstractFileSystem
 
 
 class FileSystem(AbstractFileSystem):
