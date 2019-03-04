@@ -4,6 +4,7 @@ import configparser
 from importlinter.application.user_options import UserOptions
 from importlinter.application.ports import user_options as ports
 from importlinter.application import file_finding
+from importlinter.application.app_config import settings
 
 
 class HardcodedUserOptionReader(ports.UserOptionReader):
@@ -48,12 +49,13 @@ class IniFileUserOptionReader(ports.UserOptionReader):
             return None
         for config_filename in config_filenames:
             config = configparser.ConfigParser()
-            config.read(config_filename)
+            file_contents = settings.FILE_SYSTEM.read(config_filename)
+            config.read_string(file_contents)
             if 'import-linter' in config.sections():
                 return self._build_from_config(config)
 
     def _build_from_config(self, config: configparser.ConfigParser) -> UserOptions:
-        session_options = config['import-linter']
+        session_options = dict(config['import-linter'])
         contract_options = []
         for section_name in config.sections():
             if section_name.startswith('import-linter:'):

@@ -12,3 +12,12 @@ class UserOptions:
     ) -> None:
         self.session_options = session_options
         self.contracts_options = contracts_options
+
+    def __eq__(self, other):
+        if not isinstance(other, UserOptions):
+            return False
+        return (
+            self.session_options == other.session_options
+        ) and (
+            self.contracts_options == other.contracts_options
+        )
