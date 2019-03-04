@@ -14,7 +14,7 @@ class AlwaysPassesContract(Contract):
 
     def render_broken_contract(self, check: 'ContractCheck') -> None:
         # No need to implement, will never fail.
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: nocover
 
 
 class AlwaysFailsContract(Contract):

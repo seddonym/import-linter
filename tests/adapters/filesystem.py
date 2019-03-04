@@ -1,4 +1,4 @@
-from typing import List, Tuple, Any, Dict, Optional, Generator
+from typing import List, Dict, Optional
 
 import yaml
 
@@ -43,64 +43,8 @@ class FakeFileSystem(ports.FileSystem):
         self.content_map = content_map if content_map else {}
         self.working_directory = working_directory
 
-    def dirname(self, filename: str) -> str:
-        """
-        Return the full path to the directory name of the supplied filename.
-
-        E.g. '/path/to/filename.py' will return '/path/to'.
-        """
-        return self.split(filename)[0]
-
-    def walk(self, directory_name):
-        """
-        Given a directory, walk the file system recursively.
-
-        For each directory in the tree rooted at directory top (including top itself),
-        it yields a 3-tuple (dirpath, dirnames, filenames).
-        """
-        try:
-            directory_contents = self.contents[directory_name]
-        except KeyError:
-            return []
-
-        yield from self._walk_contents(directory_contents, containing_directory=directory_name)
-
-    def _walk_contents(
-        self, directory_contents: Dict[str, Any], containing_directory: str
-    ) -> Generator[Tuple[str, List[str], List[str]], None, None]:
-
-        directories = []
-        files = []
-        for key, value in directory_contents.items():
-            if value is None:
-                files.append(key)
-            else:
-                directories.append(key)
-
-        yield (containing_directory, directories, files)
-
-        if directories:
-            for directory in directories:
-                yield from self._walk_contents(
-                    directory_contents=directory_contents[directory],
-                    containing_directory=self.join(containing_directory, directory),
-                )
-
     def join(self, *components: str) -> str:
         return '/'.join(components)
-
-    def abspath(self, file_name: str) -> str:
-        abs_components: List[str] = []
-        for component in file_name.split('/'):
-            if component == '..':
-                abs_components.pop()
-            else:
-                abs_components.append(component)
-        return self.join(*abs_components)
-
-    def split(self, file_name: str) -> Tuple[str, str]:
-        components = file_name.split('/')
-        return ('/'.join(components[:-1]), components[-1])
 
     def _parse_contents(self, raw_contents: Optional[str]):
         """
@@ -149,7 +93,7 @@ class FakeFileSystem(ports.FileSystem):
 
     def read(self, file_name: str) -> str:
         if not self.exists(file_name):
-            raise FileNotFoundError
+            raise FileNotFoundError  # pragma: nocover
         try:
             file_contents = self.content_map[file_name]
         except KeyError:
@@ -184,4 +128,4 @@ class FakeFileSystem(ports.FileSystem):
     def getcwd(self) -> str:
         if self.working_directory:
             return self.working_directory
-        raise RuntimeError('No working directory specified.')
+        raise RuntimeError('No working directory specified.')  # pragma: nocover
