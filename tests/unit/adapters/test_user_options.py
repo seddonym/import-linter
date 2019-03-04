@@ -41,7 +41,7 @@ from tests.adapters.filesystem import FakeFileSystem
                 [import-linter]
                 foo = hello
                 
-                [import-linter:contract:1]
+                [import-linter:contract:contract-one]
                 name=Contract One
                 key=value
                 multiple_values=
@@ -49,7 +49,7 @@ from tests.adapters.filesystem import FakeFileSystem
                     two
                     three
                 
-                [import-linter:contract:2]
+                [import-linter:contract:contract-two];
                 name=Contract Two
                 baz=3
                 """,
