@@ -4,6 +4,7 @@ import configparser
 
 from importlinter.application.user_options import UserOptions
 from importlinter.application.ports import user_options as ports
+from importlinter.application.app_config import settings
 
 
 class HardcodedUserOptionReader(ports.UserOptionReader):
@@ -43,7 +44,7 @@ class HardcodedUserOptionReader(ports.UserOptionReader):
 
 class IniFileUserOptionReader(ports.UserOptionReader):
     def read_options(self) -> Optional[UserOptions]:
-        config_filenames = self._discover_filenames()
+        config_filenames = settings.FILE_FINDER.find_any('setup.cfg')
         if not config_filenames:
             return None
         for config_filename in config_filenames:
@@ -51,11 +52,6 @@ class IniFileUserOptionReader(ports.UserOptionReader):
             config.read(config_filename)
             if 'import-linter' in config.sections():
                 return self._build_from_config(config)
-
-    def _discover_filenames(self):
-        return [
-            os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'setup.cfg'))
-        ]
 
     def _build_from_config(self, config: configparser.ConfigParser) -> UserOptions:
         session_options = config['import-linter']

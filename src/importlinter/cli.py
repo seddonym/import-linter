@@ -4,6 +4,7 @@ from .application.use_cases import check_contracts_and_print_report, AlreadyRepo
 from .application.app_config import settings
 from .adapters.building import GraphBuilder
 from .adapters.printing import ClickPrinter
+from .adapters.file_finder import FileFinder
 from .adapters.user_options import IniFileUserOptionReader, HardcodedUserOptionReader
 
 
@@ -14,6 +15,7 @@ settings.configure(
     ],
     GRAPH_BUILDER=GraphBuilder(),
     PRINTER=ClickPrinter(),
+    FILE_FINDER=FileFinder(),
 )
 
 EXIT_STATUS_SUCCESS = 0
