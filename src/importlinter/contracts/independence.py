@@ -1,9 +1,10 @@
-from typing import Dict, Set, Any
+from typing import Dict, Set, Any, List
 from itertools import permutations
 
 from importlinter.domain.contract import Contract, ContractCheck
-from importlinter.domain.imports import Module
+from importlinter.domain.imports import Module, DirectImport
 from importlinter.domain.ports.graph import ImportGraph
+from importlinter.domain import parsing, helpers
 from importlinter.application import output
 
 
@@ -18,10 +19,15 @@ class IndependenceContract(Contract):
     ) -> None:
         super().__init__(name, session_options, contract_options)
         self.modules = list(map(Module, contract_options['modules']))
+        self.ignore_imports: List[DirectImport] = (
+            parsing.strings_to_direct_imports(self.contract_options.get('ignore_imports', []))
+        )
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
         invalid_chains = []
+
+        removed_imports = helpers.pop_imports(graph, self.ignore_imports)
 
         all_modules_for_each_subpackage: Dict[Module, Set[Module]] = {}
 
@@ -62,6 +68,9 @@ class IndependenceContract(Contract):
                         subpackage_chain_data['chains'].append(chain_data)
             if subpackage_chain_data['chains']:
                 invalid_chains.append(subpackage_chain_data)
+
+        helpers.add_imports(graph, removed_imports)
+
         return ContractCheck(kept=is_kept, metadata={'invalid_chains': invalid_chains})
 
     def render_broken_contract(self, check: 'ContractCheck') -> None:
