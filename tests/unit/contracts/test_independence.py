@@ -272,6 +272,69 @@ def test_independence_contract(shortest_chains, expected_invalid_chains):
         assert contract_check.kept
 
 
+@pytest.mark.parametrize(
+    'ignore_imports, is_kept',
+    (
+        (
+            ('mypackage.a -> mypackage.irrelevant',),
+            False,
+        ),
+        (
+            ('mypackage.a -> mypackage.indirect',),
+            True,
+        ),
+        (
+            ('mypackage.indirect -> mypackage.b',),
+            True,
+        ),
+    )
+)
+def test_ignore_imports(ignore_imports, is_kept):
+    graph = FakeGraph(
+        root_package_name='mypackage',
+        import_details=[
+            {
+                'importer': 'mypackage.a',
+                'imported': 'mypackage.irrelevant',
+                'line_number': 1,
+                'line_contents': '-',
+            },
+            {
+                'importer': 'mypackage.a',
+                'imported': 'mypackage.indirect',
+                'line_number': 1,
+                'line_contents': '-',
+            },
+            {
+                'importer': 'mypackage.indirect',
+                'imported': 'mypackage.b',
+                'line_number': 1,
+                'line_contents': '-',
+            },
+        ],
+        shortest_chains={
+            ('a', 'b'): ('a', 'indirect', 'b'),
+        },
+    )
+    contract = IndependenceContract(
+        name='Independence contract',
+        session_options={
+            'root_package_name': 'mypackage',
+        },
+        contract_options={
+            'modules': (
+                'mypackage.a',
+                'mypackage.b',
+            ),
+            'ignore_imports': ignore_imports,
+        },
+    )
+
+    contract_check = contract.check(graph=graph)
+
+    assert is_kept == contract_check.kept
+
+
 def test_render_broken_contract():
     settings.configure(
         PRINTER=FakePrinter(),
