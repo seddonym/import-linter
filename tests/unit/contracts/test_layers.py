@@ -370,37 +370,37 @@ def test_layer_contract_populates_metadata():
         (
             # Ignore from each chain - should be valid.
             (
-                'utils.baz -> medium.orange',
-                'low.white.gamma -> utils.foo',
+                'mypackage.utils.baz -> mypackage.medium.orange',
+                'mypackage.low.white.gamma -> mypackage.utils.foo',
             ),
             None,
         ),
         (
             # Ignore only one chain - should return the other.
             (
-                'low.white.gamma -> utils.foo',
+                'mypackage.low.white.gamma -> mypackage.utils.foo',
             ),
             ['low.black', 'utils.baz', 'medium.orange'],
         ),
         (
             # Multiple ignore from same path - should allow it.
             (
-                'low.white.gamma -> utils.foo',
-                'utils.bar -> high.yellow.alpha',
+                'mypackage.low.white.gamma -> mypackage.utils.foo',
+                'mypackage.utils.bar -> mypackage.high.yellow.alpha',
             ),
             ['low.black', 'utils.baz', 'medium.orange'],
         ),
         (
             # Ignore from nonexistent module - should error.
             (
-                'nonexistent.foo -> utils.foo',
+                'mypackage.nonexistent.foo -> mypackage.utils.foo',
             ),
             MissingImport(),
         ),
         (
             # Ignore from nonexistent module - should error.
             (
-                'utils.foo -> nonexistent.foo',
+                'mypackage.utils.foo -> mypackage.nonexistent.foo',
             ),
             MissingImport(),
         ),
@@ -430,20 +430,20 @@ def test_ignore_imports(ignore_imports, invalid_chain):
         },
         import_details=[
             {
-                'importer': 'utils.baz',
-                'imported': 'medium.orange',
+                'importer': 'mypackage.utils.baz',
+                'imported': 'mypackage.medium.orange',
                 'line_number': 1,
                 'line_contents': '-',
             },
             {
-                'importer': 'low.white.gamma',
-                'imported': 'utils.foo',
+                'importer': 'mypackage.low.white.gamma',
+                'imported': 'mypackage.utils.foo',
                 'line_number': 1,
                 'line_contents': '-',
             },
             {
-                'importer': 'utils.bar',
-                'imported': 'high.yellow.alpha',
+                'importer': 'mypackage.utils.bar',
+                'imported': 'mypackage.high.yellow.alpha',
                 'line_number': 1,
                 'line_contents': '-',
             },

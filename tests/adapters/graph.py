@@ -81,9 +81,11 @@ class FakeGraph(ImportGraph):
         pass
 
     def remove_import(self, *, importer: str, imported: str) -> None:
+        rootless_importer = self._remove_root(importer)
+        rootless_imported = self._remove_root(imported)
         self._fake_shortest_chains = dict([
             (ends, chain) for ends, chain in self._fake_shortest_chains.items()
-            if not self._import_is_in_chain(importer, imported, chain)
+            if not self._import_is_in_chain(rootless_importer, rootless_imported, chain)
         ])
 
     def _remove_root(self, module: str) -> str:
