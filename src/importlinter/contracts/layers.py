@@ -1,9 +1,9 @@
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any
 
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.imports import DirectImport, Module
 from importlinter.domain.ports.graph import ImportGraph
-from importlinter.domain import helpers
+from importlinter.domain import helpers, parsing
 from importlinter.application import output
 
 
@@ -20,7 +20,7 @@ class LayersContract(Contract):
         self.containers: List[str] = self.contract_options['containers']
         self.layers: List[str] = self.contract_options['layers']
         self.ignore_imports: List[DirectImport] = (
-            self._tuples_to_direct_imports(self.contract_options.get('ignore_imports', []))
+            parsing.strings_to_direct_imports(self.contract_options.get('ignore_imports', []))
         )
 
     def check(self, graph: ImportGraph) -> ContractCheck:
@@ -101,11 +101,3 @@ class LayersContract(Contract):
                 output.new_line()
 
             output.new_line()
-
-    def _tuples_to_direct_imports(
-            self, direct_import_tuples: List[Tuple[str, str]]
-    ) -> List[DirectImport]:
-        return [
-            DirectImport(importer=Module(importer), imported=Module(imported))
-            for importer, imported in direct_import_tuples
-        ]
