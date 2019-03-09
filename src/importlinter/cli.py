@@ -1,3 +1,6 @@
+import sys
+import os
+
 import click
 
 from .application.use_cases import check_contracts_and_print_report, AlreadyReportedError
@@ -27,6 +30,8 @@ def main():
 
 
 def _main():
+    # Add current directory to the path, as this doesn't happen automatically.
+    sys.path.insert(0, os.getcwd())
     try:
         check_contracts_and_print_report()
     except AlreadyReportedError:
