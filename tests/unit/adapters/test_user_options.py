@@ -48,6 +48,7 @@ from tests.adapters.filesystem import FakeFileSystem
                 one
                 two
                 three
+                foo.one -> foo.two
 
             [import-linter:contract:contract-two];
             name=Contract Two
@@ -61,7 +62,7 @@ from tests.adapters.filesystem import FakeFileSystem
                     {
                         'name': 'Contract One',
                         'key': 'value',
-                        'multiple_values': ['one', 'two', 'three'],
+                        'multiple_values': ['one', 'two', 'three', 'foo.one -> foo.two'],
                     },
                     {
                         'name': 'Contract Two',
