@@ -25,11 +25,11 @@ EXIT_STATUS_ERROR = 1
 
 
 @click.command()
-def main():
-    _main()
+def lint_imports_command():
+    lint_imports()
 
 
-def _main():
+def lint_imports():
     # Add current directory to the path, as this doesn't happen automatically.
     sys.path.insert(0, os.getcwd())
     try:

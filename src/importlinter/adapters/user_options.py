@@ -31,7 +31,7 @@ class IniFileUserOptionReader(ports.UserOptionReader):
                     if '\n' not in value:
                         section_dict[key] = value
                     else:
-                        section_dict[key] = value.split()
+                        section_dict[key] = value.strip().split('\n')
                 contract_options.append(section_dict)
 
         return UserOptions(

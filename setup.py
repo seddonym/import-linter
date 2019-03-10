@@ -57,7 +57,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'import-lint = importlinter.cli:main',
+            'lint-imports = importlinter.cli:lint_imports_command',
         ],
     },
 )
