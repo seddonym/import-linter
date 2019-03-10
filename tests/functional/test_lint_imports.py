@@ -1,5 +1,19 @@
+import os
+
 from importlinter import cli
 
 
-def test_cli():
-    cli._main()
+testpackage_directory = os.path.join(
+    os.path.dirname(__file__),
+    '..',
+    'assets',
+    'testpackage',
+)
+
+
+def test_lint_imports():
+
+    os.chdir(testpackage_directory)
+    result = cli.lint_imports()
+
+    assert 0 is result
