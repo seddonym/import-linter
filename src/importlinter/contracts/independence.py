@@ -1,41 +1,35 @@
-from typing import Dict, Set, Any, List
+from typing import Dict, Set
 from itertools import permutations
 
 from importlinter.domain.contract import Contract, ContractCheck
-from importlinter.domain.imports import Module, DirectImport
+from importlinter.domain.imports import Module
 from importlinter.domain.ports.graph import ImportGraph
-from importlinter.domain import parsing, helpers
+from importlinter.domain import helpers, fields
 from importlinter.application import output
 
 
 class IndependenceContract(Contract):
     type_name = 'independence'
 
-    def __init__(
-        self,
-        name: str,
-        session_options: Dict[str, Any],
-        contract_options: Dict[str, Any],
-    ) -> None:
-        super().__init__(name, session_options, contract_options)
-        self.modules = list(map(Module, contract_options['modules']))
-        self.ignore_imports: List[DirectImport] = (
-            parsing.strings_to_direct_imports(self.contract_options.get('ignore_imports', []))
-        )
+    modules = fields.ListField(subfield=fields.ModuleField())
+    ignore_imports = fields.ListField(subfield=fields.DirectImportField(), required=False)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
         invalid_chains = []
 
-        removed_imports = helpers.pop_imports(graph, self.ignore_imports)
+        removed_imports = helpers.pop_imports(  # type: ignore
+            graph,
+            self.ignore_imports if self.ignore_imports else []
+        )
 
         all_modules_for_each_subpackage: Dict[Module, Set[Module]] = {}
 
-        for module in self.modules:
+        for module in self.modules:  # type: ignore
             descendants = set(map(Module, graph.find_descendants(module.name)))
             all_modules_for_each_subpackage[module] = {module} | descendants
 
-        for subpackage_1, subpackage_2 in permutations(self.modules, r=2):
+        for subpackage_1, subpackage_2 in permutations(self.modules, r=2):  # type: ignore
 
             subpackage_chain_data = {
                 'upstream_module': subpackage_2.name,
@@ -74,11 +68,12 @@ class IndependenceContract(Contract):
         return ContractCheck(kept=is_kept, metadata={'invalid_chains': invalid_chains})
 
     def render_broken_contract(self, check: 'ContractCheck') -> None:
+        count = 0
         for chains_data in check.metadata['invalid_chains']:
             downstream, upstream = chains_data['downstream_module'], chains_data['upstream_module']
             output.print(f"{downstream} is not allowed to import {upstream}:")
             output.new_line()
-
+            count += len(chains_data['chains'])
             for chain in chains_data['chains']:
                 first_line = True
                 for direct_import in chain:

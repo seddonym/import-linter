@@ -1,38 +1,28 @@
-from typing import Dict, List, Any
-
 from importlinter.domain.contract import Contract, ContractCheck
-from importlinter.domain.imports import DirectImport, Module
+from importlinter.domain.imports import Module
+from importlinter.domain import fields
 from importlinter.domain.ports.graph import ImportGraph
-from importlinter.domain import helpers, parsing
+from importlinter.domain import helpers
 from importlinter.application import output
 
 
 class LayersContract(Contract):
     type_name = 'layers'
 
-    def __init__(
-        self,
-        name: str,
-        session_options: Dict[str, Any],
-        contract_options: Dict[str, Any],
-    ) -> None:
-        super().__init__(name, session_options, contract_options)
-        self.containers: List[str] = self.contract_options['containers']
-        self.layers: List[str] = self.contract_options['layers']
-        self.ignore_imports: List[DirectImport] = (
-            parsing.strings_to_direct_imports(self.contract_options.get('ignore_imports', []))
-        )
+    containers = fields.ListField(subfield=fields.StringField())
+    layers = fields.ListField(subfield=fields.StringField())
+    ignore_imports = fields.ListField(subfield=fields.DirectImportField(), required=False)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
         invalid_chains = []
 
-        direct_imports_to_ignore = self.ignore_imports
-        removed_imports = helpers.pop_imports(graph, direct_imports_to_ignore)
+        direct_imports_to_ignore = self.ignore_imports if self.ignore_imports else []
+        removed_imports = helpers.pop_imports(graph, direct_imports_to_ignore)  # type: ignore
 
-        for index, higher_layer in enumerate(self.layers):
-            for lower_layer in self.layers[index + 1:]:
-                for container in self.containers:
+        for index, higher_layer in enumerate(self.layers):  # type: ignore
+            for lower_layer in self.layers[index + 1:]:  # type: ignore
+                for container in self.containers:  # type: ignore
                     higher_layer_package = Module('.'.join([container, higher_layer]))
                     lower_layer_package = Module('.'.join([container, lower_layer]))
 

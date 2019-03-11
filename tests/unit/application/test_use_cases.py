@@ -48,6 +48,38 @@ class TestCheckContractsAndPrintReport:
             """
         )
 
+    def test_invalid_contract(self):
+        self._configure(
+            contracts_options=[
+                {
+                    'class': 'tests.helpers.contracts.FieldsContract',
+                    'name': 'Contract foo',
+                    'single_field': ['one', 'two'],
+                    'multiple_field': 'one',
+                    'import_field': 'foobar',
+                },
+                {
+                    'class': 'tests.helpers.contracts.AlwaysPassesContract',
+                    'name': 'Contract bar',
+                },
+            ]
+        )
+
+        result = check_contracts_and_print_report()
+
+        assert result == FAILURE
+
+        settings.PRINTER.pop_and_assert(
+            """
+            Contract foo is not configured correctly:
+
+            - single_field: Expected a single value, got multiple values.
+            - multiple_field: Expected multiple values, got a single value.
+            - import_field: Must be in the form "package.importer -> package.imported".
+            - required_field: This is a required field.
+            """
+        )
+
     def test_one_failure(self):
         self._configure(
             contracts_options=[

@@ -369,39 +369,39 @@ def test_layer_contract_populates_metadata():
     (
         (
             # Ignore from each chain - should be valid.
-            (
+            [
                 'mypackage.utils.baz -> mypackage.medium.orange',
                 'mypackage.low.white.gamma -> mypackage.utils.foo',
-            ),
+            ],
             None,
         ),
         (
             # Ignore only one chain - should return the other.
-            (
+            [
                 'mypackage.low.white.gamma -> mypackage.utils.foo',
-            ),
+            ],
             ['low.black', 'utils.baz', 'medium.orange'],
         ),
         (
             # Multiple ignore from same path - should allow it.
-            (
+            [
                 'mypackage.low.white.gamma -> mypackage.utils.foo',
                 'mypackage.utils.bar -> mypackage.high.yellow.alpha',
-            ),
+            ],
             ['low.black', 'utils.baz', 'medium.orange'],
         ),
         (
             # Ignore from nonexistent module - should error.
-            (
+            [
                 'mypackage.nonexistent.foo -> mypackage.utils.foo',
-            ),
+            ],
             MissingImport(),
         ),
         (
             # Ignore from nonexistent module - should error.
-            (
+            [
                 'mypackage.utils.foo -> mypackage.nonexistent.foo',
-            ),
+            ],
             MissingImport(),
         ),
     ),
