@@ -27,11 +27,13 @@ class StringField(Field):
 
 
 class ListField(Field):
+    return_type = List[Any]
+
     def __init__(self, subfield: Field, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.subfield = subfield
 
-    def parse(self, raw_data: Union[str, List]) ->List[Any]:
+    def parse(self, raw_data: Union[str, List]) -> List[Any]:
         if isinstance(raw_data, tuple):
             raw_data = list(raw_data)
         if not isinstance(raw_data, list):
@@ -43,14 +45,18 @@ class ListField(Field):
 
 
 class ModuleField(StringField):
-    def parse(self, raw_data: Union[str, List]) -> Module:
+    return_type = Module  # type: ignore
+
+    def parse(self, raw_data: Union[str, List]) -> Module:  # type: ignore
         return Module(super().parse(raw_data))
 
 
 class DirectImportField(StringField):
+    return_type = DirectImport  # type: ignore
+
     DIRECT_IMPORT_STRING_REGEX = re.compile(r'^([\w\.]+) -> ([\w\.]+)$')
 
-    def parse(self, raw_data: Union[str, List]) -> DirectImport:
+    def parse(self, raw_data: Union[str, List]) -> DirectImport:  # type: ignore
         string = super().parse(raw_data)
         match = self.DIRECT_IMPORT_STRING_REGEX.match(string)
         if not match:

@@ -18,16 +18,18 @@ class IndependenceContract(Contract):
         is_kept = True
         invalid_chains = []
 
-        removed_imports = helpers.pop_imports(graph,
-                                              self.ignore_imports if self.ignore_imports else [])
+        removed_imports = helpers.pop_imports(  # type: ignore
+            graph,
+            self.ignore_imports if self.ignore_imports else []
+        )
 
         all_modules_for_each_subpackage: Dict[Module, Set[Module]] = {}
 
-        for module in self.modules:
+        for module in self.modules:  # type: ignore
             descendants = set(map(Module, graph.find_descendants(module.name)))
             all_modules_for_each_subpackage[module] = {module} | descendants
 
-        for subpackage_1, subpackage_2 in permutations(self.modules, r=2):
+        for subpackage_1, subpackage_2 in permutations(self.modules, r=2):  # type: ignore
 
             subpackage_chain_data = {
                 'upstream_module': subpackage_2.name,

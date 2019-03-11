@@ -16,7 +16,7 @@ class Report:
     def __init__(self, graph: ImportGraph) -> None:
         self.graph = graph
         self.could_not_run = False
-        self.invalid_contract_options = {}
+        self.invalid_contract_options: Dict[str, InvalidContractOptions] = {}
         self.contains_failures = False
         self.contracts: List[Contract] = []
         self._check_map: Dict[Contract, ContractCheck] = {}

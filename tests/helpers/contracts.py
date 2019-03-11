@@ -35,7 +35,7 @@ class ForbiddenImportContract(Contract):
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         forbidden_import_details = graph.get_import_details(
-            importer=self.importer.name, imported=self.imported.name)
+            importer=self.importer.name, imported=self.imported.name)  # type: ignore
         import_exists = bool(forbidden_import_details)
 
         return ContractCheck(

@@ -1,14 +1,16 @@
+from typing import Dict, Any, Optional, Type
+
 import pytest
 
 from importlinter.domain.imports import Module, DirectImport
 from importlinter.domain.fields import (
-    ValidationError, StringField, ModuleField, DirectImportField, ListField,
+    ValidationError, StringField, ModuleField, DirectImportField, ListField, Field,
 )
 
 
 class BaseFieldTest:
-    field_class = None
-    field_kwargs = {}
+    field_class: Optional[Type[Field]] = None
+    field_kwargs: Dict[str, Any] = {}
 
     def test_field(self, raw_data, expected_value):
         field = self.field_class(**self.field_kwargs)
@@ -62,7 +64,7 @@ class TestModuleField(BaseFieldTest):
     (
         (
             'mypackage.foo -> mypackage.bar',
-            DirectImport(importer='mypackage.foo', imported='mypackage.bar'),
+            DirectImport(importer=Module('mypackage.foo'), imported=Module('mypackage.bar')),
         ),
         (
             ['one', 'two', 'three'],
