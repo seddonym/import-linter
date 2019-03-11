@@ -7,6 +7,7 @@ from importlinter.application.user_options import UserOptions
 from tests.adapters.filesystem import FakeFileSystem
 
 
+@pytest.mark.parametrize('filename', ('setup.cfg', '.importlinter'))
 @pytest.mark.parametrize(
     'contents, expected_options', (
         (
@@ -73,11 +74,11 @@ from tests.adapters.filesystem import FakeFileSystem
         ),
     )
 )
-def test_ini_file_reader(contents, expected_options):
+def test_ini_file_reader(filename, contents, expected_options):
     settings.configure(
         FILE_SYSTEM=FakeFileSystem(
             content_map={
-                '/path/to/folder/setup.cfg': contents,
+                f'/path/to/folder/{filename}': contents,
             },
             working_directory='/path/to/folder',
         )

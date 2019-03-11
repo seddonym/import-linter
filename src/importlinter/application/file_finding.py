@@ -1,23 +1,27 @@
-from typing import List
+from typing import List, Iterable
 
 from importlinter.application.app_config import settings
 
 
-def find_any(filename: str) -> List[str]:
+def find_any(*filenames: Iterable[str]) -> List[str]:
     """
     Return a list of names of any potential files that contain config.
 
     Args:
-        filename: name of the file, e.g. 'setup.cfg'.
+        *filenames: list of filenames, e.g. ('setup.cfg', '.importlinter').
 
     Returns:
         List of absolute filenames that could be found.
     """
+    found_files: List[str] = []
+
     filesystem = settings.FILE_SYSTEM
     current_working_directory = filesystem.getcwd()
-    candidate_filename = filesystem.join(current_working_directory, filename)
 
-    if filesystem.exists(candidate_filename):
-        return [candidate_filename]
-    else:
-        return []
+    for filename in filenames:
+        candidate_filename = filesystem.join(current_working_directory, filename)
+
+        if filesystem.exists(candidate_filename):
+            found_files.append(candidate_filename)
+
+    return found_files

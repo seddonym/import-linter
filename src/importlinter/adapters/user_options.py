@@ -8,8 +8,10 @@ from importlinter.application.app_config import settings
 
 
 class IniFileUserOptionReader(ports.UserOptionReader):
+    potential_config_filenames = ('setup.cfg', '.importlinter')
+
     def read_options(self) -> Optional[UserOptions]:
-        config_filenames = file_finding.find_any('setup.cfg')
+        config_filenames = file_finding.find_any(*self.potential_config_filenames)
         if not config_filenames:
             return None
         for config_filename in config_filenames:

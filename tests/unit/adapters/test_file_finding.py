@@ -7,18 +7,20 @@ from tests.adapters.filesystem import FakeFileSystem
 
 
 @pytest.mark.parametrize(
-    'filename, expected_result',
+    'filenames, expected_result',
     (
-        ('foo.txt', ['/path/to/folder/foo.txt']),
-        ('bar.txt', []),
+        (['foo.txt'], ['/path/to/folder/foo.txt']),
+        (['foo.txt', '.another'], ['/path/to/folder/foo.txt', '/path/to/folder/.another']),
+        (['bar.txt'], []),
     )
 )
-def test_finds_file_in_current_directory(filename, expected_result):
+def test_finds_file_in_current_directory(filenames, expected_result):
     settings.configure(
         FILE_SYSTEM=FakeFileSystem(
             """
                 /path/to/folder/
                     foo.txt
+                    .another
                     another/
                         foo.txt
                         bar.txt
@@ -27,6 +29,6 @@ def test_finds_file_in_current_directory(filename, expected_result):
         )
     )
 
-    result = file_finding.find_any(filename)
+    result = file_finding.find_any(*filenames)
 
     assert expected_result == result
