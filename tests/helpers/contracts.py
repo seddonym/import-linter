@@ -2,6 +2,7 @@ from typing import Dict, Any
 
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.ports.graph import ImportGraph
+from importlinter.domain import fields
 from importlinter.domain.imports import Module
 from importlinter.application import output
 
@@ -64,3 +65,17 @@ class ForbiddenImportContract(Contract):
             line_contents = details['line_contents']
             output.indent_cursor()
             output.print(f'{self.importer}:{line_number}: {line_contents}')
+
+
+class FieldsContract(Contract):
+    single_field = fields.StringField()
+    multiple_field = fields.ListField(subfield=fields.StringField())
+    import_field = fields.DirectImportField()
+    required_field = fields.StringField()  # Fields are required by default.
+
+    def check(self, graph: ImportGraph) -> ContractCheck:
+        raise NotImplementedError
+
+
+    def render_broken_contract(self, check: 'ContractCheck') -> None:
+        raise NotImplementedError

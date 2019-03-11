@@ -1,7 +1,7 @@
 from typing import Type
 import importlib
 
-from ..domain.contract import Contract
+from ..domain.contract import Contract, InvalidContractOptions
 from .user_options import UserOptions
 from .ports.reporting import Report
 from ..domain.ports.graph import ImportGraph
@@ -39,19 +39,6 @@ def check_contracts_and_print_report():
     else:
         return SUCCESS
 
-    # try:
-    #     user_options = _read_user_options()
-    #     graph = _build_graph(
-    #         root_package_name=user_options.root_package_name,
-    #     )
-    #     report = _build_report(
-    #         graph=graph,
-    #         contracts=user_options.contracts,
-    #     )
-    # except Exception as e:
-    #     _print_exception(e)
-    #     raise AlreadyReportedError
-
 
 def _read_user_options() -> UserOptions:
     for reader in settings.USER_OPTION_READERS:
@@ -73,10 +60,15 @@ def _build_report(graph: ImportGraph, user_options: UserOptions) -> Report:
     report = Report(graph=graph)
     for contract_options in user_options.contracts_options:
         contract_class = _get_contract_class(contract_options['class'])
-        contract = contract_class(
-            name=contract_options['name'],
-            session_options=user_options.session_options,
-            contract_options=contract_options)
+        try:
+            contract = contract_class(
+                name=contract_options['name'],
+                session_options=user_options.session_options,
+                contract_options=contract_options)
+        except InvalidContractOptions as e:
+            report.add_invalid_contract_options(contract_options['name'], e)
+            return report
+
         check = contract.check(graph)
         report.add_contract_check(contract, check)
     return report

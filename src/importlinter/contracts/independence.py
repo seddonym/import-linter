@@ -95,4 +95,3 @@ class IndependenceContract(Contract):
                 output.new_line()
 
             output.new_line()
-        output.print(f"Total {count}.")

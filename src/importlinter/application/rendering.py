@@ -3,6 +3,10 @@ from . import output
 
 
 def render_report(report: Report) -> None:
+    if report.could_not_run:
+        _render_could_not_run(report)
+        return
+
     output.print_heading("Import Linter", output.HEADING_LEVEL_ONE)
     output.print_heading("Contracts", output.HEADING_LEVEL_TWO)
     file_count = report.module_count
@@ -24,6 +28,14 @@ def render_report(report: Report) -> None:
         _render_broken_contracts_details(report)
 
 
+def _render_could_not_run(report: Report) -> None:
+    for contract_name, exception in report.invalid_contract_options.items():
+        output.print(f'{contract_name} is not configured correctly:')
+        output.new_line()
+        for field_name, message in exception.errors.items():
+            output.print(f'- {field_name}: {message}')
+
+
 def _render_broken_contracts_details(report: Report) -> None:
     output.print_heading('Broken contracts', output.HEADING_LEVEL_TWO, style=output.ERROR)
 
@@ -33,17 +45,3 @@ def _render_broken_contracts_details(report: Report) -> None:
         output.print_heading(contract.name, output.HEADING_LEVEL_THREE, style=output.ERROR)
 
         contract.render_broken_contract(check)
-
-
-# def print_contract_one_liner(printer, contract: Contract) -> None:
-#     is_kept = contract.is_kept
-#     printer.print('{} '.format(contract), newline=False)
-#     # if contract.whitelisted_paths:
-#     #     printer.print('({} whitelisted paths) '.format(len(contract.whitelisted_paths)),
-#     #                 newline=False)
-#     status_map = {
-#         True: ('KEPT', SUCCESS),
-#         False: ('BROKEN', ERROR),
-#     }
-#     color = COLORS[status_map[is_kept][1]]
-#     printer.print(status_map[is_kept][0], color=color, bold=True)

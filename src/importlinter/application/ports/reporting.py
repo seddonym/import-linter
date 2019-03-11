@@ -1,7 +1,7 @@
 from typing import List, Dict, Iterator, Tuple
 
 from importlinter.domain.ports.graph import ImportGraph
-from importlinter.domain.contract import ContractCheck, Contract
+from importlinter.domain.contract import ContractCheck, Contract, InvalidContractOptions
 
 
 class Reporter:
@@ -15,6 +15,8 @@ class ExceptionReporter:
 class Report:
     def __init__(self, graph: ImportGraph) -> None:
         self.graph = graph
+        self.could_not_run = False
+        self.invalid_contract_options = {}
         self.contains_failures = False
         self.contracts: List[Contract] = []
         self._check_map: Dict[Contract, ContractCheck] = {}
@@ -35,3 +37,12 @@ class Report:
     def get_contracts_and_checks(self) -> Iterator[Tuple[Contract, ContractCheck]]:
         for contract in self.contracts:
             yield contract, self._check_map[contract]
+
+    def add_invalid_contract_options(
+        self,
+        contract_name: str,
+        exception: InvalidContractOptions,
+    ) -> None:
+        self.invalid_contract_options[contract_name] = exception
+        self.could_not_run = True
+        self.contains_failures = True
