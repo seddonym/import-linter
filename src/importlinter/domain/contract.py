@@ -25,11 +25,28 @@ class Contract(abc.ABC):
         Raises:
             InvalidContractOptions if the contract options could not be matched to the fields.
         """
+        errors = {}
         for field_name in self.__class__._get_field_names():
-            raw_data = self.contract_options[field_name]
             field = self.__class__._get_field(field_name)
-            clean_data = field.parse(raw_data)
+
+            try:
+                raw_data = self.contract_options[field_name]
+            except KeyError:
+                if field.required:
+                    errors[field_name] = 'This is a required field.'
+                else:
+                    setattr(self, field_name, None)
+                continue
+
+            try:
+                clean_data = field.parse(raw_data)
+            except fields.ValidationError as e:
+                errors[field_name] = str(e)
+                continue
             setattr(self, field_name, clean_data)
+
+        if errors:
+            raise InvalidContractOptions(errors)
 
     @classmethod
     def _get_field_names(cls) -> List[str]:
@@ -59,7 +76,8 @@ class InvalidContractOptions(Exception):
     N. B. This is not the same thing as if a contract is violated; this is raised if the contract
     is not suitable for checking in the first place.
     """
-    pass
+    def __init__(self, errors: Dict[str, str]) -> None:
+        self.errors = errors
 
 
 class ContractCheck:
