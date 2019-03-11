@@ -276,15 +276,15 @@ def test_independence_contract(shortest_chains, expected_invalid_chains):
     'ignore_imports, is_kept',
     (
         (
-            ('mypackage.a -> mypackage.irrelevant',),
+            ['mypackage.a -> mypackage.irrelevant',],
             False,
         ),
         (
-            ('mypackage.a -> mypackage.indirect',),
+            ['mypackage.a -> mypackage.indirect',],
             True,
         ),
         (
-            ('mypackage.indirect -> mypackage.b',),
+            ['mypackage.indirect -> mypackage.b',],
             True,
         ),
     )

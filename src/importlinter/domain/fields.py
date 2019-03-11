@@ -32,6 +32,8 @@ class ListField(Field):
         self.subfield = subfield
 
     def parse(self, raw_data: Union[str, List]) ->List[Any]:
+        if isinstance(raw_data, tuple):
+            raw_data = list(raw_data)
         if not isinstance(raw_data, list):
             raise ValidationError('Expected multiple values, got a single value.')
         clean_list = []
