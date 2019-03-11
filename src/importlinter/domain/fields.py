@@ -27,7 +27,8 @@ class StringField(Field):
 
 
 class ListField(Field):
-    def __init__(self, subfield: Field) -> None:
+    def __init__(self, subfield: Field, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.subfield = subfield
 
     def parse(self, raw_data: Union[str, List]) ->List[Any]:

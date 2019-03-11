@@ -33,17 +33,8 @@ class ForbiddenImportContract(Contract):
     Contract that defines a single forbidden import between
     two modules.
     """
-
-    def __init__(
-            self,
-            name: str,
-            session_options: Dict[str, Any],
-            contract_options: Dict[str, Any],
-    ) -> None:
-        super().__init__(name, session_options, contract_options)
-        # TODO - should this be where we validate the contract?
-        self.importer = Module(self.contract_options['importer'])
-        self.imported = Module(self.contract_options['imported'])
+    importer = fields.ModuleField()
+    imported = fields.ModuleField()
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         forbidden_import_details = graph.get_import_details(
@@ -75,7 +66,6 @@ class FieldsContract(Contract):
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         raise NotImplementedError
-
 
     def render_broken_contract(self, check: 'ContractCheck') -> None:
         raise NotImplementedError
