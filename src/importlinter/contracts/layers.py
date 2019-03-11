@@ -1,10 +1,8 @@
-from typing import Dict, List, Any
-
 from importlinter.domain.contract import Contract, ContractCheck
-from importlinter.domain.imports import DirectImport, Module
+from importlinter.domain.imports import Module
 from importlinter.domain import fields
 from importlinter.domain.ports.graph import ImportGraph
-from importlinter.domain import helpers, parsing
+from importlinter.domain import helpers
 from importlinter.application import output
 
 
