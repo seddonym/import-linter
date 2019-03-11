@@ -66,4 +66,4 @@ def test_contract_validation(contract_options, expected_errors):
     except InvalidContractOptions as e:
         assert e.errors == expected_errors
     else:
-        assert False, 'Did not raise InvalidContractOptions.'
+        assert False, 'Did not raise InvalidContractOptions.'  # pragma: nocover

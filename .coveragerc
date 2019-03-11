@@ -16,3 +16,4 @@ precision = 2
 omit = *migrations*
 exclude_lines =
     pragma: nocover
+    raise NotImplementedError
