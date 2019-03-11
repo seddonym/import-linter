@@ -74,11 +74,12 @@ class IndependenceContract(Contract):
         return ContractCheck(kept=is_kept, metadata={'invalid_chains': invalid_chains})
 
     def render_broken_contract(self, check: 'ContractCheck') -> None:
+        count = 0
         for chains_data in check.metadata['invalid_chains']:
             downstream, upstream = chains_data['downstream_module'], chains_data['upstream_module']
             output.print(f"{downstream} is not allowed to import {upstream}:")
             output.new_line()
-
+            count += len(chains_data['chains'])
             for chain in chains_data['chains']:
                 first_line = True
                 for direct_import in chain:
@@ -94,3 +95,4 @@ class IndependenceContract(Contract):
                 output.new_line()
 
             output.new_line()
+        output.print(f"Total {count}.")
