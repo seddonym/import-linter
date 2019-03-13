@@ -83,9 +83,9 @@ class TestContractRegistry:
     @pytest.mark.parametrize(
         'name, expected_result',
         (
-                ('foo', MyContract),
-                ('bar', AnotherContract),
-                ('baz', NoSuchContractType())
+            ('foo', MyContract),
+            ('bar', AnotherContract),
+            ('baz', NoSuchContractType())
         )
     )
     def test_registry(self, name, expected_result):

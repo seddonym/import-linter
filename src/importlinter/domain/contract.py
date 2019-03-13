@@ -1,5 +1,4 @@
 from typing import Any, Optional, Dict, List, Type
-import importlib
 import abc
 
 from .ports.graph import ImportGraph
@@ -109,7 +108,7 @@ class ContractRegistry:
         try:
             return self._classes_by_name[name]
         except KeyError:
-            raise NoSuchContractType
+            raise NoSuchContractType(name)
 
 
 registry = ContractRegistry()

@@ -1,4 +1,7 @@
-from ..domain.contract import InvalidContractOptions, registry
+from typing import Type, List, Tuple
+import importlib
+
+from ..domain.contract import InvalidContractOptions, registry, Contract
 from .user_options import UserOptions
 from .ports.reporting import Report
 from ..domain.ports.graph import ImportGraph
@@ -21,6 +24,9 @@ def check_contracts_and_print_report():
     and then raise an AlreadyReportedError.
     """
     user_options = _read_user_options()
+
+    _register_contract_types(user_options)
+
     graph = _build_graph(
         root_package_name=user_options.session_options['root_package_name'],
     )
@@ -77,13 +83,49 @@ def _print_report(report: Report) -> None:
     )
 
 
-# def _get_contract_class(contract_type_string: str) -> Type[Contract]:
-#     registry.
-#     components = contract_class_string.split('.')
-#     contract_class_name = components[-1]
-#     module_name = '.'.join(components[:-1])
-#     module = importlib.import_module(module_name)
-#     contract_class = getattr(module, contract_class_name)
-#     if not issubclass(contract_class, Contract):
-#         raise TypeError(f'{contract_class} is not a subclass of Contract.')
-#     return contract_class
+def _register_contract_types(user_options: UserOptions) -> None:
+    contract_types = (
+        _get_built_in_contract_types() + _get_plugin_contract_types(user_options)
+    )
+    for name, contract_class in contract_types:
+        registry.register(contract_class, name)
+
+
+def _get_built_in_contract_types() -> List[Tuple[str, Type[Contract]]]:
+    return list(map(
+        _parse_contract_type_string,
+        [
+            'layers: importlinter.contracts.layers.LayersContract',
+            'independence: importlinter.contracts.independence.IndependenceContract',
+        ]
+    ))
+
+
+def _get_plugin_contract_types(user_options: UserOptions) -> List[Tuple[str, Type[Contract]]]:
+    contract_types = []
+    if 'contract_types' in user_options.session_options:
+        for contract_type_string in user_options.session_options['contract_types']:
+            contract_types.append(
+                _parse_contract_type_string(contract_type_string)
+            )
+    return contract_types
+
+
+def _parse_contract_type_string(string) -> Tuple[str, Type[Contract]]:
+    components = string.split(': ')
+    assert len(components) == 2
+    name, contract_class_string = components
+    contract_class = _string_to_class(contract_class_string)
+    if not issubclass(contract_class, Contract):
+        raise TypeError(f'{contract_class} is not a subclass of Contract.')
+    return name, contract_class
+
+
+def _string_to_class(string: str) -> Type:
+    components = string.split('.')
+    class_name = components[-1]
+    module_name = '.'.join(components[:-1])
+    module = importlib.import_module(module_name)
+    cls = getattr(module, class_name)
+    assert isinstance(cls, type)
+    return cls
