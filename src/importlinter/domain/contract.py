@@ -94,16 +94,22 @@ class ContractCheck:
         self.metadata = metadata if metadata else {}
 
 
+class NoSuchContractType(Exception):
+    pass
+
+
 class ContractRegistry:
-    def get_contract_class(self, type_name: str) -> Type[Contract]:
-        components = type_name.split('.')
-        contract_class_name = components[-1]
-        module_name = '.'.join(components[:-1])
-        module = importlib.import_module(module_name)
-        contract_class = getattr(module, contract_class_name)
-        if not issubclass(contract_class, Contract):
-            raise TypeError(f'{contract_class} is not a subclass of Contract.')
-        return contract_class
+    def __init__(self):
+        self._classes_by_name = {}
+
+    def register(self, contract_class: Type[Contract], name: str) -> None:
+        self._classes_by_name[name] = contract_class
+
+    def get_contract_class(self, name: str) -> Type[Contract]:
+        try:
+            return self._classes_by_name[name]
+        except KeyError:
+            raise NoSuchContractType
 
 
 registry = ContractRegistry()

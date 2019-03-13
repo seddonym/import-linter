@@ -1,6 +1,8 @@
 import pytest
 
-from importlinter.domain.contract import Contract, InvalidContractOptions
+from importlinter.domain.contract import (
+    Contract, InvalidContractOptions, ContractRegistry, NoSuchContractType,
+)
 from importlinter.domain import fields
 
 
@@ -15,6 +17,14 @@ class MyContract(Contract):
     foo = MyField()
     bar = MyField(required=False)
 
+    def check(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def render_broken_contract(self, *args, **kwargs):
+        raise NotImplementedError
+
+
+class AnotherContract(Contract):
     def check(self, *args, **kwargs):
         raise NotImplementedError
 
@@ -67,3 +77,25 @@ def test_contract_validation(contract_options, expected_errors):
         assert e.errors == expected_errors
     else:
         assert False, 'Did not raise InvalidContractOptions.'  # pragma: nocover
+
+
+class TestContractRegistry:
+    @pytest.mark.parametrize(
+        'name, expected_result',
+        (
+                ('foo', MyContract),
+                ('bar', AnotherContract),
+                ('baz', NoSuchContractType())
+        )
+    )
+    def test_registry(self, name, expected_result):
+        registry = ContractRegistry()
+
+        registry.register(MyContract, name='foo')
+        registry.register(AnotherContract, name='bar')
+
+        if isinstance(expected_result, Exception):
+            with pytest.raises(NoSuchContractType):
+                registry.get_contract_class(name)
+        else:
+            assert expected_result == registry.get_contract_class(name)
