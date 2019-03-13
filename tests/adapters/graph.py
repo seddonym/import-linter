@@ -17,6 +17,7 @@ class FakeGraph(ImportGraph):
         descendants: Dict[str, Set[str]] = None,
         shortest_chains: Dict[TwoChain, Chain] = None,
         import_details: List[Dict[str, Union[str, int]]] = None,
+        all_modules: Optional[List[str]] = None,
         module_count: int = 99,
         import_count: int = 999,
     ) -> None:
@@ -24,7 +25,11 @@ class FakeGraph(ImportGraph):
         self._fake_descendants = descendants if descendants else {}
         self._fake_shortest_chains = shortest_chains if shortest_chains else {}
         self._import_details = import_details if import_details else []
-        self._module_count = module_count
+        if all_modules:
+            self._modules = all_modules
+            self._module_count = len(all_modules)
+        else:
+            self._module_count = module_count
         self._import_count = import_count
         self._removed_imports: List[Tuple[TwoChain]] = []
 
@@ -33,7 +38,11 @@ class FakeGraph(ImportGraph):
         """
         The names of all the modules in the graph.
         """
-        return {str(m) for m in range(self._module_count)}
+        try:
+            return self._modules
+        except AttributeError:
+            # Fake the size of the set.
+            return {str(m) for m in range(self._module_count)}
 
     def count_imports(self) -> int:
         """

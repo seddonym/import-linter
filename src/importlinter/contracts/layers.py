@@ -20,9 +20,10 @@ class LayersContract(Contract):
         direct_imports_to_ignore = self.ignore_imports if self.ignore_imports else []
         removed_imports = helpers.pop_imports(graph, direct_imports_to_ignore)  # type: ignore
 
-        for index, higher_layer in enumerate(self.layers):  # type: ignore
-            for lower_layer in self.layers[index + 1:]:  # type: ignore
-                for container in self.containers:  # type: ignore
+        for container in self.containers:  # type: ignore
+            self._check_all_layers_exist_for_container(container, graph)
+            for index, higher_layer in enumerate(self.layers):  # type: ignore
+                for lower_layer in self.layers[index + 1:]:  # type: ignore
                     higher_layer_package = Module('.'.join([container, higher_layer]))
                     lower_layer_package = Module('.'.join([container, lower_layer]))
 
@@ -91,3 +92,10 @@ class LayersContract(Contract):
                 output.new_line()
 
             output.new_line()
+
+    def _check_all_layers_exist_for_container(self, container: str, graph: ImportGraph) -> None:
+        for layer in self.layers:
+            layer_module_name = '.'.join([container, layer])
+            if layer_module_name not in graph.modules:
+                raise ValueError(f"Missing layer in container '{container}': "
+                                 f"module {layer_module_name} does not exist.")
