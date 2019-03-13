@@ -14,11 +14,11 @@ class TestCheckContractsAndPrintReport:
         self._configure(
             contracts_options=[
                 {
-                    'class': 'tests.helpers.contracts.AlwaysPassesContract',
+                    'type': 'always_passes',
                     'name': 'Contract foo',
                 },
                 {
-                    'class': 'tests.helpers.contracts.AlwaysPassesContract',
+                    'type': 'always_passes',
                     'name': 'Contract bar',
                 },
             ]
@@ -52,14 +52,14 @@ class TestCheckContractsAndPrintReport:
         self._configure(
             contracts_options=[
                 {
-                    'class': 'tests.helpers.contracts.FieldsContract',
+                    'type': 'fields',
                     'name': 'Contract foo',
                     'single_field': ['one', 'two'],
                     'multiple_field': 'one',
                     'import_field': 'foobar',
                 },
                 {
-                    'class': 'tests.helpers.contracts.AlwaysPassesContract',
+                    'type': 'always_passes',
                     'name': 'Contract bar',
                 },
             ]
@@ -84,11 +84,11 @@ class TestCheckContractsAndPrintReport:
         self._configure(
             contracts_options=[
                 {
-                    'class': 'tests.helpers.contracts.AlwaysFailsContract',
+                    'type': 'always_fails',
                     'name': 'Contract foo',
                 },
                 {
-                    'class': 'tests.helpers.contracts.AlwaysPassesContract',
+                    'type': 'always_passes',
                     'name': 'Contract bar',
                 },
             ]
@@ -153,17 +153,17 @@ class TestCheckContractsAndPrintReport:
         self._configure(
             contracts_options=[
                 {
-                    'class': 'tests.helpers.contracts.AlwaysPassesContract',
+                    'type': 'always_passes',
                     'name': 'Contract foo',
                 },
                 {
-                    'class': 'tests.helpers.contracts.ForbiddenImportContract',
+                    'type': 'forbidden',
                     'name': 'Forbidden contract one',
                     'importer': 'mypackage.foo',
                     'imported': 'mypackage.bar',
                 },
                 {
-                    'class': 'tests.helpers.contracts.ForbiddenImportContract',
+                    'type': 'forbidden',
                     'name': 'Forbidden contract two',
                     'importer': 'mypackage.foo',
                     'imported': 'mypackage.baz',
@@ -213,13 +213,24 @@ class TestCheckContractsAndPrintReport:
     def _configure(
         self,
         contracts_options: List[Dict[str, Any]],
+        contract_types: Optional[List[str]] = None,
         graph: Optional[FakeGraph] = None,
     ):
+        session_options = {
+            'root_package_name': 'mypackage',
+        }
+        if not contract_types:
+            contract_types = [
+                'always_passes: tests.helpers.contracts.AlwaysPassesContract',
+                'always_fails: tests.helpers.contracts.AlwaysFailsContract',
+                'fields: tests.helpers.contracts.FieldsContract',
+                'forbidden: tests.helpers.contracts.ForbiddenImportContract',
+            ]
+        session_options['contract_types'] = contract_types  # type: ignore
+
         reader = FakeUserOptionReader(
             UserOptions(
-                session_options={
-                    'root_package_name': 'mypackage',
-                },
+                session_options=session_options,
                 contracts_options=contracts_options,
             )
         )

@@ -1,4 +1,4 @@
-from typing import Any, Optional, Dict, List
+from typing import Any, Optional, Dict, List, Type
 import abc
 
 from .ports.graph import ImportGraph
@@ -91,3 +91,24 @@ class ContractCheck:
     ) -> None:
         self.kept = kept
         self.metadata = metadata if metadata else {}
+
+
+class NoSuchContractType(Exception):
+    pass
+
+
+class ContractRegistry:
+    def __init__(self):
+        self._classes_by_name = {}
+
+    def register(self, contract_class: Type[Contract], name: str) -> None:
+        self._classes_by_name[name] = contract_class
+
+    def get_contract_class(self, name: str) -> Type[Contract]:
+        try:
+            return self._classes_by_name[name]
+        except KeyError:
+            raise NoSuchContractType(name)
+
+
+registry = ContractRegistry()
