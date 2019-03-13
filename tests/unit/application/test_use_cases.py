@@ -14,11 +14,11 @@ class TestCheckContractsAndPrintReport:
         self._configure(
             contracts_options=[
                 {
-                    'class': 'tests.helpers.contracts.AlwaysPassesContract',
+                    'type': 'tests.helpers.contracts.AlwaysPassesContract',
                     'name': 'Contract foo',
                 },
                 {
-                    'class': 'tests.helpers.contracts.AlwaysPassesContract',
+                    'type': 'tests.helpers.contracts.AlwaysPassesContract',
                     'name': 'Contract bar',
                 },
             ]
@@ -52,14 +52,14 @@ class TestCheckContractsAndPrintReport:
         self._configure(
             contracts_options=[
                 {
-                    'class': 'tests.helpers.contracts.FieldsContract',
+                    'type': 'tests.helpers.contracts.FieldsContract',
                     'name': 'Contract foo',
                     'single_field': ['one', 'two'],
                     'multiple_field': 'one',
                     'import_field': 'foobar',
                 },
                 {
-                    'class': 'tests.helpers.contracts.AlwaysPassesContract',
+                    'type': 'tests.helpers.contracts.AlwaysPassesContract',
                     'name': 'Contract bar',
                 },
             ]
@@ -84,11 +84,11 @@ class TestCheckContractsAndPrintReport:
         self._configure(
             contracts_options=[
                 {
-                    'class': 'tests.helpers.contracts.AlwaysFailsContract',
+                    'type': 'tests.helpers.contracts.AlwaysFailsContract',
                     'name': 'Contract foo',
                 },
                 {
-                    'class': 'tests.helpers.contracts.AlwaysPassesContract',
+                    'type': 'tests.helpers.contracts.AlwaysPassesContract',
                     'name': 'Contract bar',
                 },
             ]
@@ -153,17 +153,17 @@ class TestCheckContractsAndPrintReport:
         self._configure(
             contracts_options=[
                 {
-                    'class': 'tests.helpers.contracts.AlwaysPassesContract',
+                    'type': 'tests.helpers.contracts.AlwaysPassesContract',
                     'name': 'Contract foo',
                 },
                 {
-                    'class': 'tests.helpers.contracts.ForbiddenImportContract',
+                    'type': 'tests.helpers.contracts.ForbiddenImportContract',
                     'name': 'Forbidden contract one',
                     'importer': 'mypackage.foo',
                     'imported': 'mypackage.bar',
                 },
                 {
-                    'class': 'tests.helpers.contracts.ForbiddenImportContract',
+                    'type': 'tests.helpers.contracts.ForbiddenImportContract',
                     'name': 'Forbidden contract two',
                     'importer': 'mypackage.foo',
                     'imported': 'mypackage.baz',

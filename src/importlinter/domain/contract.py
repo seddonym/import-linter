@@ -1,4 +1,5 @@
-from typing import Any, Optional, Dict, List
+from typing import Any, Optional, Dict, List, Type
+import importlib
 import abc
 
 from .ports.graph import ImportGraph
@@ -91,3 +92,18 @@ class ContractCheck:
     ) -> None:
         self.kept = kept
         self.metadata = metadata if metadata else {}
+
+
+class ContractRegistry:
+    def get_contract_class(self, type_name: str) -> Type[Contract]:
+        components = type_name.split('.')
+        contract_class_name = components[-1]
+        module_name = '.'.join(components[:-1])
+        module = importlib.import_module(module_name)
+        contract_class = getattr(module, contract_class_name)
+        if not issubclass(contract_class, Contract):
+            raise TypeError(f'{contract_class} is not a subclass of Contract.')
+        return contract_class
+
+
+registry = ContractRegistry()

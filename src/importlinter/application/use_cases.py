@@ -1,7 +1,4 @@
-from typing import Type
-import importlib
-
-from ..domain.contract import Contract, InvalidContractOptions
+from ..domain.contract import InvalidContractOptions, registry
 from .user_options import UserOptions
 from .ports.reporting import Report
 from ..domain.ports.graph import ImportGraph
@@ -59,7 +56,7 @@ def _print_exception(exception: Exception) -> None:
 def _build_report(graph: ImportGraph, user_options: UserOptions) -> Report:
     report = Report(graph=graph)
     for contract_options in user_options.contracts_options:
-        contract_class = _get_contract_class(contract_options['class'])
+        contract_class = registry.get_contract_class(contract_options['type'])
         try:
             contract = contract_class(
                 name=contract_options['name'],
@@ -80,12 +77,13 @@ def _print_report(report: Report) -> None:
     )
 
 
-def _get_contract_class(contract_class_string: str) -> Type[Contract]:
-    components = contract_class_string.split('.')
-    contract_class_name = components[-1]
-    module_name = '.'.join(components[:-1])
-    module = importlib.import_module(module_name)
-    contract_class = getattr(module, contract_class_name)
-    if not issubclass(contract_class, Contract):
-        raise TypeError(f'{contract_class} is not a subclass of Contract.')
-    return contract_class
+# def _get_contract_class(contract_type_string: str) -> Type[Contract]:
+#     registry.
+#     components = contract_class_string.split('.')
+#     contract_class_name = components[-1]
+#     module_name = '.'.join(components[:-1])
+#     module = importlib.import_module(module_name)
+#     contract_class = getattr(module, contract_class_name)
+#     if not issubclass(contract_class, Contract):
+#         raise TypeError(f'{contract_class} is not a subclass of Contract.')
+#     return contract_class
