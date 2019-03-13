@@ -490,6 +490,44 @@ def test_ignore_imports(ignore_imports, invalid_chain):
         assert True is contract_check.kept
 
 
+
+def test_optional_layers():
+    graph = FakeGraph(
+        root_package_name='mypackage',
+        descendants={
+            'foo': {
+                'high', 'high.blue', 'low', 'low.alpha',
+            },
+        },
+    )
+
+    contract = LayersContract(
+        name='Layer contract',
+        session_options={
+            'root_package_name': 'mypackage',
+        },
+        contract_options={
+            'containers': [
+                'mypackage.foo',
+            ],
+            'layers': [
+                'high',
+                'medium',
+                'low',
+            ],
+        },
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+           "Missing layer in container 'mypackage.foo': "
+           "module mypackage.foo.medium does not exist."
+        )
+    ):
+        contract.check(graph=graph)
+
+
 def test_render_broken_contract():
     settings.configure(
         PRINTER=FakePrinter(),
