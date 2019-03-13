@@ -44,20 +44,20 @@ class ListField(Field):
         return clean_list
 
 
-class ModuleField(StringField):
+class ModuleField(Field):
     return_type = Module  # type: ignore
 
-    def parse(self, raw_data: Union[str, List]) -> Module:  # type: ignore
-        return Module(super().parse(raw_data))
+    def parse(self, raw_data: Union[str, List]) -> Module:
+        return Module(StringField().parse(raw_data))
 
 
-class DirectImportField(StringField):
+class DirectImportField(Field):
     return_type = DirectImport  # type: ignore
 
     DIRECT_IMPORT_STRING_REGEX = re.compile(r'^([\w\.]+) -> ([\w\.]+)$')
 
-    def parse(self, raw_data: Union[str, List]) -> DirectImport:  # type: ignore
-        string = super().parse(raw_data)
+    def parse(self, raw_data: Union[str, List]) -> DirectImport:
+        string = StringField().parse(raw_data)
         match = self.DIRECT_IMPORT_STRING_REGEX.match(string)
         if not match:
             raise ValidationError('Must be in the form "package.importer -> package.imported".')
