@@ -66,6 +66,22 @@ def test_layer_contract_single_containers(shortest_chains, is_kept):
                 'black', 'white', 'white.gamma',
             },
         },
+        all_modules=[
+            'mypackage',
+            'mypackage.high',
+            'mypackage.high.green',
+            'mypackage.high.blue',
+            'mypackage.high.yellow',
+            'mypackage.high.yellow.alpha',
+            'mypackage.medium',
+            'mypackage.medium.orange',
+            'mypackage.medium.orange.beta',
+            'mypackage.medium.red',
+            'mypackage.low',
+            'mypackage.low.black',
+            'mypackage.low.white',
+            'mypackage.low.white.gamma',
+        ],
         shortest_chains=shortest_chains,
     )
 
@@ -184,6 +200,40 @@ def test_layer_contract_multiple_containers(shortest_chains, is_kept):
                 'cyan',
             },
         },
+        all_modules=[
+            'mypackage',
+            'mypackage.one',
+            'mypackage.one.high',
+            'mypackage.one.high.green',
+            'mypackage.one.high.blue',
+            'mypackage.one.high.yellow',
+            'mypackage.one.high.yellow.alpha',
+            'mypackage.one.medium',
+            'mypackage.one.medium.orange',
+            'mypackage.one.medium.orange.beta',
+            'mypackage.one.medium.red',
+            'mypackage.one.low',
+            'mypackage.one.low.black',
+            'mypackage.one.low.white',
+            'mypackage.one.low.white.gamma',
+            'mypackage.two',
+            'mypackage.two.high',
+            'mypackage.two.high.red',
+            'mypackage.two.high.red.alpha',
+            'mypackage.two.medium',
+            'mypackage.two.medium.green',
+            'mypackage.two.medium.green.beta',
+            'mypackage.two.low',
+            'mypackage.two.low.blue',
+            'mypackage.two.low.blue.gamma',
+            'mypackage.three',
+            'mypackage.three.high',
+            'mypackage.three.high.white',
+            'mypackage.three.medium',
+            'mypackage.three.medium.purple',
+            'mypackage.three.low',
+            'mypackage.three.low.cyan',
+        ],
         shortest_chains=shortest_chains,
     )
 
@@ -225,6 +275,22 @@ def test_layer_contract_populates_metadata():
                 'black', 'white', 'white.gamma',
             },
         },
+        all_modules=[
+            'mypackage',
+            'mypackage.high',
+            'mypackage.high.green',
+            'mypackage.high.blue',
+            'mypackage.high.yellow',
+            'mypackage.high.yellow.alpha',
+            'mypackage.medium',
+            'mypackage.medium.orange',
+            'mypackage.medium.orange.beta',
+            'mypackage.medium.red',
+            'mypackage.low',
+            'mypackage.low.black',
+            'mypackage.low.white',
+            'mypackage.low.white.gamma',
+        ],
         shortest_chains={
             ('low.white.gamma', 'high.yellow.alpha'): (
                 'low.white.gamma', 'utils.foo', 'utils.bar', 'high.yellow.alpha',
@@ -420,6 +486,22 @@ def test_ignore_imports(ignore_imports, invalid_chain):
                 'black', 'white', 'white.gamma',
             },
         },
+        all_modules=[
+            'mypackage',
+            'mypackage.high',
+            'mypackage.high.green',
+            'mypackage.high.blue',
+            'mypackage.high.yellow',
+            'mypackage.high.yellow.alpha',
+            'mypackage.medium',
+            'mypackage.medium.orange',
+            'mypackage.medium.orange.beta',
+            'mypackage.medium.red',
+            'mypackage.low',
+            'mypackage.low.black',
+            'mypackage.low.white',
+            'mypackage.low.white.gamma',
+        ],
         shortest_chains={
             ('low.white.gamma', 'high.yellow.alpha'): (
                 'low.white.gamma', 'utils.foo', 'utils.bar', 'high.yellow.alpha',
@@ -488,6 +570,56 @@ def test_ignore_imports(ignore_imports, invalid_chain):
         assert [f'{package}.{n}' for n in invalid_chain] == actual_chain
     else:
         assert True is contract_check.kept
+
+
+@pytest.mark.parametrize(
+    'include_parentheses, should_raise_exception',
+    (
+        (False, True,),
+        (True, False,),
+    )
+)
+def test_optional_layers(include_parentheses, should_raise_exception):
+    graph = FakeGraph(
+        root_package_name='mypackage',
+        all_modules=[
+            'mypackage',
+            'mypackage.foo',
+            'mypackage.foo.high',
+            'mypackage.foo.high.blue',
+            'mypackage.foo.low',
+            'mypackage.foo.low.alpha',
+        ]
+    )
+
+    contract = LayersContract(
+        name='Layer contract',
+        session_options={
+            'root_package_name': 'mypackage',
+        },
+        contract_options={
+            'containers': [
+                'mypackage.foo',
+            ],
+            'layers': [
+                'high',
+                '(medium)' if include_parentheses else 'medium',
+                'low',
+            ],
+        },
+    )
+
+    if should_raise_exception:
+        with pytest.raises(
+            ValueError,
+            match=(
+                "Missing layer in container 'mypackage.foo': "
+                "module mypackage.foo.medium does not exist."
+            )
+        ):
+            contract.check(graph=graph)
+    else:
+        contract.check(graph=graph)
 
 
 def test_render_broken_contract():
