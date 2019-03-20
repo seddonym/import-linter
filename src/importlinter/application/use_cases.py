@@ -6,7 +6,7 @@ from .user_options import UserOptions
 from .ports.reporting import Report
 from ..domain.ports.graph import ImportGraph
 from .app_config import settings
-from .rendering import render_report
+from . rendering import render_report, render_exception
 
 
 SUCCESS = True
@@ -25,10 +25,10 @@ def lint_imports() -> bool:
     try:
         report = create_report()
     except Exception as e:
-        _print_exception(e)
+        render_exception(e)
         return FAILURE
 
-    _print_report(report)
+    render_report(report)
 
     if report.contains_failures:
         return FAILURE
@@ -85,16 +85,6 @@ def _build_report(graph: ImportGraph, user_options: UserOptions) -> Report:
         check = contract.check(graph)
         report.add_contract_check(contract, check)
     return report
-
-
-def _print_report(report: Report) -> None:
-    render_report(
-        report=report,
-    )
-
-
-def _print_exception(exception: Exception) -> None:
-    settings.PRINTER(exception)
 
 
 def _register_contract_types(user_options: UserOptions) -> None:

@@ -2,6 +2,9 @@ from .ports.reporting import Report
 from . import output
 
 
+# Public functions
+# ----------------
+
 def render_report(report: Report) -> None:
     if report.could_not_run:
         _render_could_not_run(report)
@@ -27,6 +30,13 @@ def render_report(report: Report) -> None:
         output.new_line()
         _render_broken_contracts_details(report)
 
+
+def render_exception(exception: Exception) -> None:
+    output.print_error(str(exception))
+
+
+# Private functions
+# -----------------
 
 def _render_could_not_run(report: Report) -> None:
     for contract_name, exception in report.invalid_contract_options.items():
