@@ -11,10 +11,17 @@ class IniFileUserOptionReader(ports.UserOptionReader):
     potential_config_filenames = ('setup.cfg', '.importlinter')
     section_name = 'importlinter'
 
-    def read_options(self) -> Optional[UserOptions]:
-        config_filenames = file_finding.find_any(*self.potential_config_filenames)
-        if not config_filenames:
-            return None
+    def read_options(self, config_filename: Optional[str] = None) -> Optional[UserOptions]:
+        if config_filename:
+            config_filenames = file_finding.find_any(config_filename)
+            if not config_filenames:
+                # If we specify a filename, raise an exception.
+                raise FileNotFoundError(f'Could not find {config_filename}.')
+        else:
+            config_filenames = file_finding.find_any(*self.potential_config_filenames)
+            if not config_filenames:
+                return None
+
         for config_filename in config_filenames:
             config = configparser.ConfigParser()
             file_contents = settings.FILE_SYSTEM.read(config_filename)

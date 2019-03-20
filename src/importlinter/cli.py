@@ -1,3 +1,4 @@
+from typing import Optional
 import sys
 import os
 
@@ -25,15 +26,16 @@ EXIT_STATUS_ERROR = 1
 
 
 @click.command()
-def lint_imports_command():
-    lint_imports()
+@click.option('--config', default=None, help='The config file to use.')
+def lint_imports_command(config: Optional[str]) -> int:
+    return lint_imports(config_filename=config)
 
 
-def lint_imports():
+def lint_imports(config_filename: Optional[str] = None) -> int:
     # Add current directory to the path, as this doesn't happen automatically.
     sys.path.insert(0, os.getcwd())
 
-    passed = use_cases.lint_imports()
+    passed = use_cases.lint_imports(config_filename=config_filename)
 
     if passed:
         return EXIT_STATUS_SUCCESS
