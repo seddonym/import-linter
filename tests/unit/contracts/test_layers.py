@@ -613,8 +613,8 @@ def test_optional_layers(include_parentheses, should_raise_exception):
         with pytest.raises(
             ValueError,
             match=(
-               "Missing layer in container 'mypackage.foo': "
-               "module mypackage.foo.medium does not exist."
+                "Missing layer in container 'mypackage.foo': "
+                "module mypackage.foo.medium does not exist."
             )
         ):
             contract.check(graph=graph)

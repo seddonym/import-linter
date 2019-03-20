@@ -39,7 +39,7 @@ class FakeGraph(ImportGraph):
         The names of all the modules in the graph.
         """
         try:
-            return self._modules
+            return set(self._modules)
         except AttributeError:
             # Fake the size of the set.
             return {str(m) for m in range(self._module_count)}

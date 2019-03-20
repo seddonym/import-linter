@@ -1,3 +1,5 @@
+from typing import Union, List
+
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.imports import Module
 from importlinter.domain import fields
@@ -6,11 +8,31 @@ from importlinter.domain import helpers
 from importlinter.application import output
 
 
+class Layer:
+    def __init__(self, name: str, is_optional: bool = False) -> None:
+        self.name = name
+        self.is_optional = is_optional
+
+
+class LayerField(fields.Field):
+    return_type = Layer  # type: ignore
+
+    def parse(self, raw_data: Union[str, List]) -> Layer:
+        raw_string = fields.StringField().parse(raw_data)
+        if raw_string.startswith('(') and raw_string.endswith(')'):
+            layer_name = raw_string[1:-1]
+            is_optional = True
+        else:
+            layer_name = raw_string
+            is_optional = False
+        return Layer(name=layer_name, is_optional=is_optional)
+
+
 class LayersContract(Contract):
     type_name = 'layers'
 
     containers = fields.ListField(subfield=fields.StringField())
-    layers = fields.ListField(subfield=fields.StringField())
+    layers = fields.ListField(subfield=LayerField())
     ignore_imports = fields.ListField(subfield=fields.DirectImportField(), required=False)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
@@ -24,8 +46,8 @@ class LayersContract(Contract):
             self._check_all_layers_exist_for_container(container, graph)
             for index, higher_layer in enumerate(self.layers):  # type: ignore
                 for lower_layer in self.layers[index + 1:]:  # type: ignore
-                    higher_layer_package = Module('.'.join([container, higher_layer]))
-                    lower_layer_package = Module('.'.join([container, lower_layer]))
+                    higher_layer_package = Module('.'.join([container, higher_layer.name]))
+                    lower_layer_package = Module('.'.join([container, lower_layer.name]))
 
                     descendants = set(
                         map(Module, graph.find_descendants(higher_layer_package.name)))
@@ -94,8 +116,10 @@ class LayersContract(Contract):
             output.new_line()
 
     def _check_all_layers_exist_for_container(self, container: str, graph: ImportGraph) -> None:
-        for layer in self.layers:
-            layer_module_name = '.'.join([container, layer])
+        for layer in self.layers:  # type: ignore
+            if layer.is_optional:
+                continue
+            layer_module_name = '.'.join([container, layer.name])
             if layer_module_name not in graph.modules:
                 raise ValueError(f"Missing layer in container '{container}': "
                                  f"module {layer_module_name} does not exist.")
