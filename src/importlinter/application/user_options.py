@@ -1,6 +1,10 @@
 from typing import List, Dict, Any
 
 
+class InvalidUserOptions(Exception):
+    pass
+
+
 class UserOptions:
     """
     Configuration supplied by the end user.

@@ -1,7 +1,7 @@
 from typing import List, Optional, Dict, Any
 from importlinter.application.app_config import settings
 from importlinter.application.user_options import UserOptions
-from importlinter.application.use_cases import check_contracts_and_print_report, SUCCESS, FAILURE
+from importlinter.application.use_cases import lint_imports, SUCCESS, FAILURE
 
 from tests.adapters.user_options import FakeUserOptionReader
 from tests.adapters.graph import FakeGraph
@@ -24,7 +24,7 @@ class TestCheckContractsAndPrintReport:
             ]
         )
 
-        result = check_contracts_and_print_report()
+        result = lint_imports()
 
         assert result == SUCCESS
 
@@ -65,7 +65,7 @@ class TestCheckContractsAndPrintReport:
             ]
         )
 
-        result = check_contracts_and_print_report()
+        result = lint_imports()
 
         assert result == FAILURE
 
@@ -94,7 +94,7 @@ class TestCheckContractsAndPrintReport:
             ]
         )
 
-        result = check_contracts_and_print_report()
+        result = lint_imports()
 
         assert result == FAILURE
 
@@ -172,7 +172,7 @@ class TestCheckContractsAndPrintReport:
             graph=graph,
         )
 
-        result = check_contracts_and_print_report()
+        result = lint_imports()
 
         assert result == FAILURE
 
