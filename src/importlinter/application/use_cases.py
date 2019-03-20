@@ -1,4 +1,4 @@
-from typing import Type, List, Tuple
+from typing import Type, List, Tuple, Optional
 import importlib
 
 from ..domain.contract import InvalidContractOptions, registry, Contract
@@ -13,17 +13,22 @@ SUCCESS = True
 FAILURE = False
 
 
-def lint_imports() -> bool:
+def lint_imports(config_filename: Optional[str] = None) -> bool:
     """
     Analyse whether a Python package follows a set of contracts, and report on the results.
 
     This function attempts to handle and report all exceptions, too.
 
+    Args:
+        config_filename: the filename to use to parse user options.
+
     Returns:
         True if the linting passed, False if it didn't.
     """
     try:
-        report = create_report()
+        user_options = _read_user_options(config_filename=config_filename)
+        _register_contract_types(user_options)
+        report = create_report(user_options)
     except Exception as e:
         render_exception(e)
         return FAILURE
@@ -36,18 +41,14 @@ def lint_imports() -> bool:
         return SUCCESS
 
 
-def create_report() -> Report:
+def create_report(user_options: UserOptions) -> Report:
     """
     Analyse whether a Python package follows a set of contracts, returning a report on the results.
 
     Raises:
         InvalidUserOptions: if the report could not be run due to invalid user configuration,
-                            such as a malformed contract.
+                            such as a module that could not be imported.
     """
-    user_options = _read_user_options()
-
-    _register_contract_types(user_options)
-
     graph = _build_graph(
         root_package_name=user_options.session_options['root_package_name'],
     )
@@ -57,9 +58,9 @@ def create_report() -> Report:
     )
 
 
-def _read_user_options() -> UserOptions:
+def _read_user_options(config_filename: Optional[str] = None) -> UserOptions:
     for reader in settings.USER_OPTION_READERS:
-        options = reader.read_options()
+        options = reader.read_options(config_filename=config_filename)
         if options:
             return options
     raise RuntimeError('Could not read any configuration.')

@@ -87,3 +87,49 @@ def test_ini_file_reader(filename, contents, expected_options):
     options = IniFileUserOptionReader().read_options()
 
     assert expected_options == options
+
+
+@pytest.mark.parametrize(
+    'passed_filename, expected_foo_value', (
+        (None, 'green'),
+        ('custom.ini', 'blue'),
+        ('deeper/custom.ini', 'purple'),
+        ('nonexistent.ini', FileNotFoundError()),
+    ),
+)
+def test_respects_passed_filename(passed_filename, expected_foo_value):
+    settings.configure(
+        FILE_SYSTEM=FakeFileSystem(
+            content_map={
+                '/path/to/folder/.importlinter': """
+                        [importlinter]
+                        foo = green
+                    """,
+                '/path/to/folder/custom.ini': """
+                        [importlinter]
+                        foo = blue
+                    """,
+                '/path/to/folder/deeper/custom.ini': """
+                        [importlinter]
+                        foo = purple
+                    """,
+            },
+            working_directory='/path/to/folder',
+        )
+    )
+    expected_options = UserOptions(
+        session_options={
+            'foo': expected_foo_value,
+        },
+        contracts_options=[],
+    )
+
+    reader = IniFileUserOptionReader()
+
+    if isinstance(expected_foo_value, Exception):
+        with pytest.raises(expected_foo_value.__class__,
+                           match=f'Could not find {passed_filename}.'):
+            reader.read_options(config_filename=passed_filename)
+    else:
+        options = reader.read_options(config_filename=passed_filename)
+        assert expected_options == options
