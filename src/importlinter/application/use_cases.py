@@ -6,22 +6,43 @@ from .user_options import UserOptions
 from .ports.reporting import Report
 from ..domain.ports.graph import ImportGraph
 from .app_config import settings
-from .rendering import render_report
+from . rendering import render_report, render_exception
 
 
-class AlreadyReportedError(Exception):
-    pass
+SUCCESS = True
+FAILURE = False
 
 
-SUCCESS, FAILURE = 'SUCCESS', 'FAILURE'
-
-
-def check_contracts_and_print_report():
+def lint_imports() -> bool:
     """
     Analyse whether a Python package follows a set of contracts, and report on the results.
 
-    If an an error is encountered, or if the contracts are not followed, it will report the details
-    and then raise an AlreadyReportedError.
+    This function attempts to handle and report all exceptions, too.
+
+    Returns:
+        True if the linting passed, False if it didn't.
+    """
+    try:
+        report = create_report()
+    except Exception as e:
+        render_exception(e)
+        return FAILURE
+
+    render_report(report)
+
+    if report.contains_failures:
+        return FAILURE
+    else:
+        return SUCCESS
+
+
+def create_report() -> Report:
+    """
+    Analyse whether a Python package follows a set of contracts, returning a report on the results.
+
+    Raises:
+        InvalidUserOptions: if the report could not be run due to invalid user configuration,
+                            such as a malformed contract.
     """
     user_options = _read_user_options()
 
@@ -30,17 +51,10 @@ def check_contracts_and_print_report():
     graph = _build_graph(
         root_package_name=user_options.session_options['root_package_name'],
     )
-    report = _build_report(
+    return _build_report(
         graph=graph,
         user_options=user_options,
     )
-
-    _print_report(report)
-
-    if report.contains_failures:
-        return FAILURE
-    else:
-        return SUCCESS
 
 
 def _read_user_options() -> UserOptions:
@@ -53,10 +67,6 @@ def _read_user_options() -> UserOptions:
 
 def _build_graph(root_package_name: str) -> ImportGraph:
     return settings.GRAPH_BUILDER.build(root_package_name=root_package_name)
-
-
-def _print_exception(exception: Exception) -> None:
-    settings.PRINTER(exception)
 
 
 def _build_report(graph: ImportGraph, user_options: UserOptions) -> Report:
@@ -75,12 +85,6 @@ def _build_report(graph: ImportGraph, user_options: UserOptions) -> Report:
         check = contract.check(graph)
         report.add_contract_check(contract, check)
     return report
-
-
-def _print_report(report: Report) -> None:
-    render_report(
-        report=report,
-    )
 
 
 def _register_contract_types(user_options: UserOptions) -> None:
@@ -122,6 +126,15 @@ def _parse_contract_type_string(string) -> Tuple[str, Type[Contract]]:
 
 
 def _string_to_class(string: str) -> Type:
+    """
+    Parse a string into a Python class.
+
+    Args:
+        string: a fully qualified string of a class, e.g. 'mypackage.foo.MyClass'.
+
+    Returns:
+        The class.
+    """
     components = string.split('.')
     class_name = components[-1]
     module_name = '.'.join(components[:-1])

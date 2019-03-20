@@ -9,6 +9,7 @@ from importlinter.application.app_config import settings
 
 class IniFileUserOptionReader(ports.UserOptionReader):
     potential_config_filenames = ('setup.cfg', '.importlinter')
+    section_name = 'importlinter'
 
     def read_options(self) -> Optional[UserOptions]:
         config_filenames = file_finding.find_any(*self.potential_config_filenames)
@@ -18,15 +19,15 @@ class IniFileUserOptionReader(ports.UserOptionReader):
             config = configparser.ConfigParser()
             file_contents = settings.FILE_SYSTEM.read(config_filename)
             config.read_string(file_contents)
-            if 'import-linter' in config.sections():
+            if self.section_name in config.sections():
                 return self._build_from_config(config)
         return None
 
     def _build_from_config(self, config: configparser.ConfigParser) -> UserOptions:
-        session_options = dict(config['import-linter'])
+        session_options = dict(config[self.section_name])
         contract_options = []
         for section_name in config.sections():
-            if section_name.startswith('import-linter:'):
+            if section_name.startswith(f'{self.section_name}:'):
                 section = config[section_name]
                 section_dict: Dict[str, Any] = {}
                 for key, value in section.items():

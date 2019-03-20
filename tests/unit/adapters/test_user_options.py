@@ -7,7 +7,7 @@ from importlinter.application.user_options import UserOptions
 from tests.adapters.filesystem import FakeFileSystem
 
 
-@pytest.mark.parametrize('filename', ('setup.cfg', '.importlinter'))
+@pytest.mark.parametrize('filename', ('setup.cfg', '.importlinter',))
 @pytest.mark.parametrize(
     'contents, expected_options', (
         (
@@ -25,7 +25,7 @@ from tests.adapters.filesystem import FakeFileSystem
             foo = 1
             bar = hello
 
-            [import-linter]
+            [importlinter]
             foo = hello
             bar = 999
             """,
@@ -39,10 +39,10 @@ from tests.adapters.filesystem import FakeFileSystem
         ),
         (
             """
-            [import-linter]
+            [importlinter]
             foo = hello
 
-            [import-linter:contract:contract-one]
+            [importlinter:contract:contract-one]
             name=Contract One
             key=value
             multiple_values=
@@ -51,7 +51,7 @@ from tests.adapters.filesystem import FakeFileSystem
                 three
                 foo.one -> foo.two
 
-            [import-linter:contract:contract-two];
+            [importlinter:contract:contract-two];
             name=Contract Two
             baz=3
             """,

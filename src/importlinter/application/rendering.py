@@ -2,6 +2,9 @@ from .ports.reporting import Report
 from . import output
 
 
+# Public functions
+# ----------------
+
 def render_report(report: Report) -> None:
     if report.could_not_run:
         _render_could_not_run(report)
@@ -28,12 +31,19 @@ def render_report(report: Report) -> None:
         _render_broken_contracts_details(report)
 
 
+def render_exception(exception: Exception) -> None:
+    output.print_error(str(exception))
+
+
+# Private functions
+# -----------------
+
 def _render_could_not_run(report: Report) -> None:
     for contract_name, exception in report.invalid_contract_options.items():
-        output.print(f'{contract_name} is not configured correctly:')
-        output.new_line()
+        output.print_error(f'Contract "{contract_name}" is not configured correctly:')
         for field_name, message in exception.errors.items():
-            output.print(f'- {field_name}: {message}')
+            output.indent_cursor()
+            output.print_error(f'{field_name}: {message}', bold=False)
 
 
 def _render_broken_contracts_details(report: Report) -> None:

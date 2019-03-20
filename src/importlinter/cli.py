@@ -3,7 +3,7 @@ import os
 
 import click
 
-from .application.use_cases import check_contracts_and_print_report, AlreadyReportedError
+from .application import use_cases
 from .application.app_config import settings
 from .adapters.building import GraphBuilder
 from .adapters.printing import ClickPrinter
@@ -32,9 +32,10 @@ def lint_imports_command():
 def lint_imports():
     # Add current directory to the path, as this doesn't happen automatically.
     sys.path.insert(0, os.getcwd())
-    try:
-        check_contracts_and_print_report()
-    except AlreadyReportedError:
-        return EXIT_STATUS_ERROR
-    else:
+
+    passed = use_cases.lint_imports()
+
+    if passed:
         return EXIT_STATUS_SUCCESS
+    else:
+        return EXIT_STATUS_ERROR
