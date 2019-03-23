@@ -16,4 +16,4 @@ def test_lint_imports():
     os.chdir(testpackage_directory)
     result = cli.lint_imports()
 
-    assert 0 is result
+    assert 0 == result
