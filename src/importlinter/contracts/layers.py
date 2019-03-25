@@ -15,8 +15,6 @@ class Layer:
 
 
 class LayerField(fields.Field):
-    return_type = Layer  # type: ignore
-
     def parse(self, raw_data: Union[str, List]) -> Layer:
         raw_string = fields.StringField().parse(raw_data)
         if raw_string.startswith('(') and raw_string.endswith(')'):
