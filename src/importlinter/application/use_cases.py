@@ -50,7 +50,7 @@ def create_report(user_options: UserOptions) -> Report:
                             such as a module that could not be imported.
     """
     graph = _build_graph(
-        root_package_name=user_options.session_options['root_package_name'],
+        root_package_name=user_options.session_options['root_package'],
     )
     return _build_report(
         graph=graph,

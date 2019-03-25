@@ -62,7 +62,7 @@ Create an ``.importlinter`` file in the root of your project. For example:
 .. code-block:: ini
 
     [importlinter]
-    root_package_name = myproject
+    root_package = myproject
 
     [importlinter:contract:1]
     name=Foo and bar are decoupled
