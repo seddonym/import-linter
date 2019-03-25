@@ -12,7 +12,7 @@ this are:
 Step one: implementing a Contract class
 ---------------------------------------
 
-You define a custom contract type by subclassing ``importlinter.domain.contracts.Contract`` and implementing the
+You define a custom contract type by subclassing ``importlinter.Contract`` and implementing the
 following methods:
 
 - ``check(graph)``:
@@ -23,7 +23,7 @@ following methods:
           For full details of how to use this, see the `Grimp documentation`_.
 
     Returns:
-        - An ``importlinter.domain.contracts.ContractCheck`` instance. This is a simple dataclass with two attributes,
+        - An ``importlinter.ContractCheck`` instance. This is a simple dataclass with two attributes,
           ``kept`` (a boolean indicating if the contract was kept) and ``metadata`` (a dictionary of data about the
           check). The metadata can contain anything you want, as it is only used in the ``render_broken_contract``
           method that you also define in this class.
@@ -31,7 +31,7 @@ following methods:
 - ``render_broken_contract(check)``:
 
     Renders the results of a broken contract check. For output, this should use the
-    ``importlinter.application.output`` module.
+    ``importlinter.output`` module.
 
     Arguments:
         - ``check``: the ``ContractCheck`` instance returned by the ``check`` method above.
@@ -45,9 +45,7 @@ see ``importlinter.contracts.layers``.
 
 .. code-block:: python
 
-    from importlinter.domain.contract import Contract, ContractCheck
-    from importlinter.domain import fields
-    from importlinter.application import output
+    from importlinter import Contract, ContractCheck, fields, output
 
 
     class ForbiddenImportContract(Contract):
