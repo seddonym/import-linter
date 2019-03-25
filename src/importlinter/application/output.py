@@ -25,13 +25,32 @@ INDENT_SIZE = 4
 
 
 class Output:
+    """
+    A class for writing output to the console.
+
+    This should always be used instead of the built in print function, as it uses the Printer
+    port. This makes it easier for tests to swap in a different Printer so we can more easily
+    assert what would be written to the console.
+    """
+
     def print(
         self,
         text: str = '',
         bold: bool = False,
         color: Optional[str] = None,
         newline: bool = True
-    ):
+    ) -> None:
+        """
+        Print a line.
+
+        Args:
+            text (str):               The text to print.
+            bold (bool, optional):    Whether to style the text in bold. (Default False.)
+            color (str, optional):    The color of text to use. One of the values of the
+                                      COLORS dictionary.
+            newline (bool, optional): Whether to include a new line after the text.
+                                      (Default True.)
+        """
         self.printer.print(text, bold, color, newline)
 
     def indent_cursor(self):
@@ -41,6 +60,9 @@ class Output:
         self.printer.print(' ' * INDENT_SIZE, newline=False)
 
     def new_line(self):
+        """
+        Print a blank line.
+        """
         self.printer.print()
 
     def print_heading(
@@ -53,8 +75,9 @@ class Output:
         Prints the supplied text to the console, formatted as a heading.
 
         Args:
-            text (str): the text to format as a heading.
-            level (int): the level of heading to display (one of the keys of HEADING_MAP).
+            text (str):            The text to format as a heading.
+            level (int):           The level of heading to display (one of the keys
+                                   of HEADING_MAP).
             style (str, optional): ERROR or SUCCESS style to apply (default None).
         Usage:
 
