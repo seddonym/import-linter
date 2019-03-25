@@ -23,7 +23,10 @@ def render_report(report: Report) -> None:
 
     for contract, contract_check in report.get_contracts_and_checks():
         result_text = 'KEPT' if contract_check.kept else 'BROKEN'
-        output.print(f"{contract.name} {result_text}")
+        color_key = output.SUCCESS if contract_check.kept else output.ERROR
+        color = output.COLORS[color_key]
+        output.print(f"{contract.name} ", newline=False)
+        output.print(result_text, color=color)
     output.new_line()
 
     output.print(f"Contracts: {report.kept_count} kept, {report.broken_count} broken.")

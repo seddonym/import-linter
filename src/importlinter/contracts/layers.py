@@ -123,11 +123,11 @@ class LayersContract(Contract):
                     line_numbers = ', '.join(f'l.{n}' for n in direct_import['line_numbers'])
                     import_string = f"{importer} -> {imported} ({line_numbers})"
                     if first_line:
-                        output.print(f"-   {import_string}")
+                        output.print_error(f"-   {import_string}", bold=False)
                         first_line = False
                     else:
                         output.indent_cursor()
-                        output.print(import_string)
+                        output.print_error(import_string, bold=False)
                 output.new_line()
 
             output.new_line()
