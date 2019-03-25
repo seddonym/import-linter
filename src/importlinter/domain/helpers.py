@@ -34,6 +34,15 @@ def pop_imports(
 
 
 def add_imports(graph: ImportGraph, import_details: List[Dict[str, Union[str, int]]]) -> None:
+    """
+    Adds the supplied import details to the graph.
+
+    Intended to be the reverse of pop_imports, so the following code should leave the
+    graph unchanged:
+
+        import_details = pop_imports(graph, imports)
+        add_imports(graph, import_details)
+    """
     for details in import_details:
         assert isinstance(details['importer'], str)
         assert isinstance(details['imported'], str)
