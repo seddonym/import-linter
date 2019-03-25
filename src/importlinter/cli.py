@@ -28,10 +28,25 @@ EXIT_STATUS_ERROR = 1
 @click.command()
 @click.option('--config', default=None, help='The config file to use.')
 def lint_imports_command(config: Optional[str]) -> int:
+    """
+    The entry point for the CLI command.
+    """
     return lint_imports(config_filename=config)
 
 
 def lint_imports(config_filename: Optional[str] = None) -> int:
+    """
+    Check that a project adheres to a set of contracts.
+
+    This is the main function that runs the linter.
+
+    Args:
+        config_filename: The configuration file to use. If not supplied, Import Linter will look
+        for setup.cfg or .importlinter in the current directory.
+
+    Returns:
+        EXIT_STATUS_SUCCESS or EXIT_STATUS_ERROR.
+    """
     # Add current directory to the path, as this doesn't happen automatically.
     sys.path.insert(0, os.getcwd())
 
