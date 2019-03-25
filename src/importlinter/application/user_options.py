@@ -8,6 +8,10 @@ class InvalidUserOptions(Exception):
 class UserOptions:
     """
     Configuration supplied by the end user.
+
+    Arguments:
+        - session_options:   General options relating to the running of the linter.
+        - contracts_options: List of the options that will be used to build the contracts.
     """
     def __init__(
         self,

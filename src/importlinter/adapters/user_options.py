@@ -8,6 +8,9 @@ from importlinter.application.app_config import settings
 
 
 class IniFileUserOptionReader(ports.UserOptionReader):
+    """
+    Reader that looks for and parses the contents of INI files.
+    """
     potential_config_filenames = ('setup.cfg', '.importlinter')
     section_name = 'importlinter'
 
