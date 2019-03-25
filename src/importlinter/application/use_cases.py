@@ -9,6 +9,9 @@ from .app_config import settings
 from . rendering import render_report, render_exception
 
 
+# Public functions
+# ----------------
+
 SUCCESS = True
 FAILURE = False
 
@@ -50,12 +53,16 @@ def create_report(user_options: UserOptions) -> Report:
                             such as a module that could not be imported.
     """
     graph = _build_graph(
-        root_package_name=user_options.session_options['root_package_name'],
+        root_package_name=user_options.session_options['root_package'],
     )
     return _build_report(
         graph=graph,
         user_options=user_options,
     )
+
+
+# Private functions
+# -----------------
 
 
 def _read_user_options(config_filename: Optional[str] = None) -> UserOptions:

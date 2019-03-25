@@ -15,8 +15,6 @@ class Layer:
 
 
 class LayerField(fields.Field):
-    return_type = Layer  # type: ignore
-
     def parse(self, raw_data: Union[str, List]) -> Layer:
         raw_string = fields.StringField().parse(raw_data)
         if raw_string.startswith('(') and raw_string.endswith(')'):
@@ -29,6 +27,25 @@ class LayerField(fields.Field):
 
 
 class LayersContract(Contract):
+    """
+    Defines a 'layered architecture' where there is a unidirectional dependency flow.
+
+    Specifically, higher layers may depend on lower layers, but not the other way around.
+    To allow for a repeated pattern of layers across a project, you also define a set of
+    'containers', which are treated as the parent package of the layers.
+
+    Layers are required by default: if a layer is listed in the contract, the contract will be
+    broken if the layer doesn’t exist. You can make a layer optional by wrapping it in parentheses.
+
+    Configuration options:
+
+        - layers:         An ordered list of layers. Each layer is the name of a module relative
+                          to its parent package. The order is from higher to lower level layers.
+        - containers:     A list of the parent Modules of the layers.
+        - ignore_imports: A list of DirectImports. These imports will be ignored: if the import
+                          would cause a contract to be broken, adding it to the list will cause
+                          the contract be kept instead. (Optional.)
+    """
     type_name = 'layers'
 
     containers = fields.ListField(subfield=fields.StringField())

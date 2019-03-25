@@ -5,21 +5,35 @@ import abc
 from importlinter.domain.imports import Module, DirectImport
 
 
-class Field(abc.ABC):
-    def __init__(self, required: bool = True) -> None:
-        self.required = required
-
-    @abc.abstractmethod
-    def parse(self, raw_data: Union[str, List]) -> Any:
-        raise NotImplementedError
-
-
 class ValidationError(Exception):
     def __init__(self, message: str) -> None:
         self.message = message
 
 
+class Field(abc.ABC):
+    """
+    Base class for containers for some data on a Contract.
+
+    Designed to be subclassed, Fields should override the ``parse`` method.
+    """
+    def __init__(self, required: bool = True) -> None:
+        self.required = required
+
+    @abc.abstractmethod
+    def parse(self, raw_data: Union[str, List[str]]) -> Any:
+        """
+        Given some raw data supplied by a user, return some clean data.
+
+        Raises:
+            ValidationError if the data is invalid.
+        """
+        raise NotImplementedError
+
+
 class StringField(Field):
+    """
+    A field for single values of strings.
+    """
     def parse(self, raw_data: Union[str, List]) -> str:
         if isinstance(raw_data, list):
             raise ValidationError('Expected a single value, got multiple values.')
@@ -27,8 +41,17 @@ class StringField(Field):
 
 
 class ListField(Field):
-    return_type = List[Any]
+    """
+    A field for multiple values of any type.
 
+    Arguments:
+        - subfield: An instance of a single-value Field. Each item in the list will be the return
+                    value of this subfield.
+    Usage:
+
+        field = ListField(subfield=AnotherField())
+
+    """
     def __init__(self, subfield: Field, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.subfield = subfield
@@ -45,15 +68,19 @@ class ListField(Field):
 
 
 class ModuleField(Field):
-    return_type = Module  # type: ignore
-
+    """
+    A field for Modules.
+    """
     def parse(self, raw_data: Union[str, List]) -> Module:
         return Module(StringField().parse(raw_data))
 
 
 class DirectImportField(Field):
-    return_type = DirectImport  # type: ignore
+    """
+    A field for DirectImports.
 
+    Expects raw data in the form: "mypackage.foo.importer -> mypackage.bar.imported".
+    """
     DIRECT_IMPORT_STRING_REGEX = re.compile(r'^([\w\.]+) -> ([\w\.]+)$')
 
     def parse(self, raw_data: Union[str, List]) -> DirectImport:

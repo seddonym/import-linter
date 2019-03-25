@@ -21,11 +21,11 @@ As a minimum, your file should contain the following top-level configuration:
 .. code-block:: ini
 
     [importlinter]
-    root_package_name = mypackage
+    root_package = mypackage
 
 **Options:**
 
-- ``root_package_name``:
+- ``root_package``:
   The name of the top-level Python package to validate. This package must be importable: usually this
   means it is has been installed using pip, or it's in the current directory. (Required.)
 

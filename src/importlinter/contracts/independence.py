@@ -9,6 +9,19 @@ from importlinter.application import output
 
 
 class IndependenceContract(Contract):
+    """
+    Independence contracts check that a set of modules do not depend on each other.
+
+    They do this by checking that there are no imports in any direction between the modules,
+    even indirectly.
+
+    Configuration options:
+
+        - modules:        A list of Modules that should be independent from each other.
+        - ignore_imports: A list of DirectImports. These imports will be ignored: if the import
+                          would cause a contract to be broken, adding it to the list will cause
+                          the contract be kept instead. (Optional.)
+    """
     type_name = 'independence'
 
     modules = fields.ListField(subfield=fields.ModuleField())

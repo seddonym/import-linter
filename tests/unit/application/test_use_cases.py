@@ -216,7 +216,7 @@ class TestCheckContractsAndPrintReport:
         graph: Optional[FakeGraph] = None,
     ):
         session_options = {
-            'root_package_name': 'mypackage',
+            'root_package': 'mypackage',
         }
         if not contract_types:
             contract_types = [

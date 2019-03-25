@@ -4,6 +4,9 @@ from importlinter.application.ports import filesystem as ports
 
 
 class FileSystem(ports.FileSystem):
+    """
+    File system adapter that delegates to built in file system functions.
+    """
     def join(self, *components: str) -> str:
         return os.path.join(*components)
 
