@@ -8,6 +8,8 @@ Contents
    readme
    installation
    usage
+   contract_types
+   custom_contract_types
    contributing
    authors
    changelog
