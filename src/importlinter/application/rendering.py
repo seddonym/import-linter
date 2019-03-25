@@ -6,6 +6,9 @@ from . import output
 # ----------------
 
 def render_report(report: Report) -> None:
+    """
+    Output the supplied report to the console.
+    """
     if report.could_not_run:
         _render_could_not_run(report)
         return
@@ -32,6 +35,9 @@ def render_report(report: Report) -> None:
 
 
 def render_exception(exception: Exception) -> None:
+    """
+    Render any exception to the console.
+    """
     output.print_error(str(exception))
 
 

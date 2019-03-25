@@ -9,6 +9,9 @@ from .app_config import settings
 from . rendering import render_report, render_exception
 
 
+# Public functions
+# ----------------
+
 SUCCESS = True
 FAILURE = False
 
@@ -56,6 +59,10 @@ def create_report(user_options: UserOptions) -> Report:
         graph=graph,
         user_options=user_options,
     )
+
+
+# Private functions
+# -----------------
 
 
 def _read_user_options(config_filename: Optional[str] = None) -> UserOptions:
