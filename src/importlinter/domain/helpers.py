@@ -26,7 +26,7 @@ def pop_imports(
             importer=import_to_remove.importer.name,
             imported=import_to_remove.imported.name)
         if not import_details:
-            raise MissingImport('Ignored import {} not present in the graph.')
+            raise MissingImport(f'Ignored import {import_to_remove} not present in the graph.')
         removed_imports.extend(import_details)
         graph.remove_import(importer=import_to_remove.importer.name,
                             imported=import_to_remove.imported.name)

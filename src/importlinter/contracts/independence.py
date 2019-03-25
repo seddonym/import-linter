@@ -84,7 +84,7 @@ class IndependenceContract(Contract):
         count = 0
         for chains_data in check.metadata['invalid_chains']:
             downstream, upstream = chains_data['downstream_module'], chains_data['upstream_module']
-            output.print(f"{downstream} is not allowed to import {upstream}:")
+            output.print_error(f"{downstream} is not allowed to import {upstream}:")
             output.new_line()
             count += len(chains_data['chains'])
             for chain in chains_data['chains']:
@@ -94,11 +94,11 @@ class IndependenceContract(Contract):
                     line_numbers = ', '.join(f'l.{n}' for n in direct_import['line_numbers'])
                     import_string = f"{importer} -> {imported} ({line_numbers})"
                     if first_line:
-                        output.print(f"-   {import_string}")
+                        output.print_error(f"-   {import_string}", bold=False)
                         first_line = False
                     else:
                         output.indent_cursor()
-                        output.print(import_string)
+                        output.print_error(import_string, bold=False)
                 output.new_line()
 
             output.new_line()
