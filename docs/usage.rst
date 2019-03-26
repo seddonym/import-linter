@@ -72,12 +72,12 @@ Running this will check that your project adheres to the contracts you've define
 
 **Default usage:**
 
-.. code-block:: none
+.. code-block:: text
 
     lint-imports
 
 **Using a different filename or location:**
 
-.. code-block:: none
+.. code-block:: text
 
     lint-imports --config path/to/alternative-config.ini

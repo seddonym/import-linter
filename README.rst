@@ -23,7 +23,7 @@ compatibility. However, due to it being a development tool (rather than somethin
 on a production system), it may be suitable for inclusion in your testing pipeline. It also means we actively
 encourage people to try it out and `submit bug reports`_.
 
-.. _submit bug reports: https://import-linter.readthedocs.io/en/stable/contributing.html#report-bugs
+.. _submit bug reports: https://import-linter.readthedocs.io/en/latest/contributing.html#bug-reports
 
 Overview
 --------
@@ -77,7 +77,7 @@ Now, from your project root, run::
 
 If your code violates the contract, you will see an error message something like this:
 
-.. code-block:: none
+.. code-block:: text
 
     =============
     Import Linter
