@@ -19,6 +19,8 @@ testpackage_directory = os.path.join(
         (None, cli.EXIT_STATUS_SUCCESS),
         ('.brokencontract.ini', cli.EXIT_STATUS_ERROR),
         ('.malformedcontract.ini', cli.EXIT_STATUS_ERROR),
+        ('.externalkeptcontract.ini', cli.EXIT_STATUS_SUCCESS),
+        ('.externalbrokencontract.ini', cli.EXIT_STATUS_ERROR),
     )
 )
 def test_lint_imports(config_filename, expected_result):

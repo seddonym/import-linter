@@ -3,7 +3,11 @@ from importlinter.application.ports.building import GraphBuilder
 
 
 class FakeGraphBuilder(GraphBuilder):
-    def build(self, root_package_name: str) -> ImportGraph:
+    def build(
+        self,
+        root_package_name: str,
+        include_external_packages: bool = False,
+    ) -> ImportGraph:
         return self._graph
 
     def set_graph(self, graph: ImportGraph) -> None:

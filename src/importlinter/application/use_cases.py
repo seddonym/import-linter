@@ -52,8 +52,10 @@ def create_report(user_options: UserOptions) -> Report:
         InvalidUserOptions: if the report could not be run due to invalid user configuration,
                             such as a module that could not be imported.
     """
+    include_external_packages = _get_include_external_packages(user_options)
     graph = _build_graph(
         root_package_name=user_options.session_options['root_package'],
+        include_external_packages=include_external_packages,
     )
     return _build_report(
         graph=graph,
@@ -73,8 +75,11 @@ def _read_user_options(config_filename: Optional[str] = None) -> UserOptions:
     raise RuntimeError('Could not read any configuration.')
 
 
-def _build_graph(root_package_name: str) -> ImportGraph:
-    return settings.GRAPH_BUILDER.build(root_package_name=root_package_name)
+def _build_graph(root_package_name: str, include_external_packages: Optional[bool]) -> ImportGraph:
+    return settings.GRAPH_BUILDER.build(
+        root_package_name=root_package_name,
+        include_external_packages=include_external_packages,
+    )
 
 
 def _build_report(graph: ImportGraph, user_options: UserOptions) -> Report:
@@ -150,3 +155,15 @@ def _string_to_class(string: str) -> Type:
     cls = getattr(module, class_name)
     assert isinstance(cls, type)
     return cls
+
+
+def _get_include_external_packages(user_options: UserOptions) -> Optional[bool]:
+    """
+    Get a boolean (or None) for the include_external_packages option in user_options.
+    """
+    try:
+        include_external_packages_str = user_options.session_options['include_external_packages']
+    except KeyError:
+        return None
+    # Cast the string to a boolean.
+    return include_external_packages_str in ('True', 'true')
