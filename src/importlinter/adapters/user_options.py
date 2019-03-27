@@ -34,20 +34,24 @@ class IniFileUserOptionReader(ports.UserOptionReader):
         return None
 
     def _build_from_config(self, config: configparser.ConfigParser) -> UserOptions:
-        session_options = dict(config[self.section_name])
+        session_options = self._clean_section_config(dict(config[self.section_name]))
         contract_options = []
         for section_name in config.sections():
             if section_name.startswith(f'{self.section_name}:'):
-                section = config[section_name]
-                section_dict: Dict[str, Any] = {}
-                for key, value in section.items():
-                    if '\n' not in value:
-                        section_dict[key] = value
-                    else:
-                        section_dict[key] = value.strip().split('\n')
-                contract_options.append(section_dict)
-
+                contract_options.append(
+                    self._clean_section_config(dict(config[section_name]))
+                )
         return UserOptions(
             session_options=session_options,
             contracts_options=contract_options,
         )
+
+    @staticmethod
+    def _clean_section_config(section_config: Dict[str, Any]) -> Dict[str, Any]:
+        section_dict: Dict[str, Any] = {}
+        for key, value in section_config.items():
+            if '\n' not in value:
+                section_dict[key] = value
+            else:
+                section_dict[key] = value.strip().split('\n')
+        return section_dict
