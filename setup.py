@@ -29,7 +29,7 @@ setup(
     author='David Seddon',
     author_email='david@seddonym.me',
     project_urls={
-        # 'Documentation': 'https://import-linter.readthedocs.io/',
+        'Documentation': 'https://import-linter.readthedocs.io/',
         'Source code': 'https://github.com/seddonym/import-linter/',
     },
     packages=find_packages('src'),

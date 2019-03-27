@@ -13,7 +13,7 @@ Import Linter
     :target: https://travis-ci.org/seddonym/import-linter
 
 
-Import Linter allows you to define and enforce rules for the internal imports within your Python project.
+Import Linter allows you to define and enforce rules for the internal and external imports within your Python project.
 
 * Free software: BSD license
 * Documentation: https://import-linter.readthedocs.io.
@@ -29,9 +29,8 @@ Overview
 --------
 
 Import Linter is a command line tool to check that you are following a self-imposed
-architecture within your Python project. It does this by analysing the internal
-imports between all the modules in your code base, and compares this
-against a set of rules that you provide in a configuration file.
+architecture within your Python project. It does this by analysing the imports between all the modules in a Python
+package, and compares this against a set of rules that you provide in a configuration file.
 
 The configuration file contains one or more 'contracts'. Each contract has a specific
 type, which determines the sort of rules it will apply. For example, the ``independence``
