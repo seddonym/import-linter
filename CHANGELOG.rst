@@ -11,3 +11,9 @@ Changelog
 -----------------
 
 * First usable alpha release.
+
+
+1.0a3 (2019-3-27)
+-----------------
+
+* Include the ability to build the graph with external packages.
