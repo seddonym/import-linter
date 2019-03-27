@@ -16,18 +16,28 @@ current directory for one of the following files:
 Top level configuration
 -----------------------
 
-As a minimum, your file should contain the following top-level configuration:
+Your file must contain an ``importlinter`` section providing top-level (i.e. non-contract based) configuration:
 
 .. code-block:: ini
 
     [importlinter]
+    # Required:
     root_package = mypackage
+    # Optional:
+    include_external_packages = True
 
 **Options:**
 
 - ``root_package``:
   The name of the top-level Python package to validate. This package must be importable: usually this
   means it is has been installed using pip, or it's in the current directory. (Required.)
+- ``include_external_packages``:
+  Whether to include external packages when building the import graph (see `the Grimp build_graph documentation`_ for
+  more details). This is not currently used by any built in contracts, but it could be used by a custom contract type
+  that wanted to enforce rules relating to packages not in the root package (i.e. in the Python standard library, or in
+  third party libraries). (Optional.)
+
+.. _the Grimp build_graph documentation: https://grimp.readthedocs.io/en/latest/usage.html#grimp.build_graph
 
 Contracts
 ---------
