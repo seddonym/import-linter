@@ -423,3 +423,34 @@ def test_render_broken_contract():
 
         """
     )
+
+
+def test_missing_module():
+    graph = FakeGraph(
+        root_package_name='mypackage',
+        all_modules=[
+            'mypackage',
+            'mypackage.foo',
+        ]
+    )
+
+    contract = IndependenceContract(
+        name='Independence contract',
+        session_options={
+            'root_package_name': 'mypackage',
+        },
+        contract_options={
+            'modules': [
+                'mypackage.foo',
+                'mypackage.bar',
+            ],
+        },
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Module 'mypackage.bar' does not exist."
+        )
+    ):
+        contract.check(graph=graph)
