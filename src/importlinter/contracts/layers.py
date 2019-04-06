@@ -56,15 +56,21 @@ class LayersContract(Contract):
         is_kept = True
         invalid_chains = []
 
+        self._validate_containers()
+
         direct_imports_to_ignore = self.ignore_imports if self.ignore_imports else []
         removed_imports = helpers.pop_imports(graph, direct_imports_to_ignore)  # type: ignore
 
         for container in self.containers:  # type: ignore
             self._check_all_layers_exist_for_container(container, graph)
             for index, higher_layer in enumerate(self.layers):  # type: ignore
+                higher_layer_package = Module('.'.join([container, higher_layer.name]))
+                if higher_layer_package.name not in graph.modules:
+                    continue
                 for lower_layer in self.layers[index + 1:]:  # type: ignore
-                    higher_layer_package = Module('.'.join([container, higher_layer.name]))
                     lower_layer_package = Module('.'.join([container, lower_layer.name]))
+                    if lower_layer_package.name not in graph.modules:
+                        continue
 
                     descendants = set(
                         map(Module, graph.find_descendants(higher_layer_package.name)))
@@ -131,6 +137,15 @@ class LayersContract(Contract):
                 output.new_line()
 
             output.new_line()
+
+    def _validate_containers(self) -> None:
+        root_package_name = self.session_options['root_package']
+        for container in self.containers:  # type: ignore
+            if Module(container).root_package_name != root_package_name:
+                raise ValueError(
+                    f"Invalid container '{container}': a container must either be a subpackage of "
+                    f"{root_package_name}, or {root_package_name} itself."
+                )
 
     def _check_all_layers_exist_for_container(self, container: str, graph: ImportGraph) -> None:
         for layer in self.layers:  # type: ignore

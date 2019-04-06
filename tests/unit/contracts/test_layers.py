@@ -88,7 +88,7 @@ def test_layer_contract_single_containers(shortest_chains, is_kept):
     contract = LayersContract(
         name='Layer contract',
         session_options={
-            'root_package_name': 'mypackage',
+            'root_package': 'mypackage',
         },
         contract_options={
             'containers': [
@@ -240,7 +240,7 @@ def test_layer_contract_multiple_containers(shortest_chains, is_kept):
     contract = LayersContract(
         name='Layer contract',
         session_options={
-            'root_package_name': 'mypackage',
+            'root_package': 'mypackage',
         },
         contract_options={
             'containers': [
@@ -352,7 +352,7 @@ def test_layer_contract_populates_metadata():
     contract = LayersContract(
         name='Layer contract',
         session_options={
-            'root_package_name': 'mypackage',
+            'root_package': 'mypackage',
         },
         contract_options={
             'containers': [
@@ -535,7 +535,7 @@ def test_ignore_imports(ignore_imports, invalid_chain):
     contract = LayersContract(
         name='Layer contract',
         session_options={
-            'root_package_name': 'mypackage',
+            'root_package': 'mypackage',
         },
         contract_options={
             'containers': [
@@ -595,7 +595,7 @@ def test_optional_layers(include_parentheses, should_raise_exception):
     contract = LayersContract(
         name='Layer contract',
         session_options={
-            'root_package_name': 'mypackage',
+            'root_package': 'mypackage',
         },
         contract_options={
             'containers': [
@@ -629,7 +629,7 @@ def test_render_broken_contract():
     contract = LayersContract(
         name='Layers contract',
         session_options={
-            'root_package_name': 'mypackage',
+            'root_package': 'mypackage',
         },
         contract_options={
             'containers': [
@@ -731,3 +731,56 @@ def test_render_broken_contract():
 
         """
     )
+
+
+@pytest.mark.parametrize(
+    'container',
+    (
+        'notingraph',
+        'notingraph.foo',
+        'notinpackage',  # In graph, but not in package.
+        'notinpackage.foo',
+        'notinpackage.foo.one',
+        'mypackagebeginscorrectly',
+    )
+)
+def test_invalid_container(container):
+    graph = FakeGraph(
+        root_package_name='mypackage',
+        all_modules=[
+            'mypackage',
+            'mypackage.foo',
+            'mypackage.foo.high',
+            'mypackage.foo.medium',
+            'mypackage.foo.low',
+            'notinpackage',
+            'mypackagebeginscorrectly',
+        ]
+    )
+
+    contract = LayersContract(
+        name='Layer contract',
+        session_options={
+            'root_package': 'mypackage',
+        },
+        contract_options={
+            'containers': [
+                'mypackage.foo',
+                container,
+            ],
+            'layers': [
+                'high',
+                'medium',
+                'low',
+            ],
+        },
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            f"Invalid container '{container}': a container must either be a subpackage of "
+            "mypackage, or mypackage itself."
+        )
+    ):
+        contract.check(graph=graph)

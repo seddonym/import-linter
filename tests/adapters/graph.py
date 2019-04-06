@@ -59,6 +59,11 @@ class FakeGraph(ImportGraph):
             return set(['.'.join([module, d]) for d in descendants_without_root])
 
     def find_shortest_chain(self, importer: str, imported: str) -> Optional[Tuple[str, ...]]:
+        if hasattr(self, '_modules'):
+            # If we have set the modules explicitly, we should error if the module isn't in
+            # the graph.
+            for m in (importer, imported):
+                assert m in self._modules, f'Module {m} not in graph.'
         try:
             chain_without_root = self._fake_shortest_chains[
                 (self._remove_root(importer), self._remove_root(imported))

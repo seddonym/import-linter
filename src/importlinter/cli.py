@@ -31,7 +31,8 @@ def lint_imports_command(config: Optional[str]) -> int:
     """
     The entry point for the CLI command.
     """
-    return lint_imports(config_filename=config)
+    exit_code = lint_imports(config_filename=config)
+    sys.exit(exit_code)
 
 
 def lint_imports(config_filename: Optional[str] = None) -> int:

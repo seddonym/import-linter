@@ -17,3 +17,12 @@ Changelog
 -----------------
 
 * Include the ability to build the graph with external packages.
+
+
+latest
+------
+
+* Improve error handling of modules/containers not in the graph.
+* Return the exit code correctly.
+* Run lint-imports on Import Linter itself.
+* Allow single values in ListField.

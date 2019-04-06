@@ -36,6 +36,8 @@ class IndependenceContract(Contract):
             self.ignore_imports if self.ignore_imports else []
         )
 
+        self._check_all_modules_exist_in_graph(graph)
+
         all_modules_for_each_subpackage: Dict[Module, Set[Module]] = {}
 
         for module in self.modules:  # type: ignore
@@ -102,3 +104,8 @@ class IndependenceContract(Contract):
                 output.new_line()
 
             output.new_line()
+
+    def _check_all_modules_exist_in_graph(self, graph: ImportGraph) -> None:
+        for module in self.modules:  # type: ignore
+            if module.name not in graph.modules:
+                raise ValueError(f"Module '{module.name}' does not exist.")
