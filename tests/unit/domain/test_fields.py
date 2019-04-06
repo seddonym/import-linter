@@ -89,7 +89,7 @@ class TestDirectImportField(BaseFieldTest):
         ),
         (
             'singlevalue',
-            ValidationError("Expected multiple values, got a single value."),
+            [Module('singlevalue')],
         ),
     )
 )

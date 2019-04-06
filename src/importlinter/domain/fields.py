@@ -60,7 +60,7 @@ class ListField(Field):
         if isinstance(raw_data, tuple):
             raw_data = list(raw_data)
         if not isinstance(raw_data, list):
-            raise ValidationError('Expected multiple values, got a single value.')
+            raw_data = [raw_data]  # Single values should just be treated as a single item list.
         clean_list = []
         for raw_line in raw_data:
             clean_list.append(self.subfield.parse(raw_line))

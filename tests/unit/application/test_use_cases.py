@@ -73,7 +73,6 @@ class TestCheckContractsAndPrintReport:
             """
             Contract "Contract foo" is not configured correctly:
                 single_field: Expected a single value, got multiple values.
-                multiple_field: Expected multiple values, got a single value.
                 import_field: Must be in the form "package.importer -> package.imported".
                 required_field: This is a required field.
             """
