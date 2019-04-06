@@ -245,7 +245,7 @@ def test_independence_contract(shortest_chains, expected_invalid_chains):
     contract = IndependenceContract(
         name='Independence contract',
         session_options={
-            'root_package_name': 'mypackage',
+            'root_package': 'mypackage',
         },
         contract_options={
             'modules': (
@@ -319,7 +319,7 @@ def test_ignore_imports(ignore_imports, is_kept):
     contract = IndependenceContract(
         name='Independence contract',
         session_options={
-            'root_package_name': 'mypackage',
+            'root_package': 'mypackage',
         },
         contract_options={
             'modules': (
@@ -342,7 +342,7 @@ def test_render_broken_contract():
     contract = IndependenceContract(
         name='Independence contract',
         session_options={
-            'root_package_name': 'mypackage',
+            'root_package': 'mypackage',
         },
         contract_options={
             'modules': [
@@ -437,7 +437,7 @@ def test_missing_module():
     contract = IndependenceContract(
         name='Independence contract',
         session_options={
-            'root_package_name': 'mypackage',
+            'root_package': 'mypackage',
         },
         contract_options={
             'modules': [

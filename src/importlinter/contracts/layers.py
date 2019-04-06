@@ -56,6 +56,8 @@ class LayersContract(Contract):
         is_kept = True
         invalid_chains = []
 
+        self._validate_containers()
+
         direct_imports_to_ignore = self.ignore_imports if self.ignore_imports else []
         removed_imports = helpers.pop_imports(graph, direct_imports_to_ignore)  # type: ignore
 
@@ -131,6 +133,15 @@ class LayersContract(Contract):
                 output.new_line()
 
             output.new_line()
+
+    def _validate_containers(self) -> None:
+        root_package_name = self.session_options['root_package']
+        for container in self.containers:  # type: ignore
+            if Module(container).root_package_name != root_package_name:
+                raise ValueError(
+                    f"Invalid container '{container}': a container must either be a subpackage of "
+                    f"{root_package_name}, or {root_package_name} itself."
+                )
 
     def _check_all_layers_exist_for_container(self, container: str, graph: ImportGraph) -> None:
         for layer in self.layers:  # type: ignore
