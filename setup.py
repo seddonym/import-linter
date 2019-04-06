@@ -21,7 +21,7 @@ def read(*names, **kwargs):
 
 setup(
     name='import-linter',
-    version='1.0a3',
+    version='1.0b1',
     license='BSD 2-Clause License',
     description="Enforces rules for the internal and external imports within your Python project.",
     long_description=read('README.rst'),
@@ -39,7 +39,7 @@ setup(
     zip_safe=False,
     classifiers=[
         # complete classifier list: http://pypi.python.org/pypi?%3Aaction=list_classifiers
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: Unix',

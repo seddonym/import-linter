@@ -19,8 +19,8 @@ Changelog
 * Include the ability to build the graph with external packages.
 
 
-latest
-------
+1.0b1 (2019-4-6)
+----------------
 
 * Improve error handling of modules/containers not in the graph.
 * Return the exit code correctly.

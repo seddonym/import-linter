@@ -1,4 +1,4 @@
-__version__ = '1.0a3'
+__version__ = '1.0b1'
 
 from .domain.contract import Contract, ContractCheck  # noqa
 from .domain import fields  # noqa
