@@ -64,9 +64,13 @@ class LayersContract(Contract):
         for container in self.containers:  # type: ignore
             self._check_all_layers_exist_for_container(container, graph)
             for index, higher_layer in enumerate(self.layers):  # type: ignore
+                higher_layer_package = Module('.'.join([container, higher_layer.name]))
+                if higher_layer_package.name not in graph.modules:
+                    continue
                 for lower_layer in self.layers[index + 1:]:  # type: ignore
-                    higher_layer_package = Module('.'.join([container, higher_layer.name]))
                     lower_layer_package = Module('.'.join([container, lower_layer.name]))
+                    if lower_layer_package.name not in graph.modules:
+                        continue
 
                     descendants = set(
                         map(Module, graph.find_descendants(higher_layer_package.name)))
