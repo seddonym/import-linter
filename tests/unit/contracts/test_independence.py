@@ -240,7 +240,13 @@ def test_independence_contract(shortest_chains, expected_invalid_chains):
             },
         ],
         shortest_chains=shortest_chains,
-
+        all_modules=[
+            'mypackage',
+            'mypackage.blue', 'mypackage.blue.alpha', 'mypackage.blue.beta',
+            'mypackage.blue.beta.foo',
+            'mypackage.green',
+            'mypackage.yellow', 'mypackage.yellow.gamma', 'mypackage.yellow.delta',
+        ]
     )
     contract = IndependenceContract(
         name='Independence contract',
@@ -315,6 +321,9 @@ def test_ignore_imports(ignore_imports, is_kept):
         shortest_chains={
             ('a', 'b'): ('a', 'indirect', 'b'),
         },
+        all_modules=[
+            'mypackage', 'mypackage.a', 'mypackage.b', 'mypackage.indirect',
+        ]
     )
     contract = IndependenceContract(
         name='Independence contract',
