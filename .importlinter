@@ -1,0 +1,14 @@
+[importlinter]
+root_package = importlinter
+
+[importlinter:contract:1]
+name=Layered architecture
+type=layers
+containers =
+    importlinter
+layers=
+    cli
+    adapters
+    contracts
+    application
+    domain
