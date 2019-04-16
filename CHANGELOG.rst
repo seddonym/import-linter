@@ -26,3 +26,9 @@ Changelog
 * Return the exit code correctly.
 * Run lint-imports on Import Linter itself.
 * Allow single values in ListField.
+
+
+latest
+------
+
+* Update to Grimp v1.0b9, fixing error with using importlib.util.find_spec.
