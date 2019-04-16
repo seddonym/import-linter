@@ -28,7 +28,7 @@ Changelog
 * Allow single values in ListField.
 
 
-latest
-------
+1.0b2 (2019-4-16)
+-----------------
 
 * Update to Grimp v1.0b9, fixing error with using importlib.util.find_spec.
