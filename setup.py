@@ -53,7 +53,7 @@ setup(
     ],
     install_requires=[
         'click>=6,<8',
-        'grimp==1.0b8',
+        'grimp==1.0b9',
     ],
     entry_points={
         'console_scripts': [
