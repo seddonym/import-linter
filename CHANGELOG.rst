@@ -32,3 +32,9 @@ Changelog
 -----------------
 
 * Update to Grimp v1.0b9, fixing error with using importlib.util.find_spec.
+
+
+1.0b3 (2019-5-15)
+-----------------
+
+* Update to Grimp v1.0b10, fixing Windows incompatibility.

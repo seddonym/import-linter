@@ -21,7 +21,7 @@ def read(*names, **kwargs):
 
 setup(
     name='import-linter',
-    version='1.0b2',
+    version='1.0b3',
     license='BSD 2-Clause License',
     description="Enforces rules for the internal and external imports within your Python project.",
     long_description=read('README.rst'),
@@ -53,7 +53,7 @@ setup(
     ],
     install_requires=[
         'click>=6,<8',
-        'grimp==1.0b9',
+        'grimp==1.0b10',
     ],
     entry_points={
         'console_scripts': [
