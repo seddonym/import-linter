@@ -1,4 +1,4 @@
-from typing import List, Union, Any
+from typing import List, Union, Any, Pattern
 import re
 import abc
 
@@ -38,6 +38,16 @@ class StringField(Field):
         if isinstance(raw_data, list):
             raise ValidationError('Expected a single value, got multiple values.')
         return str(raw_data)
+
+
+class RegExField(Field):
+    """
+    A field for single regex expressions.
+    """
+    def parse(self, raw_data: Union[str, List]) -> Pattern[str]:
+        if isinstance(raw_data, list):
+            raise ValidationError('Expected a single value, got multiple values.')
+        return re.compile(str(raw_data))
 
 
 class ListField(Field):
