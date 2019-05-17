@@ -51,6 +51,7 @@ class LayersContract(Contract):
     containers = fields.ListField(subfield=fields.StringField())
     layers = fields.ListField(subfield=LayerField())
     ignore_imports = fields.ListField(subfield=fields.DirectImportField(), required=False)
+    ignore = fields.ListField(subfield=fields.RegExField(), required=False)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
@@ -72,11 +73,12 @@ class LayersContract(Contract):
                     if lower_layer_package.name not in graph.modules:
                         continue
 
-                    descendants = set(
-                        map(Module, graph.find_descendants(higher_layer_package.name)))
+                    descendants = set(map(Module, graph.find_descendants(higher_layer_package.name)))
+                    descendants = self._exclude_ignored(descendants) if self.ignore else descendants
                     higher_layer_modules = {higher_layer_package} | descendants
 
                     descendants = set(map(Module, graph.find_descendants(lower_layer_package.name)))
+                    descendants = self._exclude_ignored(descendants) if self.ignore else descendants
                     lower_layer_modules = {lower_layer_package} | descendants
 
                     layer_chain_data = {
@@ -137,6 +139,9 @@ class LayersContract(Contract):
                 output.new_line()
 
             output.new_line()
+
+    def _exclude_ignored(self, descendants):
+        return {d for d in descendants if not any(lambda reg: reg.match(d.name), self.ignore)}
 
     def _validate_containers(self) -> None:
         root_package_name = self.session_options['root_package']
