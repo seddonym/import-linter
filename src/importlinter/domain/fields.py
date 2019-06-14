@@ -1,8 +1,8 @@
-from typing import List, Union, Any
-import re
 import abc
+import re
+from typing import Any, List, Union
 
-from importlinter.domain.imports import Module, DirectImport
+from importlinter.domain.imports import DirectImport, Module
 
 
 class ValidationError(Exception):
@@ -16,6 +16,7 @@ class Field(abc.ABC):
 
     Designed to be subclassed, Fields should override the ``parse`` method.
     """
+
     def __init__(self, required: bool = True) -> None:
         self.required = required
 
@@ -34,9 +35,10 @@ class StringField(Field):
     """
     A field for single values of strings.
     """
+
     def parse(self, raw_data: Union[str, List]) -> str:
         if isinstance(raw_data, list):
-            raise ValidationError('Expected a single value, got multiple values.')
+            raise ValidationError("Expected a single value, got multiple values.")
         return str(raw_data)
 
 
@@ -52,6 +54,7 @@ class ListField(Field):
         field = ListField(subfield=AnotherField())
 
     """
+
     def __init__(self, subfield: Field, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.subfield = subfield
@@ -71,6 +74,7 @@ class ModuleField(Field):
     """
     A field for Modules.
     """
+
     def parse(self, raw_data: Union[str, List]) -> Module:
         return Module(StringField().parse(raw_data))
 
@@ -81,7 +85,8 @@ class DirectImportField(Field):
 
     Expects raw data in the form: "mypackage.foo.importer -> mypackage.bar.imported".
     """
-    DIRECT_IMPORT_STRING_REGEX = re.compile(r'^([\w\.]+) -> ([\w\.]+)$')
+
+    DIRECT_IMPORT_STRING_REGEX = re.compile(r"^([\w\.]+) -> ([\w\.]+)$")
 
     def parse(self, raw_data: Union[str, List]) -> DirectImport:
         string = StringField().parse(raw_data)

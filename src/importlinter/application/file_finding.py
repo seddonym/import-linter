@@ -1,4 +1,4 @@
-from typing import List, Iterable
+from typing import Iterable, List
 
 from importlinter.application.app_config import settings
 

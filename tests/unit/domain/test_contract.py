@@ -1,14 +1,17 @@
 import pytest
 
-from importlinter.domain.contract import (
-    Contract, InvalidContractOptions, ContractRegistry, NoSuchContractType,
-)
 from importlinter.domain import fields
+from importlinter.domain.contract import (
+    Contract,
+    ContractRegistry,
+    InvalidContractOptions,
+    NoSuchContractType,
+)
 
 
 class MyField(fields.Field):
     def parse(self, raw_data):
-        if raw_data == 'something invalid':
+        if raw_data == "something invalid":
             raise fields.ValidationError(f'"{raw_data}" is not a valid value.')
         return raw_data
 
@@ -33,36 +36,19 @@ class AnotherContract(Contract):
 
 
 @pytest.mark.parametrize(
-    'contract_options, expected_errors',
+    "contract_options, expected_errors",
     (
         (
-            {
-                'foo': 'The quick brown fox jumps over the lazy dog.',
-                'bar': 'To be, or not to be.'
-            },
+            {"foo": "The quick brown fox jumps over the lazy dog.", "bar": "To be, or not to be."},
             None,  # Valid.
         ),
-        (
-            {},  # No data.
-            {
-                'foo': "This is a required field.",
-            },
-        ),
-        (
-            {
-                'foo': 'something invalid',
-            },
-            {
-                'foo': '"something invalid" is not a valid value.',
-            },
-        ),
-    )
+        ({}, {"foo": "This is a required field."}),  # No data.
+        ({"foo": "something invalid"}, {"foo": '"something invalid" is not a valid value.'}),
+    ),
 )
 def test_contract_validation(contract_options, expected_errors):
     contract_kwargs = dict(
-        name='My contract',
-        session_options={},
-        contract_options=contract_options,
+        name="My contract", session_options={}, contract_options=contract_options
     )
 
     if expected_errors is None:
@@ -76,23 +62,19 @@ def test_contract_validation(contract_options, expected_errors):
     except InvalidContractOptions as e:
         assert e.errors == expected_errors
     else:
-        assert False, 'Did not raise InvalidContractOptions.'  # pragma: nocover
+        assert False, "Did not raise InvalidContractOptions."  # pragma: nocover
 
 
 class TestContractRegistry:
     @pytest.mark.parametrize(
-        'name, expected_result',
-        (
-            ('foo', MyContract),
-            ('bar', AnotherContract),
-            ('baz', NoSuchContractType())
-        )
+        "name, expected_result",
+        (("foo", MyContract), ("bar", AnotherContract), ("baz", NoSuchContractType())),
     )
     def test_registry(self, name, expected_result):
         registry = ContractRegistry()
 
-        registry.register(MyContract, name='foo')
-        registry.register(AnotherContract, name='bar')
+        registry.register(MyContract, name="foo")
+        registry.register(AnotherContract, name="bar")
 
         if isinstance(expected_result, Exception):
             with pytest.raises(NoSuchContractType):

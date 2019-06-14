@@ -1,7 +1,7 @@
-from typing import Iterable, Dict, Union, List
+from typing import Dict, Iterable, List, Union
 
-from importlinter.domain.ports.graph import ImportGraph
 from importlinter.domain.imports import DirectImport
+from importlinter.domain.ports.graph import ImportGraph
 
 
 class MissingImport(Exception):
@@ -23,13 +23,14 @@ def pop_imports(
     removed_imports: List[Dict[str, Union[str, int]]] = []
     for import_to_remove in imports:
         import_details = graph.get_import_details(
-            importer=import_to_remove.importer.name,
-            imported=import_to_remove.imported.name)
+            importer=import_to_remove.importer.name, imported=import_to_remove.imported.name
+        )
         if not import_details:
-            raise MissingImport(f'Ignored import {import_to_remove} not present in the graph.')
+            raise MissingImport(f"Ignored import {import_to_remove} not present in the graph.")
         removed_imports.extend(import_details)
-        graph.remove_import(importer=import_to_remove.importer.name,
-                            imported=import_to_remove.imported.name)
+        graph.remove_import(
+            importer=import_to_remove.importer.name, imported=import_to_remove.imported.name
+        )
     return removed_imports
 
 
@@ -44,13 +45,13 @@ def add_imports(graph: ImportGraph, import_details: List[Dict[str, Union[str, in
         add_imports(graph, import_details)
     """
     for details in import_details:
-        assert isinstance(details['importer'], str)
-        assert isinstance(details['imported'], str)
-        assert isinstance(details['line_number'], int)
-        assert isinstance(details['line_contents'], str)
+        assert isinstance(details["importer"], str)
+        assert isinstance(details["imported"], str)
+        assert isinstance(details["line_number"], int)
+        assert isinstance(details["line_contents"], str)
         graph.add_import(
-            importer=details['importer'],
-            imported=details['imported'],
-            line_number=details['line_number'],
-            line_contents=details['line_contents'],
+            importer=details["importer"],
+            imported=details["imported"],
+            line_number=details["line_number"],
+            line_contents=details["line_contents"],
         )

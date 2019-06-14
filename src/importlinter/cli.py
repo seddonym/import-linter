@@ -1,21 +1,18 @@
-from typing import Optional
-import sys
 import os
+import sys
+from typing import Optional
 
 import click
 
+from .adapters.building import GraphBuilder
+from .adapters.filesystem import FileSystem
+from .adapters.printing import ClickPrinter
+from .adapters.user_options import IniFileUserOptionReader
 from .application import use_cases
 from .application.app_config import settings
-from .adapters.building import GraphBuilder
-from .adapters.printing import ClickPrinter
-from .adapters.filesystem import FileSystem
-from .adapters.user_options import IniFileUserOptionReader
-
 
 settings.configure(
-    USER_OPTION_READERS=[
-        IniFileUserOptionReader(),
-    ],
+    USER_OPTION_READERS=[IniFileUserOptionReader()],
     GRAPH_BUILDER=GraphBuilder(),
     PRINTER=ClickPrinter(),
     FILE_SYSTEM=FileSystem(),
@@ -26,7 +23,7 @@ EXIT_STATUS_ERROR = 1
 
 
 @click.command()
-@click.option('--config', default=None, help='The config file to use.')
+@click.option("--config", default=None, help="The config file to use.")
 def lint_imports_command(config: Optional[str]) -> int:
     """
     The entry point for the CLI command.

@@ -1,7 +1,6 @@
-from typing import Optional, Tuple, Union, Set, List, Dict
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 from importlinter.domain.ports.graph import ImportGraph
-
 
 # A two-tuple representing a chain of imports between two modules.
 # Item 0: the name of the downstream (importing) module.
@@ -56,14 +55,14 @@ class FakeGraph(ImportGraph):
         except KeyError:
             return set()
         else:
-            return set(['.'.join([module, d]) for d in descendants_without_root])
+            return set([".".join([module, d]) for d in descendants_without_root])
 
     def find_shortest_chain(self, importer: str, imported: str) -> Optional[Tuple[str, ...]]:
-        if hasattr(self, '_modules'):
+        if hasattr(self, "_modules"):
             # If we have set the modules explicitly, we should error if the module isn't in
             # the graph.
             for m in (importer, imported):
-                assert m in self._modules, f'Module {m} not in graph.'
+                assert m in self._modules, f"Module {m} not in graph."
         try:
             chain_without_root = self._fake_shortest_chains[
                 (self._remove_root(importer), self._remove_root(imported))
@@ -74,43 +73,44 @@ class FakeGraph(ImportGraph):
             return tuple([self._add_root(m) for m in chain_without_root])
 
     def get_import_details(
-        self,
-        *,
-        importer: str,
-        imported: str,
+        self, *, importer: str, imported: str
     ) -> List[Dict[str, Union[str, int]]]:
         matching_details = []
         for detail in self._import_details:
-            if (detail['importer'], detail['imported']) == (importer, imported):
+            if (detail["importer"], detail["imported"]) == (importer, imported):
                 matching_details.append(detail)
         return matching_details
 
     def add_import(
-            self, *,
-            importer: str,
-            imported: str,
-            line_number: Optional[int] = None,
-            line_contents: Optional[str] = None
+        self,
+        *,
+        importer: str,
+        imported: str,
+        line_number: Optional[int] = None,
+        line_contents: Optional[str] = None,
     ) -> None:
         pass
 
     def remove_import(self, *, importer: str, imported: str) -> None:
         rootless_importer = self._remove_root(importer)
         rootless_imported = self._remove_root(imported)
-        self._fake_shortest_chains = dict([
-            (ends, chain) for ends, chain in self._fake_shortest_chains.items()
-            if not self._import_is_in_chain(rootless_importer, rootless_imported, chain)
-        ])
+        self._fake_shortest_chains = dict(
+            [
+                (ends, chain)
+                for ends, chain in self._fake_shortest_chains.items()
+                if not self._import_is_in_chain(rootless_importer, rootless_imported, chain)
+            ]
+        )
 
     def _remove_root(self, module: str) -> str:
         assert module.startswith(self.root_package_name)
-        return module[len(self.root_package_name) + 1:]
+        return module[len(self.root_package_name) + 1 :]
 
     def _add_root(self, module: str) -> str:
-        return '.'.join([self.root_package_name, module])
+        return ".".join([self.root_package_name, module])
 
     def _import_is_in_chain(self, importer: str, imported: str, chain: Chain) -> bool:
-        for pair in [chain[i:i + 2] for i in range(len(chain))]:
+        for pair in [chain[i : i + 2] for i in range(len(chain))]:
             if (importer, imported) == pair:
                 return True
         return False

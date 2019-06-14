@@ -1,5 +1,5 @@
-from typing import Optional, Tuple, Set, Dict, List, Union
 import abc
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 
 class ImportGraph(abc.ABC):
@@ -28,10 +28,7 @@ class ImportGraph(abc.ABC):
 
     @abc.abstractmethod
     def get_import_details(
-        self,
-        *,
-        importer: str,
-        imported: str
+        self, *, importer: str, imported: str
     ) -> List[Dict[str, Union[str, int]]]:
         """
         Returns a list of the details of every direct import between two modules, in the form:
@@ -49,7 +46,8 @@ class ImportGraph(abc.ABC):
 
     @abc.abstractmethod
     def add_import(
-        self, *,
+        self,
+        *,
         importer: str,
         imported: str,
         line_number: Optional[int] = None,

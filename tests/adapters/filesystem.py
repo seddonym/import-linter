@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 import yaml
 
@@ -7,8 +7,10 @@ from importlinter.application.ports import filesystem as ports
 
 class FakeFileSystem(ports.FileSystem):
     def __init__(
-        self, contents: str = None, content_map: Dict[str, str] = None,
-        working_directory: str = None
+        self,
+        contents: str = None,
+        content_map: Dict[str, str] = None,
+        working_directory: str = None,
     ) -> None:
         """
         Files can be declared as existing in the file system in two different ways, either
@@ -44,7 +46,7 @@ class FakeFileSystem(ports.FileSystem):
         self.working_directory = working_directory
 
     def join(self, *components: str) -> str:
-        return '/'.join(components)
+        return "/".join(components)
 
     def _parse_contents(self, raw_contents: Optional[str]):
         """
@@ -69,16 +71,16 @@ class FakeFileSystem(ports.FileSystem):
 
         # Convert to yaml for ease of parsing.
         yamlified_lines = []
-        raw_lines = [line for line in raw_contents.split('\n') if line.strip()]
+        raw_lines = [line for line in raw_contents.split("\n") if line.strip()]
 
         dedented_lines = self._dedent(raw_lines)
 
         for line in dedented_lines:
-            trimmed_line = line.rstrip().rstrip('/')
-            yamlified_line = trimmed_line + ':'
+            trimmed_line = line.rstrip().rstrip("/")
+            yamlified_line = trimmed_line + ":"
             yamlified_lines.append(yamlified_line)
 
-        yamlified_string = '\n'.join(yamlified_lines)
+        yamlified_string = "\n".join(yamlified_lines)
 
         return yaml.load(yamlified_string)
 
@@ -97,10 +99,10 @@ class FakeFileSystem(ports.FileSystem):
         try:
             file_contents = self.content_map[file_name]
         except KeyError:
-            return ''
-        raw_lines = [line for line in file_contents.split('\n') if line.strip()]
+            return ""
+        raw_lines = [line for line in file_contents.split("\n") if line.strip()]
         dedented_lines = self._dedent(raw_lines)
-        return '\n'.join(dedented_lines)
+        return "\n".join(dedented_lines)
 
     def exists(self, file_name: str) -> bool:
         # The file should exist if it's either declared in contents or in content_map.
@@ -114,8 +116,8 @@ class FakeFileSystem(ports.FileSystem):
         if not found_directory:
             return False
 
-        relative_file_name = file_name[len(found_directory) + 1:]
-        file_components = relative_file_name.split('/')
+        relative_file_name = file_name[len(found_directory) + 1 :]
+        file_components = relative_file_name.split("/")
 
         contents = self.contents[found_directory]
         for component in file_components:
@@ -128,4 +130,4 @@ class FakeFileSystem(ports.FileSystem):
     def getcwd(self) -> str:
         if self.working_directory:
             return self.working_directory
-        raise RuntimeError('No working directory specified.')  # pragma: nocover
+        raise RuntimeError("No working directory specified.")  # pragma: nocover

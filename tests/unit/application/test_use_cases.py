@@ -1,26 +1,20 @@
-from typing import List, Optional, Dict, Any
-from importlinter.application.app_config import settings
-from importlinter.application.user_options import UserOptions
-from importlinter.application.use_cases import lint_imports, SUCCESS, FAILURE
+from typing import Any, Dict, List, Optional
 
-from tests.adapters.user_options import FakeUserOptionReader
-from tests.adapters.graph import FakeGraph
+from importlinter.application.app_config import settings
+from importlinter.application.use_cases import FAILURE, SUCCESS, lint_imports
+from importlinter.application.user_options import UserOptions
 from tests.adapters.building import FakeGraphBuilder
+from tests.adapters.graph import FakeGraph
 from tests.adapters.printing import FakePrinter
+from tests.adapters.user_options import FakeUserOptionReader
 
 
 class TestCheckContractsAndPrintReport:
     def test_all_successful(self):
         self._configure(
             contracts_options=[
-                {
-                    'type': 'always_passes',
-                    'name': 'Contract foo',
-                },
-                {
-                    'type': 'always_passes',
-                    'name': 'Contract bar',
-                },
+                {"type": "always_passes", "name": "Contract foo"},
+                {"type": "always_passes", "name": "Contract bar"},
             ]
         )
 
@@ -52,16 +46,13 @@ class TestCheckContractsAndPrintReport:
         self._configure(
             contracts_options=[
                 {
-                    'type': 'fields',
-                    'name': 'Contract foo',
-                    'single_field': ['one', 'two'],
-                    'multiple_field': 'one',
-                    'import_field': 'foobar',
+                    "type": "fields",
+                    "name": "Contract foo",
+                    "single_field": ["one", "two"],
+                    "multiple_field": "one",
+                    "import_field": "foobar",
                 },
-                {
-                    'type': 'always_passes',
-                    'name': 'Contract bar',
-                },
+                {"type": "always_passes", "name": "Contract bar"},
             ]
         )
 
@@ -81,14 +72,8 @@ class TestCheckContractsAndPrintReport:
     def test_one_failure(self):
         self._configure(
             contracts_options=[
-                {
-                    'type': 'always_fails',
-                    'name': 'Contract foo',
-                },
-                {
-                    'type': 'always_passes',
-                    'name': 'Contract bar',
-                },
+                {"type": "always_fails", "name": "Contract foo"},
+                {"type": "always_passes", "name": "Contract bar"},
             ]
         )
 
@@ -132,39 +117,36 @@ class TestCheckContractsAndPrintReport:
         looks at the graph.
         """
         graph = FakeGraph(
-            root_package_name='mypackage',
+            root_package_name="mypackage",
             import_details=[
                 {
-                    'importer': 'mypackage.foo',
-                    'imported': 'mypackage.bar',
-                    'line_number': 8,
-                    'line_contents': 'from mypackage import bar',
+                    "importer": "mypackage.foo",
+                    "imported": "mypackage.bar",
+                    "line_number": 8,
+                    "line_contents": "from mypackage import bar",
                 },
                 {
-                    'importer': 'mypackage.foo',
-                    'imported': 'mypackage.bar',
-                    'line_number': 16,
-                    'line_contents': 'from mypackage.bar import something',
+                    "importer": "mypackage.foo",
+                    "imported": "mypackage.bar",
+                    "line_number": 16,
+                    "line_contents": "from mypackage.bar import something",
                 },
             ],
         )
         self._configure(
             contracts_options=[
+                {"type": "always_passes", "name": "Contract foo"},
                 {
-                    'type': 'always_passes',
-                    'name': 'Contract foo',
+                    "type": "forbidden",
+                    "name": "Forbidden contract one",
+                    "importer": "mypackage.foo",
+                    "imported": "mypackage.bar",
                 },
                 {
-                    'type': 'forbidden',
-                    'name': 'Forbidden contract one',
-                    'importer': 'mypackage.foo',
-                    'imported': 'mypackage.bar',
-                },
-                {
-                    'type': 'forbidden',
-                    'name': 'Forbidden contract two',
-                    'importer': 'mypackage.foo',
-                    'imported': 'mypackage.baz',
+                    "type": "forbidden",
+                    "name": "Forbidden contract two",
+                    "importer": "mypackage.foo",
+                    "imported": "mypackage.baz",
                 },
             ],
             graph=graph,
@@ -214,33 +196,22 @@ class TestCheckContractsAndPrintReport:
         contract_types: Optional[List[str]] = None,
         graph: Optional[FakeGraph] = None,
     ):
-        session_options = {
-            'root_package': 'mypackage',
-        }
+        session_options = {"root_package": "mypackage"}
         if not contract_types:
             contract_types = [
-                'always_passes: tests.helpers.contracts.AlwaysPassesContract',
-                'always_fails: tests.helpers.contracts.AlwaysFailsContract',
-                'fields: tests.helpers.contracts.FieldsContract',
-                'forbidden: tests.helpers.contracts.ForbiddenImportContract',
+                "always_passes: tests.helpers.contracts.AlwaysPassesContract",
+                "always_fails: tests.helpers.contracts.AlwaysFailsContract",
+                "fields: tests.helpers.contracts.FieldsContract",
+                "forbidden: tests.helpers.contracts.ForbiddenImportContract",
             ]
-        session_options['contract_types'] = contract_types  # type: ignore
+        session_options["contract_types"] = contract_types  # type: ignore
 
         reader = FakeUserOptionReader(
-            UserOptions(
-                session_options=session_options,
-                contracts_options=contracts_options,
-            )
+            UserOptions(session_options=session_options, contracts_options=contracts_options)
         )
         settings.configure(
-            USER_OPTION_READERS=[reader],
-            GRAPH_BUILDER=FakeGraphBuilder(),
-            PRINTER=FakePrinter(),
+            USER_OPTION_READERS=[reader], GRAPH_BUILDER=FakeGraphBuilder(), PRINTER=FakePrinter()
         )
         if graph is None:
-            graph = FakeGraph(
-                root_package_name='mypackage',
-                module_count=23,
-                import_count=44,
-            )
+            graph = FakeGraph(root_package_name="mypackage", module_count=23, import_count=44)
         settings.GRAPH_BUILDER.set_graph(graph)

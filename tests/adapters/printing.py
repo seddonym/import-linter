@@ -1,5 +1,5 @@
-from typing import Optional
 import textwrap
+from typing import Optional
 
 from importlinter.application.ports.printing import Printer
 
@@ -9,18 +9,14 @@ class FakePrinter(Printer):
         self._buffer = ""
 
     def print(
-        self,
-        text: str = '',
-        bold: bool = False,
-        color: Optional[str] = None,
-        newline: bool = True
+        self, text: str = "", bold: bool = False, color: Optional[str] = None, newline: bool = True
     ) -> None:
         """
         Prints a line.
         """
         self._buffer += text
         if newline:
-            self._buffer += '\n'
+            self._buffer += "\n"
 
     def pop_and_assert(self, expected_string):
         """
@@ -30,7 +26,7 @@ class FakePrinter(Printer):
         lines removed, and the whole thing will be dedented, before comparison.
         """
 
-        modified_expected_string = textwrap.dedent(expected_string.strip('\n'))
+        modified_expected_string = textwrap.dedent(expected_string.strip("\n"))
 
         popped_string = self._buffer
         self._buffer = ""

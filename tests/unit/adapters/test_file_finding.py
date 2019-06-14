@@ -1,18 +1,17 @@
 import pytest
 
-from importlinter.application.app_config import settings
 from importlinter.application import file_finding
-
+from importlinter.application.app_config import settings
 from tests.adapters.filesystem import FakeFileSystem
 
 
 @pytest.mark.parametrize(
-    'filenames, expected_result',
+    "filenames, expected_result",
     (
-        (['foo.txt'], ['/path/to/folder/foo.txt']),
-        (['foo.txt', '.another'], ['/path/to/folder/foo.txt', '/path/to/folder/.another']),
-        (['bar.txt'], []),
-    )
+        (["foo.txt"], ["/path/to/folder/foo.txt"]),
+        (["foo.txt", ".another"], ["/path/to/folder/foo.txt", "/path/to/folder/.another"]),
+        (["bar.txt"], []),
+    ),
 )
 def test_finds_file_in_current_directory(filenames, expected_result):
     settings.configure(
@@ -25,7 +24,7 @@ def test_finds_file_in_current_directory(filenames, expected_result):
                         foo.txt
                         bar.txt
             """,
-            working_directory='/path/to/folder',
+            working_directory="/path/to/folder",
         )
     )
 

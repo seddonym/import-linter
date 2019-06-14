@@ -5,6 +5,7 @@ class FileSystem(abc.ABC):
     """
     Abstraction around file system calls.
     """
+
     @abc.abstractmethod
     def join(self, *components: str) -> str:
         raise NotImplementedError

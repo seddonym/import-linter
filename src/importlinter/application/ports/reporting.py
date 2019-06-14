@@ -1,7 +1,7 @@
-from typing import List, Dict, Iterator, Tuple
+from typing import Dict, Iterator, List, Tuple
 
+from importlinter.domain.contract import Contract, ContractCheck, InvalidContractOptions
 from importlinter.domain.ports.graph import ImportGraph
-from importlinter.domain.contract import ContractCheck, Contract, InvalidContractOptions
 
 
 class Reporter:
@@ -39,9 +39,7 @@ class Report:
             yield contract, self._check_map[contract]
 
     def add_invalid_contract_options(
-        self,
-        contract_name: str,
-        exception: InvalidContractOptions,
+        self, contract_name: str, exception: InvalidContractOptions
     ) -> None:
         self.invalid_contract_options[contract_name] = exception
         self.could_not_run = True

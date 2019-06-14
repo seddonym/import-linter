@@ -1,24 +1,20 @@
 from typing import Optional
 
-from .ports.printing import Printer
 from .app_config import settings
+from .ports.printing import Printer
 
-
-ERROR = 'error'
-SUCCESS = 'success'
-COLORS = {
-    ERROR: 'red',
-    SUCCESS: 'green',
-}
+ERROR = "error"
+SUCCESS = "success"
+COLORS = {ERROR: "red", SUCCESS: "green"}
 
 HEADING_LEVEL_ONE = 1
 HEADING_LEVEL_TWO = 2
 HEADING_LEVEL_THREE = 3
 
 HEADING_MAP = {
-    HEADING_LEVEL_ONE: ('=', True),
-    HEADING_LEVEL_TWO: ('-', True),
-    HEADING_LEVEL_THREE: ('-', False),
+    HEADING_LEVEL_ONE: ("=", True),
+    HEADING_LEVEL_TWO: ("-", True),
+    HEADING_LEVEL_THREE: ("-", False),
 }
 
 INDENT_SIZE = 4
@@ -34,11 +30,7 @@ class Output:
     """
 
     def print(
-        self,
-        text: str = '',
-        bold: bool = False,
-        color: Optional[str] = None,
-        newline: bool = True
+        self, text: str = "", bold: bool = False, color: Optional[str] = None, newline: bool = True
     ) -> None:
         """
         Print a line.
@@ -57,7 +49,7 @@ class Output:
         """
         Indents the cursor ready to print a line.
         """
-        self.printer.print(' ' * INDENT_SIZE, newline=False)
+        self.printer.print(" " * INDENT_SIZE, newline=False)
 
     def new_line(self):
         """
@@ -65,12 +57,7 @@ class Output:
         """
         self.printer.print()
 
-    def print_heading(
-        self,
-        text: str,
-        level: int,
-        style: Optional[str] = None,
-    ) -> None:
+    def print_heading(self, text: str, level: int, style: Optional[str] = None) -> None:
         """
         Prints the supplied text to the console, formatted as a heading.
 

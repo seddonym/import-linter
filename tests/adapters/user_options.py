@@ -1,7 +1,7 @@
 from typing import Optional
 
-from importlinter.application.user_options import UserOptions
 from importlinter.application.ports.user_options import UserOptionReader
+from importlinter.application.user_options import UserOptions
 
 
 class FakeUserOptionReader(UserOptionReader):

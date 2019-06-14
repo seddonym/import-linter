@@ -1,5 +1,5 @@
-from typing import Optional
 import abc
+from typing import Optional
 
 from ..user_options import UserOptions
 
