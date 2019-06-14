@@ -2,4 +2,4 @@
 Authors
 =======
 
-* David Seddon - http://seddonym.me
+* David Seddon - https://seddonym.me
