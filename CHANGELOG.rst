@@ -38,3 +38,8 @@ Changelog
 -----------------
 
 * Update to Grimp v1.0b10, fixing Windows incompatibility.
+
+latest
+------
+
+* Add https://pre-commit.com configuration.
