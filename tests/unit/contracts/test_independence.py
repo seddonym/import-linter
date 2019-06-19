@@ -253,30 +253,25 @@ def test_independence_contract(shortest_chains, expected_invalid_chains):
     ),
 )
 def test_ignore_imports(ignore_imports, is_kept):
-    graph = FakeGraph(
-        root_package_name="mypackage",
-        import_details=[
-            {
-                "importer": "mypackage.a",
-                "imported": "mypackage.irrelevant",
-                "line_number": 1,
-                "line_contents": "-",
-            },
-            {
-                "importer": "mypackage.a",
-                "imported": "mypackage.indirect",
-                "line_number": 1,
-                "line_contents": "-",
-            },
-            {
-                "importer": "mypackage.indirect",
-                "imported": "mypackage.b",
-                "line_number": 1,
-                "line_contents": "-",
-            },
-        ],
-        shortest_chains={("a", "b"): ("a", "indirect", "b")},
-        all_modules=["mypackage", "mypackage.a", "mypackage.b", "mypackage.indirect"],
+    graph = ImportGraph()
+    graph.add_module("mypackage")
+    graph.add_import(
+        importer="mypackage.a",
+        imported="mypackage.irrelevant",
+        line_number=1,
+        line_contents="-",
+    )
+    graph.add_import(
+        importer="mypackage.a",
+        imported="mypackage.indirect",
+        line_number=1,
+        line_contents="-",
+    )
+    graph.add_import(
+        importer = "mypackage.indirect",
+        imported = "mypackage.b",
+        line_number = 1,
+        line_contents = "-",
     )
     contract = IndependenceContract(
         name="Independence contract",
