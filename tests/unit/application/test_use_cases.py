@@ -1,10 +1,12 @@
+import string
 from typing import Any, Dict, List, Optional
 
+from grimp.adaptors.graph import ImportGraph  # type: ignore
 from importlinter.application.app_config import settings
 from importlinter.application.use_cases import FAILURE, SUCCESS, lint_imports
 from importlinter.application.user_options import UserOptions
+
 from tests.adapters.building import FakeGraphBuilder
-from tests.adapters.graph import FakeGraph
 from tests.adapters.printing import FakePrinter
 from tests.adapters.user_options import FakeUserOptionReader
 
@@ -32,7 +34,7 @@ class TestCheckContractsAndPrintReport:
             Contracts
             ---------
 
-            Analyzed 23 files, 44 dependencies.
+            Analyzed 26 files, 10 dependencies.
             -----------------------------------
 
             Contract foo KEPT
@@ -91,7 +93,7 @@ class TestCheckContractsAndPrintReport:
             Contracts
             ---------
 
-            Analyzed 23 files, 44 dependencies.
+            Analyzed 26 files, 10 dependencies.
             -----------------------------------
 
             Contract foo BROKEN
@@ -116,22 +118,18 @@ class TestCheckContractsAndPrintReport:
         Tests the ForbiddenImportContract - a simple contract that
         looks at the graph.
         """
-        graph = FakeGraph(
-            root_package_name="mypackage",
-            import_details=[
-                {
-                    "importer": "mypackage.foo",
-                    "imported": "mypackage.bar",
-                    "line_number": 8,
-                    "line_contents": "from mypackage import bar",
-                },
-                {
-                    "importer": "mypackage.foo",
-                    "imported": "mypackage.bar",
-                    "line_number": 16,
-                    "line_contents": "from mypackage.bar import something",
-                },
-            ],
+        graph = self._build_default_graph()
+        graph.add_import(
+            importer="mypackage.foo",
+            imported="mypackage.bar",
+            line_number=8,
+            line_contents="from mypackage import bar",
+        )
+        graph.add_import(
+            importer="mypackage.foo",
+            imported="mypackage.bar",
+            line_number=16,
+            line_contents="from mypackage.bar import something",
         )
         self._configure(
             contracts_options=[
@@ -156,6 +154,9 @@ class TestCheckContractsAndPrintReport:
 
         assert result == FAILURE
 
+        # Expecting 28 files (default graph has 26 modules, we add 2).
+        # Expecting 11 dependencies (default graph has 10 imports, we add 2,
+        # but it counts as 1 as it's between the same modules).
         settings.PRINTER.pop_and_assert(
             """
             =============
@@ -166,8 +167,8 @@ class TestCheckContractsAndPrintReport:
             Contracts
             ---------
 
-            Analyzed 99 files, 999 dependencies.
-            ------------------------------------
+            Analyzed 28 files, 11 dependencies.
+            -----------------------------------
 
             Contract foo KEPT
             Forbidden contract one BROKEN
@@ -194,7 +195,7 @@ class TestCheckContractsAndPrintReport:
         self,
         contracts_options: List[Dict[str, Any]],
         contract_types: Optional[List[str]] = None,
-        graph: Optional[FakeGraph] = None,
+        graph: Optional[ImportGraph] = None,
     ):
         session_options = {"root_package": "mypackage"}
         if not contract_types:
@@ -213,5 +214,22 @@ class TestCheckContractsAndPrintReport:
             USER_OPTION_READERS=[reader], GRAPH_BUILDER=FakeGraphBuilder(), PRINTER=FakePrinter()
         )
         if graph is None:
-            graph = FakeGraph(root_package_name="mypackage", module_count=23, import_count=44)
-        settings.GRAPH_BUILDER.set_graph(graph)
+            graph = self._build_default_graph()
+
+        settings.GRAPH_BUILDER.inject_graph(graph)
+
+    def _build_default_graph(self):
+        graph = ImportGraph()
+
+        # Add 26 modules.
+        for letter in string.ascii_lowercase:
+            graph.add_module(f"mypackage.{letter}")
+
+        # Add 10 imports in total.
+        for imported in ("d", "e", "f"):
+            for importer in ("a", "b", "c"):
+                graph.add_import(
+                    importer=f"mypackage.{importer}", imported=f"mypackage.{imported}"
+                )  # 3 * 3 = 9 imports.
+        graph.add_import(importer="mypackage.d", imported="mypackage.f")  # 1 extra import.
+        return graph

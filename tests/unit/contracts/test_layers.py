@@ -1,9 +1,10 @@
 import pytest
-
+from grimp.adaptors.graph import ImportGraph  # type: ignore
 from importlinter.application.app_config import settings
 from importlinter.contracts.layers import LayersContract
 from importlinter.domain.contract import ContractCheck
 from importlinter.domain.helpers import MissingImport
+
 from tests.adapters.graph import FakeGraph
 from tests.adapters.printing import FakePrinter
 
@@ -190,14 +191,8 @@ def test_layer_contract_multiple_containers(shortest_chains, is_kept):
 
 
 def test_layer_contract_populates_metadata():
-    graph = FakeGraph(
-        root_package_name="mypackage",
-        descendants={
-            "high": {"green", "blue", "yellow", "yellow.alpha"},
-            "medium": {"orange", "red", "orange.beta"},
-            "low": {"black", "white", "white.gamma"},
-        },
-        all_modules=[
+    graph = ImportGraph()
+    for module in (
             "mypackage",
             "mypackage.high",
             "mypackage.high.green",
@@ -212,62 +207,50 @@ def test_layer_contract_populates_metadata():
             "mypackage.low.black",
             "mypackage.low.white",
             "mypackage.low.white.gamma",
-        ],
-        shortest_chains={
-            ("low.white.gamma", "high.yellow.alpha"): (
-                "low.white.gamma",
-                "utils.foo",
-                "utils.bar",
-                "high.yellow.alpha",
-            ),
-            ("medium.orange.beta", "high.blue"): ("medium.orange.beta", "high.blue"),
-            ("low.black", "medium.red"): ("low.black", "utils.baz", "medium.red"),
-        },
-        import_details=[
-            {
-                "importer": "mypackage.low.white.gamma",
-                "imported": "mypackage.utils.foo",
-                "line_number": 3,
-                "line_contents": "",
-            },
-            {
-                "importer": "mypackage.utils.foo",
-                "imported": "mypackage.utils.bar",
-                "line_number": 1,
-                "line_contents": "",
-            },
-            {
-                "importer": "mypackage.utils.foo",
-                "imported": "mypackage.utils.bar",
-                "line_number": 101,
-                "line_contents": "",
-            },
-            {
-                "importer": "mypackage.utils.bar",
-                "imported": "mypackage.high.yellow.alpha",
-                "line_number": 13,
-                "line_contents": "",
-            },
-            {
-                "importer": "mypackage.medium.orange.beta",
-                "imported": "mypackage.high.blue",
-                "line_number": 2,
-                "line_contents": "",
-            },
-            {
-                "importer": "mypackage.low.black",
-                "imported": "mypackage.utils.baz",
-                "line_number": 2,
-                "line_contents": "",
-            },
-            {
-                "importer": "mypackage.utils.baz",
-                "imported": "mypackage.medium.red",
-                "line_number": 3,
-                "line_contents": "",
-            },
-        ],
-    )
+    ):
+        graph.add_module(module)
+    graph.add_import(
+        importer="mypackage.low.white.gamma",
+        imported="mypackage.utils.foo",
+        line_number=3,
+        line_contents="-",
+    ),
+    graph.add_import(
+        importer="mypackage.utils.foo",
+        imported="mypackage.utils.bar",
+        line_number=1,
+        line_contents="-",
+    ),
+    graph.add_import(
+        importer="mypackage.utils.foo",
+        imported="mypackage.utils.bar",
+        line_number=101,
+        line_contents="-",
+    ),
+    graph.add_import(
+        importer="mypackage.utils.bar",
+        imported="mypackage.high.yellow.alpha",
+        line_number=13,
+        line_contents="-",
+    ),
+    graph.add_import(
+        importer="mypackage.medium.orange.beta",
+        imported="mypackage.high.blue",
+        line_number=2,
+        line_contents="-",
+    ),
+    graph.add_import(
+        importer="mypackage.low.black",
+        imported="mypackage.utils.baz",
+        line_number=2,
+        line_contents="-",
+    ),
+    graph.add_import(
+        importer="mypackage.utils.baz",
+        imported="mypackage.medium.red",
+        line_number=3,
+        line_contents="-",
+    ),
 
     contract = LayersContract(
         name="Layer contract",
@@ -466,17 +449,16 @@ def test_ignore_imports(ignore_imports, invalid_chain):
     "include_parentheses, should_raise_exception", ((False, True), (True, False))
 )
 def test_optional_layers(include_parentheses, should_raise_exception):
-    graph = FakeGraph(
-        root_package_name="mypackage",
-        all_modules=[
-            "mypackage",
-            "mypackage.foo",
-            "mypackage.foo.high",
-            "mypackage.foo.high.blue",
-            "mypackage.foo.low",
-            "mypackage.foo.low.alpha",
-        ],
-    )
+    graph = ImportGraph()
+    for module in (
+        "mypackage",
+        "mypackage.foo",
+        "mypackage.foo.high",
+        "mypackage.foo.high.blue",
+        "mypackage.foo.low",
+        "mypackage.foo.low.alpha",
+    ):
+        graph.add_module(module)
 
     contract = LayersContract(
         name="Layer contract",
@@ -610,18 +592,17 @@ def test_render_broken_contract():
     ),
 )
 def test_invalid_container(container):
-    graph = FakeGraph(
-        root_package_name="mypackage",
-        all_modules=[
-            "mypackage",
-            "mypackage.foo",
-            "mypackage.foo.high",
-            "mypackage.foo.medium",
-            "mypackage.foo.low",
-            "notinpackage",
-            "mypackagebeginscorrectly",
-        ],
-    )
+    graph = ImportGraph()
+    for module in (
+        "mypackage",
+        "mypackage.foo",
+        "mypackage.foo.high",
+        "mypackage.foo.medium",
+        "mypackage.foo.low",
+        "notinpackage",
+        "mypackagebeginscorrectly",
+    ):
+        graph.add_module(module)
 
     contract = LayersContract(
         name="Layer contract",
