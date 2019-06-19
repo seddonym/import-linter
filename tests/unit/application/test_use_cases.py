@@ -7,7 +7,6 @@ from importlinter.application.use_cases import FAILURE, SUCCESS, lint_imports
 from importlinter.application.user_options import UserOptions
 
 from tests.adapters.building import FakeGraphBuilder
-from tests.adapters.graph import FakeGraph
 from tests.adapters.printing import FakePrinter
 from tests.adapters.user_options import FakeUserOptionReader
 
@@ -119,22 +118,18 @@ class TestCheckContractsAndPrintReport:
         Tests the ForbiddenImportContract - a simple contract that
         looks at the graph.
         """
-        graph = FakeGraph(
-            root_package_name="mypackage",
-            import_details=[
-                {
-                    "importer": "mypackage.foo",
-                    "imported": "mypackage.bar",
-                    "line_number": 8,
-                    "line_contents": "from mypackage import bar",
-                },
-                {
-                    "importer": "mypackage.foo",
-                    "imported": "mypackage.bar",
-                    "line_number": 16,
-                    "line_contents": "from mypackage.bar import something",
-                },
-            ],
+        graph = self._build_default_graph()
+        graph.add_import(
+            importer="mypackage.foo",
+            imported="mypackage.bar",
+            line_number=8,
+            line_contents="from mypackage import bar",
+        )
+        graph.add_import(
+            importer="mypackage.foo",
+            imported="mypackage.bar",
+            line_number=16,
+            line_contents="from mypackage.bar import something",
         )
         self._configure(
             contracts_options=[
@@ -159,6 +154,9 @@ class TestCheckContractsAndPrintReport:
 
         assert result == FAILURE
 
+        # Expecting 28 files (default graph has 26 modules, we add 2).
+        # Expecting 11 dependencies (default graph has 10 imports, we add 2,
+        # but it counts as 1 as it's between the same modules).
         settings.PRINTER.pop_and_assert(
             """
             =============
@@ -169,8 +167,8 @@ class TestCheckContractsAndPrintReport:
             Contracts
             ---------
 
-            Analyzed 99 files, 999 dependencies.
-            ------------------------------------
+            Analyzed 28 files, 11 dependencies.
+            -----------------------------------
 
             Contract foo KEPT
             Forbidden contract one BROKEN
@@ -234,5 +232,4 @@ class TestCheckContractsAndPrintReport:
                     importer=f"mypackage.{importer}", imported=f"mypackage.{imported}"
                 )  # 3 * 3 = 9 imports.
         graph.add_import(importer="mypackage.d", imported="mypackage.f")  # 1 extra import.
-
         return graph
