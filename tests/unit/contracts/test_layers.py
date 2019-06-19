@@ -467,17 +467,16 @@ def test_ignore_imports(ignore_imports, invalid_chain):
     "include_parentheses, should_raise_exception", ((False, True), (True, False))
 )
 def test_optional_layers(include_parentheses, should_raise_exception):
-    graph = FakeGraph(
-        root_package_name="mypackage",
-        all_modules=[
-            "mypackage",
-            "mypackage.foo",
-            "mypackage.foo.high",
-            "mypackage.foo.high.blue",
-            "mypackage.foo.low",
-            "mypackage.foo.low.alpha",
-        ],
-    )
+    graph = ImportGraph()
+    for module in (
+        "mypackage",
+        "mypackage.foo",
+        "mypackage.foo.high",
+        "mypackage.foo.high.blue",
+        "mypackage.foo.low",
+        "mypackage.foo.low.alpha",
+    ):
+        graph.add_module(module)
 
     contract = LayersContract(
         name="Layer contract",
