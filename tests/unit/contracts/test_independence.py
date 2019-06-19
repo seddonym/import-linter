@@ -1,5 +1,6 @@
 import pytest
 
+from grimp.adaptors.graph import ImportGraph
 from importlinter.application.app_config import settings
 from importlinter.contracts.independence import IndependenceContract
 from importlinter.domain.contract import ContractCheck
@@ -372,7 +373,9 @@ def test_render_broken_contract():
 
 
 def test_missing_module():
-    graph = FakeGraph(root_package_name="mypackage", all_modules=["mypackage", "mypackage.foo"])
+    graph = ImportGraph()
+    for module in ("mypackage", "mypackage.foo"):
+        graph.add_module(module)
 
     contract = IndependenceContract(
         name="Independence contract",
