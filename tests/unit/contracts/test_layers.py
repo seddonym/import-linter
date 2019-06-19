@@ -191,14 +191,8 @@ def test_layer_contract_multiple_containers(shortest_chains, is_kept):
 
 
 def test_layer_contract_populates_metadata():
-    graph = FakeGraph(
-        root_package_name="mypackage",
-        descendants={
-            "high": {"green", "blue", "yellow", "yellow.alpha"},
-            "medium": {"orange", "red", "orange.beta"},
-            "low": {"black", "white", "white.gamma"},
-        },
-        all_modules=[
+    graph = ImportGraph()
+    for module in (
             "mypackage",
             "mypackage.high",
             "mypackage.high.green",
@@ -213,62 +207,50 @@ def test_layer_contract_populates_metadata():
             "mypackage.low.black",
             "mypackage.low.white",
             "mypackage.low.white.gamma",
-        ],
-        shortest_chains={
-            ("low.white.gamma", "high.yellow.alpha"): (
-                "low.white.gamma",
-                "utils.foo",
-                "utils.bar",
-                "high.yellow.alpha",
-            ),
-            ("medium.orange.beta", "high.blue"): ("medium.orange.beta", "high.blue"),
-            ("low.black", "medium.red"): ("low.black", "utils.baz", "medium.red"),
-        },
-        import_details=[
-            {
-                "importer": "mypackage.low.white.gamma",
-                "imported": "mypackage.utils.foo",
-                "line_number": 3,
-                "line_contents": "",
-            },
-            {
-                "importer": "mypackage.utils.foo",
-                "imported": "mypackage.utils.bar",
-                "line_number": 1,
-                "line_contents": "",
-            },
-            {
-                "importer": "mypackage.utils.foo",
-                "imported": "mypackage.utils.bar",
-                "line_number": 101,
-                "line_contents": "",
-            },
-            {
-                "importer": "mypackage.utils.bar",
-                "imported": "mypackage.high.yellow.alpha",
-                "line_number": 13,
-                "line_contents": "",
-            },
-            {
-                "importer": "mypackage.medium.orange.beta",
-                "imported": "mypackage.high.blue",
-                "line_number": 2,
-                "line_contents": "",
-            },
-            {
-                "importer": "mypackage.low.black",
-                "imported": "mypackage.utils.baz",
-                "line_number": 2,
-                "line_contents": "",
-            },
-            {
-                "importer": "mypackage.utils.baz",
-                "imported": "mypackage.medium.red",
-                "line_number": 3,
-                "line_contents": "",
-            },
-        ],
-    )
+    ):
+        graph.add_module(module)
+    graph.add_import(
+        importer="mypackage.low.white.gamma",
+        imported="mypackage.utils.foo",
+        line_number=3,
+        line_contents="-",
+    ),
+    graph.add_import(
+        importer="mypackage.utils.foo",
+        imported="mypackage.utils.bar",
+        line_number=1,
+        line_contents="-",
+    ),
+    graph.add_import(
+        importer="mypackage.utils.foo",
+        imported="mypackage.utils.bar",
+        line_number=101,
+        line_contents="-",
+    ),
+    graph.add_import(
+        importer="mypackage.utils.bar",
+        imported="mypackage.high.yellow.alpha",
+        line_number=13,
+        line_contents="-",
+    ),
+    graph.add_import(
+        importer="mypackage.medium.orange.beta",
+        imported="mypackage.high.blue",
+        line_number=2,
+        line_contents="-",
+    ),
+    graph.add_import(
+        importer="mypackage.low.black",
+        imported="mypackage.utils.baz",
+        line_number=2,
+        line_contents="-",
+    ),
+    graph.add_import(
+        importer="mypackage.utils.baz",
+        imported="mypackage.medium.red",
+        line_number=3,
+        line_contents="-",
+    ),
 
     contract = LayersContract(
         name="Layer contract",
