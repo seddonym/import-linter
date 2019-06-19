@@ -1,9 +1,9 @@
 import pytest
-
 from grimp.adaptors.graph import ImportGraph
 from importlinter.application.app_config import settings
 from importlinter.contracts.independence import IndependenceContract
 from importlinter.domain.contract import ContractCheck
+
 from tests.adapters.graph import FakeGraph
 from tests.adapters.printing import FakePrinter
 
@@ -256,22 +256,13 @@ def test_ignore_imports(ignore_imports, is_kept):
     graph = ImportGraph()
     graph.add_module("mypackage")
     graph.add_import(
-        importer="mypackage.a",
-        imported="mypackage.irrelevant",
-        line_number=1,
-        line_contents="-",
+        importer="mypackage.a", imported="mypackage.irrelevant", line_number=1, line_contents="-"
     )
     graph.add_import(
-        importer="mypackage.a",
-        imported="mypackage.indirect",
-        line_number=1,
-        line_contents="-",
+        importer="mypackage.a", imported="mypackage.indirect", line_number=1, line_contents="-"
     )
     graph.add_import(
-        importer = "mypackage.indirect",
-        imported = "mypackage.b",
-        line_number = 1,
-        line_contents = "-",
+        importer="mypackage.indirect", imported="mypackage.b", line_number=1, line_contents="-"
     )
     contract = IndependenceContract(
         name="Independence contract",
