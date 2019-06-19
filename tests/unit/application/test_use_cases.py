@@ -1,7 +1,7 @@
 import string
 from typing import Any, Dict, List, Optional
 
-from grimp.adaptors.graph import ImportGraph
+from grimp.adaptors.graph import ImportGraph  # type: ignore
 from importlinter.application.app_config import settings
 from importlinter.application.use_cases import FAILURE, SUCCESS, lint_imports
 from importlinter.application.user_options import UserOptions
