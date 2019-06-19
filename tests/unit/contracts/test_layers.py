@@ -1,9 +1,10 @@
 import pytest
-
+from grimp.adaptors.graph import ImportGraph
 from importlinter.application.app_config import settings
 from importlinter.contracts.layers import LayersContract
 from importlinter.domain.contract import ContractCheck
 from importlinter.domain.helpers import MissingImport
+
 from tests.adapters.graph import FakeGraph
 from tests.adapters.printing import FakePrinter
 
@@ -610,18 +611,17 @@ def test_render_broken_contract():
     ),
 )
 def test_invalid_container(container):
-    graph = FakeGraph(
-        root_package_name="mypackage",
-        all_modules=[
-            "mypackage",
-            "mypackage.foo",
-            "mypackage.foo.high",
-            "mypackage.foo.medium",
-            "mypackage.foo.low",
-            "notinpackage",
-            "mypackagebeginscorrectly",
-        ],
-    )
+    graph = ImportGraph()
+    for module in (
+        "mypackage",
+        "mypackage.foo",
+        "mypackage.foo.high",
+        "mypackage.foo.medium",
+        "mypackage.foo.low",
+        "notinpackage",
+        "mypackagebeginscorrectly",
+    ):
+        graph.add_module(module)
 
     contract = LayersContract(
         name="Layer contract",
