@@ -1,8 +1,11 @@
+import string
 from typing import Any, Dict, List, Optional
 
+from grimp.adaptors.graph import ImportGraph
 from importlinter.application.app_config import settings
 from importlinter.application.use_cases import FAILURE, SUCCESS, lint_imports
 from importlinter.application.user_options import UserOptions
+
 from tests.adapters.building import FakeGraphBuilder
 from tests.adapters.graph import FakeGraph
 from tests.adapters.printing import FakePrinter
@@ -32,7 +35,7 @@ class TestCheckContractsAndPrintReport:
             Contracts
             ---------
 
-            Analyzed 23 files, 44 dependencies.
+            Analyzed 26 files, 10 dependencies.
             -----------------------------------
 
             Contract foo KEPT
@@ -91,7 +94,7 @@ class TestCheckContractsAndPrintReport:
             Contracts
             ---------
 
-            Analyzed 23 files, 44 dependencies.
+            Analyzed 26 files, 10 dependencies.
             -----------------------------------
 
             Contract foo BROKEN
@@ -194,7 +197,7 @@ class TestCheckContractsAndPrintReport:
         self,
         contracts_options: List[Dict[str, Any]],
         contract_types: Optional[List[str]] = None,
-        graph: Optional[FakeGraph] = None,
+        graph: Optional[ImportGraph] = None,
     ):
         session_options = {"root_package": "mypackage"}
         if not contract_types:
@@ -213,5 +216,23 @@ class TestCheckContractsAndPrintReport:
             USER_OPTION_READERS=[reader], GRAPH_BUILDER=FakeGraphBuilder(), PRINTER=FakePrinter()
         )
         if graph is None:
-            graph = FakeGraph(root_package_name="mypackage", module_count=23, import_count=44)
+            graph = self._build_default_graph()
+
         settings.GRAPH_BUILDER.inject_graph(graph)
+
+    def _build_default_graph(self):
+        graph = ImportGraph()
+
+        # Add 26 modules.
+        for letter in string.ascii_lowercase:
+            graph.add_module(f"mypackage.{letter}")
+
+        # Add 10 imports in total.
+        for imported in ("d", "e", "f"):
+            for importer in ("a", "b", "c"):
+                graph.add_import(
+                    importer=f"mypackage.{importer}", imported=f"mypackage.{imported}"
+                )  # 3 * 3 = 9 imports.
+        graph.add_import(importer="mypackage.d", imported="mypackage.f")  # 1 extra import.
+
+        return graph
