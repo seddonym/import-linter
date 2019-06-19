@@ -4,217 +4,13 @@ from importlinter.application.app_config import settings
 from importlinter.contracts.independence import IndependenceContract
 from importlinter.domain.contract import ContractCheck
 
-from tests.adapters.graph import FakeGraph
 from tests.adapters.printing import FakePrinter
 
 
-@pytest.mark.parametrize(
-    "shortest_chains, expected_invalid_chains",
-    (
-        ({("blue", "orange"): ("blue", "orange"), ("brown", "blue"): ("brown", "blue")}, []),
-        (
-            {("blue", "green"): ("blue", "green")},
-            {
-                "upstream_module": "mypackage.green",
-                "downstream_module": "mypackage.blue",
-                "chains": [
-                    [
-                        {
-                            "importer": "mypackage.blue",
-                            "imported": "mypackage.green",
-                            "line_numbers": (10,),
-                        }
-                    ]
-                ],
-            },
-        ),
-        (
-            {("blue.beta.foo", "green"): ("blue.beta.foo", "orange.omega", "green")},
-            {
-                "upstream_module": "mypackage.green",
-                "downstream_module": "mypackage.blue",
-                "chains": [
-                    [
-                        {
-                            "importer": "mypackage.blue.beta.foo",
-                            "imported": "mypackage.orange.omega",
-                            "line_numbers": (9, 109),
-                        },
-                        {
-                            "importer": "mypackage.orange.omega",
-                            "imported": "mypackage.green",
-                            "line_numbers": (1,),
-                        },
-                    ]
-                ],
-            },
-        ),
-        (
-            {("green", "blue.beta.foo"): ("green", "blue.beta.foo")},
-            {
-                "upstream_module": "mypackage.blue",
-                "downstream_module": "mypackage.green",
-                "chains": [
-                    [
-                        {
-                            "importer": "mypackage.green",
-                            "imported": "mypackage.blue.beta.foo",
-                            "line_numbers": (8,),
-                        }
-                    ]
-                ],
-            },
-        ),
-        (
-            {("blue", "yellow"): ("blue", "yellow")},
-            {
-                "upstream_module": "mypackage.yellow",
-                "downstream_module": "mypackage.blue",
-                "chains": [
-                    [
-                        {
-                            "importer": "mypackage.blue",
-                            "imported": "mypackage.yellow",
-                            "line_numbers": (3,),
-                        }
-                    ]
-                ],
-            },
-        ),
-        (
-            {("blue.beta.foo", "yellow.gamma"): ("blue.beta.foo", "yellow.gamma")},
-            {
-                "upstream_module": "mypackage.yellow",
-                "downstream_module": "mypackage.blue",
-                "chains": [
-                    [
-                        {
-                            "importer": "mypackage.blue.beta.foo",
-                            "imported": "mypackage.yellow.gamma",
-                            "line_numbers": (100,),
-                        }
-                    ]
-                ],
-            },
-        ),
-        (
-            {("yellow", "blue"): ("yellow", "blue")},
-            {
-                "upstream_module": "mypackage.blue",
-                "downstream_module": "mypackage.yellow",
-                "chains": [
-                    [
-                        {
-                            "importer": "mypackage.yellow",
-                            "imported": "mypackage.blue",
-                            "line_numbers": (4,),
-                        }
-                    ]
-                ],
-            },
-        ),
-        (
-            {("green", "yellow"): ("green", "yellow")},
-            {
-                "upstream_module": "mypackage.yellow",
-                "downstream_module": "mypackage.green",
-                "chains": [
-                    [
-                        {
-                            "importer": "mypackage.green",
-                            "imported": "mypackage.yellow",
-                            "line_numbers": (6,),
-                        }
-                    ]
-                ],
-            },
-        ),
-        (
-            {("yellow", "green"): ("yellow", "green")},
-            {
-                "upstream_module": "mypackage.green",
-                "downstream_module": "mypackage.yellow",
-                "chains": [
-                    [
-                        {
-                            "importer": "mypackage.yellow",
-                            "imported": "mypackage.green",
-                            "line_numbers": (10,),
-                        }
-                    ]
-                ],
-            },
-        ),
-    ),
-)
-def test_independence_contract(shortest_chains, expected_invalid_chains):
-    graph = FakeGraph(
-        root_package_name="mypackage",
-        descendants={"blue": {"alpha", "beta", "beta.foo"}, "yellow": {"gamma", "delta"}},
-        import_details=[
-            {
-                "importer": "mypackage.blue",
-                "imported": "mypackage.green",
-                "line_number": 10,
-                "line_contents": "-",
-            },
-            {
-                "importer": "mypackage.blue.beta.foo",
-                "imported": "mypackage.orange.omega",
-                "line_number": 9,
-                "line_contents": "-",
-            },
-            {
-                "importer": "mypackage.blue.beta.foo",
-                "imported": "mypackage.orange.omega",
-                "line_number": 109,
-                "line_contents": "-",
-            },
-            {
-                "importer": "mypackage.orange.omega",
-                "imported": "mypackage.green",
-                "line_number": 1,
-                "line_contents": "-",
-            },
-            {
-                "importer": "mypackage.green",
-                "imported": "mypackage.blue.beta.foo",
-                "line_number": 8,
-                "line_contents": "-",
-            },
-            {
-                "importer": "mypackage.blue",
-                "imported": "mypackage.yellow",
-                "line_number": 3,
-                "line_contents": "-",
-            },
-            {
-                "importer": "mypackage.blue.beta.foo",
-                "imported": "mypackage.yellow.gamma",
-                "line_number": 100,
-                "line_contents": "-",
-            },
-            {
-                "importer": "mypackage.yellow",
-                "imported": "mypackage.blue",
-                "line_number": 4,
-                "line_contents": "-",
-            },
-            {
-                "importer": "mypackage.green",
-                "imported": "mypackage.yellow",
-                "line_number": 6,
-                "line_contents": "-",
-            },
-            {
-                "importer": "mypackage.yellow",
-                "imported": "mypackage.green",
-                "line_number": 10,
-                "line_contents": "-",
-            },
-        ],
-        shortest_chains=shortest_chains,
-        all_modules=[
+class TestIndependenceContract:
+    def _build_default_graph(self):
+        graph = ImportGraph()
+        for module in (
             "mypackage",
             "mypackage.blue",
             "mypackage.blue.alpha",
@@ -224,24 +20,249 @@ def test_independence_contract(shortest_chains, expected_invalid_chains):
             "mypackage.yellow",
             "mypackage.yellow.gamma",
             "mypackage.yellow.delta",
-        ],
-    )
-    contract = IndependenceContract(
-        name="Independence contract",
-        session_options={"root_package": "mypackage"},
-        contract_options={"modules": ("mypackage.blue", "mypackage.green", "mypackage.yellow")},
-    )
+            "mypackage.other",
+        ):
+            graph.add_module(module)
+        return graph
 
-    contract_check = contract.check(graph=graph)
+    def _check_default_contract(self, graph):
+        contract = IndependenceContract(
+            name="Independence contract",
+            session_options={"root_package": "mypackage"},
+            contract_options={
+                "modules": ("mypackage.blue", "mypackage.green", "mypackage.yellow")
+            },
+        )
+        return contract.check(graph=graph)
 
-    if expected_invalid_chains:
+    def test_when_modules_are_independent(self):
+        graph = self._build_default_graph()
+        graph.add_import(
+            importer="mypackage.blue",
+            imported="mypackage.other",
+            line_number=10,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.green",
+            imported="mypackage.other",
+            line_number=11,
+            line_contents="-",
+        )
+
+        contract_check = self._check_default_contract(graph)
+
+        assert contract_check.kept
+
+    def test_when_root_imports_root_directly(self):
+        graph = self._build_default_graph()
+        graph.add_import(
+            importer="mypackage.blue",
+            imported="mypackage.green",
+            line_number=10,
+            line_contents="-",
+        )
+
+        contract_check = self._check_default_contract(graph)
+
         assert not contract_check.kept
 
-        expected_metadata = {"invalid_chains": [expected_invalid_chains]}
-
+        expected_metadata = {
+            "invalid_chains": [
+                {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.blue",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.blue",
+                                "imported": "mypackage.green",
+                                "line_numbers": (10,),
+                            }
+                        ]
+                    ],
+                }
+            ]
+        }
         assert expected_metadata == contract_check.metadata
-    else:
-        assert contract_check.kept
+
+    def test_when_root_imports_root_indirectly(self):
+        graph = self._build_default_graph()
+        graph.add_import(
+            importer="mypackage.blue",
+            imported="mypackage.other",
+            line_number=10,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.other",
+            imported="mypackage.green",
+            line_number=11,
+            line_contents="-",
+        )
+
+        contract_check = self._check_default_contract(graph)
+
+        assert not contract_check.kept
+
+        expected_metadata = {
+            "invalid_chains": [
+                {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.blue",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.blue",
+                                "imported": "mypackage.other",
+                                "line_numbers": (10,),
+                            },
+                            {
+                                "importer": "mypackage.other",
+                                "imported": "mypackage.green",
+                                "line_numbers": (11,),
+                            },
+                        ]
+                    ],
+                }
+            ]
+        }
+        assert expected_metadata == contract_check.metadata
+
+    def test_chains_via_other_independent_modules(self):
+        # In this case, all chains are included, even though they are repeated elsewhere in the
+        # contract check (we may want to change this).
+        graph = self._build_default_graph()
+        graph.add_import(
+            importer="mypackage.blue",
+            imported="mypackage.green",
+            line_number=10,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.yellow",
+            imported="mypackage.blue",
+            line_number=11,
+            line_contents="-",
+        )
+
+        contract_check = self._check_default_contract(graph)
+
+        assert not contract_check.kept
+
+        expected_metadata = {
+            "invalid_chains": [
+                {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.blue",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.blue",
+                                "imported": "mypackage.green",
+                                "line_numbers": (10,),
+                            }
+                        ]
+                    ],
+                },
+                {
+                    "upstream_module": "mypackage.blue",
+                    "downstream_module": "mypackage.yellow",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.yellow",
+                                "imported": "mypackage.blue",
+                                "line_numbers": (11,),
+                            }
+                        ]
+                    ],
+                },
+                {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.yellow",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.yellow",
+                                "imported": "mypackage.blue",
+                                "line_numbers": (11,),
+                            },
+                            {
+                                "importer": "mypackage.blue",
+                                "imported": "mypackage.green",
+                                "line_numbers": (10,),
+                            },
+                        ]
+                    ],
+                },
+            ]
+        }
+        assert expected_metadata == contract_check.metadata
+
+    def test_when_child_imports_child(self):
+        graph = self._build_default_graph()
+        graph.add_import(
+            importer="mypackage.blue.alpha",
+            imported="mypackage.yellow.gamma",
+            line_number=5,
+            line_contents="-",
+        )
+
+        contract_check = self._check_default_contract(graph)
+
+        assert not contract_check.kept
+
+        expected_metadata = {
+            "invalid_chains": [
+                {
+                    "upstream_module": "mypackage.yellow",
+                    "downstream_module": "mypackage.blue",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.blue.alpha",
+                                "imported": "mypackage.yellow.gamma",
+                                "line_numbers": (5,),
+                            }
+                        ]
+                    ],
+                }
+            ]
+        }
+        assert expected_metadata == contract_check.metadata
+
+    def test_when_grandchild_imports_root(self):
+        graph = self._build_default_graph()
+        graph.add_import(
+            importer="mypackage.blue.beta.foo",
+            imported="mypackage.green",
+            line_number=8,
+            line_contents="-",
+        )
+
+        contract_check = self._check_default_contract(graph)
+
+        assert not contract_check.kept
+
+        expected_metadata = {
+            "invalid_chains": [
+                {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.blue",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.blue.beta.foo",
+                                "imported": "mypackage.green",
+                                "line_numbers": (8,),
+                            }
+                        ]
+                    ],
+                }
+            ]
+        }
+        assert expected_metadata == contract_check.metadata
 
 
 @pytest.mark.parametrize(
