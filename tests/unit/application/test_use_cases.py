@@ -214,4 +214,4 @@ class TestCheckContractsAndPrintReport:
         )
         if graph is None:
             graph = FakeGraph(root_package_name="mypackage", module_count=23, import_count=44)
-        settings.GRAPH_BUILDER.set_graph(graph)
+        settings.GRAPH_BUILDER.inject_graph(graph)
