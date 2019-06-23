@@ -5,38 +5,39 @@ from importlinter.contracts.layers import LayersContract
 from importlinter.domain.contract import ContractCheck
 from importlinter.domain.helpers import MissingImport
 
-from tests.adapters.graph import FakeGraph
 from tests.adapters.printing import FakePrinter
 
 
-@pytest.mark.parametrize(
-    "shortest_chains, is_kept",
-    (
-        (
-            {
-                ("high.green", "medium.orange"): ("high.green", "medium.orange"),
-                ("high.green", "low.white.gamma"): ("high.green", "low.white.gamma"),
-                ("medium.orange", "low.white"): ("medium.orange", "low.white"),
-            },
-            True,
-        ),
-        ({("medium.orange", "high.green"): ("medium.orange", "high.green")}, False),
-        (
-            {("low.white.gamma", "high.yellow.alpha"): ("low.white.gamma", "high.yellow.alpha")},
-            False,
-        ),
-        ({("low.white.gamma", "medium.red"): ("low.white.gamma", "medium.red")}, False),
-    ),
-)
-def test_layer_contract_single_containers(shortest_chains, is_kept):
-    graph = FakeGraph(
-        root_package_name="mypackage",
-        descendants={
-            "high": {"green", "blue", "yellow", "yellow.alpha"},
-            "medium": {"orange", "red", "orange.beta"},
-            "low": {"black", "white", "white.gamma"},
-        },
-        all_modules=[
+class TestLayerContractSingleContainers:
+    def test_no_illegal_imports_means_contract_is_kept(self):
+        contract = self._build_contract()
+        graph = self._build_graph()
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept is True
+
+    def test_illegal_child_imports_means_contract_is_broken(self):
+        contract = self._build_contract()
+        graph = self._build_graph()
+        graph.add_import(importer="mypackage.medium.orange", imported="mypackage.high.green")
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept is False
+
+    def test_illegal_grandchild_to_child_means_contract_is_broken(self):
+        contract = self._build_contract()
+        graph = self._build_graph()
+        graph.add_import(importer="mypackage.low.white.gamma", imported="mypackage.medium.red")
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept is False
+
+    def _build_graph(self):
+        graph = ImportGraph()
+        for module in (
             "mypackage",
             "mypackage.high",
             "mypackage.high.green",
@@ -51,95 +52,63 @@ def test_layer_contract_single_containers(shortest_chains, is_kept):
             "mypackage.low.black",
             "mypackage.low.white",
             "mypackage.low.white.gamma",
-        ],
-        shortest_chains=shortest_chains,
-    )
+        ):
+            graph.add_module(module)
 
-    contract = LayersContract(
-        name="Layer contract",
-        session_options={"root_package": "mypackage"},
-        contract_options={"containers": ["mypackage"], "layers": ["high", "medium", "low"]},
-    )
+        # Add some 'legal' imports.
+        graph.add_import(importer="mypackage.high.green", imported="mypackage.medium.orange")
+        graph.add_import(importer="mypackage.high.green", imported="mypackage.low.white.gamma")
+        graph.add_import(importer="mypackage.medium.orange", imported="mypackage.low.white")
+        graph.add_import(importer="mypackage.high.blue", imported="mypackage.utils")
+        graph.add_import(importer="mypackage.utils", imported="mypackage.medium.red")
 
-    contract_check = contract.check(graph=graph)
+        return graph
 
-    assert contract_check.kept == is_kept
+    def _build_contract(self):
+        return LayersContract(
+            name="Layer contract",
+            session_options={"root_package": "mypackage"},
+            contract_options={"containers": ["mypackage"], "layers": ["high", "medium", "low"]},
+        )
 
 
-@pytest.mark.parametrize(
-    "shortest_chains, is_kept",
-    (
-        (
-            {
-                ("one.high.green", "one.medium.orange"): ("one.high.green", "one.medium.orange"),
-                ("one.high.green", "one.low.white.gamma"): (
-                    "one.high.green",
-                    "one.low.white.gamma",
-                ),
-                ("one.medium.orange", "one.low.white"): ("one.medium.orange", "one.low.white"),
-                ("two.high.red.alpha", "two.medium.green.beta"): (
-                    "two.high.red.alpha",
-                    "two.medium.green.beta",
-                ),
-                ("two.high.red.alpha", "two.low.blue.gamma"): (
-                    "two.high.red.alpha",
-                    "two.low.blue.gamma",
-                ),
-                ("two.medium.green.beta", "two.low.blue.gamma"): (
-                    "two.medium.green.beta",
-                    "two.low.blue.gamma",
-                ),
-                ("three.high.white", "three.medium.purple"): (
-                    "three.high.white",
-                    "three.medium.purple",
-                ),
-                ("three.high.white", "three.low.cyan"): ("three.high.white", "three.low.cyan"),
-                ("three.medium.purple", "three.low.cyan"): (
-                    "three.medium.purple",
-                    "three.low.cyan",
-                ),
-            },
-            True,
-        ),
-        (
-            {
-                ("two.medium.green.beta", "one.high.green"): (
-                    "two.medium.green.beta",
-                    "one.high.green",
-                )
-            },
-            True,
-        ),
-        (
-            {("three.low.cyan", "two.high.red.alpha"): ("three.low.cyan", "two.high.red.alpha")},
-            True,
-        ),
-        (
-            {
-                ("two.medium.green.beta", "two.high.red.alpha"): (
-                    "two.medium.green.beta",
-                    "two.high.red.alpha",
-                )
-            },
-            False,
-        ),
-    ),
-)
-def test_layer_contract_multiple_containers(shortest_chains, is_kept):
-    graph = FakeGraph(
-        root_package_name="mypackage",
-        descendants={
-            "one.high": {"green", "blue", "yellow", "yellow.alpha"},
-            "one.medium": {"orange", "red", "orange.beta"},
-            "one.low": {"black", "white", "white.gamma"},
-            "two.high": {"red", "red.alpha"},
-            "two.medium": {"green", "green.beta"},
-            "two.low": {"blue", "blue.gamma"},
-            "three.high": {"white"},
-            "three.medium": {"purple"},
-            "three.low": {"cyan"},
-        },
-        all_modules=[
+class TestLayerMultipleContainers:
+    def test_no_illegal_imports_means_contract_is_kept(self):
+        contract = self._build_contract()
+        graph = self._build_graph()
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept is True
+
+    def test_imports_from_low_to_high_but_in_different_container_doesnt_break_contract(self):
+        contract = self._build_contract()
+        graph = self._build_graph()
+        graph.add_import(
+            importer="mypackage.two.medium.green.beta", imported="mypackage.one.high.green"
+        )
+        graph.add_import(
+            importer="mypackage.three.low.cyan", imported="mypackage.two.high.red.alpha"
+        )
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept is True
+
+    def test_illegal_grandchild_imports_means_contract_is_broken(self):
+        contract = self._build_contract()
+        graph = self._build_graph()
+        graph.add_import(
+            importer="mypackage.two.medium.green.beta", imported="mypackage.two.high.red.alpha"
+        )
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept is False
+
+    def _build_graph(self):
+        graph = ImportGraph()
+        for module in (
             "mypackage",
             "mypackage.one",
             "mypackage.one.high",
@@ -172,41 +141,70 @@ def test_layer_contract_multiple_containers(shortest_chains, is_kept):
             "mypackage.three.medium.purple",
             "mypackage.three.low",
             "mypackage.three.low.cyan",
-        ],
-        shortest_chains=shortest_chains,
-    )
+        ):
+            graph.add_module(module)
 
-    contract = LayersContract(
-        name="Layer contract",
-        session_options={"root_package": "mypackage"},
-        contract_options={
-            "containers": ["mypackage.one", "mypackage.two", "mypackage.three"],
-            "layers": ["high", "medium", "low"],
-        },
-    )
+        # Add some 'legal' imports, each within their separate containers.
+        graph.add_import(
+            importer="mypackage.one.high.green", imported="mypackage.one.medium.orange"
+        )
+        graph.add_import(
+            importer="mypackage.one.high.green", imported="mypackage.one.low.white.gamma"
+        )
+        graph.add_import(
+            importer="mypackage.one.medium.orange", imported="mypackage.one.low.white"
+        )
 
-    contract_check = contract.check(graph=graph)
+        graph.add_import(
+            importer="mypackage.two.high.red.alpha", imported="mypackage.two.medium.green.beta"
+        )
+        graph.add_import(
+            importer="mypackage.two.high.red.alpha", imported="mypackage.two.low.blue.gamma"
+        )
+        graph.add_import(
+            importer="mypackage.two.medium.green.beta", imported="mypackage.two.low.blue.gamma"
+        )
 
-    assert contract_check.kept == is_kept
+        graph.add_import(
+            importer="mypackage.three.high.white", imported="mypackage.three.medium.purple"
+        )
+        graph.add_import(
+            importer="mypackage.three.high.white", imported="mypackage.three.low.cyan"
+        )
+        graph.add_import(
+            importer="mypackage.three.medium.purple", imported="mypackage.three.low.cyan"
+        )
+
+        return graph
+
+    def _build_contract(self):
+        return LayersContract(
+            name="Layer contract",
+            session_options={"root_package": "mypackage"},
+            contract_options={
+                "containers": ["mypackage.one", "mypackage.two", "mypackage.three"],
+                "layers": ["high", "medium", "low"],
+            },
+        )
 
 
 def test_layer_contract_populates_metadata():
     graph = ImportGraph()
     for module in (
-            "mypackage",
-            "mypackage.high",
-            "mypackage.high.green",
-            "mypackage.high.blue",
-            "mypackage.high.yellow",
-            "mypackage.high.yellow.alpha",
-            "mypackage.medium",
-            "mypackage.medium.orange",
-            "mypackage.medium.orange.beta",
-            "mypackage.medium.red",
-            "mypackage.low",
-            "mypackage.low.black",
-            "mypackage.low.white",
-            "mypackage.low.white.gamma",
+        "mypackage",
+        "mypackage.high",
+        "mypackage.high.green",
+        "mypackage.high.blue",
+        "mypackage.high.yellow",
+        "mypackage.high.yellow.alpha",
+        "mypackage.medium",
+        "mypackage.medium.orange",
+        "mypackage.medium.orange.beta",
+        "mypackage.medium.red",
+        "mypackage.low",
+        "mypackage.low.black",
+        "mypackage.low.white",
+        "mypackage.low.white.gamma",
     ):
         graph.add_module(module)
     graph.add_import(
@@ -322,51 +320,94 @@ def test_layer_contract_populates_metadata():
     }
 
 
-@pytest.mark.parametrize(
-    "ignore_imports, invalid_chain",
-    (
-        (
-            # Ignore from each chain - should be valid.
-            [
-                "mypackage.utils.baz -> mypackage.medium.orange",
-                "mypackage.low.white.gamma -> mypackage.utils.foo",
-            ],
-            None,
-        ),
-        (
-            # Ignore only one chain - should return the other.
-            ["mypackage.low.white.gamma -> mypackage.utils.foo"],
-            ["low.black", "utils.baz", "medium.orange"],
-        ),
-        (
-            # Multiple ignore from same path - should allow it.
-            [
+class TestIgnoreImports:
+    def test_one_ignored_from_each_chain_means_contract_is_kept(self):
+        contract = self._build_contract(
+            ignore_imports=[
+                "mypackage.low.black -> mypackage.medium.orange",
+                "mypackage.utils.foo -> mypackage.utils.bar",
+            ]
+        )
+        graph = self._build_graph()
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept is True
+
+    def test_ignore_only_one_chain_should_fail_because_of_the_other(self):
+        contract = self._build_contract(
+            ignore_imports=["mypackage.utils.bar -> mypackage.high.yellow.alpha"]
+        )
+        graph = self._build_graph()
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept is False
+        assert contract_check.metadata["invalid_chains"] == [
+            {
+                "higher_layer": "mypackage.medium",
+                "lower_layer": "mypackage.low",
+                "chains": [
+                    [
+                        dict(
+                            importer="mypackage.low.black",
+                            imported="mypackage.medium.orange",
+                            line_numbers=(1,),
+                        )
+                    ]
+                ],
+            }
+        ]
+
+    def test_multiple_ignore_from_same_chain_should_not_error(self):
+        contract = self._build_contract(
+            ignore_imports=[
                 "mypackage.low.white.gamma -> mypackage.utils.foo",
                 "mypackage.utils.bar -> mypackage.high.yellow.alpha",
-            ],
-            ["low.black", "utils.baz", "medium.orange"],
-        ),
-        (
-            # Ignore from nonexistent module - should error.
-            ["mypackage.nonexistent.foo -> mypackage.utils.foo"],
-            MissingImport(),
-        ),
-        (
-            # Ignore from nonexistent module - should error.
-            ["mypackage.utils.foo -> mypackage.nonexistent.foo"],
-            MissingImport(),
-        ),
-    ),
-)
-def test_ignore_imports(ignore_imports, invalid_chain):
-    graph = FakeGraph(
-        root_package_name="mypackage",
-        descendants={
-            "high": {"green", "blue", "yellow", "yellow.alpha"},
-            "medium": {"orange"},
-            "low": {"black", "white", "white.gamma"},
-        },
-        all_modules=[
+            ]
+        )
+        graph = self._build_graph()
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept is False
+        assert contract_check.metadata["invalid_chains"] == [
+            {
+                "higher_layer": "mypackage.medium",
+                "lower_layer": "mypackage.low",
+                "chains": [
+                    [
+                        dict(
+                            importer="mypackage.low.black",
+                            imported="mypackage.medium.orange",
+                            line_numbers=(1,),
+                        )
+                    ]
+                ],
+            }
+        ]
+
+    def test_ignore_from_nonexistent_importer_raises_missing_import(self):
+        contract = self._build_contract(
+            ignore_imports=["mypackage.nonexistent.foo -> mypackage.high"]
+        )
+        graph = self._build_graph()
+
+        with pytest.raises(MissingImport):
+            contract.check(graph=graph)
+
+    def test_ignore_from_nonexistent_imported_raises_missing_import(self):
+        contract = self._build_contract(
+            ignore_imports=["mypackage.high -> mypackage.nonexistent.foo"]
+        )
+        graph = self._build_graph()
+
+        with pytest.raises(MissingImport):
+            contract.check(graph=graph)
+
+    def _build_graph(self):
+        graph = ImportGraph()
+        for module in (
             "mypackage",
             "mypackage.high",
             "mypackage.high.green",
@@ -381,68 +422,55 @@ def test_ignore_imports(ignore_imports, invalid_chain):
             "mypackage.low.black",
             "mypackage.low.white",
             "mypackage.low.white.gamma",
-        ],
-        shortest_chains={
-            ("low.white.gamma", "high.yellow.alpha"): (
-                "low.white.gamma",
-                "utils.foo",
-                "utils.bar",
-                "high.yellow.alpha",
-            ),
-            ("low.black", "medium.orange"): ("low.black", "utils.baz", "medium.orange"),
-        },
-        import_details=[
-            {
-                "importer": "mypackage.utils.baz",
-                "imported": "mypackage.medium.orange",
-                "line_number": 1,
-                "line_contents": "-",
-            },
-            {
-                "importer": "mypackage.low.white.gamma",
-                "imported": "mypackage.utils.foo",
-                "line_number": 1,
-                "line_contents": "-",
-            },
-            {
-                "importer": "mypackage.utils.bar",
-                "imported": "mypackage.high.yellow.alpha",
-                "line_number": 1,
-                "line_contents": "-",
-            },
-        ],
-    )
+        ):
+            graph.add_module(module)
 
-    contract = LayersContract(
-        name="Layer contract",
-        session_options={"root_package": "mypackage"},
-        contract_options={
-            "containers": ["mypackage"],
-            "layers": ["high", "medium", "low"],
-            "ignore_imports": ignore_imports,
-        },
-    )
+        # Add some 'legal' imports.
+        graph.add_import(importer="mypackage.high.green", imported="mypackage.medium.orange")
+        graph.add_import(importer="mypackage.high.green", imported="mypackage.low.white.gamma")
+        graph.add_import(importer="mypackage.medium.orange", imported="mypackage.low.white")
+        graph.add_import(importer="mypackage.high.blue", imported="mypackage.utils")
+        graph.add_import(importer="mypackage.utils", imported="mypackage.medium.red")
 
-    if isinstance(invalid_chain, Exception):
-        with pytest.raises(invalid_chain.__class__):
-            contract.check(graph=graph)
-        return
-    else:
-        contract_check = contract.check(graph=graph)
+        # Direct illegal import.
+        graph.add_import(
+            importer="mypackage.low.black",
+            imported="mypackage.medium.orange",
+            line_number=1,
+            line_contents="-",
+        )
+        # Indirect illegal import.
+        graph.add_import(
+            importer="mypackage.low.white.gamma",
+            imported="mypackage.utils.foo",
+            line_number=1,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.utils.foo",
+            imported="mypackage.utils.bar",
+            line_number=1,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.utils.bar",
+            imported="mypackage.high.yellow.alpha",
+            line_number=1,
+            line_contents="-",
+        )
 
-    if invalid_chain:
-        assert False is contract_check.kept
-        assert len(contract_check.metadata["invalid_chains"]) == 1
-        chains_metadata = contract_check.metadata["invalid_chains"][0]
-        assert len(chains_metadata["chains"]) == 1
-        chain_metadata = chains_metadata["chains"][0]
-        actual_chain = [chain_metadata[0]["importer"]]
-        for direct_import in chain_metadata:
-            actual_chain.append(direct_import["imported"])
-        package = graph.root_package_name
-        assert [f"{package}.{n}" for n in invalid_chain] == actual_chain
-    else:
-        assert True is contract_check.kept
+        return graph
+
+    def _build_contract(self, ignore_imports):
+        return LayersContract(
+            name="Layer contract",
+            session_options={"root_package": "mypackage"},
+            contract_options={
+                "containers": ["mypackage"],
+                "layers": ["high", "medium", "low"],
+                "ignore_imports": ignore_imports,
+            },
+        )
 
 
 @pytest.mark.parametrize(
