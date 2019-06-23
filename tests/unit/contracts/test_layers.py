@@ -9,34 +9,36 @@ from tests.adapters.graph import FakeGraph
 from tests.adapters.printing import FakePrinter
 
 
-@pytest.mark.parametrize(
-    "shortest_chains, is_kept",
-    (
-        (
-            {
-                ("high.green", "medium.orange"): ("high.green", "medium.orange"),
-                ("high.green", "low.white.gamma"): ("high.green", "low.white.gamma"),
-                ("medium.orange", "low.white"): ("medium.orange", "low.white"),
-            },
-            True,
-        ),
-        ({("medium.orange", "high.green"): ("medium.orange", "high.green")}, False),
-        (
-            {("low.white.gamma", "high.yellow.alpha"): ("low.white.gamma", "high.yellow.alpha")},
-            False,
-        ),
-        ({("low.white.gamma", "medium.red"): ("low.white.gamma", "medium.red")}, False),
-    ),
-)
-def test_layer_contract_single_containers(shortest_chains, is_kept):
-    graph = FakeGraph(
-        root_package_name="mypackage",
-        descendants={
-            "high": {"green", "blue", "yellow", "yellow.alpha"},
-            "medium": {"orange", "red", "orange.beta"},
-            "low": {"black", "white", "white.gamma"},
-        },
-        all_modules=[
+class TestLayerContractSingleContainers:
+    def test_no_illegal_imports_means_contract_is_kept(self):
+        contract = self._build_contract()
+        graph = self._build_graph()
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept is True
+
+    def test_illegal_child_imports_means_contract_is_broken(self):
+        contract = self._build_contract()
+        graph = self._build_graph()
+        graph.add_import(importer="mypackage.medium.orange", imported="mypackage.high.green")
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept is False
+
+    def test_illegal_grandchild_to_child_means_contract_is_broken(self):
+        contract = self._build_contract()
+        graph = self._build_graph()
+        graph.add_import(importer="mypackage.low.white.gamma", imported="mypackage.medium.red")
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept is False
+
+    def _build_graph(self):
+        graph = ImportGraph()
+        for module in (
             "mypackage",
             "mypackage.high",
             "mypackage.high.green",
@@ -51,19 +53,24 @@ def test_layer_contract_single_containers(shortest_chains, is_kept):
             "mypackage.low.black",
             "mypackage.low.white",
             "mypackage.low.white.gamma",
-        ],
-        shortest_chains=shortest_chains,
-    )
+        ):
+            graph.add_module(module)
 
-    contract = LayersContract(
-        name="Layer contract",
-        session_options={"root_package": "mypackage"},
-        contract_options={"containers": ["mypackage"], "layers": ["high", "medium", "low"]},
-    )
+        # Add some 'legal' imports.
+        graph.add_import(importer="mypackage.high.green", imported="mypackage.medium.orange")
+        graph.add_import(importer="mypackage.high.green", imported="mypackage.low.white.gamma")
+        graph.add_import(importer="mypackage.medium.orange", imported="mypackage.low.white")
+        graph.add_import(importer="mypackage.high.blue", imported="mypackage.utils")
+        graph.add_import(importer="mypackage.utils", imported="mypackage.medium.red")
 
-    contract_check = contract.check(graph=graph)
+        return graph
 
-    assert contract_check.kept == is_kept
+    def _build_contract(self):
+        return LayersContract(
+            name="Layer contract",
+            session_options={"root_package": "mypackage"},
+            contract_options={"containers": ["mypackage"], "layers": ["high", "medium", "low"]},
+        )
 
 
 @pytest.mark.parametrize(
@@ -193,20 +200,20 @@ def test_layer_contract_multiple_containers(shortest_chains, is_kept):
 def test_layer_contract_populates_metadata():
     graph = ImportGraph()
     for module in (
-            "mypackage",
-            "mypackage.high",
-            "mypackage.high.green",
-            "mypackage.high.blue",
-            "mypackage.high.yellow",
-            "mypackage.high.yellow.alpha",
-            "mypackage.medium",
-            "mypackage.medium.orange",
-            "mypackage.medium.orange.beta",
-            "mypackage.medium.red",
-            "mypackage.low",
-            "mypackage.low.black",
-            "mypackage.low.white",
-            "mypackage.low.white.gamma",
+        "mypackage",
+        "mypackage.high",
+        "mypackage.high.green",
+        "mypackage.high.blue",
+        "mypackage.high.yellow",
+        "mypackage.high.yellow.alpha",
+        "mypackage.medium",
+        "mypackage.medium.orange",
+        "mypackage.medium.orange.beta",
+        "mypackage.medium.red",
+        "mypackage.low",
+        "mypackage.low.black",
+        "mypackage.low.white",
+        "mypackage.low.white.gamma",
     ):
         graph.add_module(module)
     graph.add_import(
