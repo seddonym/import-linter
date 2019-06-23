@@ -1,10 +1,8 @@
 from itertools import permutations
-from typing import Dict, Set
 
 from importlinter.application import output
 from importlinter.domain import fields, helpers
 from importlinter.domain.contract import Contract, ContractCheck
-from importlinter.domain.imports import Module
 from importlinter.domain.ports.graph import ImportGraph
 
 
@@ -38,45 +36,37 @@ class IndependenceContract(Contract):
 
         self._check_all_modules_exist_in_graph(graph)
 
-        all_modules_for_each_subpackage: Dict[Module, Set[Module]] = {}
-
-        for module in self.modules:  # type: ignore
-            descendants = set(map(Module, graph.find_descendants(module.name)))
-            all_modules_for_each_subpackage[module] = {module} | descendants
-
         for subpackage_1, subpackage_2 in permutations(  # type: ignore
             self.modules, r=2
         ):
-
             subpackage_chain_data = {
                 "upstream_module": subpackage_2.name,
                 "downstream_module": subpackage_1.name,
                 "chains": [],
             }
             assert isinstance(subpackage_chain_data["chains"], list)  # For type checker.
-            for importer_module in all_modules_for_each_subpackage[subpackage_1]:
-                for imported_module in all_modules_for_each_subpackage[subpackage_2]:
-                    chain = graph.find_shortest_chain(
-                        importer=importer_module.name, imported=imported_module.name
-                    )
-                    if chain:
-                        is_kept = False
-                        chain_data = []
-                        for importer, imported in [
-                            (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
-                        ]:
-                            import_details = graph.get_import_details(
-                                importer=importer, imported=imported
-                            )
-                            line_numbers = tuple(j["line_number"] for j in import_details)
-                            chain_data.append(
-                                {
-                                    "importer": importer,
-                                    "imported": imported,
-                                    "line_numbers": line_numbers,
-                                }
-                            )
-                        subpackage_chain_data["chains"].append(chain_data)
+            chains = graph.find_shortest_chains(
+                importer=subpackage_1.name, imported=subpackage_2.name
+            )
+            if chains:
+                is_kept = False
+                for chain in chains:
+                    chain_data = []
+                    for importer, imported in [
+                        (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
+                    ]:
+                        import_details = graph.get_import_details(
+                            importer=importer, imported=imported
+                        )
+                        line_numbers = tuple(j["line_number"] for j in import_details)
+                        chain_data.append(
+                            {
+                                "importer": importer,
+                                "imported": imported,
+                                "line_numbers": line_numbers,
+                            }
+                        )
+                subpackage_chain_data["chains"].append(chain_data)
             if subpackage_chain_data["chains"]:
                 invalid_chains.append(subpackage_chain_data)
 
