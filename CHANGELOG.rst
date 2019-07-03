@@ -44,3 +44,4 @@ latest
 
 * Add https://pre-commit.com configuration.
 * Use find_shortest_chains instead of find_shortest_chain on the Grimp import graph.
+* Add Forbidden Modules contract type.

@@ -2,6 +2,71 @@
 Contract types
 ==============
 
+Forbidden modules
+-----------------
+
+*Type name:* ``forbidden``
+
+Forbidden contracts check that one set of modules are not imported by another set of modules.
+
+Descendants of each module will be checked - so if ``mypackage.one`` is forbidden from importing ``mypackage.two``, then
+``mypackage.one.blue`` will be forbidden from importing ``mypackage.two.green``. Indirect imports will also be checked.
+
+External packages may also be forbidden.
+
+**Examples:**
+
+.. code-block:: ini
+
+    [importlinter]
+    root_package = mypackage
+
+    [importlinter:contract:1]
+    name = My forbidden contract (internal packages only)
+    type = forbidden
+    source_modules =
+        mypackage.one
+        mypackage.two
+        mypackage.three.blue
+    forbidden_modules =
+        mypackage.four
+        mypackage.five.green
+    ignore_imports =
+        mypackage.one.green -> mypackage.utils
+        mypackage.two -> mypackage.four
+
+.. code-block:: ini
+
+    [importlinter]
+    root_package = mypackage
+    include_external_packages = True
+
+    [importlinter:contract:1]
+    name = My forbidden contract (internal and external packages)
+    type = forbidden
+    source_modules =
+        mypackage.one
+        mypackage.two
+    forbidden_modules =
+        mypackage.three
+        django
+        requests
+    ignore_imports =
+        mypackage.one.green -> sqlalchemy
+
+**Configuration options**
+
+Configuration options:
+
+    - ``source_modules``:    A list of modules that should not import the forbidden modules.
+    - ``forbidden_modules``: A list of modules that should not be imported by the source modules. These may include
+      root level external packages (i.e. ``django``, but not ``django.db.models``). If external packages are included,
+      the top level configuration must have ``internal_external_packages = True``.
+    - ``ignore_imports``:
+      A list of imports, each in the form ``mypackage.foo.importer -> mypackage.bar.imported``. These imports
+      will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the
+      contract be kept instead. (Optional.)
+
 Independence
 ------------
 

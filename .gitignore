@@ -68,3 +68,5 @@ docs/_build
 .mypy_cache/
 
 .python-version
+
+pip-wheel-metadata
