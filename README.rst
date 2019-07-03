@@ -33,9 +33,9 @@ architecture within your Python project. It does this by analysing the imports b
 package, and compares this against a set of rules that you provide in a configuration file.
 
 The configuration file contains one or more 'contracts'. Each contract has a specific
-type, which determines the sort of rules it will apply. For example, the ``independence``
-contract type checks that there are no imports, in either direction, between a set
-of subpackages.
+type, which determines the sort of rules it will apply. For example, the ``forbidden``
+contract type allows you to check that certain modules or packages are not imported by
+parts of your project.
 
 Import Linter is particularly useful if you are working on a complex codebase within a team,
 when you want to enforce a particular architectural style. In this case you can add
@@ -53,10 +53,10 @@ Install Import Linter::
     pip install import-linter
 
 Decide on the dependency flows you wish to check. In this example, we have
-decided to make sure that there are no dependencies between ``myproject.foo``
-and ``myproject.bar``, so we will use the ``independence`` contract type.
+decided to make sure that ``myproject.foo`` has dependencies on neither
+``myproject.bar`` nor ``myproject.baz``, so we will use the ``forbidden`` contract type.
 
-Create an ``.importlinter`` file in the root of your project. For example:
+Create an ``.importlinter`` file in the root of your project to define your contract(s). In this case:
 
 .. code-block:: ini
 
@@ -64,11 +64,13 @@ Create an ``.importlinter`` file in the root of your project. For example:
     root_package = myproject
 
     [importlinter:contract:1]
-    name=Foo and bar are decoupled
-    type=independence
-    modules=
+    name=Foo doesn't import bar or baz
+    type=forbidden
+    source_modules=
         myproject.foo
+    forbidden_modules=
         myproject.bar
+        myproject.baz
 
 Now, from your project root, run::
 
@@ -89,7 +91,7 @@ If your code violates the contract, you will see an error message something like
     Analyzed 23 files, 44 dependencies.
     -----------------------------------
 
-    Foo and bar are decoupled BROKEN
+    Foo doesn't import bar or baz BROKEN
 
     Contracts: 1 broken.
 
@@ -98,8 +100,8 @@ If your code violates the contract, you will see an error message something like
     Broken contracts
     ----------------
 
-    Foo and bar are decoupled
-    -------------------------
+    Foo doesn't import bar or baz
+    -----------------------------
 
     myproject.foo is not allowed to import myproject.bar:
 

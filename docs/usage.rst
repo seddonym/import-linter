@@ -33,9 +33,7 @@ Your file must contain an ``importlinter`` section providing top-level (i.e. non
   means it is has been installed using pip, or it's in the current directory. (Required.)
 - ``include_external_packages``:
   Whether to include external packages when building the import graph (see `the Grimp build_graph documentation`_ for
-  more details). This is not currently used by any built in contracts, but it could be used by a custom contract type
-  that wanted to enforce rules relating to packages not in the root package (i.e. in the Python standard library, or in
-  third party libraries). (Optional.)
+  more details). Not every contract type uses this. (Optional.)
 
 .. _the Grimp build_graph documentation: https://grimp.readthedocs.io/en/latest/usage.html#grimp.build_graph
 
