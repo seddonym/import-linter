@@ -37,7 +37,7 @@ class ForbiddenContract(Contract):
         )
 
         self._check_all_modules_exist_in_graph(graph)
-        # TODO validate external packages is True if there are external forbidden modules.
+        self._check_external_forbidden_modules(graph)
 
         # We only need to check for illegal imports for forbidden modules that are in the graph.
         forbidden_modules_in_graph = [m for m in self.forbidden_modules if m.name in graph.modules]
@@ -106,3 +106,19 @@ class ForbiddenContract(Contract):
         for module in self.source_modules:
             if module.name not in graph.modules:
                 raise ValueError(f"Module '{module.name}' does not exist.")
+
+    def _check_external_forbidden_modules(self, graph: ImportGraph) -> None:
+        if (
+            self._contains_external_forbidden_modules(graph)
+            and not self._graph_was_built_with_externals()
+        ):
+            raise ValueError(
+                "The top level configuration must have include_external_packages=True when there are external forbidden modules."
+            )
+
+    def _contains_external_forbidden_modules(self, graph: ImportGraph) -> bool:
+        root_package = Module(self.session_options["root_package"])
+        return not all(m.is_descendant_of(root_package) for m in self.forbidden_modules)
+
+    def _graph_was_built_with_externals(self) -> bool:
+        return self.session_options.get("include_external_packages")

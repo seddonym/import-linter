@@ -1,3 +1,4 @@
+import pytest
 from grimp.adaptors.graph import ImportGraph
 from importlinter.application.app_config import settings
 from importlinter.contracts.forbidden import ForbiddenContract
@@ -7,7 +8,7 @@ from tests.adapters.printing import FakePrinter
 
 
 class TestForbiddenContract:
-    def test_contract_kept_when_no_forbidden_modules_imported(self):
+    def test_is_kept_when_no_forbidden_modules_imported(self):
         graph = self._build_graph()
         contract = self._build_contract(forbidden_modules=("mypackage.blue", "mypackage.yellow"))
 
@@ -15,7 +16,7 @@ class TestForbiddenContract:
 
         assert contract_check.kept
 
-    def test_contract_broken_when_forbidden_modules_imported(self):
+    def test_is_broken_when_forbidden_modules_imported(self):
         graph = self._build_graph()
         contract = self._build_contract(
             forbidden_modules=(
@@ -81,9 +82,11 @@ class TestForbiddenContract:
 
         assert expected_metadata == contract_check.metadata
 
-    def test_contract_broken_when_forbidden_external_modules_imported(self):
+    def test_is_broken_when_forbidden_external_modules_imported(self):
         graph = self._build_graph()
-        contract = self._build_contract(forbidden_modules=("sqlalchemy", "requests"))
+        contract = self._build_contract(
+            forbidden_modules=("sqlalchemy", "requests"), include_external_packages=True
+        )
 
         contract_check = contract.check(graph=graph)
 
@@ -108,6 +111,18 @@ class TestForbiddenContract:
         }
 
         assert expected_metadata == contract_check.metadata
+
+    def test_is_invalid_when_forbidden_externals_but_graph_does_not_include_externals(self):
+        graph = self._build_graph()
+        contract = self._build_contract(forbidden_modules=("sqlalchemy", "requests"))
+
+        with pytest.raises(
+            ValueError,
+            match=(
+                "The top level configuration must have include_external_packages=True when there are external forbidden modules."
+            ),
+        ):
+            contract.check(graph=graph)
 
     def _build_graph(self):
         graph = ImportGraph()
@@ -155,10 +170,14 @@ class TestForbiddenContract:
         )
         return graph
 
-    def _build_contract(self, forbidden_modules):
+    def _build_contract(self, forbidden_modules, include_external_packages=False):
+        session_options = {"root_package": "mypackage"}
+        if include_external_packages:
+            session_options["include_external_packages"] = True
+
         return ForbiddenContract(
             name="Forbid contract",
-            session_options={"root_package": "mypackage"},
+            session_options=session_options,
             contract_options={
                 "source_modules": ("mypackage.one", "mypackage.two", "mypackage.three"),
                 "forbidden_modules": forbidden_modules,
