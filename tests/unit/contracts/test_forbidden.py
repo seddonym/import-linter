@@ -1,5 +1,5 @@
 import pytest
-from grimp.adaptors.graph import ImportGraph
+from grimp.adaptors.graph import ImportGraph  # type: ignore
 from importlinter.application.app_config import settings
 from importlinter.contracts.forbidden import ForbiddenContract
 from importlinter.domain.contract import ContractCheck
@@ -119,7 +119,8 @@ class TestForbiddenContract:
         with pytest.raises(
             ValueError,
             match=(
-                "The top level configuration must have include_external_packages=True when there are external forbidden modules."
+                "The top level configuration must have include_external_packages=True "
+                "when there are external forbidden modules."
             ),
         ):
             contract.check(graph=graph)
@@ -173,7 +174,7 @@ class TestForbiddenContract:
     def _build_contract(self, forbidden_modules, include_external_packages=False):
         session_options = {"root_package": "mypackage"}
         if include_external_packages:
-            session_options["include_external_packages"] = True
+            session_options["include_external_packages"] = "True"
 
         return ForbiddenContract(
             name="Forbid contract",
