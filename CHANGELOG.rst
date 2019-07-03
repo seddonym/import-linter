@@ -39,8 +39,8 @@ Changelog
 
 * Update to Grimp v1.0b10, fixing Windows incompatibility.
 
-latest
-------
+1.0b4 (2019-7-3)
+----------------
 
 * Add https://pre-commit.com configuration.
 * Use find_shortest_chains instead of find_shortest_chain on the Grimp import graph.
