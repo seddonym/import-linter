@@ -9,6 +9,7 @@ class FakeGraphBuilder(GraphBuilder):
     To use, call inject_graph with the graph you wish to inject, ahead
     of when the builder would be called.
     """
+
     def build(
         self, root_package_name: str, include_external_packages: bool = False
     ) -> ImportGraph:
