@@ -53,7 +53,7 @@ def create_report(user_options: UserOptions) -> Report:
     """
     include_external_packages = _get_include_external_packages(user_options)
     graph = _build_graph(
-        root_package_name=user_options.session_options["root_package"],
+        root_package_names=[user_options.session_options["root_package"]],
         include_external_packages=include_external_packages,
     )
     return _build_report(graph=graph, user_options=user_options)
@@ -71,9 +71,11 @@ def _read_user_options(config_filename: Optional[str] = None) -> UserOptions:
     raise RuntimeError("Could not read any configuration.")
 
 
-def _build_graph(root_package_name: str, include_external_packages: Optional[bool]) -> ImportGraph:
+def _build_graph(
+    root_package_names: List[str], include_external_packages: Optional[bool]
+) -> ImportGraph:
     return settings.GRAPH_BUILDER.build(
-        root_package_name=root_package_name, include_external_packages=include_external_packages
+        root_package_names=root_package_names, include_external_packages=include_external_packages
     )
 
 
