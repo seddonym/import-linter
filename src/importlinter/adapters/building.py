@@ -1,5 +1,4 @@
 import grimp  # type: ignore
-
 from importlinter.application.ports import building as ports
 from importlinter.domain.ports.graph import ImportGraph
 

@@ -30,8 +30,8 @@ class ForbiddenContract(Contract):
         is_kept = True
         invalid_chains = []
 
-        removed_imports = helpers.pop_imports(  # type: ignore
-            graph, self.ignore_imports if self.ignore_imports else []
+        removed_imports = helpers.pop_imports(
+            graph, self.ignore_imports if self.ignore_imports else []  # type: ignore
         )
 
         self._check_all_modules_exist_in_graph(graph)
