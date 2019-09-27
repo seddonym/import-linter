@@ -59,8 +59,8 @@ class LayersContract(Contract):
         self._validate_containers()
 
         direct_imports_to_ignore = self.ignore_imports if self.ignore_imports else []
-        removed_imports = helpers.pop_imports(  # type: ignore
-            graph, direct_imports_to_ignore
+        removed_imports = helpers.pop_imports(
+            graph, direct_imports_to_ignore  # type: ignore
         )
 
         for container in self.containers:  # type: ignore

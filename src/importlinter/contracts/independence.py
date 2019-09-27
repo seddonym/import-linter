@@ -30,15 +30,13 @@ class IndependenceContract(Contract):
         is_kept = True
         invalid_chains = []
 
-        removed_imports = helpers.pop_imports(  # type: ignore
-            graph, self.ignore_imports if self.ignore_imports else []
+        removed_imports = helpers.pop_imports(
+            graph, self.ignore_imports if self.ignore_imports else []  # type: ignore
         )
 
         self._check_all_modules_exist_in_graph(graph)
 
-        for subpackage_1, subpackage_2 in permutations(  # type: ignore
-            self.modules, r=2
-        ):
+        for subpackage_1, subpackage_2 in permutations(self.modules, r=2):  # type: ignore
             subpackage_chain_data = {
                 "upstream_module": subpackage_2.name,
                 "downstream_module": subpackage_1.name,
