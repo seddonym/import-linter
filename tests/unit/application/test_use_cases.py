@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from grimp.adaptors.graph import ImportGraph  # type: ignore
 from importlinter.application.app_config import settings
-from importlinter.application.use_cases import FAILURE, SUCCESS, lint_imports
+from importlinter.application.use_cases import FAILURE, SUCCESS, create_report, lint_imports
 from importlinter.application.user_options import UserOptions
 
 from tests.adapters.building import FakeGraphBuilder
@@ -233,3 +233,18 @@ class TestCheckContractsAndPrintReport:
                 )  # 3 * 3 = 9 imports.
         graph.add_import(importer="mypackage.d", imported="mypackage.f")  # 1 extra import.
         return graph
+
+
+class TestMultipleRootPackages:
+    def test_builder_is_called_with_root_packages(self):
+        builder = FakeGraphBuilder()
+        root_package_names = ["mypackageone", "mypackagetwo"]
+        settings.configure(GRAPH_BUILDER=builder, PRINTER=FakePrinter())
+
+        create_report(
+            UserOptions(
+                session_options={"root_packages": root_package_names}, contracts_options=[]
+            )
+        )
+
+        assert builder.build_arguments["root_package_names"] == root_package_names
