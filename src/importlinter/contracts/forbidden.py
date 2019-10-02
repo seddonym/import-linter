@@ -1,7 +1,6 @@
 from importlinter.application import output
 from importlinter.domain import fields, helpers
 from importlinter.domain.contract import Contract, ContractCheck
-from importlinter.domain.imports import Module
 from importlinter.domain.ports.graph import ImportGraph
 
 

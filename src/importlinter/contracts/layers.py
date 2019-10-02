@@ -140,14 +140,15 @@ class LayersContract(Contract):
                 if len(root_package_names) == 1:
                     root_package_name = root_package_names[0]
                     error_message = (
-                        f"Invalid container '{container}': a container must either be a subpackage of "
-                        f"{root_package_name}, or {root_package_name} itself."
+                        f"Invalid container '{container}': a container must either be a "
+                        f"subpackage of {root_package_name}, or {root_package_name} itself."
                     )
                 else:
                     packages_string = ", ".join(root_package_names)
                     error_message = (
-                        f"Invalid container '{container}': a container must either be a root package, "
-                        f"or a subpackage of one of them. (The root packages are: {packages_string}.)"
+                        f"Invalid container '{container}': a container must either be a root "
+                        f"package, or a subpackage of one of them. "
+                        f"(The root packages are: {packages_string}.)"
                     )
                 raise ValueError(error_message)
 
