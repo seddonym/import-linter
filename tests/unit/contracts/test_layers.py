@@ -67,7 +67,7 @@ class TestLayerContractSingleContainers:
     def _build_contract(self):
         return LayersContract(
             name="Layer contract",
-            session_options={"root_package": "mypackage"},
+            session_options={"root_packages": ["mypackage"]},
             contract_options={"containers": ["mypackage"], "layers": ["high", "medium", "low"]},
         )
 
@@ -180,7 +180,7 @@ class TestLayerMultipleContainers:
     def _build_contract(self):
         return LayersContract(
             name="Layer contract",
-            session_options={"root_package": "mypackage"},
+            session_options={"root_packages": ["mypackage"]},
             contract_options={
                 "containers": ["mypackage.one", "mypackage.two", "mypackage.three"],
                 "layers": ["high", "medium", "low"],
@@ -252,7 +252,7 @@ def test_layer_contract_populates_metadata():
 
     contract = LayersContract(
         name="Layer contract",
-        session_options={"root_package": "mypackage"},
+        session_options={"root_packages": ["mypackage"]},
         contract_options={"containers": ["mypackage"], "layers": ["high", "medium", "low"]},
     )
 
@@ -464,7 +464,7 @@ class TestIgnoreImports:
     def _build_contract(self, ignore_imports):
         return LayersContract(
             name="Layer contract",
-            session_options={"root_package": "mypackage"},
+            session_options={"root_packages": ["mypackage"]},
             contract_options={
                 "containers": ["mypackage"],
                 "layers": ["high", "medium", "low"],
@@ -490,7 +490,7 @@ def test_optional_layers(include_parentheses, should_raise_exception):
 
     contract = LayersContract(
         name="Layer contract",
-        session_options={"root_package": "mypackage"},
+        session_options={"root_packages": ["mypackage"]},
         contract_options={
             "containers": ["mypackage.foo"],
             "layers": ["high", "(medium)" if include_parentheses else "medium", "low"],
@@ -530,7 +530,7 @@ def test_render_broken_contract():
     settings.configure(PRINTER=FakePrinter())
     contract = LayersContract(
         name="Layers contract",
-        session_options={"root_package": "mypackage"},
+        session_options={"root_packages": ["mypackage"]},
         contract_options={"containers": ["mypackage"], "layers": ["high", "medium", "low"]},
     )
     check = ContractCheck(
@@ -650,7 +650,7 @@ def test_invalid_container(container):
 
     contract = LayersContract(
         name="Layer contract",
-        session_options={"root_package": "mypackage"},
+        session_options={"root_packages": ["mypackage"]},
         contract_options={
             "containers": ["mypackage.foo", container],
             "layers": ["high", "medium", "low"],

@@ -172,7 +172,7 @@ class TestForbiddenContract:
         return graph
 
     def _build_contract(self, forbidden_modules, include_external_packages=False):
-        session_options = {"root_package": "mypackage"}
+        session_options = {"root_packages": ["mypackage"]}
         if include_external_packages:
             session_options["include_external_packages"] = "True"
 
@@ -190,7 +190,7 @@ def test_render_broken_contract():
     settings.configure(PRINTER=FakePrinter())
     contract = ForbiddenContract(
         name="Forbid contract",
-        session_options={"root_package": "mypackage"},
+        session_options={"root_packages": ["mypackage"]},
         contract_options={
             "source_modules": ("mypackage.one", "mypackage.two", "mypackage.three"),
             "forbidden_modules": (

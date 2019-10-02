@@ -28,7 +28,7 @@ class TestIndependenceContract:
     def _check_default_contract(self, graph):
         contract = IndependenceContract(
             name="Independence contract",
-            session_options={"root_package": "mypackage"},
+            session_options={"root_packages": ["mypackage"]},
             contract_options={
                 "modules": ("mypackage.blue", "mypackage.green", "mypackage.yellow")
             },
@@ -287,7 +287,7 @@ def test_ignore_imports(ignore_imports, is_kept):
     )
     contract = IndependenceContract(
         name="Independence contract",
-        session_options={"root_package": "mypackage"},
+        session_options={"root_packages": ["mypackage"]},
         contract_options={
             "modules": ("mypackage.a", "mypackage.b"),
             "ignore_imports": ignore_imports,
@@ -303,7 +303,7 @@ def test_render_broken_contract():
     settings.configure(PRINTER=FakePrinter())
     contract = IndependenceContract(
         name="Independence contract",
-        session_options={"root_package": "mypackage"},
+        session_options={"root_packages": ["mypackage"]},
         contract_options={"modules": ["mypackage.blue", "mypackage.green", "mypackage.yellow"]},
     )
     check = ContractCheck(
@@ -386,7 +386,7 @@ def test_missing_module():
 
     contract = IndependenceContract(
         name="Independence contract",
-        session_options={"root_package": "mypackage"},
+        session_options={"root_packages": ["mypackage"]},
         contract_options={"modules": ["mypackage.foo", "mypackage.bar"]},
     )
 
