@@ -510,7 +510,6 @@ def test_optional_layers(include_parentheses, should_raise_exception):
         contract.check(graph=graph)
 
 
-@pytest.mark.xfail
 def test_missing_containerless_layers_raise_value_error():
     graph = ImportGraph()
     for module in ("foo", "foo.blue", "bar", "bar.green"):
@@ -697,7 +696,6 @@ class TestLayerContractNoContainer:
 
         assert contract_check.kept is True
 
-    @pytest.mark.xfail
     def test_illegal_imports_means_contract_is_broken(self):
         contract = self._build_contract_without_containers(
             layers=["mypackage.high", "mypackage.medium", "mypackage.low"]
@@ -718,7 +716,6 @@ class TestLayerContractNoContainer:
 
         assert contract_check.kept is True
 
-    @pytest.mark.xfail
     def test_illegal_imports_across_multiple_root_packages_means_contract_is_broken(self):
         contract = self._build_contract_without_containers(layers=["high", "medium", "low"])
         graph = self._build_legal_graph()

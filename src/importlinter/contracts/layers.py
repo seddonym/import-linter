@@ -85,6 +85,27 @@ class LayersContract(Contract):
                         if layer_chain_data["chains"]:
                             is_kept = False
                             invalid_chains.append(layer_chain_data)
+        else:
+            # No containers, so the layers are modules in their own right.
+            # TODO: this repeats much of the logic above; refactor.
+            self._check_all_containerless_layers_exist(graph)
+
+            for index, higher_layer in enumerate(self.layers):  # type: ignore
+                if higher_layer.name not in graph.modules:
+                    continue
+                for lower_layer in self.layers[index + 1 :]:  # type: ignore
+                    if lower_layer.name not in graph.modules:
+                        continue
+
+                    layer_chain_data = self._build_layer_chain_data(
+                        higher_layer_package=higher_layer,
+                        lower_layer_package=lower_layer,
+                        graph=graph,
+                    )
+
+                    if layer_chain_data["chains"]:
+                        is_kept = False
+                        invalid_chains.append(layer_chain_data)
 
         helpers.add_imports(graph, removed_imports)
 
@@ -139,6 +160,15 @@ class LayersContract(Contract):
                 raise ValueError(
                     f"Missing layer in container '{container}': "
                     f"module {layer_module_name} does not exist."
+                )
+
+    def _check_all_containerless_layers_exist(self, graph: ImportGraph) -> None:
+        for layer in self.layers:  # type: ignore
+            if layer.is_optional:
+                continue
+            if layer.name not in graph.modules:
+                raise ValueError(
+                    f"Missing layer '{layer.name}': module {layer.name} does not exist."
                 )
 
     def _build_layer_chain_data(
