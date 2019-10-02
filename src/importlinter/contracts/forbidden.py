@@ -118,9 +118,9 @@ class ForbiddenContract(Contract):
             )
 
     def _contains_external_forbidden_modules(self, graph: ImportGraph) -> bool:
-        root_package = Module(self.session_options["root_package"])
+        root_packages = self.session_options["root_packages"]
         return not all(
-            m.is_descendant_of(root_package) for m in self.forbidden_modules  # type: ignore
+            m.root_package_name in root_packages for m in self.forbidden_modules  # type: ignore
         )
 
     def _graph_was_built_with_externals(self) -> bool:

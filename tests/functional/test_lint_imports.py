@@ -16,12 +16,7 @@ multipleroots_directory = os.path.join(os.path.dirname(__file__), "..", "assets"
         (testpackage_directory, ".customkeptcontract.ini", cli.EXIT_STATUS_SUCCESS),
         (testpackage_directory, ".externalkeptcontract.ini", cli.EXIT_STATUS_SUCCESS),
         (testpackage_directory, ".externalbrokencontract.ini", cli.EXIT_STATUS_ERROR),
-        pytest.param(
-            multipleroots_directory,
-            ".multiplerootskeptcontract.ini",
-            cli.EXIT_STATUS_SUCCESS,
-            marks=[pytest.mark.xfail],
-        ),
+        (multipleroots_directory, ".multiplerootskeptcontract.ini", cli.EXIT_STATUS_SUCCESS),
         (multipleroots_directory, ".multiplerootsbrokencontract.ini", cli.EXIT_STATUS_ERROR),
     ),
 )
