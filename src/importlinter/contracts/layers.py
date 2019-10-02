@@ -30,7 +30,7 @@ class LayersContract(Contract):
     Defines a 'layered architecture' where there is a unidirectional dependency flow.
 
     Specifically, higher layers may depend on lower layers, but not the other way around.
-    To allow for a repeated pattern of layers across a project, you also define a set of
+    To allow for a repeated pattern of layers across a project, you may also define a set of
     'containers', which are treated as the parent package of the layers.
 
     Layers are required by default: if a layer is listed in the contract, the contract will be
@@ -40,7 +40,7 @@ class LayersContract(Contract):
 
         - layers:         An ordered list of layers. Each layer is the name of a module relative
                           to its parent package. The order is from higher to lower level layers.
-        - containers:     A list of the parent Modules of the layers.
+        - containers:     A list of the parent Modules of the layers (optional).
         - ignore_imports: A list of DirectImports. These imports will be ignored: if the import
                           would cause a contract to be broken, adding it to the list will cause
                           the contract be kept instead. (Optional.)
