@@ -134,13 +134,22 @@ class LayersContract(Contract):
             output.new_line()
 
     def _validate_containers(self) -> None:
-        root_package_name = self.session_options["root_package"]
+        root_package_names = self.session_options["root_packages"]
         for container in self.containers:  # type: ignore
-            if Module(container).root_package_name != root_package_name:
-                raise ValueError(
-                    f"Invalid container '{container}': a container must either be a subpackage of "
-                    f"{root_package_name}, or {root_package_name} itself."
-                )
+            if Module(container).root_package_name not in root_package_names:
+                if len(root_package_names) == 1:
+                    root_package_name = root_package_names[0]
+                    error_message = (
+                        f"Invalid container '{container}': a container must either be a subpackage of "
+                        f"{root_package_name}, or {root_package_name} itself."
+                    )
+                else:
+                    packages_string = ", ".join(root_package_names)
+                    error_message = (
+                        f"Invalid container '{container}': a container must either be a root package, "
+                        f"or a subpackage of one of them. (The root packages are: {packages_string}.)"
+                    )
+                raise ValueError(error_message)
 
     def _check_all_layers_exist_for_container(self, container: str, graph: ImportGraph) -> None:
         for layer in self.layers:  # type: ignore
