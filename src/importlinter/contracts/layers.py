@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Any, Dict, List, Union
 
 from importlinter.application import output
 from importlinter.domain import fields, helpers
@@ -56,56 +56,35 @@ class LayersContract(Contract):
         is_kept = True
         invalid_chains = []
 
-        self._validate_containers()
-
         direct_imports_to_ignore = self.ignore_imports if self.ignore_imports else []
         removed_imports = helpers.pop_imports(
             graph, direct_imports_to_ignore  # type: ignore
         )
 
-        for container in self.containers:  # type: ignore
-            self._check_all_layers_exist_for_container(container, graph)
-            for index, higher_layer in enumerate(self.layers):  # type: ignore
-                higher_layer_package = Module(".".join([container, higher_layer.name]))
-                if higher_layer_package.name not in graph.modules:
-                    continue
-                for lower_layer in self.layers[index + 1 :]:  # type: ignore
-                    lower_layer_package = Module(".".join([container, lower_layer.name]))
-                    if lower_layer_package.name not in graph.modules:
+        if self.containers:
+            self._validate_containers()
+
+            for container in self.containers:  # type: ignore
+                self._check_all_layers_exist_for_container(container, graph)
+
+                for index, higher_layer in enumerate(self.layers):  # type: ignore
+                    higher_layer_package = Module(".".join([container, higher_layer.name]))
+                    if higher_layer_package.name not in graph.modules:
                         continue
+                    for lower_layer in self.layers[index + 1 :]:  # type: ignore
+                        lower_layer_package = Module(".".join([container, lower_layer.name]))
+                        if lower_layer_package.name not in graph.modules:
+                            continue
 
-                    layer_chain_data = {
-                        "higher_layer": higher_layer_package.name,
-                        "lower_layer": lower_layer_package.name,
-                        "chains": [],
-                    }
-                    assert isinstance(layer_chain_data["chains"], list)  # For type checker.
+                        layer_chain_data = self._build_layer_chain_data(
+                            higher_layer_package=higher_layer_package,
+                            lower_layer_package=lower_layer_package,
+                            graph=graph,
+                        )
 
-                    chains = graph.find_shortest_chains(
-                        importer=lower_layer_package.name, imported=higher_layer_package.name
-                    )
-                    if chains:
-                        is_kept = False
-                        for chain in chains:
-                            chain_data = []
-                            for importer, imported in [
-                                (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
-                            ]:
-                                import_details = graph.get_import_details(
-                                    importer=importer, imported=imported
-                                )
-                                line_numbers = tuple(j["line_number"] for j in import_details)
-                                chain_data.append(
-                                    {
-                                        "importer": importer,
-                                        "imported": imported,
-                                        "line_numbers": line_numbers,
-                                    }
-                                )
-
-                            layer_chain_data["chains"].append(chain_data)
-                    if layer_chain_data["chains"]:
-                        invalid_chains.append(layer_chain_data)
+                        if layer_chain_data["chains"]:
+                            is_kept = False
+                            invalid_chains.append(layer_chain_data)
 
         helpers.add_imports(graph, removed_imports)
 
@@ -161,3 +140,31 @@ class LayersContract(Contract):
                     f"Missing layer in container '{container}': "
                     f"module {layer_module_name} does not exist."
                 )
+
+    def _build_layer_chain_data(
+        self, higher_layer_package: Module, lower_layer_package: Module, graph: ImportGraph
+    ) -> Dict[str, Any]:
+        layer_chain_data = {
+            "higher_layer": higher_layer_package.name,
+            "lower_layer": lower_layer_package.name,
+            "chains": [],
+        }
+        assert isinstance(layer_chain_data["chains"], list)  # For type checker.
+
+        chains = graph.find_shortest_chains(
+            importer=lower_layer_package.name, imported=higher_layer_package.name
+        )
+        if chains:
+            for chain in chains:
+                chain_data = []
+                for importer, imported in [
+                    (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
+                ]:
+                    import_details = graph.get_import_details(importer=importer, imported=imported)
+                    line_numbers = tuple(j["line_number"] for j in import_details)
+                    chain_data.append(
+                        {"importer": importer, "imported": imported, "line_numbers": line_numbers}
+                    )
+
+                layer_chain_data["chains"].append(chain_data)
+        return layer_chain_data
