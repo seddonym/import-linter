@@ -48,8 +48,8 @@ class LayersContract(Contract):
 
     type_name = "layers"
 
-    containers = fields.ListField(subfield=fields.StringField())
     layers = fields.ListField(subfield=LayerField())
+    containers = fields.ListField(subfield=fields.StringField(), required=False)
     ignore_imports = fields.ListField(subfield=fields.DirectImportField(), required=False)
 
     def check(self, graph: ImportGraph) -> ContractCheck:

@@ -763,5 +763,5 @@ class TestLayerContractNoContainer:
         return LayersContract(
             name="Layer contract",
             session_options={"root_packages": root_packages},
-            contract_options={"containers": [], "layers": layers},
+            contract_options={"layers": layers},
         )
