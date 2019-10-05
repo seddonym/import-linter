@@ -18,7 +18,7 @@ setup(
     name="import-linter",
     version="1.0b4",
     license="BSD 2-Clause License",
-    description="Enforces rules for the internal and external imports within your Python project.",
+    description="Enforces rules for the imports within and between Python packages.",
     long_description=read("README.rst"),
     long_description_content_type="text/x-rst",
     author="David Seddon",
@@ -46,7 +46,7 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Utilities",
     ],
-    install_requires=["click>=6,<8", "grimp==1.0b12"],
+    install_requires=["click>=6,<8", "grimp==1.0b13"],
     entry_points={
         "console_scripts": ["lint-imports = importlinter.cli:lint_imports_command"]
     },

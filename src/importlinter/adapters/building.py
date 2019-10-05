@@ -1,3 +1,5 @@
+from typing import List
+
 import grimp  # type: ignore
 from importlinter.application.ports import building as ports
 from importlinter.domain.ports.graph import ImportGraph
@@ -9,8 +11,8 @@ class GraphBuilder(ports.GraphBuilder):
     """
 
     def build(
-        self, root_package_name: str, include_external_packages: bool = False
+        self, root_package_names: List[str], include_external_packages: bool = False
     ) -> ImportGraph:
         return grimp.build_graph(
-            package_name=root_package_name, include_external_packages=include_external_packages
+            *root_package_names, include_external_packages=include_external_packages
         )

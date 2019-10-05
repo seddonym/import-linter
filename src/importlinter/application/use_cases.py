@@ -1,4 +1,5 @@
 import importlib
+from copy import copy
 from typing import List, Optional, Tuple, Type
 
 from ..domain.contract import Contract, InvalidContractOptions, registry
@@ -53,7 +54,7 @@ def create_report(user_options: UserOptions) -> Report:
     """
     include_external_packages = _get_include_external_packages(user_options)
     graph = _build_graph(
-        root_package_name=user_options.session_options["root_package"],
+        root_package_names=user_options.session_options["root_packages"],
         include_external_packages=include_external_packages,
     )
     return _build_report(graph=graph, user_options=user_options)
@@ -67,13 +68,25 @@ def _read_user_options(config_filename: Optional[str] = None) -> UserOptions:
     for reader in settings.USER_OPTION_READERS:
         options = reader.read_options(config_filename=config_filename)
         if options:
-            return options
+            normalized_options = _normalize_user_options(options)
+            return normalized_options
     raise RuntimeError("Could not read any configuration.")
 
 
-def _build_graph(root_package_name: str, include_external_packages: Optional[bool]) -> ImportGraph:
+def _normalize_user_options(user_options: UserOptions) -> UserOptions:
+    normalized_options = copy(user_options)
+    if "root_packages" not in normalized_options.session_options:
+        normalized_options.session_options["root_packages"] = [
+            normalized_options.session_options["root_package"]
+        ]
+    return normalized_options
+
+
+def _build_graph(
+    root_package_names: List[str], include_external_packages: Optional[bool]
+) -> ImportGraph:
     return settings.GRAPH_BUILDER.build(
-        root_package_name=root_package_name, include_external_packages=include_external_packages
+        root_package_names=root_package_names, include_external_packages=include_external_packages
     )
 
 

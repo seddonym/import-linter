@@ -108,28 +108,52 @@ Layers contracts enforce a 'layered architecture', where higher layers may depen
 way around.
 
 They do this by checking, for an ordered list of modules, that none higher up the list imports anything from a module
-lower down the list, even indirectly. To allow for a repeated pattern of layers across a project, you also define
-a set of 'containers', which are treated as the parent package of the layers.
+lower down the list, even indirectly.
 
 Layers are required by default: if a layer is listed in the contract, the contract will be broken if the layer
 doesn't exist. You can make a layer optional by wrapping it in parentheses.
+
+You may also define a set of 'containers'. These allow for a repeated pattern of layers across a project. If containers
+are provided, these are treated as the parent package of the layers.
 
 **Examples**
 
 .. code-block:: ini
 
+    [importlinter]
+    root_package = mypackage
+
     [importlinter:contract:1]
     name = My three-tier layers contract
+    type = layers
+    layers=
+        mypackage.high
+        mypackage.medium
+        mypackage.low
+
+This contract will not allow imports from lower layers to higher layers. For example, it will not allow
+``mypackage.low`` to import ``mypackage.high``, even indirectly.
+
+.. code-block:: ini
+
+    [importlinter]
+    root_packages=
+        high
+        medium
+        low
+
+    [importlinter:contract:1]
+    name = My three-tier layers contract (multiple root packages)
     type = layers
     layers=
         high
         medium
         low
-    containers=
-        mypackage
 
-This contract will not allow imports from lower layers to higher layers. For example, it will not allow
-``mypackage.low`` to import ``mypackage.high``, even indirectly.
+This contract is similar to the one above, but is suitable if the packages are not contained within a root package
+(i.e. the Python project consists of several packages in a directory that does not contain an ``__init__.py`` file).
+In this case, ``high``, ``medium`` and ``low`` all need to be specified as ``root_packages`` in the
+``[importlinter]`` configuration.
 
 .. code-block:: ini
 
@@ -155,11 +179,12 @@ won't complain.
 **Configuration options**
 
     - ``layers``:
-      An ordered list with the name of each layer module, *relative to its parent package*. The order is from higher
-      to lower level layers.
+      An ordered list with the name of each layer module. If containers are specified, then these names must be
+      *relative to the container*. The order is from higher to lower level layers. Layers wrapped in parentheses
+      (e.g. ``(foo)``) will be ignored if they are not present in the file system.
     - ``containers``:
       List of the parent modules of the layers, as *absolute names* that you could import, such as
-      ``mypackage.foo``. If you only have one set of layers, there will only be one container.
+      ``mypackage.foo``. (Optional.)
     - ``ignore_imports``:
       A list of imports, each in the form ``mypackage.foo.importer -> mypackage.bar.imported``. These imports
       will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the

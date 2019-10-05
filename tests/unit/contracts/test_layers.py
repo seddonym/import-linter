@@ -67,7 +67,7 @@ class TestLayerContractSingleContainers:
     def _build_contract(self):
         return LayersContract(
             name="Layer contract",
-            session_options={"root_package": "mypackage"},
+            session_options={"root_packages": ["mypackage"]},
             contract_options={"containers": ["mypackage"], "layers": ["high", "medium", "low"]},
         )
 
@@ -180,7 +180,7 @@ class TestLayerMultipleContainers:
     def _build_contract(self):
         return LayersContract(
             name="Layer contract",
-            session_options={"root_package": "mypackage"},
+            session_options={"root_packages": ["mypackage"]},
             contract_options={
                 "containers": ["mypackage.one", "mypackage.two", "mypackage.three"],
                 "layers": ["high", "medium", "low"],
@@ -252,7 +252,7 @@ def test_layer_contract_populates_metadata():
 
     contract = LayersContract(
         name="Layer contract",
-        session_options={"root_package": "mypackage"},
+        session_options={"root_packages": ["mypackage"]},
         contract_options={"containers": ["mypackage"], "layers": ["high", "medium", "low"]},
     )
 
@@ -464,7 +464,7 @@ class TestIgnoreImports:
     def _build_contract(self, ignore_imports):
         return LayersContract(
             name="Layer contract",
-            session_options={"root_package": "mypackage"},
+            session_options={"root_packages": ["mypackage"]},
             contract_options={
                 "containers": ["mypackage"],
                 "layers": ["high", "medium", "low"],
@@ -490,7 +490,7 @@ def test_optional_layers(include_parentheses, should_raise_exception):
 
     contract = LayersContract(
         name="Layer contract",
-        session_options={"root_package": "mypackage"},
+        session_options={"root_packages": ["mypackage"]},
         contract_options={
             "containers": ["mypackage.foo"],
             "layers": ["high", "(medium)" if include_parentheses else "medium", "low"],
@@ -510,11 +510,26 @@ def test_optional_layers(include_parentheses, should_raise_exception):
         contract.check(graph=graph)
 
 
+def test_missing_containerless_layers_raise_value_error():
+    graph = ImportGraph()
+    for module in ("foo", "foo.blue", "bar", "bar.green"):
+        graph.add_module(module)
+
+    contract = LayersContract(
+        name="Layer contract",
+        session_options={"root_packages": ["foo", "bar"]},
+        contract_options={"containers": [], "layers": ["foo", "bar", "baz"]},
+    )
+
+    with pytest.raises(ValueError, match=("Missing layer 'baz': module baz does not exist.")):
+        contract.check(graph=graph)
+
+
 def test_render_broken_contract():
     settings.configure(PRINTER=FakePrinter())
     contract = LayersContract(
         name="Layers contract",
-        session_options={"root_package": "mypackage"},
+        session_options={"root_packages": ["mypackage"]},
         contract_options={"containers": ["mypackage"], "layers": ["high", "medium", "low"]},
     )
     check = ContractCheck(
@@ -634,7 +649,7 @@ def test_invalid_container(container):
 
     contract = LayersContract(
         name="Layer contract",
-        session_options={"root_package": "mypackage"},
+        session_options={"root_packages": ["mypackage"]},
         contract_options={
             "containers": ["mypackage.foo", container],
             "layers": ["high", "medium", "low"],
@@ -649,3 +664,104 @@ def test_invalid_container(container):
         ),
     ):
         contract.check(graph=graph)
+
+
+def test_invalid_container_multiple_packages():
+    graph = ImportGraph()
+
+    contract = LayersContract(
+        name="Layer contract",
+        session_options={"root_packages": ["packageone", "packagetwo"]},
+        contract_options={"containers": ["notinpackages"], "layers": ["high", "medium", "low"]},
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"Invalid container 'notinpackages': a container must either be a root package, "
+            r"or a subpackage of one of them. \(The root packages are: packageone, packagetwo.\)"
+        ),
+    ):
+        contract.check(graph=graph)
+
+
+class TestLayerContractNoContainer:
+    def test_no_illegal_imports_means_contract_is_kept(self):
+        contract = self._build_contract_without_containers(
+            layers=["mypackage.high", "mypackage.medium", "mypackage.low"]
+        )
+        graph = self._build_legal_graph(container="mypackage")
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept is True
+
+    def test_illegal_imports_means_contract_is_broken(self):
+        contract = self._build_contract_without_containers(
+            layers=["mypackage.high", "mypackage.medium", "mypackage.low"]
+        )
+        graph = self._build_legal_graph(container="mypackage")
+        graph.add_import(importer="mypackage.medium.orange", imported="mypackage.high.green")
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept is False
+
+    def test_no_illegal_imports_across_multiple_root_packages_means_contract_is_kept(self):
+        contract = self._build_contract_without_containers(
+            root_packages=["high", "medium", "low", "utils"], layers=["high", "medium", "low"]
+        )
+        graph = self._build_legal_graph()
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept is True
+
+    def test_illegal_imports_across_multiple_root_packages_means_contract_is_broken(self):
+        contract = self._build_contract_without_containers(layers=["high", "medium", "low"])
+        graph = self._build_legal_graph()
+        graph.add_import(importer="medium.orange", imported="high.green")
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept is False
+
+    def _build_legal_graph(self, container=None):
+        graph = ImportGraph()
+        if container:
+            graph.add_module(container)
+            namespace = f"{container}."
+        else:
+            namespace = ""
+
+        for module in (
+            f"{namespace}high",
+            f"{namespace}high.green",
+            f"{namespace}high.blue",
+            f"{namespace}high.yellow",
+            f"{namespace}high.yellow.alpha",
+            f"{namespace}medium",
+            f"{namespace}medium.orange",
+            f"{namespace}medium.orange.beta",
+            f"{namespace}medium.red",
+            f"{namespace}low",
+            f"{namespace}low.black",
+            f"{namespace}low.white",
+            f"{namespace}low.white.gamma",
+        ):
+            graph.add_module(module)
+
+        # Add some 'legal' imports.
+        graph.add_import(importer=f"{namespace}high.green", imported=f"{namespace}medium.orange")
+        graph.add_import(importer=f"{namespace}high.green", imported=f"{namespace}low.white.gamma")
+        graph.add_import(importer=f"{namespace}medium.orange", imported=f"{namespace}low.white")
+        graph.add_import(importer=f"{namespace}high.blue", imported=f"{namespace}utils")
+        graph.add_import(importer=f"{namespace}utils", imported=f"{namespace}medium.red")
+
+        return graph
+
+    def _build_contract_without_containers(self, layers, root_packages=["mypackage"]):
+        return LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": root_packages},
+            contract_options={"layers": layers},
+        )

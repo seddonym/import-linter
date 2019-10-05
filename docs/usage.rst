@@ -21,8 +21,18 @@ Your file must contain an ``importlinter`` section providing top-level (i.e. non
 .. code-block:: ini
 
     [importlinter]
-    # Required:
     root_package = mypackage
+    # Optional:
+    include_external_packages = True
+
+Or, with multiple root packages:
+
+.. code-block:: ini
+
+    [importlinter]
+    root_packages=
+        packageone
+        packagetwo
     # Optional:
     include_external_packages = True
 
@@ -30,10 +40,15 @@ Your file must contain an ``importlinter`` section providing top-level (i.e. non
 
 - ``root_package``:
   The name of the top-level Python package to validate. This package must be importable: usually this
-  means it is has been installed using pip, or it's in the current directory. (Required.)
+  means it is has been installed using pip, or it's in the current directory. (Either this or ``root_packages`` is required.)
+- ``root_packages``:
+  The names of the top-level Python packages to validate. This should be used in place of ``root_package`` if you want
+  to analyse the imports of multiple packages. (Either this or ``root_package`` is required.)
 - ``include_external_packages``:
-  Whether to include external packages when building the import graph (see `the Grimp build_graph documentation`_ for
-  more details). Not every contract type uses this. (Optional.)
+  Whether to include external packages when building the import graph. Unlike root packages, external packages are
+  *not* statically analyzed, so no imports from external packages will be checked. However, imports *of* external
+  packages will be available for checking. Not every contract type uses this.
+  For more information, see `the Grimp build_graph documentation`_. (Optional.)
 
 .. _the Grimp build_graph documentation: https://grimp.readthedocs.io/en/latest/usage.html#grimp.build_graph
 
