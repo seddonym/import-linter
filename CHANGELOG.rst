@@ -46,8 +46,8 @@ Changelog
 * Use find_shortest_chains instead of find_shortest_chain on the Grimp import graph.
 * Add Forbidden Modules contract type.
 
-latest
-------
+1.0b5 (2019-10-5)
+-----------------
 
 * Allow multiple root packages.
 * Make containers optional in Layers contracts.
