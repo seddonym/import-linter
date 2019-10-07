@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Iterator, List, Tuple, Union
 
 from importlinter.application import output
 from importlinter.domain import fields, helpers
@@ -91,22 +91,18 @@ class LayersContract(Contract):
             # No containers, so the layers are modules in their own right.
             # TODO: this repeats much of the logic above; refactor.
 
-            for index, higher_layer in enumerate(self.layers):  # type: ignore
-                if higher_layer.name not in graph.modules:
-                    continue
-                for lower_layer in self.layers[index + 1 :]:  # type: ignore
-                    if lower_layer.name not in graph.modules:
-                        continue
+            for higher_layer_package, lower_layer_package in self._generate_module_permutations(
+                graph
+            ):
+                layer_chain_data = self._build_layer_chain_data(
+                    higher_layer_package=higher_layer_package,
+                    lower_layer_package=lower_layer_package,
+                    graph=graph,
+                )
 
-                    layer_chain_data = self._build_layer_chain_data(
-                        higher_layer_package=higher_layer,
-                        lower_layer_package=lower_layer,
-                        graph=graph,
-                    )
-
-                    if layer_chain_data["chains"]:
-                        is_kept = False
-                        invalid_chains.append(layer_chain_data)
+                if layer_chain_data["chains"]:
+                    is_kept = False
+                    invalid_chains.append(layer_chain_data)
 
         helpers.add_imports(graph, removed_imports)
 
@@ -173,6 +169,25 @@ class LayersContract(Contract):
                 raise ValueError(
                     f"Missing layer '{layer.name}': module {layer.name} does not exist."
                 )
+
+    def _generate_module_permutations(self, graph: ImportGraph) -> Iterator[Tuple[Module, Module]]:
+        """
+        Return all possible combinations of higher level and lower level modules, in pairs.
+
+        Each pair of modules consists of immediate children of two different layers. The first
+        module is in a layer higher than the layer of the second module. This means the first
+        module is allowed to import the second, but not the other way around.
+
+        Returns:
+            module_in_higher_layer, module_in_lower_layer
+        """
+        for index, higher_layer in enumerate(self.layers):  # type: ignore
+            if higher_layer.name not in graph.modules:
+                continue
+            for lower_layer in self.layers[index + 1 :]:  # type: ignore
+                if lower_layer.name not in graph.modules:
+                    continue
+                yield higher_layer, lower_layer
 
     def _build_layer_chain_data(
         self, higher_layer_package: Module, lower_layer_package: Module, graph: ImportGraph
