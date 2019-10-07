@@ -168,12 +168,14 @@ class LayersContract(Contract):
         else:
             # No containers, so the layers are modules in their own right.
             for index, higher_layer in enumerate(self.layers):  # type: ignore
-                if higher_layer.name not in graph.modules:
+                higher_layer_package = Module(higher_layer.name)
+                if higher_layer_package.name not in graph.modules:
                     continue
                 for lower_layer in self.layers[index + 1 :]:  # type: ignore
-                    if lower_layer.name not in graph.modules:
+                    lower_layer_package = Module(lower_layer.name)
+                    if lower_layer_package.name not in graph.modules:
                         continue
-                    yield Module(higher_layer.name), Module(lower_layer.name)
+                    yield higher_layer_package, lower_layer_package
 
     def _build_layer_chain_data(
         self, higher_layer_package: Module, lower_layer_package: Module, graph: ImportGraph
