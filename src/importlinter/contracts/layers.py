@@ -66,43 +66,16 @@ class LayersContract(Contract):
         else:
             self._check_all_containerless_layers_exist(graph)
 
-        if self.containers:
-            for container in self.containers:  # type: ignore
+        for higher_layer_package, lower_layer_package in self._generate_module_permutations(graph):
+            layer_chain_data = self._build_layer_chain_data(
+                higher_layer_package=higher_layer_package,
+                lower_layer_package=lower_layer_package,
+                graph=graph,
+            )
 
-                for index, higher_layer in enumerate(self.layers):  # type: ignore
-                    higher_layer_package = Module(".".join([container, higher_layer.name]))
-                    if higher_layer_package.name not in graph.modules:
-                        continue
-                    for lower_layer in self.layers[index + 1 :]:  # type: ignore
-                        lower_layer_package = Module(".".join([container, lower_layer.name]))
-                        if lower_layer_package.name not in graph.modules:
-                            continue
-
-                        layer_chain_data = self._build_layer_chain_data(
-                            higher_layer_package=higher_layer_package,
-                            lower_layer_package=lower_layer_package,
-                            graph=graph,
-                        )
-
-                        if layer_chain_data["chains"]:
-                            is_kept = False
-                            invalid_chains.append(layer_chain_data)
-        else:
-            # No containers, so the layers are modules in their own right.
-            # TODO: this repeats much of the logic above; refactor.
-
-            for higher_layer_package, lower_layer_package in self._generate_module_permutations(
-                graph
-            ):
-                layer_chain_data = self._build_layer_chain_data(
-                    higher_layer_package=higher_layer_package,
-                    lower_layer_package=lower_layer_package,
-                    graph=graph,
-                )
-
-                if layer_chain_data["chains"]:
-                    is_kept = False
-                    invalid_chains.append(layer_chain_data)
+            if layer_chain_data["chains"]:
+                is_kept = False
+                invalid_chains.append(layer_chain_data)
 
         helpers.add_imports(graph, removed_imports)
 
@@ -181,13 +154,26 @@ class LayersContract(Contract):
         Returns:
             module_in_higher_layer, module_in_lower_layer
         """
-        for index, higher_layer in enumerate(self.layers):  # type: ignore
-            if higher_layer.name not in graph.modules:
-                continue
-            for lower_layer in self.layers[index + 1 :]:  # type: ignore
-                if lower_layer.name not in graph.modules:
+        if self.containers:
+            for container in self.containers:  # type: ignore
+                for index, higher_layer in enumerate(self.layers):  # type: ignore
+                    higher_layer_package = Module(".".join([container, higher_layer.name]))
+                    if higher_layer_package.name not in graph.modules:
+                        continue
+                    for lower_layer in self.layers[index + 1 :]:  # type: ignore
+                        lower_layer_package = Module(".".join([container, lower_layer.name]))
+                        if lower_layer_package.name not in graph.modules:
+                            continue
+                        yield higher_layer_package, lower_layer_package
+        else:
+            # No containers, so the layers are modules in their own right.
+            for index, higher_layer in enumerate(self.layers):  # type: ignore
+                if higher_layer.name not in graph.modules:
                     continue
-                yield higher_layer, lower_layer
+                for lower_layer in self.layers[index + 1 :]:  # type: ignore
+                    if lower_layer.name not in graph.modules:
+                        continue
+                    yield higher_layer, lower_layer
 
     def _build_layer_chain_data(
         self, higher_layer_package: Module, lower_layer_package: Module, graph: ImportGraph
