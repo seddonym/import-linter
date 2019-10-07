@@ -62,10 +62,9 @@ class LayersContract(Contract):
         )
 
         if self.containers:
-            self._validate_containers()
+            self._validate_containers(graph)
 
             for container in self.containers:  # type: ignore
-                self._check_all_layers_exist_for_container(container, graph)
 
                 for index, higher_layer in enumerate(self.layers):  # type: ignore
                     higher_layer_package = Module(".".join([container, higher_layer.name]))
@@ -133,7 +132,7 @@ class LayersContract(Contract):
 
             output.new_line()
 
-    def _validate_containers(self) -> None:
+    def _validate_containers(self, graph: ImportGraph) -> None:
         root_package_names = self.session_options["root_packages"]
         for container in self.containers:  # type: ignore
             if Module(container).root_package_name not in root_package_names:
@@ -151,6 +150,7 @@ class LayersContract(Contract):
                         f"(The root packages are: {packages_string}.)"
                     )
                 raise ValueError(error_message)
+            self._check_all_layers_exist_for_container(container, graph)
 
     def _check_all_layers_exist_for_container(self, container: str, graph: ImportGraph) -> None:
         for layer in self.layers:  # type: ignore
