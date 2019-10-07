@@ -63,7 +63,10 @@ class LayersContract(Contract):
 
         if self.containers:
             self._validate_containers(graph)
+        else:
+            self._check_all_containerless_layers_exist(graph)
 
+        if self.containers:
             for container in self.containers:  # type: ignore
 
                 for index, higher_layer in enumerate(self.layers):  # type: ignore
@@ -87,7 +90,6 @@ class LayersContract(Contract):
         else:
             # No containers, so the layers are modules in their own right.
             # TODO: this repeats much of the logic above; refactor.
-            self._check_all_containerless_layers_exist(graph)
 
             for index, higher_layer in enumerate(self.layers):  # type: ignore
                 if higher_layer.name not in graph.modules:
