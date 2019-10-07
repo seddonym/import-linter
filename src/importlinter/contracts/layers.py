@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, List, Tuple, Union
+from typing import Any, Dict, Iterator, List, Tuple, Union, Optional
 
 from importlinter.application import output
 from importlinter.domain import fields, helpers
@@ -154,28 +154,31 @@ class LayersContract(Contract):
         Returns:
             module_in_higher_layer, module_in_lower_layer
         """
-        if self.containers:
-            for container in self.containers:  # type: ignore
-                for index, higher_layer in enumerate(self.layers):  # type: ignore
-                    higher_layer_package = Module(".".join([container, higher_layer.name]))
-                    if higher_layer_package.name not in graph.modules:
-                        continue
-                    for lower_layer in self.layers[index + 1 :]:  # type: ignore
-                        lower_layer_package = Module(".".join([container, lower_layer.name]))
-                        if lower_layer_package.name not in graph.modules:
-                            continue
-                        yield higher_layer_package, lower_layer_package
-        else:
-            # No containers, so the layers are modules in their own right.
+        # If there are no containers, we still want to run the loop once.
+        quasi_containers = self.containers or [None]
+
+        for container in quasi_containers:  # type: ignore
             for index, higher_layer in enumerate(self.layers):  # type: ignore
-                higher_layer_package = Module(higher_layer.name)
-                if higher_layer_package.name not in graph.modules:
+                higher_layer_module = self._module_from_layer(higher_layer, container)
+
+                if higher_layer_module.name not in graph.modules:
                     continue
+
                 for lower_layer in self.layers[index + 1 :]:  # type: ignore
-                    lower_layer_package = Module(lower_layer.name)
-                    if lower_layer_package.name not in graph.modules:
+
+                    lower_layer_module = self._module_from_layer(lower_layer, container)
+
+                    if lower_layer_module.name not in graph.modules:
                         continue
-                    yield higher_layer_package, lower_layer_package
+
+                    yield higher_layer_module, lower_layer_module
+
+    def _module_from_layer(self, layer: Layer, container: Optional[str] = None) -> Module:
+        if container:
+            name = ".".join([container, layer.name])
+        else:
+            name = layer.name
+        return Module(name)
 
     def _build_layer_chain_data(
         self, higher_layer_package: Module, lower_layer_package: Module, graph: ImportGraph
