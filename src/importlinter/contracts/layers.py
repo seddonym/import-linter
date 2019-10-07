@@ -173,7 +173,7 @@ class LayersContract(Contract):
                 for lower_layer in self.layers[index + 1 :]:  # type: ignore
                     if lower_layer.name not in graph.modules:
                         continue
-                    yield higher_layer, lower_layer
+                    yield Module(higher_layer.name), Module(lower_layer.name)
 
     def _build_layer_chain_data(
         self, higher_layer_package: Module, lower_layer_package: Module, graph: ImportGraph
