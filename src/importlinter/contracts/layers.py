@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Iterator, List, Tuple, Union, Optional
 
 from importlinter.application import output
 from importlinter.domain import fields, helpers
@@ -62,50 +62,20 @@ class LayersContract(Contract):
         )
 
         if self.containers:
-            self._validate_containers()
-
-            for container in self.containers:  # type: ignore
-                self._check_all_layers_exist_for_container(container, graph)
-
-                for index, higher_layer in enumerate(self.layers):  # type: ignore
-                    higher_layer_package = Module(".".join([container, higher_layer.name]))
-                    if higher_layer_package.name not in graph.modules:
-                        continue
-                    for lower_layer in self.layers[index + 1 :]:  # type: ignore
-                        lower_layer_package = Module(".".join([container, lower_layer.name]))
-                        if lower_layer_package.name not in graph.modules:
-                            continue
-
-                        layer_chain_data = self._build_layer_chain_data(
-                            higher_layer_package=higher_layer_package,
-                            lower_layer_package=lower_layer_package,
-                            graph=graph,
-                        )
-
-                        if layer_chain_data["chains"]:
-                            is_kept = False
-                            invalid_chains.append(layer_chain_data)
+            self._validate_containers(graph)
         else:
-            # No containers, so the layers are modules in their own right.
-            # TODO: this repeats much of the logic above; refactor.
             self._check_all_containerless_layers_exist(graph)
 
-            for index, higher_layer in enumerate(self.layers):  # type: ignore
-                if higher_layer.name not in graph.modules:
-                    continue
-                for lower_layer in self.layers[index + 1 :]:  # type: ignore
-                    if lower_layer.name not in graph.modules:
-                        continue
+        for higher_layer_package, lower_layer_package in self._generate_module_permutations(graph):
+            layer_chain_data = self._build_layer_chain_data(
+                higher_layer_package=higher_layer_package,
+                lower_layer_package=lower_layer_package,
+                graph=graph,
+            )
 
-                    layer_chain_data = self._build_layer_chain_data(
-                        higher_layer_package=higher_layer,
-                        lower_layer_package=lower_layer,
-                        graph=graph,
-                    )
-
-                    if layer_chain_data["chains"]:
-                        is_kept = False
-                        invalid_chains.append(layer_chain_data)
+            if layer_chain_data["chains"]:
+                is_kept = False
+                invalid_chains.append(layer_chain_data)
 
         helpers.add_imports(graph, removed_imports)
 
@@ -133,7 +103,7 @@ class LayersContract(Contract):
 
             output.new_line()
 
-    def _validate_containers(self) -> None:
+    def _validate_containers(self, graph: ImportGraph) -> None:
         root_package_names = self.session_options["root_packages"]
         for container in self.containers:  # type: ignore
             if Module(container).root_package_name not in root_package_names:
@@ -151,6 +121,7 @@ class LayersContract(Contract):
                         f"(The root packages are: {packages_string}.)"
                     )
                 raise ValueError(error_message)
+            self._check_all_layers_exist_for_container(container, graph)
 
     def _check_all_layers_exist_for_container(self, container: str, graph: ImportGraph) -> None:
         for layer in self.layers:  # type: ignore
@@ -171,6 +142,43 @@ class LayersContract(Contract):
                 raise ValueError(
                     f"Missing layer '{layer.name}': module {layer.name} does not exist."
                 )
+
+    def _generate_module_permutations(self, graph: ImportGraph) -> Iterator[Tuple[Module, Module]]:
+        """
+        Return all possible combinations of higher level and lower level modules, in pairs.
+
+        Each pair of modules consists of immediate children of two different layers. The first
+        module is in a layer higher than the layer of the second module. This means the first
+        module is allowed to import the second, but not the other way around.
+
+        Returns:
+            module_in_higher_layer, module_in_lower_layer
+        """
+        # If there are no containers, we still want to run the loop once.
+        quasi_containers = self.containers or [None]
+
+        for container in quasi_containers:  # type: ignore
+            for index, higher_layer in enumerate(self.layers):  # type: ignore
+                higher_layer_module = self._module_from_layer(higher_layer, container)
+
+                if higher_layer_module.name not in graph.modules:
+                    continue
+
+                for lower_layer in self.layers[index + 1 :]:  # type: ignore
+
+                    lower_layer_module = self._module_from_layer(lower_layer, container)
+
+                    if lower_layer_module.name not in graph.modules:
+                        continue
+
+                    yield higher_layer_module, lower_layer_module
+
+    def _module_from_layer(self, layer: Layer, container: Optional[str] = None) -> Module:
+        if container:
+            name = ".".join([container, layer.name])
+        else:
+            name = layer.name
+        return Module(name)
 
     def _build_layer_chain_data(
         self, higher_layer_package: Module, lower_layer_package: Module, graph: ImportGraph
