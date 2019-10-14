@@ -1,6 +1,7 @@
 import string
 from typing import Any, Dict, List, Optional
 
+import pytest
 from grimp.adaptors.graph import ImportGraph  # type: ignore
 from importlinter.application.app_config import settings
 from importlinter.application.use_cases import FAILURE, SUCCESS, create_report, lint_imports
@@ -8,7 +9,7 @@ from importlinter.application.user_options import UserOptions
 
 from tests.adapters.building import FakeGraphBuilder
 from tests.adapters.printing import FakePrinter
-from tests.adapters.user_options import FakeUserOptionReader
+from tests.adapters.user_options import ExceptionRaisingUserOptionReader, FakeUserOptionReader
 
 
 class TestCheckContractsAndPrintReport:
@@ -188,6 +189,31 @@ class TestCheckContractsAndPrintReport:
 
                 mypackage.foo:8: from mypackage import bar
                 mypackage.foo:16: from mypackage.bar import something
+            """
+        )
+
+    @pytest.mark.xfail
+    def test_debug_mode_doesnt_swallow_exception(self):
+        some_exception = RuntimeError("There was some sort of exception.")
+        reader = ExceptionRaisingUserOptionReader(exception=some_exception)
+        settings.configure(
+            USER_OPTION_READERS=[reader], GRAPH_BUILDER=FakeGraphBuilder(), PRINTER=FakePrinter()
+        )
+
+        with pytest.raises(some_exception.__class__, match=str(some_exception)):
+            lint_imports(is_debug_mode=True)
+
+    def test_non_debug_mode_prints_exception(self):
+        some_exception = RuntimeError("There was some sort of exception.")
+        reader = ExceptionRaisingUserOptionReader(exception=some_exception)
+        settings.configure(
+            USER_OPTION_READERS=[reader], GRAPH_BUILDER=FakeGraphBuilder(), PRINTER=FakePrinter()
+        )
+
+        lint_imports(is_debug_mode=False)
+
+        settings.PRINTER.pop_and_assert(
+            """There was some sort of exception.
             """
         )
 
