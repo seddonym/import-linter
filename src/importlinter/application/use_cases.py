@@ -35,6 +35,8 @@ def lint_imports(config_filename: Optional[str] = None, is_debug_mode: bool = Fa
         _register_contract_types(user_options)
         report = create_report(user_options)
     except Exception as e:
+        if is_debug_mode:
+            raise e
         render_exception(e)
         return FAILURE
 

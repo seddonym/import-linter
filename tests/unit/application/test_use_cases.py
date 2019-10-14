@@ -192,7 +192,6 @@ class TestCheckContractsAndPrintReport:
             """
         )
 
-    @pytest.mark.xfail
     def test_debug_mode_doesnt_swallow_exception(self):
         some_exception = RuntimeError("There was some sort of exception.")
         reader = ExceptionRaisingUserOptionReader(exception=some_exception)
