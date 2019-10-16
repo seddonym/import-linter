@@ -82,7 +82,7 @@ class FakeFileSystem(ports.FileSystem):
 
         yamlified_string = "\n".join(yamlified_lines)
 
-        return yaml.load(yamlified_string)
+        return yaml.safe_load(yamlified_string)
 
     def _dedent(self, lines: List[str]) -> List[str]:
         """

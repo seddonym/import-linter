@@ -51,3 +51,8 @@ Changelog
 
 * Allow multiple root packages.
 * Make containers optional in Layers contracts.
+
+latest
+------
+
+* Officially support Python 3.8.
