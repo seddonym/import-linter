@@ -18,13 +18,6 @@ Import Linter allows you to define and enforce rules for the imports within and 
 * Free software: BSD license
 * Documentation: https://import-linter.readthedocs.io.
 
-**Warning:** This software is currently in beta. It is undergoing active development, and breaking changes may be
-introduced between versions. However, due to it being a development tool (rather than something that needs to be
-installed on a production system), it may be suitable for inclusion in your testing pipeline. It also means we actively
-encourage people to try it out and `submit bug reports`_.
-
-.. _submit bug reports: https://import-linter.readthedocs.io/en/latest/contributing.html#bug-reports
-
 Overview
 --------
 
