@@ -10,3 +10,11 @@ class FakeUserOptionReader(UserOptionReader):
 
     def read_options(self, config_filename: Optional[str] = None) -> Optional[UserOptions]:
         return self._user_options
+
+
+class ExceptionRaisingUserOptionReader(UserOptionReader):
+    def __init__(self, exception: Exception):
+        self._exception = exception
+
+    def read_options(self, config_filename: Optional[str] = None) -> Optional[UserOptions]:
+        raise self._exception

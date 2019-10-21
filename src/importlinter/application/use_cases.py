@@ -16,7 +16,7 @@ SUCCESS = True
 FAILURE = False
 
 
-def lint_imports(config_filename: Optional[str] = None) -> bool:
+def lint_imports(config_filename: Optional[str] = None, is_debug_mode: bool = False) -> bool:
     """
     Analyse whether a Python package follows a set of contracts, and report on the results.
 
@@ -24,6 +24,8 @@ def lint_imports(config_filename: Optional[str] = None) -> bool:
 
     Args:
         config_filename: the filename to use to parse user options.
+        is_debug_mode:   whether debugging should be turned on. In debug mode, exceptions are
+                         not swallowed at the top level, so the stack trace can be seen.
 
     Returns:
         True if the linting passed, False if it didn't.
@@ -33,6 +35,8 @@ def lint_imports(config_filename: Optional[str] = None) -> bool:
         _register_contract_types(user_options)
         report = create_report(user_options)
     except Exception as e:
+        if is_debug_mode:
+            raise e
         render_exception(e)
         return FAILURE
 
