@@ -56,3 +56,8 @@ Changelog
 ----------------
 
 * Officially support Python 3.8.
+
+latest
+------
+
+* Provide debug mode.
