@@ -15,7 +15,7 @@ matrix:
       sudo: required
       env:
         - TOXENV=py37,report
-    - python: '3.8-dev'
+    - python: '3.8'
       dist: xenial
       sudo: required
       env:
