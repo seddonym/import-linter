@@ -1,6 +1,7 @@
 import os
 
 import pytest
+
 from importlinter import cli
 
 testpackage_directory = os.path.join(os.path.dirname(__file__), "..", "assets", "testpackage")
@@ -30,3 +31,13 @@ def test_lint_imports(working_directory, config_filename, expected_result):
         result = cli.lint_imports()
 
     assert expected_result == result
+
+
+@pytest.mark.parametrize("is_debug_mode", (True, False))
+def test_lint_imports_debug_mode(is_debug_mode):
+    kwargs = dict(config_filename=".nonexistentcontract.ini", is_debug_mode=is_debug_mode)
+    if is_debug_mode:
+        with pytest.raises(FileNotFoundError):
+            cli.lint_imports(**kwargs)
+    else:
+        assert cli.EXIT_STATUS_ERROR == cli.lint_imports(**kwargs)
