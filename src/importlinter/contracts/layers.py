@@ -1,3 +1,4 @@
+import copy
 from typing import Any, Dict, Iterator, List, Tuple, Union, Optional
 from datetime import datetime
 from importlinter.application import output
@@ -53,6 +54,63 @@ class LayersContract(Contract):
     ignore_imports = fields.ListField(subfield=fields.DirectImportField(), required=False)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
+        is_kept = True
+        invalid_chains = []
+        self._call_count = 0
+        direct_imports_to_ignore = self.ignore_imports if self.ignore_imports else []
+        removed_imports = helpers.pop_imports(
+            graph, direct_imports_to_ignore  # type: ignore
+        )
+
+        temp_graph = copy.deepcopy(graph)
+
+        for container in self.containers:
+            for layer in self.layers:
+                module = self._module_from_layer(layer, container)
+                self._squash_package(package_name=module.name, graph=temp_graph)
+
+        print(f"Beginning layer analysis at {datetime.now().time()}...")
+        for higher_layer_package, lower_layer_package in self._generate_module_permutations(temp_graph):
+            layer_chain_data = self._build_layer_chain_data(
+                higher_layer_package=higher_layer_package,
+                lower_layer_package=lower_layer_package,
+                graph=temp_graph,
+            )
+
+            if layer_chain_data["chains"]:
+                is_kept = False
+                invalid_chains.append(layer_chain_data)
+        print(f"Finished layer analysis at {datetime.now().time()}. {self._call_count} calls made.")
+
+        return ContractCheck(kept=is_kept, metadata={"invalid_chains": invalid_chains})
+
+    def _squash_package(self, package_name, graph):
+        modules_that_import_package = set()
+        modules_imported_by_package = set()
+
+        package_module = Module(package_name)
+        package_modules = {package_name} | graph.find_descendants(package_name)
+
+        # Remove all the modules from the package, keeping track of the imports to and from.
+        for package_module_name in package_modules:
+            for module in graph.find_modules_directly_imported_by(package_module_name):
+                if not Module(module).is_descendant_of(package_module):
+                    modules_imported_by_package.add(module)
+            for module in graph.find_modules_that_directly_import(package_module_name):
+                if not Module(module).is_descendant_of(package_module):
+                    modules_that_import_package.add(module)
+            graph.remove_module(package_module_name)
+
+        # Now add a single module back.
+
+        graph.add_module(package_name, is_squashed=True)
+
+        for module in modules_that_import_package:
+            graph.add_import(importer=module, imported=package_name)
+        for module in modules_imported_by_package:
+            graph.add_import(importer=package_name, imported=module)
+
+    def _alt_check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
         invalid_chains = []
 
