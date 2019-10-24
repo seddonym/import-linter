@@ -1,5 +1,5 @@
 from typing import Any, Dict, Iterator, List, Tuple, Union, Optional
-
+from datetime import datetime
 from importlinter.application import output
 from importlinter.domain import fields, helpers
 from importlinter.domain.contract import Contract, ContractCheck
@@ -65,7 +65,9 @@ class LayersContract(Contract):
             self._validate_containers(graph)
         else:
             self._check_all_containerless_layers_exist(graph)
+        self._call_count = 0
 
+        print(f"Beginning layer analysis at {datetime.now().time()}...")
         for higher_layer_package, lower_layer_package in self._generate_module_permutations(graph):
             layer_chain_data = self._build_layer_chain_data(
                 higher_layer_package=higher_layer_package,
@@ -76,6 +78,7 @@ class LayersContract(Contract):
             if layer_chain_data["chains"]:
                 is_kept = False
                 invalid_chains.append(layer_chain_data)
+        print(f"Finished layer analysis at {datetime.now().time()}. {self._call_count} calls made.")
 
         helpers.add_imports(graph, removed_imports)
 
@@ -189,7 +192,7 @@ class LayersContract(Contract):
             "chains": [],
         }
         assert isinstance(layer_chain_data["chains"], list)  # For type checker.
-
+        self._call_count += 1
         chains = graph.find_shortest_chains(
             importer=lower_layer_package.name, imported=higher_layer_package.name
         )
