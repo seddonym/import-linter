@@ -1,6 +1,9 @@
 import copy
-from typing import Any, Dict, Iterator, List, Tuple, Union, Optional
 from datetime import datetime
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+
+import networkx
+
 from importlinter.application import output
 from importlinter.domain import fields, helpers
 from importlinter.domain.contract import Contract, ContractCheck
@@ -55,34 +58,91 @@ class LayersContract(Contract):
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
-        invalid_chains = []
         self._call_count = 0
         direct_imports_to_ignore = self.ignore_imports if self.ignore_imports else []
         removed_imports = helpers.pop_imports(
             graph, direct_imports_to_ignore  # type: ignore
         )
 
-        temp_graph = copy.deepcopy(graph)
+        # print(f"Beginning squashing at {datetime.now().time()}...")
+        # for container in self.containers:
+        #     for layer in self.layers:
+        #         module = self._module_from_layer(layer, container)
+        #         self._squash_package(package_name=module.name, graph=temp_graph)temp_graph
+        # print(f"Finished squashing at {datetime.now().time()}.")
 
-        for container in self.containers:
+        print(f"Beginning high level layer analysis at {datetime.now().time()}...")
+        high_level_invalid_chains = []
+        for higher_layer_package, lower_layer_package in self._generate_module_permutations(graph):
+            temp_graph = copy.deepcopy(graph)
+            self._squash_package(package_name=higher_layer_package.name, graph=temp_graph)
+            # Delete all other layers.
             for layer in self.layers:
-                module = self._module_from_layer(layer, container)
-                self._squash_package(package_name=module.name, graph=temp_graph)
+                module = self._module_from_layer(layer, self.containers[0])
+                if module not in (higher_layer_package, lower_layer_package):
+                    self._remove_package(package_name=module.name, graph=temp_graph)
 
-        print(f"Beginning layer analysis at {datetime.now().time()}...")
-        for higher_layer_package, lower_layer_package in self._generate_module_permutations(temp_graph):
-            layer_chain_data = self._build_layer_chain_data(
-                higher_layer_package=higher_layer_package,
-                lower_layer_package=lower_layer_package,
-                graph=temp_graph,
+            lower_layer_module_names = {lower_layer_package.name} | graph.find_descendants(
+                lower_layer_package.name
             )
+            count = len(lower_layer_module_names)
+            imports_outside_layer_by_module = self._pop_imports_outside_layer_by_module(
+                graph=temp_graph,
+                layer_package=lower_layer_package,
+                module_names=lower_layer_module_names,
+            )
+            for position, module_name in enumerate(lower_layer_module_names):
+                print(
+                    f"{position}/{count}: {module_name} of {lower_layer_package} -> {higher_layer_package}"
+                )
+                helpers.add_imports(temp_graph, imports_outside_layer_by_module[module_name])
 
-            if layer_chain_data["chains"]:
-                is_kept = False
-                invalid_chains.append(layer_chain_data)
-        print(f"Finished layer analysis at {datetime.now().time()}. {self._call_count} calls made.")
+                if module_name in temp_graph.modules:
+                    try:
+
+                        layer_chain_data = list(
+                            networkx.all_shortest_paths(
+                                temp_graph._networkx_graph,
+                                source=module_name,
+                                target=higher_layer_package.name,
+                            )
+                        )
+                    except networkx.exception.NetworkXNoPath:
+                        layer_chain_data = []
+                else:
+                    layer_chain_data = []
+
+                for import_details in imports_outside_layer_by_module[module_name]:
+                    temp_graph.remove_import(
+                        importer=import_details["importer"], imported=import_details["imported"]
+                    )
+                print(f"Added {len(layer_chain_data)}.")
+                if layer_chain_data:
+                    is_kept = False
+                    high_level_invalid_chains.append(layer_chain_data)
+        print(
+            f"Finished high level layer analysis at {datetime.now().time()}. {self._call_count} calls made."
+        )
+
+        print(f"Beginning getting specific chains at {datetime.now().time()}...")
+        import ipdb; ipdb.set_trace()
+        invalid_chains = self._determine_specific_chains(high_level_invalid_chains, graph)
+        print(f"Finished getting specific chains at {datetime.now().time()}.")
 
         return ContractCheck(kept=is_kept, metadata={"invalid_chains": invalid_chains})
+
+    def _pop_imports_outside_layer_by_module(self, graph, layer_package, module_names):
+        imports_by_layer = {}
+        for module_name in module_names:
+            imports_by_layer[module_name] = []
+            for imported_module in graph.find_modules_directly_imported_by(module_name):
+                if not Module(imported_module).is_descendant_of(layer_package):
+                    import_details = graph.get_import_details(
+                        importer=module_name, imported=imported_module
+                    )
+                    imports_by_layer[module_name].extend(import_details)
+            graph.remove_module(module_name)
+        return imports_by_layer
 
     def _squash_package(self, package_name, graph):
         modules_that_import_package = set()
@@ -110,6 +170,64 @@ class LayersContract(Contract):
         for module in modules_imported_by_package:
             graph.add_import(importer=package_name, imported=module)
 
+    def _remove_package(self, package_name, graph):
+        package_modules = {Module(package_name)} | graph.find_descendants(package_name)
+        for package_module_name in package_modules:
+            graph.remove_module(package_module_name)
+
+    def _determine_specific_chains(
+        self, high_level_invalid_chains: List[Tuple[str, ...]], graph: ImportGraph
+    ) -> List[Dict[str, Any]]:
+        invalid_chains = []
+        for high_level_invalid_chain in high_level_invalid_chains:
+            if len(high_level_invalid_chain) == 2:
+                # TODO
+                invalid_chains.append(high_level_invalid_chain)
+            else:
+                # import ipdb; ipdb.set_trace()
+                starting_package = high_level_invalid_chain[0]
+                candidate_starting_modules = graph.find_modules_that_directly_import(
+                    high_level_invalid_chain[1]
+                )
+                starting_modules = [
+                    m
+                    for m in candidate_starting_modules
+                    if Module(m).is_descendant_of(starting_package)
+                ]
+                ending_package = high_level_invalid_chain[-1]
+                candidate_ending_modules = graph.find_modules_directly_imported_by(
+                    high_level_invalid_chain[-2]
+                )
+                ending_modules = [
+                    m
+                    for m in candidate_ending_modules
+                    if Module(m).is_descendant_of(ending_package)
+                ]
+                for starting_module in starting_modules:
+                    invalid_chains.append(
+                        [starting_module] + high_level_invalid_chain[1:-1] + [ending_modules[0]]
+                    )
+                for ending_module in ending_modules[1:]:
+                    invalid_chains.append(
+                        [starting_modules[0]] + high_level_invalid_chain[1:-1] + [ending_module]
+                    )
+        return self._convert_chains(invalid_chains, graph)
+
+    def _convert_chains(self, invalid_chains, graph):
+        converted_chains = []
+        for chain in invalid_chains:
+            converted_chain = []
+
+            for importer, imported in [(chain[i], chain[i + 1]) for i in range(len(chain) - 1)]:
+                import_details = graph.get_import_details(importer=importer, imported=imported)
+                line_numbers = tuple(j["line_number"] for j in import_details)
+                converted_chain.append(
+                    {"importer": importer, "imported": imported, "line_numbers": line_numbers}
+                )
+            converted_chains.append(converted_chain)
+
+        return converted_chains
+
     def _alt_check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
         invalid_chains = []
@@ -136,13 +254,32 @@ class LayersContract(Contract):
             if layer_chain_data["chains"]:
                 is_kept = False
                 invalid_chains.append(layer_chain_data)
-        print(f"Finished layer analysis at {datetime.now().time()}. {self._call_count} calls made.")
+        print(
+            f"Finished layer analysis at {datetime.now().time()}. {self._call_count} calls made."
+        )
 
         helpers.add_imports(graph, removed_imports)
 
         return ContractCheck(kept=is_kept, metadata={"invalid_chains": invalid_chains})
 
     def render_broken_contract(self, check: ContractCheck) -> None:
+        for chain in check.metadata["invalid_chains"]:
+
+            first_line = True
+            for direct_import in chain:
+                importer, imported = (direct_import["importer"], direct_import["imported"])
+                line_numbers = ", ".join(f"l.{n}" for n in direct_import["line_numbers"])
+                import_string = f"{importer} -> {imported} ({line_numbers})"
+                if first_line:
+                    output.print_error(f"-   {import_string}", bold=False)
+                    first_line = False
+                else:
+                    output.indent_cursor()
+                    output.print_error(import_string, bold=False)
+
+            output.new_line()
+
+    def old_render_broken_contract(self, check: ContractCheck) -> None:
         for chains_data in check.metadata["invalid_chains"]:
             higher_layer, lower_layer = (chains_data["higher_layer"], chains_data["lower_layer"])
             output.print(f"{lower_layer} is not allowed to import {higher_layer}:")

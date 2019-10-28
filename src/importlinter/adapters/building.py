@@ -16,7 +16,7 @@ class GraphBuilder(ports.GraphBuilder):
         self, root_package_names: List[str], include_external_packages: bool = False
     ) -> ImportGraph:
         LOAD = True
-        filename = "graph.grimp"
+        filename = "/Users/david/kraken.grimp"
         if LOAD:
             print(f'Loading graph at {datetime.now().time()}...')
             pickle_in = open(filename, "rb")
