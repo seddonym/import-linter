@@ -75,6 +75,7 @@ class LayersContract(Contract):
         high_level_invalid_chains = []
         for higher_layer_package, lower_layer_package in self._generate_module_permutations(graph):
             temp_graph = copy.deepcopy(graph)
+            self._squash_package(package_name=lower_layer_package.name, graph=temp_graph)
             self._squash_package(package_name=higher_layer_package.name, graph=temp_graph)
             # Delete all other layers.
             for layer in self.layers:
@@ -82,44 +83,22 @@ class LayersContract(Contract):
                 if module not in (higher_layer_package, lower_layer_package):
                     self._remove_package(package_name=module.name, graph=temp_graph)
 
-            lower_layer_module_names = {lower_layer_package.name} | graph.find_descendants(
-                lower_layer_package.name
-            )
-            count = len(lower_layer_module_names)
-            imports_outside_layer_by_module = self._pop_imports_outside_layer_by_module(
-                graph=temp_graph,
-                layer_package=lower_layer_package,
-                module_names=lower_layer_module_names,
-            )
-            for position, module_name in enumerate(lower_layer_module_names):
-                print(
-                    f"{position}/{count}: {module_name} of {lower_layer_package} -> {higher_layer_package}"
-                )
-                helpers.add_imports(temp_graph, imports_outside_layer_by_module[module_name])
-
-                if module_name in temp_graph.modules:
-                    try:
-
-                        layer_chain_data = list(
-                            networkx.all_shortest_paths(
-                                temp_graph._networkx_graph,
-                                source=module_name,
-                                target=higher_layer_package.name,
-                            )
-                        )
-                    except networkx.exception.NetworkXNoPath:
-                        layer_chain_data = []
-                else:
-                    layer_chain_data = []
-
-                for import_details in imports_outside_layer_by_module[module_name]:
-                    temp_graph.remove_import(
-                        importer=import_details["importer"], imported=import_details["imported"]
+            try:
+                layer_chain_data = list(
+                    networkx.all_shortest_paths(
+                        temp_graph._networkx_graph,
+                        source=lower_layer_package.name,
+                        target=higher_layer_package.name,
                     )
-                print(f"Added {len(layer_chain_data)}.")
-                if layer_chain_data:
-                    is_kept = False
-                    high_level_invalid_chains.append(layer_chain_data)
+                )
+            except networkx.exception.NetworkXNoPath:
+                layer_chain_data = []
+
+            print(f"Added {len(layer_chain_data)}.")
+            if layer_chain_data:
+                is_kept = False
+                high_level_invalid_chains.append(layer_chain_data)
+
         print(
             f"Finished high level layer analysis at {datetime.now().time()}. {self._call_count} calls made."
         )
