@@ -1,10 +1,10 @@
 import pytest
 from grimp.adaptors.graph import ImportGraph  # type: ignore
+
 from importlinter.application.app_config import settings
 from importlinter.contracts.layers import LayersContract
 from importlinter.domain.contract import ContractCheck
 from importlinter.domain.helpers import MissingImport
-
 from tests.adapters.printing import FakePrinter
 
 
@@ -537,59 +537,151 @@ def test_render_broken_contract():
         metadata={
             "invalid_chains": [
                 {
-                    "higher_layer": "mypackage.high",
                     "lower_layer": "mypackage.low",
+                    "higher_layer": "mypackage.high",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.low.blue",
-                                "imported": "mypackage.utils.red",
-                                "line_numbers": (8, 16),
-                            },
-                            {
-                                "importer": "mypackage.utils.red",
-                                "imported": "mypackage.utils.yellow",
-                                "line_numbers": (1,),
-                            },
-                            {
-                                "importer": "mypackage.utils.yellow",
-                                "imported": "mypackage.high.green",
-                                "line_numbers": (3,),
-                            },
-                        ],
-                        [
-                            {
-                                "importer": "mypackage.low.purple",
-                                "imported": "mypackage.high.brown",
-                                "line_numbers": (9,),
-                            }
-                        ],
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.blue",
+                                    "imported": "mypackage.high.yellow",
+                                    "line_numbers": (6,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        },
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.green",
+                                    "imported": "mypackage.high.blue",
+                                    "line_numbers": (12,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        },
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.blue",
+                                    "imported": "mypackage.utils.red",
+                                    "line_numbers": (8, 16),
+                                },
+                                {
+                                    "importer": "mypackage.utils.red",
+                                    "imported": "mypackage.utils.yellow",
+                                    "line_numbers": (2,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.yellow",
+                                    "imported": "mypackage.utils.brown",
+                                    "line_numbers": (10,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.brown",
+                                    "imported": "mypackage.high.green",
+                                    "line_numbers": (3,),
+                                },
+                            ],
+                            "extra_firsts": [
+                                {
+                                    "importer": "mypackage.low.purple",
+                                    "imported": "mypackage.utils.red",
+                                    "line_numbers": (11,),
+                                },
+                                {
+                                    "importer": "mypackage.low.white",
+                                    "imported": "mypackage.utils.red",
+                                    "line_numbers": (1,),
+                                },
+                            ],
+                            "extra_lasts": [
+                                {
+                                    "importer": "mypackage.utils.brown",
+                                    "imported": "mypackage.high.black",
+                                    "line_numbers": (11,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.brown",
+                                    "imported": "mypackage.high.white",
+                                    "line_numbers": (8, 16),
+                                },
+                            ],
+                        },
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.purple",
+                                    "imported": "mypackage.utils.yellow",
+                                    "line_numbers": (9,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.yellow",
+                                    "imported": "mypackage.utils.brown",
+                                    "line_numbers": (10,),
+                                },
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        },
                     ],
                 },
                 {
+                    "lower_layer": "mypackage.low",
                     "higher_layer": "mypackage.medium",
-                    "lower_layer": "mypackage.low",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.low.blue",
-                                "imported": "mypackage.medium.yellow",
-                                "line_numbers": (6,),
-                            }
-                        ]
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.blue",
+                                    "imported": "mypackage.medium.yellow",
+                                    "line_numbers": (6,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        }
                     ],
                 },
                 {
-                    "higher_layer": "mypackage.high",
                     "lower_layer": "mypackage.medium",
+                    "higher_layer": "mypackage.high",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.medium",
-                                "imported": "mypackage.high.cyan.alpha",
-                                "line_numbers": (2,),
-                            }
-                        ]
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.medium.blue",
+                                    "imported": "mypackage.utils.yellow",
+                                    "line_numbers": (8,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.yellow",
+                                    "imported": "mypackage.utils.brown",
+                                    "line_numbers": (10,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.brown",
+                                    "imported": "mypackage.high.green",
+                                    "line_numbers": (3,),
+                                },
+                            ],
+                            "extra_firsts": [
+                                {
+                                    "importer": "mypackage.medium.white",
+                                    "imported": "mypackage.utils.yellow",
+                                    "line_numbers": (1, 10),
+                                }
+                            ],
+                            "extra_lasts": [
+                                {
+                                    "importer": "mypackage.utils.brown",
+                                    "imported": "mypackage.high.black",
+                                    "line_numbers": (11,),
+                                }
+                            ],
+                        }
                     ],
                 },
             ]
@@ -601,22 +693,36 @@ def test_render_broken_contract():
     settings.PRINTER.pop_and_assert(
         """
         mypackage.low is not allowed to import mypackage.high:
+        
+        - mypackage.low.blue -> mypackage.high.yellow (l.6)
+        
+        - mypackage.low.green -> mypackage.high.blue (l.12)
 
-        -   mypackage.low.blue -> mypackage.utils.red (l.8, l.16)
-            mypackage.utils.red -> mypackage.utils.yellow (l.1)
-            mypackage.utils.yellow -> mypackage.high.green (l.3)
+        - mypackage.low.blue (l.8, l.16)
+          & mypackage.low.purple (l.11)
+          & mypackage.low.white -> mypackage.utils.red (l.1)
+          mypackage.utils.red -> mypackage.utils.yellow (l.2)
+          mypackage.utils.yellow -> mypackage.utils.brown (l.10)
+          mypackage.utils.brown -> mypackage.high.green (l.3)
+                                   & mypackage.high.black (l.11)
+                                   & mypackage.high.white (l.8, l.16)
 
-        -   mypackage.low.purple -> mypackage.high.brown (l.9)
+        - mypackage.low.purple -> mypackage.utils.yellow (l.9)
+          mypackage.utils.yellow -> mypackage.utils.brown (l.10)
 
 
         mypackage.low is not allowed to import mypackage.medium:
 
-        -   mypackage.low.blue -> mypackage.medium.yellow (l.6)
+        - mypackage.low.blue -> mypackage.medium.yellow (l.6)
 
 
         mypackage.medium is not allowed to import mypackage.high:
 
-        -   mypackage.medium -> mypackage.high.cyan.alpha (l.2)
+        - mypackage.medium.blue (l.8)
+          & mypackage.medium.white -> mypackage.utils.yellow (l.1, l.10)
+          mypackage.utils.yellow -> mypackage.utils.brown (l.10)
+          mypackage.utils.brown -> mypackage.high.green (l.3)
+                                   & mypackage.high.black (l.11)
 
 
         """
