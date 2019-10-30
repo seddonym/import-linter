@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, List, Tuple, Union, Optional
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from importlinter.application import output
 from importlinter.domain import fields, helpers
@@ -85,21 +85,58 @@ class LayersContract(Contract):
             output.print(f"{lower_layer} is not allowed to import {higher_layer}:")
             output.new_line()
 
-            for chain in chains_data["chains"]:
-                first_line = True
-                for direct_import in chain:
-                    importer, imported = (direct_import["importer"], direct_import["imported"])
-                    line_numbers = ", ".join(f"l.{n}" for n in direct_import["line_numbers"])
-                    import_string = f"{importer} -> {imported} ({line_numbers})"
-                    if first_line:
-                        output.print_error(f"-   {import_string}", bold=False)
-                        first_line = False
-                    else:
-                        output.indent_cursor()
-                        output.print_error(import_string, bold=False)
+            for chain_data in chains_data["chains"]:
+                self._render_chain_data(chain_data)
                 output.new_line()
 
             output.new_line()
+
+    def _render_chain_data(self, chain_data: Dict) -> None:
+        main_chain = chain_data["chain"]
+        self._render_direct_import(
+            main_chain[0], extra_firsts=chain_data["extra_firsts"], first_line=True
+        )
+
+        for direct_import in main_chain[1:-1]:
+            self._render_direct_import(direct_import)
+
+        if len(main_chain) > 1:
+            self._render_direct_import(main_chain[-1], extra_lasts=chain_data["extra_lasts"])
+
+    def _render_direct_import(
+        self,
+        direct_import,
+        first_line: bool = False,
+        extra_firsts: Optional[List] = None,
+        extra_lasts: Optional[List] = None,
+    ) -> None:
+        import_strings = []
+        if extra_firsts:
+            for position, source in enumerate([direct_import] + extra_firsts[:-1]):
+                prefix = "& " if position > 0 else ""
+                importer = source["importer"]
+                line_numbers = ", ".join(f"l.{n}" for n in source["line_numbers"])
+                import_strings.append(f"{prefix}{importer} ({line_numbers})")
+            importer, imported = extra_firsts[-1]["importer"], extra_firsts[-1]["imported"]
+            line_numbers = ", ".join(f"l.{n}" for n in extra_firsts[-1]["line_numbers"])
+            import_strings.append(f"& {importer} -> {imported} ({line_numbers})")
+        else:
+            importer, imported = direct_import["importer"], direct_import["imported"]
+            line_numbers = ", ".join(f"l.{n}" for n in direct_import["line_numbers"])
+            import_strings.append(f"{importer} -> {imported} ({line_numbers})")
+
+        if extra_lasts:
+            indent_string = (len(direct_import["importer"]) + 4) * " "
+            for destination in extra_lasts:
+                imported = destination["imported"]
+                line_numbers = ", ".join(f"l.{n}" for n in destination["line_numbers"])
+                import_strings.append(f"{indent_string}& {imported} ({line_numbers})")
+
+        for position, import_string in enumerate(import_strings):
+            if first_line and position == 0:
+                output.print_error(f"- {import_string}", bold=False)
+            else:
+                output.print_error(f"  {import_string}", bold=False)
 
     def _validate_containers(self, graph: ImportGraph) -> None:
         root_package_names = self.session_options["root_packages"]
@@ -193,13 +230,13 @@ class LayersContract(Contract):
         )
         if chains:
             for chain in chains:
-                chain_data = []
+                chain_data = {"chain": [], "extra_firsts": [], "extra_lasts": []}  # type: ignore
                 for importer, imported in [
                     (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
                 ]:
                     import_details = graph.get_import_details(importer=importer, imported=imported)
                     line_numbers = tuple(j["line_number"] for j in import_details)
-                    chain_data.append(
+                    chain_data["chain"].append(
                         {"importer": importer, "imported": imported, "line_numbers": line_numbers}
                     )
 
