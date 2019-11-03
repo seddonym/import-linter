@@ -1,3 +1,4 @@
+import copy
 from datetime import datetime
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
@@ -69,10 +70,15 @@ class LayersContract(Contract):
         self._call_count = 0
 
         print(f"Beginning layer analysis at {datetime.now().time()}...")
-        for higher_layer_package, lower_layer_package in self._generate_module_permutations(graph):
+        for (
+            higher_layer_package,
+            lower_layer_package,
+            container,
+        ) in self._generate_module_permutations(graph):
             layer_chain_data = self._build_layer_chain_data(
                 higher_layer_package=higher_layer_package,
                 lower_layer_package=lower_layer_package,
+                container=container,
                 graph=graph,
             )
 
@@ -220,7 +226,7 @@ class LayersContract(Contract):
                     if lower_layer_module.name not in graph.modules:
                         continue
 
-                    yield higher_layer_module, lower_layer_module
+                    yield higher_layer_module, lower_layer_module, container
 
     def _module_from_layer(self, layer: Layer, container: Optional[str] = None) -> Module:
         if container:
@@ -230,7 +236,11 @@ class LayersContract(Contract):
         return Module(name)
 
     def _build_layer_chain_data(
-        self, higher_layer_package: Module, lower_layer_package: Module, graph: ImportGraph
+        self,
+        higher_layer_package: Module,
+        lower_layer_package: Module,
+        container: Optional[str],
+        graph: ImportGraph,
     ) -> Dict[str, Any]:
         layer_chain_data = {
             "higher_layer": higher_layer_package.name,
@@ -239,7 +249,41 @@ class LayersContract(Contract):
         }
         assert isinstance(layer_chain_data["chains"], list)  # For type checker.
         self._call_count += 1
-        chains = graph.find_shortest_chains(
+
+        temp_graph = copy.deepcopy(graph)
+        self._remove_other_layers(
+            temp_graph,
+            container=container,
+            layers_to_preserve=(higher_layer_package, lower_layer_package),
+        )
+
+        # Assemble direct imports between the layers, then remove them.
+        import_details_between_layers = self._pop_direct_imports(
+            higher_layer_package=higher_layer_package,
+            lower_layer_package=lower_layer_package,
+            graph=temp_graph,
+        )
+        for import_details_list in import_details_between_layers:
+            line_numbers = tuple(j["line_number"] for j in import_details_list)
+            layer_chain_data["chains"].append(
+                {
+                    "chain": [
+                        {
+                            "importer": import_details_list[0]["importer"],
+                            "imported": import_details_list[0]["imported"],
+                            "line_numbers": line_numbers,
+                        }
+                    ],
+                    "extra_firsts": [],
+                    "extra_lasts": [],
+                }
+            )
+
+        # Assemble indirect imports between the layers.
+        # TODO - populate extra firsts and lasts. What's the best way to do this?
+        # Possibly we use find_shortest_chains and then look at the results to assemble things?
+        # Might be good as a separate function that we can unit test.
+        chains = temp_graph.find_shortest_chains(
             importer=lower_layer_package.name, imported=higher_layer_package.name
         )
         if chains:
@@ -248,7 +292,7 @@ class LayersContract(Contract):
                 for importer, imported in [
                     (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
                 ]:
-                    import_details = graph.get_import_details(importer=importer, imported=imported)
+                    import_details = temp_graph.get_import_details(importer=importer, imported=imported)
                     line_numbers = tuple(j["line_number"] for j in import_details)
                     chain_data["chain"].append(
                         {"importer": importer, "imported": imported, "line_numbers": line_numbers}
@@ -256,3 +300,31 @@ class LayersContract(Contract):
 
                 layer_chain_data["chains"].append(chain_data)
         return layer_chain_data
+
+    def _remove_other_layers(self, graph, container, layers_to_preserve):
+        for index, layer in enumerate(self.layers):  # type: ignore
+            candidate_layer = self._module_from_layer(layer, container)
+            if candidate_layer not in layers_to_preserve:
+                self._remove_layer(graph, layer_package=candidate_layer)
+
+    def _remove_layer(self, graph, layer_package):
+        for module in graph.find_descendants(layer_package):
+            graph.remove_module(module)
+        graph.remove_module(layer_package)
+
+    def _pop_direct_imports(self, higher_layer_package, lower_layer_package, graph):
+        import_details_list = []
+        lower_layer_modules = {lower_layer_package.name} | graph.find_descendants(
+            lower_layer_package
+        )
+        for lower_layer_module in lower_layer_modules:
+            imported_modules = graph.find_modules_directly_imported_by(lower_layer_module)
+            for imported_module in imported_modules:
+                if Module(imported_module).is_descendant_of(Module(higher_layer_package)):
+                    import_details_list.append(
+                        graph.get_import_details(
+                            importer=lower_layer_module, imported=imported_module
+                        )
+                    )
+                    graph.remove_import(importer=lower_layer_module, imported=imported_module)
+        return import_details_list
