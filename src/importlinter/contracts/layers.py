@@ -244,13 +244,13 @@ class LayersContract(Contract):
         )
         if chains:
             for chain in chains:
-                chain_data = []
+                chain_data = {"chain": [], "extra_firsts": [], "extra_lasts": []}
                 for importer, imported in [
                     (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
                 ]:
                     import_details = graph.get_import_details(importer=importer, imported=imported)
                     line_numbers = tuple(j["line_number"] for j in import_details)
-                    chain_data.append(
+                    chain_data["chain"].append(
                         {"importer": importer, "imported": imported, "line_numbers": line_numbers}
                     )
 

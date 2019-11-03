@@ -257,63 +257,74 @@ def test_layer_contract_populates_metadata():
     )
 
     contract_check = contract.check(graph=graph)
-
     assert contract_check.kept is False
 
     assert contract_check.metadata == {
         "invalid_chains": [
             {
-                "higher_layer": "mypackage.high",
                 "lower_layer": "mypackage.medium",
+                "higher_layer": "mypackage.high",
                 "chains": [
-                    [
-                        {
-                            "importer": "mypackage.medium.orange.beta",
-                            "imported": "mypackage.high.blue",
-                            "line_numbers": (2,),
-                        }
-                    ]
+                    {
+                        "chain": [
+                            {
+                                "importer": "mypackage.medium.orange.beta",
+                                "imported": "mypackage.high.blue",
+                                "line_numbers": (2,),
+                            }
+                        ],
+                        "extra_firsts": [],
+                        "extra_lasts": [],
+                    }
                 ],
             },
             {
-                "higher_layer": "mypackage.high",
                 "lower_layer": "mypackage.low",
+                "higher_layer": "mypackage.high",
                 "chains": [
-                    [
-                        {
-                            "importer": "mypackage.low.white.gamma",
-                            "imported": "mypackage.utils.foo",
-                            "line_numbers": (3,),
-                        },
-                        {
-                            "importer": "mypackage.utils.foo",
-                            "imported": "mypackage.utils.bar",
-                            "line_numbers": (1, 101),
-                        },
-                        {
-                            "importer": "mypackage.utils.bar",
-                            "imported": "mypackage.high.yellow.alpha",
-                            "line_numbers": (13,),
-                        },
-                    ]
+                    {
+                        "chain": [
+                            {
+                                "importer": "mypackage.low.white.gamma",
+                                "imported": "mypackage.utils.foo",
+                                "line_numbers": (3,),
+                            },
+                            {
+                                "importer": "mypackage.utils.foo",
+                                "imported": "mypackage.utils.bar",
+                                "line_numbers": (1, 101),
+                            },
+                            {
+                                "importer": "mypackage.utils.bar",
+                                "imported": "mypackage.high.yellow.alpha",
+                                "line_numbers": (13,),
+                            },
+                        ],
+                        "extra_firsts": [],
+                        "extra_lasts": [],
+                    }
                 ],
             },
             {
                 "higher_layer": "mypackage.medium",
                 "lower_layer": "mypackage.low",
                 "chains": [
-                    [
-                        {
-                            "importer": "mypackage.low.black",
-                            "imported": "mypackage.utils.baz",
-                            "line_numbers": (2,),
-                        },
-                        {
-                            "importer": "mypackage.utils.baz",
-                            "imported": "mypackage.medium.red",
-                            "line_numbers": (3,),
-                        },
-                    ]
+                    {
+                        "chain": [
+                            {
+                                "importer": "mypackage.low.black",
+                                "imported": "mypackage.utils.baz",
+                                "line_numbers": (2,),
+                            },
+                            {
+                                "importer": "mypackage.utils.baz",
+                                "imported": "mypackage.medium.red",
+                                "line_numbers": (3,),
+                            },
+                        ],
+                        "extra_firsts": [],
+                        "extra_lasts": [],
+                    }
                 ],
             },
         ]
@@ -345,16 +356,20 @@ class TestIgnoreImports:
         assert contract_check.kept is False
         assert contract_check.metadata["invalid_chains"] == [
             {
-                "higher_layer": "mypackage.medium",
                 "lower_layer": "mypackage.low",
+                "higher_layer": "mypackage.medium",
                 "chains": [
-                    [
-                        dict(
-                            importer="mypackage.low.black",
-                            imported="mypackage.medium.orange",
-                            line_numbers=(1,),
-                        )
-                    ]
+                    {
+                        "chain": [
+                            dict(
+                                importer="mypackage.low.black",
+                                imported="mypackage.medium.orange",
+                                line_numbers=(1,),
+                            )
+                        ],
+                        "extra_firsts": [],
+                        "extra_lasts": [],
+                    }
                 ],
             }
         ]
@@ -376,13 +391,17 @@ class TestIgnoreImports:
                 "higher_layer": "mypackage.medium",
                 "lower_layer": "mypackage.low",
                 "chains": [
-                    [
-                        dict(
-                            importer="mypackage.low.black",
-                            imported="mypackage.medium.orange",
-                            line_numbers=(1,),
-                        )
-                    ]
+                    {
+                        "chain": [
+                            dict(
+                                importer="mypackage.low.black",
+                                imported="mypackage.medium.orange",
+                                line_numbers=(1,),
+                            )
+                        ],
+                        "extra_firsts": [],
+                        "extra_lasts": [],
+                    }
                 ],
             }
         ]
