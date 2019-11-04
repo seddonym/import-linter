@@ -1,10 +1,10 @@
 import pytest
 from grimp.adaptors.graph import ImportGraph  # type: ignore
-
 from importlinter.application.app_config import settings
 from importlinter.contracts.layers import LayersContract
 from importlinter.domain.contract import ContractCheck
 from importlinter.domain.helpers import MissingImport
+
 from tests.adapters.printing import FakePrinter
 
 
@@ -446,11 +446,7 @@ class TestLayerContractPopulatesMetadata:
             line_number=1,
             line_contents="-",
         )
-        for ending_point in (
-            "mypackage.high.blue",
-            "mypackage.high.green",
-            "mypackage.high.red",
-        ):
+        for ending_point in ("mypackage.high.blue", "mypackage.high.green", "mypackage.high.red"):
             graph.add_import(
                 importer="mypackage.utils.foo",
                 imported=ending_point,
@@ -631,14 +627,14 @@ class TestLayerContractPopulatesMetadata:
                                     "importer": "mypackage.low.green",
                                     "imported": "mypackage.utils.foo",
                                     "line_numbers": (3,),
-                                },
+                                }
                             ],
                             "extra_lasts": [
                                 {
                                     "importer": "mypackage.utils.baz",
                                     "imported": "mypackage.high.yellow",
                                     "line_numbers": (5,),
-                                },
+                                }
                             ],
                         }
                     ],
@@ -671,10 +667,7 @@ class TestLayerContractPopulatesMetadata:
         return LayersContract(
             name="Layer contract",
             session_options={"root_packages": ["mypackage"]},
-            contract_options={
-                "containers": ["mypackage"],
-                "layers": ["high", "medium", "low"],
-            },
+            contract_options={"containers": ["mypackage"], "layers": ["high", "medium", "low"]},
         )
 
 
@@ -1237,3 +1230,112 @@ class TestLayerContractNoContainer:
             session_options={"root_packages": root_packages},
             contract_options={"layers": layers},
         )
+
+
+class TestCollapseDetailedChains:
+    def test_empty_list_collapses_to_itself(self):
+        assert [] == LayersContract._collapse_detailed_chains([])
+
+    def test_single_chain(self):
+        chain = self._make_detailed_chain("foo", "bar")
+
+        assert [
+            {"chain": chain, "extra_firsts": [], "extra_lasts": []}
+        ] == LayersContract._collapse_detailed_chains([chain])
+
+    def test_two_chains_with_no_shared_path(self):
+        chain_one = self._make_detailed_chain("green", "blue", "yellow")
+        chain_two = self._make_detailed_chain("one", "two", "three", "four")
+        detailed_chains = [chain_one, chain_two]
+
+        assert [
+            {"chain": chain_one, "extra_firsts": [], "extra_lasts": []},
+            {"chain": chain_two, "extra_firsts": [], "extra_lasts": []},
+        ] == LayersContract._collapse_detailed_chains(detailed_chains)
+
+    def test_chains_with_extra_firsts(self):
+        chain_one = self._make_detailed_chain("brown", "blue", "yellow")
+        chain_two = self._make_detailed_chain("green", "blue", "yellow")
+        chain_three = self._make_detailed_chain("red", "blue", "yellow")
+        detailed_chains = [chain_one, chain_two, chain_three]
+
+        assert [
+            {"chain": chain_one, "extra_firsts": [chain_two[0], chain_three[0]], "extra_lasts": []}
+        ] == LayersContract._collapse_detailed_chains(detailed_chains)
+
+    def test_chains_with_extra_lasts(self):
+        chain_one = self._make_detailed_chain("green", "blue", "yellow")
+        chain_two = self._make_detailed_chain("green", "blue", "brown")
+        chain_three = self._make_detailed_chain("green", "blue", "purple")
+        detailed_chains = [chain_one, chain_two, chain_three]
+
+        assert [
+            {
+                "chain": chain_one,
+                "extra_firsts": [],
+                "extra_lasts": [chain_two[-1], chain_three[-1]],
+            }
+        ] == LayersContract._collapse_detailed_chains(detailed_chains)
+
+    def test_chains_with_extra_firsts_and_lasts(self):
+        chain_one = self._make_detailed_chain("brown", "blue", "yellow")
+        chain_two = self._make_detailed_chain("green", "blue", "yellow")
+        chain_three = self._make_detailed_chain("brown", "blue", "pink")
+        chain_four = self._make_detailed_chain("green", "blue", "red")
+        chain_five = self._make_detailed_chain("purple", "blue", "white")
+        other_chain = self._make_detailed_chain("foo", "bar")
+        detailed_chains = [chain_one, chain_two, chain_three, other_chain, chain_four, chain_five]
+
+        assert [
+            {"chain": other_chain, "extra_firsts": [], "extra_lasts": []},
+            {
+                "chain": chain_one,
+                "extra_firsts": [chain_two[0], chain_five[0]],
+                "extra_lasts": [chain_three[-1], chain_four[-1], chain_five[-1]],
+            },
+        ] == LayersContract._collapse_detailed_chains(detailed_chains)
+
+    def test_one_step_chains_with_firsts_and_lasts(self):
+        chain_one = self._make_detailed_chain("green", "blue")
+        chain_two = self._make_detailed_chain("green", "yellow")
+        chain_three = self._make_detailed_chain("red", "blue")
+        detailed_chains = [chain_one, chain_two, chain_three]
+
+        assert [
+            {"chain": chain_one, "extra_firsts": [], "extra_lasts": []},
+            {"chain": chain_two, "extra_firsts": [], "extra_lasts": []},
+            {"chain": chain_three, "extra_firsts": [], "extra_lasts": []},
+        ] == LayersContract._collapse_detailed_chains(detailed_chains)
+
+    def test_multi_step_chains_with_extra_firsts_and_lasts(self):
+        chain_one = self._make_detailed_chain("green", "blue", "yellow", "red", "purple")
+        chain_two = self._make_detailed_chain("brown", "blue", "yellow", "red", "pink")
+        detailed_chains = [chain_one, chain_two]
+
+        assert [
+            {"chain": chain_one, "extra_firsts": [chain_two[0]], "extra_lasts": [chain_two[-1]]}
+        ] == LayersContract._collapse_detailed_chains(detailed_chains)
+
+    def test_subset_chains_dont_collapse(self):
+        chain_one = self._make_detailed_chain("green", "blue", "yellow", "red", "purple")
+        chain_two = self._make_detailed_chain("green", "blue", "yellow", "pink")
+        chain_three = self._make_detailed_chain("brown", "yellow", "red", "purple")
+        detailed_chains = [chain_one, chain_two, chain_three]
+
+        assert [
+            {"chain": chain_one, "extra_firsts": [], "extra_lasts": []},
+            {"chain": chain_two, "extra_firsts": [], "extra_lasts": []},
+            {"chain": chain_three, "extra_firsts": [], "extra_lasts": []},
+        ] == LayersContract._collapse_detailed_chains(detailed_chains)
+
+    def _make_detailed_chain(self, *items):
+        detailed_chain = []
+        for index in range(len(items) - 1):
+            detailed_chain.append(
+                {
+                    "importer": items[index],
+                    "imported": items[index + 1],
+                    "line_numbers": (3, index + 100),  # Add some identifiable line numbers.
+                }
+            )
+        return detailed_chain

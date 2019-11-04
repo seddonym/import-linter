@@ -242,12 +242,7 @@ class LayersContract(Contract):
         container: Optional[str],
         graph: ImportGraph,
     ) -> Dict[str, Any]:
-        layer_chain_data = {
-            "higher_layer": higher_layer_package.name,
-            "lower_layer": lower_layer_package.name,
-            "chains": [],
-        }
-        assert isinstance(layer_chain_data["chains"], list)  # For type checker.
+        detailed_chains = []
         self._call_count += 1
 
         temp_graph = copy.deepcopy(graph)
@@ -265,41 +260,114 @@ class LayersContract(Contract):
         )
         for import_details_list in import_details_between_layers:
             line_numbers = tuple(j["line_number"] for j in import_details_list)
-            layer_chain_data["chains"].append(
-                {
-                    "chain": [
-                        {
-                            "importer": import_details_list[0]["importer"],
-                            "imported": import_details_list[0]["imported"],
-                            "line_numbers": line_numbers,
-                        }
-                    ],
-                    "extra_firsts": [],
-                    "extra_lasts": [],
-                }
+            detailed_chains.append(
+                [
+                    {
+                        "importer": import_details_list[0]["importer"],
+                        "imported": import_details_list[0]["imported"],
+                        "line_numbers": line_numbers,
+                    }
+                ]
             )
 
         # Assemble indirect imports between the layers.
-        # TODO - populate extra firsts and lasts. What's the best way to do this?
-        # Possibly we use find_shortest_chains and then look at the results to assemble things?
-        # Might be good as a separate function that we can unit test.
-        chains = temp_graph.find_shortest_chains(
-            importer=lower_layer_package.name, imported=higher_layer_package.name
+        chains = (
+            temp_graph.find_shortest_chains(
+                importer=lower_layer_package.name, imported=higher_layer_package.name
+            )
+            or []
         )
-        if chains:
-            for chain in chains:
-                chain_data = {"chain": [], "extra_firsts": [], "extra_lasts": []}
-                for importer, imported in [
-                    (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
-                ]:
-                    import_details = temp_graph.get_import_details(importer=importer, imported=imported)
-                    line_numbers = tuple(j["line_number"] for j in import_details)
-                    chain_data["chain"].append(
-                        {"importer": importer, "imported": imported, "line_numbers": line_numbers}
-                    )
 
-                layer_chain_data["chains"].append(chain_data)
+        for chain in chains:
+            detailed_chain = []
+            for importer, imported in [(chain[i], chain[i + 1]) for i in range(len(chain) - 1)]:
+                import_details = temp_graph.get_import_details(
+                    importer=importer, imported=imported
+                )
+                line_numbers = tuple(j["line_number"] for j in import_details)
+                detailed_chain.append(
+                    {"importer": importer, "imported": imported, "line_numbers": line_numbers}
+                )
+
+            detailed_chains.append(detailed_chain)
+
+        layer_chain_data = {
+            "higher_layer": higher_layer_package.name,
+            "lower_layer": lower_layer_package.name,
+            "chains": self._collapse_detailed_chains(detailed_chains),
+        }
+        assert isinstance(layer_chain_data["chains"], list)  # For type checker.
+
         return layer_chain_data
+
+    @classmethod
+    def _collapse_detailed_chains(cls, detailed_chains):
+        """
+        Return a list of detailed chains in the following format:
+
+        [
+            {
+                "chain": <detailed chain>,
+                "extra_firsts": [
+                    <import details>,
+                    ...
+                ],
+                "extra_lasts": [
+                    <import details>,
+                    <import details>,
+                    ...
+                ],
+            }
+        ]
+        """
+        collapsed_chain_by_headless_hash = {}
+        collapsed_chains = []
+        for detailed_chain in detailed_chains:
+            collapsed_chain = {"chain": detailed_chain, "extra_firsts": [], "extra_lasts": []}
+            if len(detailed_chain) > 2:
+                headless_hash = cls._hash_detailed_chain(detailed_chain[1:-1])
+                try:
+                    matching_collapsed_chain = collapsed_chain_by_headless_hash[headless_hash]
+                except KeyError:
+                    collapsed_chain_by_headless_hash[headless_hash] = collapsed_chain
+                else:
+                    if collapsed_chain["chain"][0] != matching_collapsed_chain["chain"][0]:
+                        matching_collapsed_chain["extra_firsts"].append(detailed_chain[0])
+                    if collapsed_chain["chain"][-1] != matching_collapsed_chain["chain"][-1]:
+                        matching_collapsed_chain["extra_lasts"].append(collapsed_chain["chain"][-1])
+            elif len(detailed_chain) == 2:
+                headless_hash = cls._hash_detailed_chain(detailed_chain[1:])
+                try:
+                    matching_collapsed_chain = collapsed_chain_by_headless_hash[headless_hash]
+                except KeyError:
+                    collapsed_chain_by_headless_hash[headless_hash] = collapsed_chain
+                else:
+                    matching_collapsed_chain["extra_firsts"].append(detailed_chain[0])
+            else:
+                collapsed_chains.append(collapsed_chain)
+
+        collapsed_chain_by_tailless_hash = {}
+        for collapsed_chain in collapsed_chain_by_headless_hash.values():
+            tailless_hash = cls._hash_detailed_chain(collapsed_chain["chain"][:-1])
+            try:
+                matching_collapsed_chain = collapsed_chain_by_tailless_hash[tailless_hash]
+            except KeyError:
+                collapsed_chain_by_tailless_hash[tailless_hash] = collapsed_chain
+            else:
+                matching_collapsed_chain["extra_lasts"].append(collapsed_chain["chain"][-1])
+
+        collapsed_chains.extend(collapsed_chain_by_tailless_hash.values())
+
+        return collapsed_chains
+
+    @classmethod
+    def _hash_detailed_chain(cls, detailed_chain):
+        list_to_turn_to_tuple = []
+        for import_detail in detailed_chain:
+            list_to_turn_to_tuple.append(
+                (import_detail["importer"], import_detail["imported"], import_detail["line_numbers"]),
+            )
+        return hash(tuple(list_to_turn_to_tuple))
 
     def _remove_other_layers(self, graph, container, layers_to_preserve):
         for index, layer in enumerate(self.layers):  # type: ignore
