@@ -1,6 +1,8 @@
 import copy
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+
+from networkx.algorithms import simple_paths
 
 from importlinter.application import output
 from importlinter.domain import fields, helpers
@@ -242,16 +244,20 @@ class LayersContract(Contract):
         container: Optional[str],
         graph: ImportGraph,
     ) -> Dict[str, Any]:
+        print(higher_layer_package, " to ", lower_layer_package)
         detailed_chains = []
         self._call_count += 1
-
+        timepoint = datetime.now()
         temp_graph = copy.deepcopy(graph)
+        # print(f"Copied graph in {(datetime.now() - timepoint).microseconds / 1000}.")
+        timepoint = datetime.now()
         self._remove_other_layers(
             temp_graph,
             container=container,
             layers_to_preserve=(higher_layer_package, lower_layer_package),
         )
-
+        # print(f"Removed other layers in {(datetime.now() - timepoint).microseconds / 1000}.")
+        timepoint = datetime.now()
         # Assemble direct imports between the layers, then remove them.
         import_details_between_layers = self._pop_direct_imports(
             higher_layer_package=higher_layer_package,
@@ -269,41 +275,199 @@ class LayersContract(Contract):
                     }
                 ]
             )
-
+        # print(f"Got direct imports in {(datetime.now() - timepoint).microseconds / 1000}.")
         # Assemble indirect imports between the layers.
-        chains = (
-            temp_graph.find_shortest_chains(
-                importer=lower_layer_package.name, imported=higher_layer_package.name
-            )
-            or []
-        )
+        timepoint = datetime.now()
 
-        for chain in chains:
-            detailed_chain = []
-            for importer, imported in [(chain[i], chain[i + 1]) for i in range(len(chain) - 1)]:
-                import_details = temp_graph.get_import_details(
-                    importer=importer, imported=imported
-                )
-                line_numbers = tuple(j["line_number"] for j in import_details)
-                detailed_chain.append(
-                    {"importer": importer, "imported": imported, "line_numbers": line_numbers}
-                )
-
-            detailed_chains.append(detailed_chain)
-
+        # ALTERNATIVE ALGORITHM
         layer_chain_data = {
             "higher_layer": higher_layer_package.name,
             "lower_layer": lower_layer_package.name,
             "chains": self._collapse_detailed_chains(detailed_chains),
         }
-        assert isinstance(layer_chain_data["chains"], list)  # For type checker.
+
+        indirect_chain_data = self._get_indirect_collapsed_chains(
+            temp_graph, higher_layer_package, lower_layer_package
+        )
+        layer_chain_data["chains"].extend(indirect_chain_data)
+
+        # chains = (
+        #     temp_graph.find_shortest_chains(
+        #         importer=lower_layer_package.name, imported=higher_layer_package.name
+        #     )
+        #     or []
+        # )
+        # print(f"Found shortest chains in {(datetime.now() - timepoint).microseconds / 1000}.")
+        # timepoint = datetime.now()
+        # for chain in chains:
+        #     detailed_chain = []
+        #     for importer, imported in [(chain[i], chain[i + 1]) for i in range(len(chain) - 1)]:
+        #         import_details = temp_graph.get_import_details(
+        #             importer=importer, imported=imported
+        #         )
+        #         line_numbers = tuple(j["line_number"] for j in import_details)
+        #         detailed_chain.append(
+        #             {"importer": importer, "imported": imported, "line_numbers": line_numbers}
+        #         )
+        #
+        #     detailed_chains.append(detailed_chain)
+        # # print(f"Got import details of indirect chains in {(datetime.now() - timepoint).microseconds / 1000}.")
+        #
+        # timepoint = datetime.now()
+        # layer_chain_data = {
+        #     "higher_layer": higher_layer_package.name,
+        #     "lower_layer": lower_layer_package.name,
+        #     "chains": self._collapse_detailed_chains(detailed_chains),
+        # }
+        # print(f"Collapsed indirect chains in {(datetime.now() - timepoint).microseconds / 1000}.")
+        # assert isinstance(layer_chain_data["chains"], list)  # For type checker.
 
         return layer_chain_data
 
     @classmethod
+    def _get_indirect_collapsed_chains(cls, graph, importer_package, imported_package):
+        """
+        Squashes the two packages.
+        Gets a list of paths between them, called segments.
+        Add the heads and tails to the segments.
+        Return a list of detailed chains in the following format:
+
+        [
+            {
+                "chain": <detailed chain>,
+                "extra_firsts": [
+                    <import details>,
+                    ...
+                ],
+                "extra_lasts": [
+                    <import details>,
+                    <import details>,
+                    ...
+                ],
+            }
+        ]
+        """
+        temp_graph = copy.deepcopy(graph)
+
+        cls._squash_module(temp_graph, importer_package)
+        cls._squash_module(temp_graph, imported_package)
+
+        segments = cls._find_segments(
+            temp_graph, importer=importer_package, imported=imported_package
+        )
+
+        return cls._segments_to_collapsed_chains(
+            graph, segments, importer=importer_package, imported=imported_package
+        )
+
+    @classmethod
+    def _squash_module(cls, graph: ImportGraph, package: Module):
+        for descendant in graph.find_descendants(package.name):
+            for imported_module in graph.find_modules_directly_imported_by(descendant):
+                graph.add_import(importer=package.name, imported=imported_module)
+                # Hack due to bug with Grimp (see a few lines below too).
+                graph._import_details.setdefault(package.name, [])
+                graph._import_details[package.name].append(
+                    {
+                        "importer": package.name,
+                        "imported": imported_module,
+                        "line_number": None,
+                        "line_contents": None,
+                    }
+                )
+            for importing_module in graph.find_modules_that_directly_import(descendant) | {
+                package.name
+            }:
+                graph.add_import(importer=importing_module, imported=package.name)
+                graph._import_details.setdefault(importing_module, [])
+                graph._import_details[importing_module].append(
+                    {
+                        "importer": importing_module,
+                        "imported": package.name,
+                        "line_number": None,
+                        "line_contents": None,
+                    }
+                )
+            graph.remove_module(descendant)
+        if package.name in graph.modules:
+            graph._mark_module_as_squashed(package.name)
+        else:
+            graph.add_module(package.name, is_squashed=True)
+
+    @classmethod
+    def _find_segments(cls, graph, importer: Module, imported: Module):
+        """
+        Return list of headless and tailless detailed chains.
+        """
+        segments = []
+        for chain in simple_paths.all_simple_paths(
+            graph._networkx_graph, source=importer.name, target=imported.name
+        ):
+            # chain = graph.find_shortest_chain(importer=importer.name, imported=imported.name)
+            if len(chain) == 2:
+                continue
+                # Not sure why this happens?
+                raise ValueError("Direct chain found - these should have been removed.")
+            detailed_chain = []
+            for importer, imported in [(chain[i], chain[i + 1]) for i in range(len(chain) - 1)]:
+                import_details = graph.get_import_details(importer=importer, imported=imported)
+                line_numbers = tuple(j["line_number"] for j in import_details)
+                detailed_chain.append(
+                    {"importer": importer, "imported": imported, "line_numbers": line_numbers}
+                )
+            segments.append(detailed_chain)
+        return segments
+
+    @classmethod
+    def _segments_to_collapsed_chains(cls, graph, segments, importer: Module, imported: Module):
+        collapsed_chains = []
+        for segment in segments:
+            head_imports = []
+            imported_module = segment[0]["imported"]
+            candidate_modules = graph.find_modules_that_directly_import(imported_module)
+            for module in [m for m in candidate_modules if Module(m).is_descendant_of(importer)]:
+                import_details_list = graph.get_import_details(
+                    importer=module, imported=imported_module
+                )
+                line_numbers = tuple(j["line_number"] for j in import_details_list)
+                head_imports.append(
+                    {
+                        "importer": import_details_list[0]["importer"],
+                        "imported": import_details_list[0]["imported"],
+                        "line_numbers": line_numbers,
+                    }
+                )
+
+            tail_imports = []
+            importer_module = segment[-1]["importer"]
+            candidate_modules = graph.find_modules_directly_imported_by(importer_module)
+            for module in [m for m in candidate_modules if Module(m).is_descendant_of(imported)]:
+                import_details_list = graph.get_import_details(
+                    importer=importer_module, imported=module
+                )
+                line_numbers = tuple(j["line_number"] for j in import_details_list)
+                tail_imports.append(
+                    {
+                        "importer": import_details_list[0]["importer"],
+                        "imported": import_details_list[0]["imported"],
+                        "line_numbers": line_numbers,
+                    }
+                )
+
+            collapsed_chains.append(
+                {
+                    "chain": [head_imports[0]] + segment[1:-1] + [tail_imports[0]],
+                    "extra_firsts": head_imports[1:],
+                    "extra_lasts": tail_imports[1:],
+                }
+            )
+
+        return collapsed_chains
+
+    @classmethod
     def _collapse_detailed_chains(cls, detailed_chains):
         """
-        Return a list of detailed chains in the following format:
+        Return a list of collapsed chains in the following format:
 
         [
             {
@@ -334,7 +498,9 @@ class LayersContract(Contract):
                     if collapsed_chain["chain"][0] != matching_collapsed_chain["chain"][0]:
                         matching_collapsed_chain["extra_firsts"].append(detailed_chain[0])
                     if collapsed_chain["chain"][-1] != matching_collapsed_chain["chain"][-1]:
-                        matching_collapsed_chain["extra_lasts"].append(collapsed_chain["chain"][-1])
+                        matching_collapsed_chain["extra_lasts"].append(
+                            collapsed_chain["chain"][-1]
+                        )
             elif len(detailed_chain) == 2:
                 headless_hash = cls._hash_detailed_chain(detailed_chain[1:])
                 try:
@@ -365,7 +531,11 @@ class LayersContract(Contract):
         list_to_turn_to_tuple = []
         for import_detail in detailed_chain:
             list_to_turn_to_tuple.append(
-                (import_detail["importer"], import_detail["imported"], import_detail["line_numbers"]),
+                (
+                    import_detail["importer"],
+                    import_detail["imported"],
+                    import_detail["line_numbers"],
+                )
             )
         return hash(tuple(list_to_turn_to_tuple))
 

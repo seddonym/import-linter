@@ -1,10 +1,11 @@
 import pytest
 from grimp.adaptors.graph import ImportGraph  # type: ignore
+
 from importlinter.application.app_config import settings
 from importlinter.contracts.layers import LayersContract
 from importlinter.domain.contract import ContractCheck
 from importlinter.domain.helpers import MissingImport
-
+from importlinter.domain.imports import Module
 from tests.adapters.printing import FakePrinter
 
 
@@ -1339,3 +1340,172 @@ class TestCollapseDetailedChains:
                 }
             )
         return detailed_chain
+
+
+class TestGetIndirectCollapsedChains:
+    def test_no_chains(self):
+        graph = self._build_legal_graph()
+
+        assert [] == LayersContract._get_indirect_collapsed_chains(
+            graph, importer_package=Module("medium"), imported_package=Module("high")
+        )
+
+    @pytest.mark.xfail(reason="Temporarily turned off")
+    def test_direct_imports_raises_value_error(self):
+        graph = self._build_legal_graph()
+
+        self._make_detailed_chain_and_add_to_graph(graph, "medium.orange", "high.yellow")
+
+        with pytest.raises(
+            ValueError, match="Direct chain found - these should have been removed."
+        ):
+            LayersContract._get_indirect_collapsed_chains(
+                graph, importer_package=Module("medium"), imported_package=Module("high")
+            )
+
+    def test_chain_length_2_is_included(self):
+        graph = self._build_legal_graph()
+
+        chain = self._make_detailed_chain_and_add_to_graph(
+            graph, "medium.orange", "utils.brown", "high.yellow"
+        )
+
+        assert [
+            {"chain": chain, "extra_firsts": [], "extra_lasts": []}
+        ] == LayersContract._get_indirect_collapsed_chains(
+            graph, importer_package=Module("medium"), imported_package=Module("high")
+        )
+
+    def test_chain_length_3_is_included(self):
+        graph = self._build_legal_graph()
+
+        chain = self._make_detailed_chain_and_add_to_graph(
+            graph, "medium.orange", "utils.brown", "utils.grey", "high.yellow"
+        )
+
+        assert [
+            {"chain": chain, "extra_firsts": [], "extra_lasts": []}
+        ] == LayersContract._get_indirect_collapsed_chains(
+            graph, importer_package=Module("medium"), imported_package=Module("high")
+        )
+
+    def test_multiple_chains_same_segment(self):
+        graph = self._build_legal_graph()
+
+        chain1 = self._make_detailed_chain_and_add_to_graph(
+            graph, "medium.orange", "utils.brown", "utils.grey", "high.yellow"
+        )
+        chain2 = self._make_detailed_chain_and_add_to_graph(
+            graph, "medium.blue.foo", "utils.brown", "utils.grey", "high"
+        )
+
+        result = LayersContract._get_indirect_collapsed_chains(
+            graph, importer_package=Module("medium"), imported_package=Module("high")
+        )
+
+        assert [
+            {"chain": chain1, "extra_firsts": [chain2[0]], "extra_lasts": [chain2[-1]]}
+        ] == LayersContract._get_indirect_collapsed_chains(
+            graph, importer_package=Module("medium"), imported_package=Module("high")
+        )
+
+    def test_more(self):
+        # More tests needed to ensure we get all the chains we want.
+        assert False
+
+    def _build_legal_graph(self):
+        graph = ImportGraph()
+
+        for module in (
+            "high",
+            "high.green",
+            "high.blue",
+            "high.yellow",
+            "high.yellow.alpha",
+            "medium",
+            "medium.orange",
+            "medium.orange.beta",
+            "medium.red",
+            "low",
+            "low.black",
+            "low.white",
+            "low.white.gamma",
+        ):
+            graph.add_module(module)
+
+        # Add some 'legal' imports.
+        graph.add_import(importer="high.green", imported="medium.orange")
+        graph.add_import(importer="high.green", imported="low.white.gamma")
+        graph.add_import(importer="medium.orange", imported="low.white")
+        graph.add_import(importer="high.blue", imported="utils")
+        graph.add_import(importer="utils", imported="medium.red")
+
+        return graph
+
+    def _make_detailed_chain_and_add_to_graph(self, graph, *items):
+        detailed_chain = []
+        for index in range(len(items) - 1):
+            line_numbers = (3, index + 100)  # Some identifiable line numbers.
+            direct_import = {
+                "importer": items[index],
+                "imported": items[index + 1],
+                "line_numbers": line_numbers,
+            }
+            for line_number in line_numbers:
+                graph.add_import(
+                    importer=direct_import["importer"],
+                    imported=direct_import["imported"],
+                    line_number=line_number,
+                    line_contents="Foo",
+                )
+            detailed_chain.append(direct_import)
+        return detailed_chain
+
+
+def test_squash_module():
+    graph = ImportGraph()
+
+    for module in (
+        "high",
+        "high.green",
+        "high.blue",
+        "high.yellow",
+        "high.yellow.alpha",
+        "low",
+        "low.black",
+        "low.white",
+        "low.white.gamma",
+        "utils",
+    ):
+        graph.add_module(module)
+
+    # Bug in grimp means we have to supply line numbers.
+    graph.add_import(importer="high", imported="low.black", line_number=1, line_contents="foo")
+    graph.add_import(importer="high.green", imported="low")
+    graph.add_import(importer="high.yellow.alpha", imported="low.white.gamma")
+    graph.add_import(importer="high.blue", imported="utils")
+    assert graph._is_existing_module_squashed("high") is False
+
+    LayersContract._squash_module(graph, Module("high"))
+
+    assert {"high", "low", "low.black", "low.white", "low.white.gamma", "utils"} == graph.modules
+    assert graph._is_existing_module_squashed("high")
+    assert graph.direct_import_exists(importer="high", imported="low.black")
+    assert graph.direct_import_exists(importer="high", imported="low")
+    assert graph.direct_import_exists(importer="high", imported="low.white.gamma")
+    assert graph.direct_import_exists(importer="high", imported="utils")
+
+    assert [
+        {"importer": "high", "imported": "low.black", "line_number": 1, "line_contents": "foo"}
+    ] == graph.get_import_details(importer="high", imported="low.black")
+    assert [
+        {"importer": "high", "imported": "low", "line_number": None, "line_contents": None}
+    ] == graph.get_import_details(importer="high", imported="low")
+    assert [
+        {
+            "importer": "high",
+            "imported": "low.white.gamma",
+            "line_number": None,
+            "line_contents": None,
+        }
+    ] == graph.get_import_details(importer="high", imported="low.white.gamma")
