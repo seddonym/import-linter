@@ -61,3 +61,4 @@ latest
 ------
 
 * Provide debug mode.
+* Allow contracts to mutate the graph without affecting other contracts.

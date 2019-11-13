@@ -61,3 +61,31 @@ class FieldsContract(Contract):
 
     def render_broken_contract(self, check: "ContractCheck") -> None:
         raise NotImplementedError
+
+
+class MutationCheckContract(Contract):
+    """
+    Contract for checking that contracts can't mutate the graph for other contracts.
+
+    It checks that there are a certain number of modules and imports in the graph, then adds
+    an extra import containing two new modules. We can check two such contracts and the second one
+    will fail, if the graph gets mutated by other contracts.
+    """
+
+    number_of_modules = fields.StringField()
+    number_of_imports = fields.StringField()
+
+    def check(self, graph: ImportGraph) -> ContractCheck:
+        number_of_modules: int = int(self.number_of_modules)  # type: ignore
+        number_of_imports: int = int(self.number_of_imports)  # type: ignore
+        if not all(
+            [number_of_modules == len(graph.modules), number_of_imports == graph.count_imports()]
+        ):
+            raise RuntimeError("Contract was mutated.")
+
+        # Mutate graph.
+        graph.add_import(importer="added-by-contract-1", imported="added-by-contract-2")
+        return ContractCheck(kept=True)
+
+    def render_broken_contract(self, check: "ContractCheck") -> None:
+        raise NotImplementedError

@@ -1,5 +1,5 @@
 import importlib
-from copy import copy
+from copy import copy, deepcopy
 from typing import List, Optional, Tuple, Type
 
 from ..domain.contract import Contract, InvalidContractOptions, registry
@@ -108,7 +108,10 @@ def _build_report(graph: ImportGraph, user_options: UserOptions) -> Report:
             report.add_invalid_contract_options(contract_options["name"], e)
             return report
 
-        check = contract.check(graph)
+        # Make a copy so that contracts can mutate the graph without affecting
+        # other contract checks.
+        copy_of_graph = deepcopy(graph)
+        check = contract.check(copy_of_graph)
         report.add_contract_check(contract, check)
     return report
 

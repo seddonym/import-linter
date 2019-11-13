@@ -3,10 +3,10 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 from grimp.adaptors.graph import ImportGraph  # type: ignore
+
 from importlinter.application.app_config import settings
 from importlinter.application.use_cases import FAILURE, SUCCESS, create_report, lint_imports
 from importlinter.application.user_options import UserOptions
-
 from tests.adapters.building import FakeGraphBuilder
 from tests.adapters.printing import FakePrinter
 from tests.adapters.user_options import ExceptionRaisingUserOptionReader, FakeUserOptionReader
@@ -273,3 +273,51 @@ class TestMultipleRootPackages:
         )
 
         assert builder.build_arguments["root_package_names"] == root_package_names
+
+
+class TestGraphCopying:
+    def test_graph_can_be_mutated_without_affecting_other_contracts(self):
+        # The MutationCheckContract checks that there are a certain number of modules and imports
+        # in the graph, then adds one more module and one more import. We can check two such
+        # contracts and the second one will fail, if the graph gets mutated by other contracts.
+        session_options = {
+            "root_package": "mypackage",
+            "contract_types": ["mutation_check: tests.helpers.contracts.MutationCheckContract"],
+        }
+
+        reader = FakeUserOptionReader(
+            UserOptions(
+                session_options=session_options,
+                contracts_options=[
+                    {
+                        "type": "mutation_check",
+                        "name": "Contract one",
+                        "number_of_modules": "5",
+                        "number_of_imports": "2",
+                    },
+                    {
+                        "type": "mutation_check",
+                        "name": "Contract two",
+                        "number_of_modules": "5",
+                        "number_of_imports": "2",
+                    },
+                ],
+            )
+        )
+        settings.configure(
+            USER_OPTION_READERS=[reader], GRAPH_BUILDER=FakeGraphBuilder(), PRINTER=FakePrinter()
+        )
+
+        graph = ImportGraph()
+
+        # Create a graph with five modules and two imports.
+        for module in ("one", "two", "three", "four", "five"):
+            graph.add_module(module)
+        graph.add_import(importer="one", imported="two")
+        graph.add_import(importer="one", imported="three")
+
+        settings.GRAPH_BUILDER.inject_graph(graph)
+
+        result = lint_imports(is_debug_mode=True)
+
+        assert result == SUCCESS
