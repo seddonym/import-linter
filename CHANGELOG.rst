@@ -57,8 +57,8 @@ Changelog
 
 * Officially support Python 3.8.
 
-latest
-------
+1.1b1 (2019-11-24)
+------------------
 
 * Provide debug mode.
 * Allow contracts to mutate the graph without affecting other contracts.
