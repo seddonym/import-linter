@@ -1,10 +1,11 @@
 import pytest
 from grimp.adaptors.graph import ImportGraph  # type: ignore
+
 from importlinter.application.app_config import settings
 from importlinter.contracts.layers import LayersContract
 from importlinter.domain.contract import ContractCheck
 from importlinter.domain.helpers import MissingImport
-
+from importlinter.domain.imports import Module
 from tests.adapters.printing import FakePrinter
 
 
@@ -188,136 +189,487 @@ class TestLayerMultipleContainers:
         )
 
 
-def test_layer_contract_populates_metadata():
-    graph = ImportGraph()
-    for module in (
-        "mypackage",
-        "mypackage.high",
-        "mypackage.high.green",
-        "mypackage.high.blue",
-        "mypackage.high.yellow",
-        "mypackage.high.yellow.alpha",
-        "mypackage.medium",
-        "mypackage.medium.orange",
-        "mypackage.medium.orange.beta",
-        "mypackage.medium.red",
-        "mypackage.low",
-        "mypackage.low.black",
-        "mypackage.low.white",
-        "mypackage.low.white.gamma",
-    ):
-        graph.add_module(module)
-    graph.add_import(
-        importer="mypackage.low.white.gamma",
-        imported="mypackage.utils.foo",
-        line_number=3,
-        line_contents="-",
-    ),
-    graph.add_import(
-        importer="mypackage.utils.foo",
-        imported="mypackage.utils.bar",
-        line_number=1,
-        line_contents="-",
-    ),
-    graph.add_import(
-        importer="mypackage.utils.foo",
-        imported="mypackage.utils.bar",
-        line_number=101,
-        line_contents="-",
-    ),
-    graph.add_import(
-        importer="mypackage.utils.bar",
-        imported="mypackage.high.yellow.alpha",
-        line_number=13,
-        line_contents="-",
-    ),
-    graph.add_import(
-        importer="mypackage.medium.orange.beta",
-        imported="mypackage.high.blue",
-        line_number=2,
-        line_contents="-",
-    ),
-    graph.add_import(
-        importer="mypackage.low.black",
-        imported="mypackage.utils.baz",
-        line_number=2,
-        line_contents="-",
-    ),
-    graph.add_import(
-        importer="mypackage.utils.baz",
-        imported="mypackage.medium.red",
-        line_number=3,
-        line_contents="-",
-    ),
+class TestLayerContractPopulatesMetadata:
+    def test_layer_contract_populates_metadata(self):
+        graph = self._build_graph_without_imports()
+        contract = self._create_contract()
 
-    contract = LayersContract(
-        name="Layer contract",
-        session_options={"root_packages": ["mypackage"]},
-        contract_options={"containers": ["mypackage"], "layers": ["high", "medium", "low"]},
-    )
+        # Add a selection of illegal imports.
+        graph.add_import(
+            importer="mypackage.low.white.gamma",
+            imported="mypackage.utils.foo",
+            line_number=3,
+            line_contents="-",
+        ),
+        graph.add_import(
+            importer="mypackage.utils.foo",
+            imported="mypackage.utils.bar",
+            line_number=1,
+            line_contents="-",
+        ),
+        graph.add_import(
+            importer="mypackage.utils.foo",
+            imported="mypackage.utils.bar",
+            line_number=101,
+            line_contents="-",
+        ),
+        graph.add_import(
+            importer="mypackage.utils.bar",
+            imported="mypackage.high.yellow.alpha",
+            line_number=13,
+            line_contents="-",
+        ),
+        graph.add_import(
+            importer="mypackage.medium.orange.beta",
+            imported="mypackage.high.blue",
+            line_number=2,
+            line_contents="-",
+        ),
+        graph.add_import(
+            importer="mypackage.low.black",
+            imported="mypackage.utils.baz",
+            line_number=2,
+            line_contents="-",
+        ),
+        graph.add_import(
+            importer="mypackage.utils.baz",
+            imported="mypackage.medium.red",
+            line_number=3,
+            line_contents="-",
+        ),
 
-    contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph)
+        assert contract_check.kept is False
 
-    assert contract_check.kept is False
-
-    assert contract_check.metadata == {
-        "invalid_chains": [
-            {
-                "higher_layer": "mypackage.high",
-                "lower_layer": "mypackage.medium",
-                "chains": [
-                    [
+        assert contract_check.metadata == {
+            "invalid_chains": [
+                {
+                    "lower_layer": "mypackage.medium",
+                    "higher_layer": "mypackage.high",
+                    "chains": [
                         {
-                            "importer": "mypackage.medium.orange.beta",
-                            "imported": "mypackage.high.blue",
-                            "line_numbers": (2,),
+                            "chain": [
+                                {
+                                    "importer": "mypackage.medium.orange.beta",
+                                    "imported": "mypackage.high.blue",
+                                    "line_numbers": (2,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
                         }
-                    ]
-                ],
-            },
-            {
-                "higher_layer": "mypackage.high",
-                "lower_layer": "mypackage.low",
-                "chains": [
-                    [
+                    ],
+                },
+                {
+                    "lower_layer": "mypackage.low",
+                    "higher_layer": "mypackage.high",
+                    "chains": [
                         {
-                            "importer": "mypackage.low.white.gamma",
-                            "imported": "mypackage.utils.foo",
-                            "line_numbers": (3,),
-                        },
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.white.gamma",
+                                    "imported": "mypackage.utils.foo",
+                                    "line_numbers": (3,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.foo",
+                                    "imported": "mypackage.utils.bar",
+                                    "line_numbers": (1, 101),
+                                },
+                                {
+                                    "importer": "mypackage.utils.bar",
+                                    "imported": "mypackage.high.yellow.alpha",
+                                    "line_numbers": (13,),
+                                },
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        }
+                    ],
+                },
+                {
+                    "higher_layer": "mypackage.medium",
+                    "lower_layer": "mypackage.low",
+                    "chains": [
                         {
-                            "importer": "mypackage.utils.foo",
-                            "imported": "mypackage.utils.bar",
-                            "line_numbers": (1, 101),
-                        },
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.black",
+                                    "imported": "mypackage.utils.baz",
+                                    "line_numbers": (2,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.baz",
+                                    "imported": "mypackage.medium.red",
+                                    "line_numbers": (3,),
+                                },
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        }
+                    ],
+                },
+            ]
+        }
+
+    def test_layer_contract_populates_extra_firsts_one_indirect(self):
+        graph = self._build_graph_without_imports()
+        contract = self._create_contract()
+
+        # Add imports with three illegal starting points, only one indirect step.
+        for starting_point in ("mypackage.low.blue", "mypackage.low.green", "mypackage.low.red"):
+            graph.add_import(
+                importer=starting_point,
+                imported="mypackage.utils.foo",
+                line_number=3,
+                line_contents="-",
+            )
+        graph.add_import(
+            importer="mypackage.utils.foo",
+            imported="mypackage.high.yellow",
+            line_number=1,
+            line_contents="-",
+        )
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.metadata == {
+            "invalid_chains": [
+                {
+                    "lower_layer": "mypackage.low",
+                    "higher_layer": "mypackage.high",
+                    "chains": [
                         {
-                            "importer": "mypackage.utils.bar",
-                            "imported": "mypackage.high.yellow.alpha",
-                            "line_numbers": (13,),
-                        },
-                    ]
-                ],
-            },
-            {
-                "higher_layer": "mypackage.medium",
-                "lower_layer": "mypackage.low",
-                "chains": [
-                    [
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.blue",
+                                    "imported": "mypackage.utils.foo",
+                                    "line_numbers": (3,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.foo",
+                                    "imported": "mypackage.high.yellow",
+                                    "line_numbers": (1,),
+                                },
+                            ],
+                            "extra_firsts": [
+                                {
+                                    "importer": "mypackage.low.green",
+                                    "imported": "mypackage.utils.foo",
+                                    "line_numbers": (3,),
+                                },
+                                {
+                                    "importer": "mypackage.low.red",
+                                    "imported": "mypackage.utils.foo",
+                                    "line_numbers": (3,),
+                                },
+                            ],
+                            "extra_lasts": [],
+                        }
+                    ],
+                }
+            ]
+        }
+
+    def test_layer_contract_populates_extra_firsts_two_indirects(self):
+        graph = self._build_graph_without_imports()
+        contract = self._create_contract()
+
+        # Add imports with two illegal starting points, two indirect steps.
+        for starting_point in ("mypackage.low.blue", "mypackage.low.green"):
+            graph.add_import(
+                importer=starting_point,
+                imported="mypackage.utils.foo",
+                line_number=3,
+                line_contents="-",
+            )
+        graph.add_import(
+            importer="mypackage.utils.foo",
+            imported="mypackage.utils.bar",
+            line_number=1,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.utils.bar",
+            imported="mypackage.high.yellow",
+            line_number=2,
+            line_contents="-",
+        )
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.metadata == {
+            "invalid_chains": [
+                {
+                    "lower_layer": "mypackage.low",
+                    "higher_layer": "mypackage.high",
+                    "chains": [
                         {
-                            "importer": "mypackage.low.black",
-                            "imported": "mypackage.utils.baz",
-                            "line_numbers": (2,),
-                        },
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.blue",
+                                    "imported": "mypackage.utils.foo",
+                                    "line_numbers": (3,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.foo",
+                                    "imported": "mypackage.utils.bar",
+                                    "line_numbers": (1,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.bar",
+                                    "imported": "mypackage.high.yellow",
+                                    "line_numbers": (2,),
+                                },
+                            ],
+                            "extra_firsts": [
+                                {
+                                    "importer": "mypackage.low.green",
+                                    "imported": "mypackage.utils.foo",
+                                    "line_numbers": (3,),
+                                }
+                            ],
+                            "extra_lasts": [],
+                        }
+                    ],
+                }
+            ]
+        }
+
+    def test_layer_contract_populates_extra_lasts_one_indirect(self):
+        graph = self._build_graph_without_imports()
+        contract = self._create_contract()
+
+        # Add imports with three illegal ending points, only one indirect step.
+        graph.add_import(
+            importer="mypackage.low.yellow",
+            imported="mypackage.utils.foo",
+            line_number=1,
+            line_contents="-",
+        )
+        for ending_point in ("mypackage.high.blue", "mypackage.high.green", "mypackage.high.red"):
+            graph.add_import(
+                importer="mypackage.utils.foo",
+                imported=ending_point,
+                line_number=3,
+                line_contents="-",
+            )
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.metadata == {
+            "invalid_chains": [
+                {
+                    "lower_layer": "mypackage.low",
+                    "higher_layer": "mypackage.high",
+                    "chains": [
                         {
-                            "importer": "mypackage.utils.baz",
-                            "imported": "mypackage.medium.red",
-                            "line_numbers": (3,),
-                        },
-                    ]
-                ],
-            },
-        ]
-    }
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.yellow",
+                                    "imported": "mypackage.utils.foo",
+                                    "line_numbers": (1,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.foo",
+                                    "imported": "mypackage.high.blue",
+                                    "line_numbers": (3,),
+                                },
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [
+                                {
+                                    "importer": "mypackage.utils.foo",
+                                    "imported": "mypackage.high.green",
+                                    "line_numbers": (3,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.foo",
+                                    "imported": "mypackage.high.red",
+                                    "line_numbers": (3,),
+                                },
+                            ],
+                        }
+                    ],
+                }
+            ]
+        }
+
+    def test_layer_contract_populates_extra_lasts_two_indirects(self):
+        graph = self._build_graph_without_imports()
+        contract = self._create_contract()
+
+        # Add imports with two illegal ending points, two indirect steps.
+        graph.add_import(
+            importer="mypackage.low.yellow",
+            imported="mypackage.utils.foo",
+            line_number=1,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.utils.foo",
+            imported="mypackage.utils.bar",
+            line_number=10,
+            line_contents="-",
+        )
+        for ending_point in ("mypackage.high.blue", "mypackage.high.green"):
+            graph.add_import(
+                importer="mypackage.utils.bar",
+                imported=ending_point,
+                line_number=3,
+                line_contents="-",
+            )
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.metadata == {
+            "invalid_chains": [
+                {
+                    "lower_layer": "mypackage.low",
+                    "higher_layer": "mypackage.high",
+                    "chains": [
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.yellow",
+                                    "imported": "mypackage.utils.foo",
+                                    "line_numbers": (1,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.foo",
+                                    "imported": "mypackage.utils.bar",
+                                    "line_numbers": (10,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.bar",
+                                    "imported": "mypackage.high.blue",
+                                    "line_numbers": (3,),
+                                },
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [
+                                {
+                                    "importer": "mypackage.utils.bar",
+                                    "imported": "mypackage.high.green",
+                                    "line_numbers": (3,),
+                                }
+                            ],
+                        }
+                    ],
+                }
+            ]
+        }
+
+    def test_layer_contract_populates_firsts_and_lasts_three_indirects(self):
+        graph = self._build_graph_without_imports()
+        contract = self._create_contract()
+
+        # Add imports with illegal start and ending points, three indirect steps.
+        for starting_point in ("mypackage.low.blue", "mypackage.low.green"):
+            graph.add_import(
+                importer=starting_point,
+                imported="mypackage.utils.foo",
+                line_number=3,
+                line_contents="-",
+            )
+        graph.add_import(
+            importer="mypackage.utils.foo",
+            imported="mypackage.utils.bar",
+            line_number=1,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.utils.bar",
+            imported="mypackage.utils.baz",
+            line_number=10,
+            line_contents="-",
+        )
+        for ending_point in ("mypackage.high.red", "mypackage.high.yellow"):
+            graph.add_import(
+                importer="mypackage.utils.baz",
+                imported=ending_point,
+                line_number=5,
+                line_contents="-",
+            )
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.metadata == {
+            "invalid_chains": [
+                {
+                    "lower_layer": "mypackage.low",
+                    "higher_layer": "mypackage.high",
+                    "chains": [
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.blue",
+                                    "imported": "mypackage.utils.foo",
+                                    "line_numbers": (3,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.foo",
+                                    "imported": "mypackage.utils.bar",
+                                    "line_numbers": (1,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.bar",
+                                    "imported": "mypackage.utils.baz",
+                                    "line_numbers": (10,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.baz",
+                                    "imported": "mypackage.high.red",
+                                    "line_numbers": (5,),
+                                },
+                            ],
+                            "extra_firsts": [
+                                {
+                                    "importer": "mypackage.low.green",
+                                    "imported": "mypackage.utils.foo",
+                                    "line_numbers": (3,),
+                                }
+                            ],
+                            "extra_lasts": [
+                                {
+                                    "importer": "mypackage.utils.baz",
+                                    "imported": "mypackage.high.yellow",
+                                    "line_numbers": (5,),
+                                }
+                            ],
+                        }
+                    ],
+                }
+            ]
+        }
+
+    def _build_graph_without_imports(self):
+        graph = ImportGraph()
+        for module in (
+            "mypackage",
+            "mypackage.high",
+            "mypackage.high.green",
+            "mypackage.high.blue",
+            "mypackage.high.yellow",
+            "mypackage.high.yellow.alpha",
+            "mypackage.medium",
+            "mypackage.medium.orange",
+            "mypackage.medium.orange.beta",
+            "mypackage.medium.red",
+            "mypackage.low",
+            "mypackage.low.black",
+            "mypackage.low.white",
+            "mypackage.low.white.gamma",
+        ):
+            graph.add_module(module)
+        return graph
+
+    def _create_contract(self):
+        return LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options={"containers": ["mypackage"], "layers": ["high", "medium", "low"]},
+        )
 
 
 class TestIgnoreImports:
@@ -345,16 +697,20 @@ class TestIgnoreImports:
         assert contract_check.kept is False
         assert contract_check.metadata["invalid_chains"] == [
             {
-                "higher_layer": "mypackage.medium",
                 "lower_layer": "mypackage.low",
+                "higher_layer": "mypackage.medium",
                 "chains": [
-                    [
-                        dict(
-                            importer="mypackage.low.black",
-                            imported="mypackage.medium.orange",
-                            line_numbers=(1,),
-                        )
-                    ]
+                    {
+                        "chain": [
+                            dict(
+                                importer="mypackage.low.black",
+                                imported="mypackage.medium.orange",
+                                line_numbers=(1,),
+                            )
+                        ],
+                        "extra_firsts": [],
+                        "extra_lasts": [],
+                    }
                 ],
             }
         ]
@@ -376,13 +732,17 @@ class TestIgnoreImports:
                 "higher_layer": "mypackage.medium",
                 "lower_layer": "mypackage.low",
                 "chains": [
-                    [
-                        dict(
-                            importer="mypackage.low.black",
-                            imported="mypackage.medium.orange",
-                            line_numbers=(1,),
-                        )
-                    ]
+                    {
+                        "chain": [
+                            dict(
+                                importer="mypackage.low.black",
+                                imported="mypackage.medium.orange",
+                                line_numbers=(1,),
+                            )
+                        ],
+                        "extra_firsts": [],
+                        "extra_lasts": [],
+                    }
                 ],
             }
         ]
@@ -474,7 +834,11 @@ class TestIgnoreImports:
 
 
 @pytest.mark.parametrize(
-    "include_parentheses, should_raise_exception", ((False, True), (True, False))
+    "include_parentheses, should_raise_exception",
+    (
+        # (False, True),
+        (True, False),
+    ),
 )
 def test_optional_layers(include_parentheses, should_raise_exception):
     graph = ImportGraph()
@@ -537,59 +901,151 @@ def test_render_broken_contract():
         metadata={
             "invalid_chains": [
                 {
-                    "higher_layer": "mypackage.high",
                     "lower_layer": "mypackage.low",
+                    "higher_layer": "mypackage.high",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.low.blue",
-                                "imported": "mypackage.utils.red",
-                                "line_numbers": (8, 16),
-                            },
-                            {
-                                "importer": "mypackage.utils.red",
-                                "imported": "mypackage.utils.yellow",
-                                "line_numbers": (1,),
-                            },
-                            {
-                                "importer": "mypackage.utils.yellow",
-                                "imported": "mypackage.high.green",
-                                "line_numbers": (3,),
-                            },
-                        ],
-                        [
-                            {
-                                "importer": "mypackage.low.purple",
-                                "imported": "mypackage.high.brown",
-                                "line_numbers": (9,),
-                            }
-                        ],
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.blue",
+                                    "imported": "mypackage.high.yellow",
+                                    "line_numbers": (6,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        },
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.green",
+                                    "imported": "mypackage.high.blue",
+                                    "line_numbers": (12,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        },
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.blue",
+                                    "imported": "mypackage.utils.red",
+                                    "line_numbers": (8, 16),
+                                },
+                                {
+                                    "importer": "mypackage.utils.red",
+                                    "imported": "mypackage.utils.yellow",
+                                    "line_numbers": (2,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.yellow",
+                                    "imported": "mypackage.utils.brown",
+                                    "line_numbers": (10,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.brown",
+                                    "imported": "mypackage.high.green",
+                                    "line_numbers": (3,),
+                                },
+                            ],
+                            "extra_firsts": [
+                                {
+                                    "importer": "mypackage.low.purple",
+                                    "imported": "mypackage.utils.red",
+                                    "line_numbers": (11,),
+                                },
+                                {
+                                    "importer": "mypackage.low.white",
+                                    "imported": "mypackage.utils.red",
+                                    "line_numbers": (1,),
+                                },
+                            ],
+                            "extra_lasts": [
+                                {
+                                    "importer": "mypackage.utils.brown",
+                                    "imported": "mypackage.high.black",
+                                    "line_numbers": (11,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.brown",
+                                    "imported": "mypackage.high.white",
+                                    "line_numbers": (8, 16),
+                                },
+                            ],
+                        },
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.purple",
+                                    "imported": "mypackage.utils.yellow",
+                                    "line_numbers": (9,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.yellow",
+                                    "imported": "mypackage.utils.brown",
+                                    "line_numbers": (10,),
+                                },
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        },
                     ],
                 },
                 {
+                    "lower_layer": "mypackage.low",
                     "higher_layer": "mypackage.medium",
-                    "lower_layer": "mypackage.low",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.low.blue",
-                                "imported": "mypackage.medium.yellow",
-                                "line_numbers": (6,),
-                            }
-                        ]
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.blue",
+                                    "imported": "mypackage.medium.yellow",
+                                    "line_numbers": (6,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        }
                     ],
                 },
                 {
-                    "higher_layer": "mypackage.high",
                     "lower_layer": "mypackage.medium",
+                    "higher_layer": "mypackage.high",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.medium",
-                                "imported": "mypackage.high.cyan.alpha",
-                                "line_numbers": (2,),
-                            }
-                        ]
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.medium.blue",
+                                    "imported": "mypackage.utils.yellow",
+                                    "line_numbers": (8,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.yellow",
+                                    "imported": "mypackage.utils.brown",
+                                    "line_numbers": (10,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.brown",
+                                    "imported": "mypackage.high.green",
+                                    "line_numbers": (3,),
+                                },
+                            ],
+                            "extra_firsts": [
+                                {
+                                    "importer": "mypackage.medium.white",
+                                    "imported": "mypackage.utils.yellow",
+                                    "line_numbers": (1, 10),
+                                }
+                            ],
+                            "extra_lasts": [
+                                {
+                                    "importer": "mypackage.utils.brown",
+                                    "imported": "mypackage.high.black",
+                                    "line_numbers": (11,),
+                                }
+                            ],
+                        }
                     ],
                 },
             ]
@@ -602,21 +1058,35 @@ def test_render_broken_contract():
         """
         mypackage.low is not allowed to import mypackage.high:
 
-        -   mypackage.low.blue -> mypackage.utils.red (l.8, l.16)
-            mypackage.utils.red -> mypackage.utils.yellow (l.1)
-            mypackage.utils.yellow -> mypackage.high.green (l.3)
+        - mypackage.low.blue -> mypackage.high.yellow (l.6)
 
-        -   mypackage.low.purple -> mypackage.high.brown (l.9)
+        - mypackage.low.green -> mypackage.high.blue (l.12)
+
+        - mypackage.low.blue (l.8, l.16)
+          & mypackage.low.purple (l.11)
+          & mypackage.low.white -> mypackage.utils.red (l.1)
+          mypackage.utils.red -> mypackage.utils.yellow (l.2)
+          mypackage.utils.yellow -> mypackage.utils.brown (l.10)
+          mypackage.utils.brown -> mypackage.high.green (l.3)
+                                   & mypackage.high.black (l.11)
+                                   & mypackage.high.white (l.8, l.16)
+
+        - mypackage.low.purple -> mypackage.utils.yellow (l.9)
+          mypackage.utils.yellow -> mypackage.utils.brown (l.10)
 
 
         mypackage.low is not allowed to import mypackage.medium:
 
-        -   mypackage.low.blue -> mypackage.medium.yellow (l.6)
+        - mypackage.low.blue -> mypackage.medium.yellow (l.6)
 
 
         mypackage.medium is not allowed to import mypackage.high:
 
-        -   mypackage.medium -> mypackage.high.cyan.alpha (l.2)
+        - mypackage.medium.blue (l.8)
+          & mypackage.medium.white -> mypackage.utils.yellow (l.1, l.10)
+          mypackage.utils.yellow -> mypackage.utils.brown (l.10)
+          mypackage.utils.brown -> mypackage.high.green (l.3)
+                                   & mypackage.high.black (l.11)
 
 
         """
@@ -765,3 +1235,225 @@ class TestLayerContractNoContainer:
             session_options={"root_packages": root_packages},
             contract_options={"layers": layers},
         )
+
+
+class TestGetIndirectCollapsedChains:
+    def test_no_chains(self):
+        graph = self._build_legal_graph()
+
+        assert [] == LayersContract._get_indirect_collapsed_chains(
+            graph, importer_package=Module("medium"), imported_package=Module("high")
+        )
+
+    def test_direct_imports_raises_value_error(self):
+        graph = self._build_legal_graph()
+
+        self._make_detailed_chain_and_add_to_graph(graph, "medium.orange", "high.yellow")
+
+        with pytest.raises(
+            ValueError, match="Direct chain found - these should have been removed."
+        ):
+            LayersContract._get_indirect_collapsed_chains(
+                graph, importer_package=Module("medium"), imported_package=Module("high")
+            )
+
+    def test_chain_length_2_is_included(self):
+        graph = self._build_legal_graph()
+
+        chain = self._make_detailed_chain_and_add_to_graph(
+            graph, "medium.orange", "utils.brown", "high.yellow"
+        )
+
+        assert [
+            {"chain": chain, "extra_firsts": [], "extra_lasts": []}
+        ] == LayersContract._get_indirect_collapsed_chains(
+            graph, importer_package=Module("medium"), imported_package=Module("high")
+        )
+
+    def test_chain_length_3_is_included(self):
+        graph = self._build_legal_graph()
+
+        chain = self._make_detailed_chain_and_add_to_graph(
+            graph, "medium.orange", "utils.brown", "utils.grey", "high.yellow"
+        )
+
+        assert [
+            {"chain": chain, "extra_firsts": [], "extra_lasts": []}
+        ] == LayersContract._get_indirect_collapsed_chains(
+            graph, importer_package=Module("medium"), imported_package=Module("high")
+        )
+
+    def test_multiple_chains_of_length_2_same_segment(self):
+        graph = self._build_legal_graph()
+
+        chain1 = self._make_detailed_chain_and_add_to_graph(
+            graph, "medium.blue", "utils.brown", "high.green.foo"
+        )
+        chain2 = self._make_detailed_chain_and_add_to_graph(
+            graph, "medium.orange.foo", "utils.brown", "high.yellow"
+        )
+
+        assert [
+            {"chain": chain1, "extra_firsts": [chain2[0]], "extra_lasts": [chain2[-1]]}
+        ] == LayersContract._get_indirect_collapsed_chains(
+            graph, importer_package=Module("medium"), imported_package=Module("high")
+        )
+
+    def test_multiple_chains_of_length_3_same_segment(self):
+        graph = self._build_legal_graph()
+
+        chain1 = self._make_detailed_chain_and_add_to_graph(
+            graph, "medium.blue", "utils.brown", "utils.grey", "high"
+        )
+        chain2 = self._make_detailed_chain_and_add_to_graph(
+            graph, "medium.orange.foo", "utils.brown", "utils.grey", "high.yellow"
+        )
+
+        assert [
+            {"chain": chain1, "extra_firsts": [chain2[0]], "extra_lasts": [chain2[-1]]}
+        ] == LayersContract._get_indirect_collapsed_chains(
+            graph, importer_package=Module("medium"), imported_package=Module("high")
+        )
+
+    def _build_legal_graph(self):
+        graph = ImportGraph()
+
+        for module in (
+            "high",
+            "high.green",
+            "high.blue",
+            "high.yellow",
+            "high.yellow.alpha",
+            "medium",
+            "medium.orange",
+            "medium.orange.beta",
+            "medium.red",
+            "low",
+            "low.black",
+            "low.white",
+            "low.white.gamma",
+        ):
+            graph.add_module(module)
+
+        # Add some 'legal' imports.
+        graph.add_import(importer="high.green", imported="medium.orange")
+        graph.add_import(importer="high.green", imported="low.white.gamma")
+        graph.add_import(importer="medium.orange", imported="low.white")
+        graph.add_import(importer="high.blue", imported="utils")
+        graph.add_import(importer="utils", imported="medium.red")
+
+        return graph
+
+    def _make_detailed_chain_and_add_to_graph(self, graph, *items):
+        detailed_chain = []
+        for index in range(len(items) - 1):
+            line_numbers = (3, index + 100)  # Some identifiable line numbers.
+            direct_import = {
+                "importer": items[index],
+                "imported": items[index + 1],
+                "line_numbers": line_numbers,
+            }
+            for line_number in line_numbers:
+                graph.add_import(
+                    importer=direct_import["importer"],
+                    imported=direct_import["imported"],
+                    line_number=line_number,
+                    line_contents="Foo",
+                )
+            detailed_chain.append(direct_import)
+        return detailed_chain
+
+
+class TestPopDirectImports:
+    def test_direct_import_between_descendants(self):
+        graph = self._build_graph()
+        direct_import = self._add_direct_import(graph, importer="low.green", imported="high.blue")
+
+        # Add some other imports that we don't want to be affected.
+        other_imports = self._add_other_imports(graph, importer="low.green", imported="high.blue")
+
+        result = LayersContract._pop_direct_imports(
+            higher_layer_package=Module("high"), lower_layer_package=Module("low"), graph=graph
+        )
+
+        assert [[direct_import]] == result
+        self._assert_import_was_popped(graph, direct_import)
+        self._assert_imports_were_not_popped(graph, other_imports)
+
+    def test_direct_import_between_roots(self):
+        graph = self._build_graph()
+        direct_import = self._add_direct_import(graph, importer="low", imported="high")
+
+        # Add some other imports that we don't want to be affected.
+        other_imports = self._add_other_imports(graph, importer="low", imported="high")
+
+        result = LayersContract._pop_direct_imports(
+            higher_layer_package=Module("high"), lower_layer_package=Module("low"), graph=graph
+        )
+
+        assert [[direct_import]] == result
+        self._assert_import_was_popped(graph, direct_import)
+        self._assert_imports_were_not_popped(graph, other_imports)
+
+    def test_direct_import_root_to_descendant(self):
+        graph = self._build_graph()
+        direct_import = self._add_direct_import(graph, importer="low", imported="high.blue")
+
+        # Add some other imports that we don't want to be affected.
+        other_imports = self._add_other_imports(graph, importer="low", imported="high.blue")
+
+        result = LayersContract._pop_direct_imports(
+            higher_layer_package=Module("high"), lower_layer_package=Module("low"), graph=graph
+        )
+
+        assert [[direct_import]] == result
+        self._assert_import_was_popped(graph, direct_import)
+        self._assert_imports_were_not_popped(graph, other_imports)
+
+    def test_direct_import_descendant_to_root(self):
+        graph = self._build_graph()
+        direct_import = self._add_direct_import(graph, importer="low.green", imported="high")
+
+        # Add some other imports that we don't want to be affected.
+        other_imports = self._add_other_imports(graph, importer="low.green", imported="high")
+
+        result = LayersContract._pop_direct_imports(
+            higher_layer_package=Module("high"), lower_layer_package=Module("low"), graph=graph
+        )
+
+        assert [[direct_import]] == result
+        self._assert_import_was_popped(graph, direct_import)
+        self._assert_imports_were_not_popped(graph, other_imports)
+
+    def _build_graph(self):
+        graph = ImportGraph()
+        graph.add_module("high")
+        graph.add_module("low")
+        return graph
+
+    def _add_direct_import(self, graph, importer, imported):
+        direct_import = dict(
+            importer=importer, imported=imported, line_number=99, line_contents="blah"
+        )
+        graph.add_import(**direct_import)
+        return direct_import
+
+    def _add_other_imports(self, graph, importer, imported):
+        other_imports = (
+            dict(importer=importer, imported="foo", line_number=2, line_contents="blah"),
+            dict(importer="bar", imported=imported, line_number=3, line_contents="blah"),
+        )
+        for other_import in other_imports:
+            graph.add_import(**other_import)
+        return other_imports
+
+    def _assert_import_was_popped(self, graph, direct_import):
+        assert not graph.direct_import_exists(
+            importer=direct_import["importer"], imported=direct_import["imported"]
+        )
+
+    def _assert_imports_were_not_popped(self, graph, other_imports):
+        for other_import in other_imports:
+            assert graph.direct_import_exists(
+                importer=other_import["importer"], imported=other_import["imported"]
+            )

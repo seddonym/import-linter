@@ -61,3 +61,13 @@ latest
 ------
 
 * Provide debug mode.
+* Allow contracts to mutate the graph without affecting other contracts.
+* Update to Grimp v1.1.
+* Change the rendering of broken layers contracts by combining any shared chain beginning or endings.
+* Speed up and make more comprehensive the algorithm for finding illegal chains in layer contracts. Prior to this,
+  layers contracts used Grimp's find_shortest_chains method for each pairing of layers. This found the shortest chain
+  between each pair of modules across the two layers. The algorithm was very slow and not comprehensive. With this
+  release, for each pair of layers, a copy of the graph is made. All other layers are removed from the graph, any
+  direct imports between the two layers are stored. Next, the two layers in question are 'squashed', the shortest
+  chain is repeatedly popped from the graph until no more chains remain. This results in more comprehensive results,
+  and at significantly increased speed.

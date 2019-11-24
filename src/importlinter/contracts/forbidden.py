@@ -29,7 +29,7 @@ class ForbiddenContract(Contract):
         is_kept = True
         invalid_chains = []
 
-        removed_imports = helpers.pop_imports(
+        helpers.pop_imports(
             graph, self.ignore_imports if self.ignore_imports else []  # type: ignore
         )
 
@@ -73,8 +73,6 @@ class ForbiddenContract(Contract):
                         subpackage_chain_data["chains"].append(chain_data)
                 if subpackage_chain_data["chains"]:
                     invalid_chains.append(subpackage_chain_data)
-
-        helpers.add_imports(graph, removed_imports)
 
         return ContractCheck(kept=is_kept, metadata={"invalid_chains": invalid_chains})
 
