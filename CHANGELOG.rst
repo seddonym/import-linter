@@ -71,3 +71,8 @@ Changelog
   direct imports between the two layers are stored. Next, the two layers in question are 'squashed', the shortest
   chain is repeatedly popped from the graph until no more chains remain. This results in more comprehensive results,
   and at significantly increased speed.
+
+1.1b2 (2019-11-27)
+------------------
+
+* Update to Grimp v1.2, significantly increasing speed of building the graph.
