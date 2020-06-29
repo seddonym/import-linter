@@ -76,3 +76,8 @@ Changelog
 ------------------
 
 * Update to Grimp v1.2, significantly increasing speed of building the graph.
+
+1.1
+---
+
+* Bring 1.1 out of beta.
