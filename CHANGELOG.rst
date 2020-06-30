@@ -81,3 +81,9 @@ Changelog
 ---
 
 * Bring 1.1 out of beta.
+
+
+latest
+------
+
+* Upgrade Grimp to 1.2.2.

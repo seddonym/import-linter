@@ -47,7 +47,7 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Utilities",
     ],
-    install_requires=["click>=6,<8", "grimp>=1.2,<2"],
+    install_requires=["click>=6,<8", "grimp>=1.2.2,<2"],
     entry_points={
         "console_scripts": ["lint-imports = importlinter.cli:lint_imports_command"]
     },
