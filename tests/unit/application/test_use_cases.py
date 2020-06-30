@@ -5,9 +5,10 @@ import pytest
 from grimp.adaptors.graph import ImportGraph  # type: ignore
 
 from importlinter.application.app_config import settings
+from importlinter.application.ports.building import SourceSyntaxError
 from importlinter.application.use_cases import FAILURE, SUCCESS, create_report, lint_imports
 from importlinter.application.user_options import UserOptions
-from tests.adapters.building import FakeGraphBuilder
+from tests.adapters.building import FakeGraphBuilder, ExceptionRaisingGraphBuilder
 from tests.adapters.printing import FakePrinter
 from tests.adapters.user_options import ExceptionRaisingUserOptionReader, FakeUserOptionReader
 
@@ -321,3 +322,30 @@ class TestGraphCopying:
         result = lint_imports(is_debug_mode=True)
 
         assert result == SUCCESS
+
+
+class TestGraphSyntaxError:
+    def test_is_handled_helpfully(self):
+        reader = FakeUserOptionReader(
+            UserOptions(session_options={"root_package": "mypackage", "contract_types": []}, contracts_options=[])
+        )
+        exception = SourceSyntaxError(
+            filename="/path/to/file.py",
+            lineno=33,
+            text="fromp import syntaxerror\n",
+        )
+        builder = ExceptionRaisingGraphBuilder(exception=exception)
+        settings.configure(
+            USER_OPTION_READERS=[reader], GRAPH_BUILDER=builder, PRINTER=FakePrinter()
+        )
+
+        result = lint_imports()
+
+        assert result == FAILURE
+
+        settings.PRINTER.pop_and_assert(
+            """
+            Syntax error in /path/to/file.py, line 33: fromp import syntaxerror
+            
+            """
+        )

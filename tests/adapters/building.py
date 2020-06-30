@@ -1,7 +1,7 @@
 from typing import List
 
 from grimp.adaptors.graph import ImportGraph as GrimpImportGraph  # type: ignore
-from importlinter.application.ports.building import GraphBuilder
+from importlinter.application.ports.building import GraphBuilder, SourceSyntaxError
 from importlinter.domain.ports.graph import ImportGraph
 
 
@@ -37,3 +37,13 @@ class FakeGraphBuilder(GraphBuilder):
 
     def inject_graph(self, graph: ImportGraph) -> None:
         self._graph = graph
+
+
+class ExceptionRaisingGraphBuilder(GraphBuilder):
+    def __init__(self, exception: Exception):
+        self._exception = exception
+
+    def build(
+        self, root_package_names: List[str], include_external_packages: bool = False
+    ) -> ImportGraph:
+        raise self._exception

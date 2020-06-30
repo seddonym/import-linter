@@ -81,3 +81,9 @@ Changelog
 ---
 
 * Bring 1.1 out of beta.
+
+
+latest
+------
+
+* Better reporting of syntax errors.

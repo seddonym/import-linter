@@ -4,7 +4,7 @@ from typing import List, Optional
 from importlinter.domain.ports.graph import ImportGraph
 
 
-class SourceSyntaxError:
+class SourceSyntaxError(Exception):
     """
     Indicates a syntax error in the code being statically analysed to build the graph.
     """
@@ -38,4 +38,8 @@ class GraphBuilder(abc.ABC):
     def build(
         self, root_package_names: List[str], include_external_packages: bool = False
     ) -> ImportGraph:
+        """
+        Raises:
+            SourceSyntaxError if the code under analysis contains a syntax error.
+        """
         raise NotImplementedError
