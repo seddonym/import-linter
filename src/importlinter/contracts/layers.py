@@ -51,9 +51,7 @@ class LayersContract(Contract):
 
     layers = fields.ListField(subfield=LayerField())
     containers = fields.ListField(subfield=fields.StringField(), required=False)
-    ignore_imports = fields.ListField(
-        subfield=fields.DirectImportField(), required=False, drop_duplicates=True
-    )
+    ignore_imports = fields.ListField(subfield=fields.DirectImportField(), required=False)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True

@@ -55,22 +55,18 @@ class ListField(Field):
 
     """
 
-    def __init__(self, subfield: Field, *args, drop_duplicates: bool = False, **kwargs) -> None:
+    def __init__(self, subfield: Field, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.subfield = subfield
-        self.drop_duplicates = drop_duplicates
 
     def parse(self, raw_data: Union[str, List]) -> List[Any]:
         if isinstance(raw_data, tuple):
             raw_data = list(raw_data)
         if not isinstance(raw_data, list):
             raw_data = [raw_data]  # Single values should just be treated as a single item list.
-        clean_list: Any = []
+        clean_list = []
         for raw_line in raw_data:
-            list_item = self.subfield.parse(raw_line)
-            if self.drop_duplicates and list_item in clean_list:
-                continue
-            clean_list.append(list_item)
+            clean_list.append(self.subfield.parse(raw_line))
         return clean_list
 
 

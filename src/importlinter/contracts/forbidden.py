@@ -23,9 +23,7 @@ class ForbiddenContract(Contract):
 
     source_modules = fields.ListField(subfield=fields.ModuleField())
     forbidden_modules = fields.ListField(subfield=fields.ModuleField())
-    ignore_imports = fields.ListField(
-        subfield=fields.DirectImportField(), required=False, drop_duplicates=True
-    )
+    ignore_imports = fields.ListField(subfield=fields.DirectImportField(), required=False)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True

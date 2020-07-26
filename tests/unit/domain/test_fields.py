@@ -89,24 +89,3 @@ class TestDirectImportField(BaseFieldTest):
 class TestListField(BaseFieldTest):
     field_class = ListField
     field_kwargs = dict(subfield=ModuleField())
-
-
-class TestListFieldDropDuplicates:
-    field_class = ListField
-    field_kwargs = dict(subfield=ModuleField())
-
-    @pytest.mark.parametrize(
-        ("drop_duplicates", "raw_data", "expected_value"),
-        [
-            (False, ["mypackage.foo"] * 2, [Module("mypackage.foo")] * 2),
-            (True, ["mypackage.foo"] * 2, [Module("mypackage.foo")]),
-            (
-                True,
-                ["mypackage.foo", "mypackage.bar", "mypackage.foo"],
-                [Module("mypackage.foo"), Module("mypackage.bar")],
-            ),
-        ],
-    )
-    def test_field_drop_duplicates(self, drop_duplicates, raw_data, expected_value):
-        field = self.field_class(drop_duplicates=drop_duplicates, **self.field_kwargs)
-        assert field.parse(raw_data) == expected_value
