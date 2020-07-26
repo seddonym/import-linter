@@ -269,6 +269,7 @@ class TestIndependenceContract:
     "ignore_imports, is_kept",
     (
         (["mypackage.a -> mypackage.irrelevant"], False),
+        (["mypackage.a -> mypackage.irrelevant"] * 2, False),
         (["mypackage.a -> mypackage.indirect"], True),
         (["mypackage.indirect -> mypackage.b"], True),
     ),
