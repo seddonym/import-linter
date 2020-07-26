@@ -87,4 +87,5 @@ latest
 ------
 
 * Upgrade Grimp to 1.2.2.
-* Drop duplicated values of `ignore_imports` options
+* Add SetField
+* Use a SetField for ignore_imports options
