@@ -1,6 +1,6 @@
 import abc
 import re
-from typing import Any, List, Union
+from typing import Any, List, Set, Union
 
 from importlinter.domain.imports import DirectImport, Module
 
@@ -68,6 +68,25 @@ class ListField(Field):
         for raw_line in raw_data:
             clean_list.append(self.subfield.parse(raw_line))
         return clean_list
+
+
+class SetField(ListField):
+    """
+    A field for multiple, unique values of any type.
+
+    Arguments:
+        - subfield: An instance of a single-value Field. Each item in the list will be the return
+                    value of this subfield.
+    Usage:
+
+        field = SetField(subfield=AnotherField())
+
+    """
+
+    def parse(  # type: ignore[override]  # noqa: F821
+        self, raw_data: Union[str, List]
+    ) -> Set[Any]:
+        return set(super().parse(raw_data))
 
 
 class ModuleField(Field):

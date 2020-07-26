@@ -7,6 +7,7 @@ from importlinter.domain.fields import (
     Field,
     ListField,
     ModuleField,
+    SetField,
     StringField,
     ValidationError,
 )
@@ -83,9 +84,23 @@ class TestDirectImportField(BaseFieldTest):
     "raw_data, expected_value",
     (
         (["mypackage.foo", "mypackage.bar"], [Module("mypackage.foo"), Module("mypackage.bar")]),
+        (["mypackage.foo", "mypackage.foo"], [Module("mypackage.foo"), Module("mypackage.foo")]),
         ("singlevalue", [Module("singlevalue")]),
     ),
 )
 class TestListField(BaseFieldTest):
     field_class = ListField
+    field_kwargs = dict(subfield=ModuleField())
+
+
+@pytest.mark.parametrize(
+    "raw_data, expected_value",
+    (
+        (["mypackage.foo", "mypackage.bar"], {Module("mypackage.foo"), Module("mypackage.bar")}),
+        (["mypackage.foo", "mypackage.foo"], {Module("mypackage.foo")}),
+        ("singlevalue", {Module("singlevalue")}),
+    ),
+)
+class TestSetField(BaseFieldTest):
+    field_class = SetField
     field_kwargs = dict(subfield=ModuleField())
