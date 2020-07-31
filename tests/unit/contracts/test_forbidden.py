@@ -125,6 +125,24 @@ class TestForbiddenContract:
         ):
             contract.check(graph=graph)
 
+    def test_issue69(self):
+        """Ensure issue 69 is fixed.
+
+        https://github.com/seddonym/import-linter/issues/69
+
+        """
+        graph = self._build_graph()
+        contract = self._build_contract(
+            forbidden_modules=("mypackage.blue", "mypackage.yellow"),
+            ignore_imports=(
+                "mypackage.three -> mypackage.green",
+                "mypackage.utils -> mypackage.purple",
+                "mypackage.three -> mypackage.green",
+            ),
+            include_external_packages=False,
+        )
+        assert contract.check(graph=graph)
+
     def _build_graph(self):
         graph = ImportGraph()
         for module in (
@@ -171,7 +189,9 @@ class TestForbiddenContract:
         )
         return graph
 
-    def _build_contract(self, forbidden_modules, include_external_packages=False):
+    def _build_contract(
+        self, forbidden_modules, ignore_imports=None, include_external_packages=False
+    ):
         session_options = {"root_packages": ["mypackage"]}
         if include_external_packages:
             session_options["include_external_packages"] = "True"
@@ -182,6 +202,7 @@ class TestForbiddenContract:
             contract_options={
                 "source_modules": ("mypackage.one", "mypackage.two", "mypackage.three"),
                 "forbidden_modules": forbidden_modules,
+                "ignore_imports": ignore_imports or [],
             },
         )
 

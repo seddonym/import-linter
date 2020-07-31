@@ -765,6 +765,25 @@ class TestIgnoreImports:
         with pytest.raises(MissingImport):
             contract.check(graph=graph)
 
+    def test_issue69(self):
+        """Ensure issue 69 is fixed.
+
+        https://github.com/seddonym/import-linter/issues/69
+
+        """
+        contract = self._build_contract(
+            ignore_imports=[
+                "mypackage.low.black -> mypackage.medium.orange",
+                "mypackage.utils.foo -> mypackage.utils.bar",
+                "mypackage.low.black -> mypackage.medium.orange",
+            ]
+        )
+        graph = self._build_graph()
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept
+
     def _build_graph(self):
         graph = ImportGraph()
         for module in (

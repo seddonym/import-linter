@@ -392,3 +392,35 @@ def test_missing_module():
 
     with pytest.raises(ValueError, match=("Module 'mypackage.bar' does not exist.")):
         contract.check(graph=graph)
+
+
+def test_issue69():
+    """Ensure issue 69 is fixed.
+
+    https://github.com/seddonym/import-linter/issues/69
+
+    """
+    graph = ImportGraph()
+    graph.add_module("mypackage")
+    graph.add_import(
+        importer="mypackage.a", imported="mypackage.b", line_number=1, line_contents="-"
+    )
+    graph.add_import(
+        importer="mypackage.a", imported="mypackage.c", line_number=2, line_contents="-"
+    )
+    contract = IndependenceContract(
+        name="Independence contract",
+        session_options={"root_packages": ["mypackage"]},
+        contract_options={
+            "modules": ("mypackage.a", "mypackage.b"),
+            "ignore_imports": [
+                "mypackage.a -> mypackage.b",
+                "mypackage.a -> mypackage.c",
+                "mypackage.a -> mypackage.b",
+            ],
+        },
+    )
+
+    contract_check = contract.check(graph=graph)
+
+    assert contract_check.kept
