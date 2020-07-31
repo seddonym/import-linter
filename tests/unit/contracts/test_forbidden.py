@@ -125,12 +125,7 @@ class TestForbiddenContract:
         ):
             contract.check(graph=graph)
 
-    def test_issue69(self):
-        """Ensure issue 69 is fixed.
-
-        https://github.com/seddonym/import-linter/issues/69
-
-        """
+    def test_ignore_imports_tolerates_duplicates(self):
         graph = self._build_graph()
         contract = self._build_contract(
             forbidden_modules=("mypackage.blue", "mypackage.yellow"),

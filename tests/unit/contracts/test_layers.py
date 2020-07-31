@@ -765,12 +765,7 @@ class TestIgnoreImports:
         with pytest.raises(MissingImport):
             contract.check(graph=graph)
 
-    def test_issue69(self):
-        """Ensure issue 69 is fixed.
-
-        https://github.com/seddonym/import-linter/issues/69
-
-        """
+    def test_ignore_imports_tolerates_duplicates(self):
         contract = self._build_contract(
             ignore_imports=[
                 "mypackage.low.black -> mypackage.medium.orange",

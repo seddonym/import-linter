@@ -394,12 +394,7 @@ def test_missing_module():
         contract.check(graph=graph)
 
 
-def test_issue69():
-    """Ensure issue 69 is fixed.
-
-    https://github.com/seddonym/import-linter/issues/69
-
-    """
+def test_ignore_imports_tolerates_duplicates():
     graph = ImportGraph()
     graph.add_module("mypackage")
     graph.add_import(
