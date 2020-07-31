@@ -1,8 +1,10 @@
 import abc
 import re
-from typing import Any, List, Set, Union
+from typing import Generic, Iterable, List, Set, TypeVar, Union
 
 from importlinter.domain.imports import DirectImport, Module
+
+FieldValue = TypeVar("FieldValue")
 
 
 class ValidationError(Exception):
@@ -10,7 +12,7 @@ class ValidationError(Exception):
         self.message = message
 
 
-class Field(abc.ABC):
+class Field(Generic[FieldValue], abc.ABC):
     """
     Base class for containers for some data on a Contract.
 
@@ -21,7 +23,7 @@ class Field(abc.ABC):
         self.required = required
 
     @abc.abstractmethod
-    def parse(self, raw_data: Union[str, List[str]]) -> Any:
+    def parse(self, raw_data: Union[str, List[str]]) -> FieldValue:
         """
         Given some raw data supplied by a user, return some clean data.
 
@@ -42,16 +44,13 @@ class StringField(Field):
         return str(raw_data)
 
 
-class ListField(Field):
+class BaseMultipleValueField(Field):
     """
-    A field for multiple values of any type.
+    An abstract field for multiple values of any type.
 
     Arguments:
-        - subfield: An instance of a single-value Field. Each item in the list will be the return
-                    value of this subfield.
-    Usage:
-
-        field = ListField(subfield=AnotherField())
+        - subfield: An instance of a single-value Field. Each item in the iterable will be
+                    the return value of this subfield.
 
     """
 
@@ -59,7 +58,8 @@ class ListField(Field):
         super().__init__(*args, **kwargs)
         self.subfield = subfield
 
-    def parse(self, raw_data: Union[str, List]) -> List[Any]:
+    @abc.abstractmethod
+    def parse(self, raw_data: Union[str, List]) -> Iterable[FieldValue]:
         if isinstance(raw_data, tuple):
             raw_data = list(raw_data)
         if not isinstance(raw_data, list):
@@ -70,22 +70,34 @@ class ListField(Field):
         return clean_list
 
 
-class SetField(ListField):
+class ListField(BaseMultipleValueField):
+    """
+    A field for multiple values of any type.
+
+    Fields values are returned in list sorted by parsing order.
+
+    Usage:
+
+        field = ListField(subfield=AnotherField())
+    """
+
+    def parse(self, raw_data: Union[str, List]) -> List[FieldValue]:
+        return list(super().parse(raw_data))
+
+
+class SetField(BaseMultipleValueField):
     """
     A field for multiple, unique values of any type.
 
-    Arguments:
-        - subfield: An instance of a single-value Field. Each item in the list will be the return
-                    value of this subfield.
+    Fields values are returned inordered in set.
+
     Usage:
 
         field = SetField(subfield=AnotherField())
 
     """
 
-    def parse(  # type: ignore[override]  # noqa: F821
-        self, raw_data: Union[str, List]
-    ) -> Set[Any]:
+    def parse(self, raw_data: Union[str, List]) -> Set[FieldValue]:
         return set(super().parse(raw_data))
 
 
