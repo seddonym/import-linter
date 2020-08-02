@@ -1,5 +1,11 @@
+[build-system]
+requires = ["poetry>=1.0.10"]
+build-backend = "poetry.masonry.api"
+
+
 [tool.black]
 line-length = 99
+
 
 [tool.isort]
 multi_line_output = 3
@@ -8,3 +14,56 @@ force_grid_wrap = 0
 use_parentheses = "True"
 line_length = 99
 
+
+[tool.poetry]
+name = "import-linter"
+version = "1.1"
+packages = [
+    { include = "importlinter", from = "src" },
+]
+description = "Enforces rules for the imports within and between Python packages."
+readme = "README.rst"
+authors = [
+    "David Seddon <david@seddonym.me>",
+]
+license = "BSD-2-Clause"
+repository = "https://github.com/seddonym/import-linter/"
+documentation = "https://import-linter.readthedocs.io/"
+classifiers = [
+    # complete classifier list: http://pypi.python.org/pypi?%3Aaction=list_classifiers
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: Unix",
+    "Operating System :: POSIX",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Utilities",
+]
+
+[tool.poetry.scripts]
+lint-imports = "importlinter.cli:lint_imports_command"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+click = ">=6,<8"
+grimp = ">=1.2.2,<2"
+
+[tool.poetry.dev-dependencies]
+# tests
+PyYAML = "5.1.2"
+coverage = "5.1"
+pytest = "3.10.0"
+pytest-cov = "2.6.0"
+pytest-travis-fold = "1.3.0"
+# linters
+black = "19.3b0"
+flake8 = "3.7.8"
+mypy = "0.730"
+# documentation
+sphinx = ">=1.3"
+sphinx-rtd-theme = "^0.5.0"

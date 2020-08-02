@@ -47,19 +47,28 @@ To set up `import-linter` for local development:
 
     git checkout -b name-of-your-bugfix-or-feature
 
-   Now you can make your changes locally.
+    Now you can make your changes locally.
 
-4. When you're done making changes, run all the checks, doc builder and spell checker with `tox <https://tox.readthedocs.io/en/latest/install.html>`_ one command::
+4. Install all development tools like `black`, `mypy` or `flake8` with
+   `poetry <https://python-poetry.org/docs/>`_ by running following command::
+
+    poetry install
+
+    Then you can run each tool like::
+
+    poetry run black src/ tests/
+
+5. When you're done making changes, run all the checks, doc builder and spell checker with `tox <https://tox.readthedocs.io/en/latest/install.html>`_ one command::
 
     tox
 
-5. Commit your changes and push your branch to GitHub::
+6. Commit your changes and push your branch to GitHub::
 
     git add .
     git commit -m "Your detailed description of your changes."
     git push origin name-of-your-bugfix-or-feature
 
-6. Submit a pull request through the GitHub website.
+7. Submit a pull request through the GitHub website.
 
 Pull Request Guidelines
 -----------------------
