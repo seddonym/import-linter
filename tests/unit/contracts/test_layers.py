@@ -765,6 +765,20 @@ class TestIgnoreImports:
         with pytest.raises(MissingImport):
             contract.check(graph=graph)
 
+    def test_ignore_imports_tolerates_duplicates(self):
+        contract = self._build_contract(
+            ignore_imports=[
+                "mypackage.low.black -> mypackage.medium.orange",
+                "mypackage.utils.foo -> mypackage.utils.bar",
+                "mypackage.low.black -> mypackage.medium.orange",
+            ]
+        )
+        graph = self._build_graph()
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept
+
     def _build_graph(self):
         graph = ImportGraph()
         for module in (
