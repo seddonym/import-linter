@@ -89,4 +89,3 @@ latest
 * Upgrade Grimp to 1.2.2.
 * Add SetField
 * Use a SetField for ignore_imports options
-* Add more unit tests for imports.py file
