@@ -27,7 +27,6 @@ class TestModule:
 
     @pytest.mark.parametrize(('module', 'expected_parent', 'exception'), [
         (Module('parent.child'), Module('parent'), does_not_raise()),
-        (Module('grandparent.parent.child'), Module('grandparent.parent'), does_not_raise()),
         (Module('child'), Module(''), pytest.raises(ValueError)),
     ])
     def test_parent(self, module, expected_parent, exception):
