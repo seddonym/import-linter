@@ -1,8 +1,10 @@
+---
 language: python
 sudo: false
 cache: pip
 env:
   global:
+    - POETRY_VERSION=1.0.10
     - LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
     - SEGFAULT_SIGNALS=all
 matrix:
@@ -25,7 +27,7 @@ before_install:
   - uname -a
   - lsb_release -a
 install:
-  - pip install tox
+  - pip install "poetry==${POETRY_VERSION}" tox
   - virtualenv --version
   - easy_install --version
   - pip --version
