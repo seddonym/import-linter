@@ -117,8 +117,6 @@ class DirectImportField(Field):
     Expects raw data in the form: "mypackage.foo.importer -> mypackage.bar.imported".
     """
 
-    DIRECT_IMPORT_STRING_REGEX = re.compile(r"^([\w\.-]+) -> ([\w\.-]+)$")
-
     def parse(self, raw_data: Union[str, List]) -> DirectImport:
         string = StringField().parse(raw_data)
         importer, _, imported = string.partition(" -> ")
