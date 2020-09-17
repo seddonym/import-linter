@@ -1,4 +1,4 @@
-from grimp.adaptors.graph import ImportGraph
+from grimp.adaptors.graph import ImportGraph  # type: ignore
 from importlinter.domain.helpers import add_imports
 
 
