@@ -1,5 +1,4 @@
 import abc
-import re
 from typing import Generic, Iterable, List, Set, TypeVar, Union
 
 from importlinter.domain.imports import DirectImport, Module
