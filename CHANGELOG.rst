@@ -1,6 +1,7 @@
 Changelog
 =========
 
+
 1.0a1 (2019-1-27)
 -----------------
 
@@ -89,3 +90,4 @@ latest
 * Upgrade Grimp to 1.2.2.
 * Add SetField
 * Use a SetField for ignore_imports options
+* Add support for non `\w` characters in import exceptions
