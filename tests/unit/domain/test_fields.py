@@ -74,6 +74,10 @@ class TestModuleField(BaseFieldTest):
             "mypackage.foo - mypackage.bar",
             ValidationError('Must be in the form "package.importer -> package.imported".'),
         ),
+        (
+            "my-package.foo -> my-package.bar",
+            DirectImport(importer=Module("my-package.foo"), imported=Module("my-package.bar")),
+        ),
     ),
 )
 class TestDirectImportField(BaseFieldTest):
