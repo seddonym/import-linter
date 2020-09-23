@@ -77,14 +77,14 @@ Changelog
 
 * Update to Grimp v1.2, significantly increasing speed of building the graph.
 
-1.1
----
+1.1 (2020-6-29)
+---------------
 
 * Bring 1.1 out of beta.
 
 
-latest
-------
+1.2 (2020-9-23)
+---------------
 
 * Upgrade Grimp to 1.2.2.
 * Add SetField
