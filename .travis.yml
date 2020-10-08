@@ -20,6 +20,11 @@ matrix:
       sudo: required
       env:
         - TOXENV=py38,report
+    - python: '3.9'
+      dist: xenial
+      sudo: required
+      env:
+        - TOXENV=py39,report
 before_install:
   - python --version
   - uname -a
