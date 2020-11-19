@@ -7,16 +7,14 @@ from importlinter.domain.ports.graph import ImportGraph
 class ForbiddenContract(Contract):
     """
     Forbidden contracts check that one set of modules are not imported by another set of modules.
-
     Indirect imports will also be checked.
-
     Configuration options:
-
         - source_modules:    A list of Modules that should not import the forbidden modules.
         - forbidden_modules: A list of Modules that should not be imported by the source modules.
         - ignore_imports:    A set of DirectImports. These imports will be ignored: if the import
                              would cause a contract to be broken, adding it to the set will cause
                              the contract be kept instead. (Optional.)
+        - allow_indirect_imports: (True/False). Whether indirect imports are allowed.
     """
 
     type_name = "forbidden"
@@ -24,6 +22,7 @@ class ForbiddenContract(Contract):
     source_modules = fields.ListField(subfield=fields.ModuleField())
     forbidden_modules = fields.ListField(subfield=fields.ModuleField())
     ignore_imports = fields.SetField(subfield=fields.DirectImportField(), required=False)
+    allow_indirect_imports = fields.StringField(required=False)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
@@ -53,6 +52,10 @@ class ForbiddenContract(Contract):
                     importer=source_module.name, imported=forbidden_module.name
                 )
                 if chains:
+                    if self._allow_indirect_imports():
+                        chains = [chain for chain in chains if len(chain) <= 2]
+                        if len(chains) == 0:
+                            continue
                     is_kept = False
                     for chain in chains:
                         chain_data = []
@@ -119,6 +122,9 @@ class ForbiddenContract(Contract):
         return not all(
             m.root_package_name in root_packages for m in self.forbidden_modules  # type: ignore
         )
+
+    def _allow_indirect_imports(self) -> bool:
+        return self.allow_indirect_imports and self.allow_indirect_imports in ("True", "true")
 
     def _graph_was_built_with_externals(self) -> bool:
         return self.session_options.get("include_external_packages") in ("True", "true")
