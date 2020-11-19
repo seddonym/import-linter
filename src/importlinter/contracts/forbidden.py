@@ -14,7 +14,7 @@ class ForbiddenContract(Contract):
         - ignore_imports:    A set of DirectImports. These imports will be ignored: if the import
                              would cause a contract to be broken, adding it to the set will cause
                              the contract be kept instead. (Optional.)
-        - allow_indirect_imports: (True/False). Whether indirect imports are allowed.
+        - allow_indirect_imports: Bool:r indirect imports are allowed. (Default: False.)
     """
 
     type_name = "forbidden"
@@ -52,8 +52,11 @@ class ForbiddenContract(Contract):
                     importer=source_module.name, imported=forbidden_module.name
                 )
                 if chains:
-                    if self._allow_indirect_imports():
-                        chains = [chain for chain in chains if len(chain) <= 2]
+                    if self.allow_indirect_imports and str(self.allow_indirect_imports) in (
+                        "True",
+                        "true",
+                    ):
+                        chains = set(chain for chain in chains if len(chain) <= 2)
                         if len(chains) == 0:
                             continue
                     is_kept = False
@@ -122,9 +125,6 @@ class ForbiddenContract(Contract):
         return not all(
             m.root_package_name in root_packages for m in self.forbidden_modules  # type: ignore
         )
-
-    def _allow_indirect_imports(self) -> bool:
-        return self.allow_indirect_imports and self.allow_indirect_imports in ("True", "true")
 
     def _graph_was_built_with_externals(self) -> bool:
         return self.session_options.get("include_external_packages") in ("True", "true")
