@@ -66,6 +66,7 @@ Configuration options:
       A list of imports, each in the form ``mypackage.foo.importer -> mypackage.bar.imported``. These imports
       will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the
       contract be kept instead. (Optional.)
+    - ``allow_indirect_imports``: Whether to allow indirect imports to forbidden modules. Defaults to False (Optional).
 
 Independence
 ------------
