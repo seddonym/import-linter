@@ -138,6 +138,15 @@ class TestForbiddenContract:
         )
         assert contract.check(graph=graph)
 
+    def test_allow_indirect_imports(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            forbidden_modules=("mypackage.purple"),
+            allow_indirect_imports=True,
+        )
+        contract_check = contract.check(graph=graph)
+        assert contract_check.kept
+
     def _build_graph(self):
         graph = ImportGraph()
         for module in (
@@ -185,7 +194,11 @@ class TestForbiddenContract:
         return graph
 
     def _build_contract(
-        self, forbidden_modules, ignore_imports=None, include_external_packages=False
+        self,
+        forbidden_modules,
+        ignore_imports=None,
+        include_external_packages=False,
+        allow_indirect_imports=None,
     ):
         session_options = {"root_packages": ["mypackage"]}
         if include_external_packages:
@@ -198,6 +211,7 @@ class TestForbiddenContract:
                 "source_modules": ("mypackage.one", "mypackage.two", "mypackage.three"),
                 "forbidden_modules": forbidden_modules,
                 "ignore_imports": ignore_imports or [],
+                "allow_indirect_imports": allow_indirect_imports,
             },
         )
 
