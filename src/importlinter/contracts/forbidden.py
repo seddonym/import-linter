@@ -1,3 +1,5 @@
+from typing import Tuple, cast
+
 from importlinter.application import output
 from importlinter.domain import fields, helpers
 from importlinter.domain.contract import Contract, ContractCheck
@@ -14,7 +16,8 @@ class ForbiddenContract(Contract):
         - ignore_imports:    A set of DirectImports. These imports will be ignored: if the import
                              would cause a contract to be broken, adding it to the set will cause
                              the contract be kept instead. (Optional.)
-        - allow_indirect_imports: Bool: indirect imports are allowed. (Default: False)
+        - allow_indirect_imports:  Whether to allow indirect imports to forbidden modules.
+                            "True" or "true" will be treated as True. (Optional.)```
     """
 
     type_name = "forbidden"
@@ -48,14 +51,21 @@ class ForbiddenContract(Contract):
                     "chains": [],
                 }
 
-                chains = graph.find_shortest_chains(
-                    importer=source_module.name, imported=forbidden_module.name
-                )
+                if str(self.allow_indirect_imports).lower() == "true":
+                    chains = {
+                        cast(
+                            Tuple[str, ...],
+                            (str(import_det["importer"]), str(import_det["imported"])),
+                        )
+                        for import_det in graph.get_import_details(
+                            importer=source_module.name, imported=forbidden_module.name
+                        )
+                    }
+                else:
+                    chains = graph.find_shortest_chains(
+                        importer=source_module.name, imported=forbidden_module.name
+                    )
                 if chains:
-                    if str(self.allow_indirect_imports).lower() == "true":
-                        chains = set(chain for chain in chains if len(chain) <= 2)
-                        if len(chains) == 0:
-                            continue
                     is_kept = False
                     for chain in chains:
                         chain_data = []

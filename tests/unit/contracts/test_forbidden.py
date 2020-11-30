@@ -138,14 +138,18 @@ class TestForbiddenContract:
         )
         assert contract.check(graph=graph)
 
-    def test_allow_indirect_imports(self):
+    @pytest.mark.parametrize(
+        "allow_indirect_imports, contract_is_kept",
+        ((None, False), ("false", False), ("True", True), ("true", True), ("anything", False)),
+    )
+    def test_allow_indirect_imports(self, allow_indirect_imports, contract_is_kept):
         graph = self._build_graph()
         contract = self._build_contract(
             forbidden_modules=("mypackage.purple"),
-            allow_indirect_imports=True,
+            allow_indirect_imports=allow_indirect_imports,
         )
         contract_check = contract.check(graph=graph)
-        assert contract_check.kept
+        assert contract_check.kept == contract_is_kept
 
     def _build_graph(self):
         graph = ImportGraph()
