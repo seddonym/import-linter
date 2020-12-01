@@ -1,3 +1,5 @@
+from typing import Tuple, cast
+
 from importlinter.application import output
 from importlinter.domain import fields, helpers
 from importlinter.domain.contract import Contract, ContractCheck
@@ -7,16 +9,15 @@ from importlinter.domain.ports.graph import ImportGraph
 class ForbiddenContract(Contract):
     """
     Forbidden contracts check that one set of modules are not imported by another set of modules.
-
     Indirect imports will also be checked.
-
     Configuration options:
-
         - source_modules:    A list of Modules that should not import the forbidden modules.
         - forbidden_modules: A list of Modules that should not be imported by the source modules.
         - ignore_imports:    A set of DirectImports. These imports will be ignored: if the import
                              would cause a contract to be broken, adding it to the set will cause
                              the contract be kept instead. (Optional.)
+        - allow_indirect_imports:  Whether to allow indirect imports to forbidden modules.
+                            "True" or "true" will be treated as True. (Optional.)```
     """
 
     type_name = "forbidden"
@@ -24,6 +25,7 @@ class ForbiddenContract(Contract):
     source_modules = fields.ListField(subfield=fields.ModuleField())
     forbidden_modules = fields.ListField(subfield=fields.ModuleField())
     ignore_imports = fields.SetField(subfield=fields.DirectImportField(), required=False)
+    allow_indirect_imports = fields.StringField(required=False)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
@@ -49,9 +51,20 @@ class ForbiddenContract(Contract):
                     "chains": [],
                 }
 
-                chains = graph.find_shortest_chains(
-                    importer=source_module.name, imported=forbidden_module.name
-                )
+                if str(self.allow_indirect_imports).lower() == "true":
+                    chains = {
+                        cast(
+                            Tuple[str, ...],
+                            (str(import_det["importer"]), str(import_det["imported"])),
+                        )
+                        for import_det in graph.get_import_details(
+                            importer=source_module.name, imported=forbidden_module.name
+                        )
+                    }
+                else:
+                    chains = graph.find_shortest_chains(
+                        importer=source_module.name, imported=forbidden_module.name
+                    )
                 if chains:
                     is_kept = False
                     for chain in chains:
@@ -121,4 +134,4 @@ class ForbiddenContract(Contract):
         )
 
     def _graph_was_built_with_externals(self) -> bool:
-        return self.session_options.get("include_external_packages") in ("True", "true")
+        return str(self.session_options.get("include_external_packages")).lower() == "true"

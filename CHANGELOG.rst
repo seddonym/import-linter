@@ -1,6 +1,8 @@
 Changelog
 =========
 
+* Add allow_indirect_imports to Forbidden Contract type
+
 1.2 (2020-09-23)
 ----------------
 
