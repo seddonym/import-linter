@@ -3,13 +3,19 @@ Changelog
 
 * Add allow_indirect_imports to Forbidden Contract type
 
+1.2.1 (2021-01-22)
+------------------
+
+* Upgrade Grimp to 1.2.3.
+* Officially support Python 3.9.
+
 1.2 (2020-09-23)
 ----------------
 
 * Upgrade Grimp to 1.2.2.
-* Add SetField
-* Use a SetField for ignore_imports options
-* Add support for non `\w` characters in import exceptions
+* Add SetField.
+* Use a SetField for ignore_imports options.
+* Add support for non `\w` characters in import exceptions.
 
 1.1 (2020-06-29)
 ----------------

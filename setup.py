@@ -16,7 +16,7 @@ def read(*names, **kwargs):
 
 setup(
     name="import-linter",
-    version="1.2",
+    version="1.2.1",
     license="BSD 2-Clause License",
     description="Enforces rules for the imports within and between Python packages.",
     long_description=read("README.rst"),
@@ -49,7 +49,7 @@ setup(
         "Topic :: Utilities",
     ],
     python_requires=">=3.6",
-    install_requires=["click>=6,<8", "grimp>=1.2.2,<2"],
+    install_requires=["click>=6,<8", "grimp>=1.2.3,<2"],
     entry_points={
         "console_scripts": ["lint-imports = importlinter.cli:lint_imports_command"]
     },

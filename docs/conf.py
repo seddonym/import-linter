@@ -21,13 +21,13 @@ import os
 # -- Project information -----------------------------------------------------
 
 project = 'Import Linter'
-copyright = '2019, David Seddon'
+copyright = '2019 David Seddon'
 author = 'David Seddon'
 
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = '1.2'
+release = '1.2.1'
 
 
 # -- General configuration ---------------------------------------------------
