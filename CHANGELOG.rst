@@ -1,11 +1,11 @@
 Changelog
 =========
 
-* Add allow_indirect_imports to Forbidden Contract type
 
 1.2.1 (2021-01-22)
 ------------------
 
+* Add allow_indirect_imports to Forbidden Contract type
 * Upgrade Grimp to 1.2.3.
 * Officially support Python 3.9.
 
