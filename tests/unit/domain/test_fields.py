@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional, Type
 import pytest
 
 from importlinter.domain.fields import (
+    BooleanField,
     DirectImportField,
     Field,
     ListField,
@@ -42,6 +43,22 @@ class BaseFieldTest:
 )
 class TestStringField(BaseFieldTest):
     field_class = StringField
+
+
+@pytest.mark.parametrize(
+    "raw_data, expected_value",
+    (
+        ("true", True),
+        ("fAlSe", False),
+        ("bananas", ValidationError("Could not parse a boolean from 'bananas'")),
+        (
+            ["one", "two", "three"],
+            ValidationError("Expected a single value, got multiple values."),
+        ),
+    ),
+)
+class TestBooleanField(BaseFieldTest):
+    field_class = BooleanField
 
 
 @pytest.mark.parametrize(
