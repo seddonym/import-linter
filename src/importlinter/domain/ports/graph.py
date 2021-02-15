@@ -19,6 +19,10 @@ class ImportGraph(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def find_children(self, module: str) -> Set[str]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def find_descendants(self, module: str) -> Set[str]:
         raise NotImplementedError
 
