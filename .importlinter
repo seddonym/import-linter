@@ -14,3 +14,4 @@ layers=
     adapters
     application
     domain
+exhaustive = true

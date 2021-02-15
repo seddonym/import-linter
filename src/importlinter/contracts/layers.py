@@ -1,5 +1,5 @@
 import copy
-from typing import Iterator, List, Optional, Tuple, Union, cast
+from typing import Iterator, List, Optional, Set, Tuple, Union, cast
 
 from typing_extensions import TypedDict
 
@@ -7,16 +7,11 @@ from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
 from importlinter.configuration import settings
 from importlinter.domain import fields
-from importlinter.domain.contract import Contract, ContractCheck
+from importlinter.domain.contract import Contract, ContractCheck, InvalidContractOptions
 from importlinter.domain.imports import Module
 from importlinter.domain.ports.graph import ImportGraph
 
-from ._common import (
-    DetailedChain,
-    find_segments,
-    render_chain_data,
-    segments_to_collapsed_chains,
-)
+from ._common import DetailedChain, find_segments, render_chain_data, segments_to_collapsed_chains
 
 
 class Layer:
@@ -56,15 +51,20 @@ class LayersContract(Contract):
 
     Configuration options:
 
-        - layers:         An ordered list of layers. Each layer is the name of a module relative
-                          to its parent package. The order is from higher to lower level layers.
-        - containers:     A list of the parent Modules of the layers (optional).
-        - ignore_imports: A set of ImportExpressions. These imports will be ignored: if the import
-                          would cause a contract to be broken, adding it to the set will cause
-                          the contract be kept instead. (Optional.)
-        - unmatched_ignore_imports_alerting: Decides how to report when the expression in the
-                          `ignore_imports` set is not found in the graph. Valid values are
-                          "none", "warn", "error". Default value is "error".
+        - layers:             An ordered list of layers. Each layer is the name of a module relative
+                              to its parent package. The order is from higher to lower level layers.
+        - containers:         A list of the parent Modules of the layers. (Optional.)
+        - ignore_imports:     A set of ImportExpressions. These imports will be ignored: if the
+                              import would cause a contract to be broken, adding it to the set will
+                              cause the contract be kept instead. (Optional.)
+        - unmatched_ignore_imports_alerting:
+                              Decides how to report when the expression in the `ignore_imports` set
+                              is not found in the graph. Valid values are "none", "warn", "error".
+                              (Optional, defaults to "error".)
+        - exhaustive:         If True, check that the contract declares every possible layer in
+                              its list of layers to check. (Optional, default False.)
+        - exhaustive_ignores: A set of potential layers to ignore in exhaustiveness checks.
+                              (Optional.)
     """
 
     type_name = "layers"
@@ -73,6 +73,18 @@ class LayersContract(Contract):
     containers = fields.ListField(subfield=fields.StringField(), required=False)
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
+    exhaustive = fields.BooleanField(default=False)
+    exhaustive_ignores = fields.SetField(subfield=fields.StringField(), required=False)
+
+    def validate(self) -> None:
+        if self.exhaustive and not self.containers:
+            raise InvalidContractOptions(
+                {
+                    "exhaustive": (
+                        "The exhaustive option is not supported for contracts without containers."
+                    )
+                }
+            )
 
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
         is_kept = True
@@ -88,6 +100,10 @@ class LayersContract(Contract):
             self._validate_containers(graph)
         else:
             self._check_all_containerless_layers_exist(graph)
+
+        undeclared_modules = self._get_undeclared_modules(graph)
+        if undeclared_modules:
+            is_kept = False
 
         for (
             higher_layer_package,
@@ -119,7 +135,9 @@ class LayersContract(Contract):
                 )
 
         return ContractCheck(
-            kept=is_kept, warnings=warnings, metadata={"invalid_chains": invalid_chains}
+            kept=is_kept,
+            warnings=warnings,
+            metadata={"invalid_chains": invalid_chains, "undeclared_modules": undeclared_modules},
         )
 
     def render_broken_contract(self, check: ContractCheck) -> None:
@@ -132,6 +150,18 @@ class LayersContract(Contract):
                 render_chain_data(chain_data)
                 output.new_line()
 
+            output.new_line()
+
+        if check.metadata["undeclared_modules"]:
+            output.print("The following modules are not listed as layers:")
+            output.new_line()
+            for module in sorted(check.metadata["undeclared_modules"]):
+                output.print_error(f"- {module}", bold=False)
+            output.new_line()
+            output.print(
+                "(Since this contract is marked as 'exhaustive', every child of every "
+                "container must be declared as a layer.)"
+            )
             output.new_line()
 
     def _validate_containers(self, graph: ImportGraph) -> None:
@@ -168,6 +198,24 @@ class LayersContract(Contract):
                     f"Missing layer in container '{container}': "
                     f"module {layer_module_name} does not exist."
                 )
+
+    def _get_undeclared_modules(self, graph: ImportGraph) -> Set[str]:
+        if not self.exhaustive:
+            return set()
+
+        undeclared_modules = set()
+
+        exhaustive_ignores: Set[str] = self.exhaustive_ignores or set()  # type: ignore
+        layers: Set[str] = {layer.name for layer in self.layers}  # type: ignore
+        declared_modules = layers | exhaustive_ignores
+
+        for container in self.containers:  # type: ignore[attr-defined]
+            for module in graph.find_children(container):
+                undotted_module = module.rpartition(".")[-1]
+                if undotted_module not in declared_modules:
+                    undeclared_modules.add(f"{container}.{undotted_module}")
+
+        return undeclared_modules
 
     def _check_all_containerless_layers_exist(self, graph: ImportGraph) -> None:
         for layer in self.layers:  # type: ignore
