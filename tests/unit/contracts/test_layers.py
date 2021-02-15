@@ -1471,3 +1471,110 @@ class TestPopDirectImports:
             assert graph.direct_import_exists(
                 importer=other_import["importer"], imported=other_import["imported"]
             )
+
+
+class TestExhaustiveContracts:
+    def test_requires_containers(self):
+        graph = self._setup_graph()
+        contract = LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["foo"]},
+            contract_options={"layers": ["red", "green"], "exhaustive": "true"},
+        )
+
+        with pytest.raises(
+            ValueError, match="The exhaustive option cannot be set if containers is not set"
+        ):
+            contract.check(graph=graph)
+
+    def test_does_not_raise_if_exhaustive_not_set(self):
+        graph = self._setup_graph()
+        contract = LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["foo"]},
+            contract_options={"containers": ["foo"], "layers": ["red", "green"]},
+        )
+
+        contract.check(graph=graph)
+
+    def test_raises_for_single_missing_layer(self):
+        graph = self._setup_graph()
+        contract = LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["foo"]},
+            contract_options={
+                "containers": ["foo"],
+                "layers": ["red", "green"],
+                "exhaustive": "true",
+            },
+        )
+
+        with pytest.raises(
+            ValueError,
+            match=(
+                "Missing potential layers from container 'foo': "
+                "'blue' are not declared as layers in the contract"
+            ),
+        ):
+            contract.check(graph=graph)
+
+    def test_does_not_raises_for_ignored_single_missing_layer(self):
+        graph = self._setup_graph()
+        contract = LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["foo"]},
+            contract_options={
+                "containers": ["foo"],
+                "layers": ["red", "green"],
+                # Exhaustive ignores should imply exhaustive
+                "exhaustive_ignores": ["blue"],
+            },
+        )
+
+        contract.check(graph=graph)
+
+    def test_raises_for_multiple_missing_layers(self):
+        graph = self._setup_graph()
+        contract = LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["foo"]},
+            contract_options={"containers": ["foo"], "layers": ["red"], "exhaustive": "true"},
+        )
+
+        with pytest.raises(
+            ValueError,
+            match=(
+                "Missing potential layers from container 'foo': "
+                "'blue', 'green' are not declared as layers in the contract"
+            ),
+        ):
+            contract.check(graph=graph)
+
+    def test_raises_for_multiple_missing_layers_some_ignored(self):
+        graph = self._setup_graph()
+        contract = LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["foo"]},
+            contract_options={
+                "containers": ["foo"],
+                "layers": ["red"],
+                # Exhaustive ignores should imply exhaustive
+                "exhaustive_ignores": ["blue"],
+            },
+        )
+
+        with pytest.raises(
+            ValueError,
+            match=(
+                "Missing potential layers from container 'foo': "
+                "'green' are not declared as layers in the contract"
+            ),
+        ):
+            contract.check(graph=graph)
+
+    def _setup_graph(self):
+        graph = ImportGraph()
+        for module in ["foo", "foo.red", "foo.blue", "foo.green"]:
+            graph.add_module(module)
+
+        return graph

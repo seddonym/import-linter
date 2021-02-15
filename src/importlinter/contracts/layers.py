@@ -39,12 +39,18 @@ class LayersContract(Contract):
 
     Configuration options:
 
-        - layers:         An ordered list of layers. Each layer is the name of a module relative
-                          to its parent package. The order is from higher to lower level layers.
-        - containers:     A list of the parent Modules of the layers (optional).
-        - ignore_imports: A set of DirectImports. These imports will be ignored: if the import
-                          would cause a contract to be broken, adding it to the set will cause
-                          the contract be kept instead. (Optional.)
+        - layers:             An ordered list of layers. Each layer is the name of a module
+                              relative to its parent package. The order is from higher to lower
+                              level layers.
+        - containers:         A list of the parent Modules of the layers (optional).
+        - ignore_imports:     A set of DirectImports. These imports will be ignored: if the import
+                              would cause a contract to be broken, adding it to the set will cause
+                              the contract be kept instead. (Optional.)
+        - exhaustive:         If true, check that the contract declares every possible layer in
+                              its list of layers to check. This option cannot be used without the
+                              containers option. (Optional.)
+        - exhaustive_ignores: A set of potential layers to ignore in exhaustiveness checks. The
+                              presence of this option implies exhaustive. (Optional.)
     """
 
     type_name = "layers"
@@ -52,6 +58,10 @@ class LayersContract(Contract):
     layers = fields.ListField(subfield=LayerField())
     containers = fields.ListField(subfield=fields.StringField(), required=False)
     ignore_imports = fields.SetField(subfield=fields.DirectImportField(), required=False)
+    exhaustive = fields.BooleanField(required=False, default=False)
+    exhaustive_ignores = fields.SetField(
+        subfield=fields.StringField(), required=False, default=set
+    )
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
@@ -63,6 +73,8 @@ class LayersContract(Contract):
         if self.containers:
             self._validate_containers(graph)
         else:
+            if self.exhaustive or self.exhaustive_ignores:
+                raise ValueError("The exhaustive option cannot be set if containers is not set")
             self._check_all_containerless_layers_exist(graph)
 
         for (
@@ -161,6 +173,8 @@ class LayersContract(Contract):
                     )
                 raise ValueError(error_message)
             self._check_all_layers_exist_for_container(container, graph)
+            if self.exhaustive or self.exhaustive_ignores:
+                self._check_all_potential_layers_exist_in_contract(container, graph)
 
     def _check_all_layers_exist_for_container(self, container: str, graph: ImportGraph) -> None:
         for layer in self.layers:  # type: ignore
@@ -172,6 +186,28 @@ class LayersContract(Contract):
                     f"Missing layer in container '{container}': "
                     f"module {layer_module_name} does not exist."
                 )
+
+    def _check_all_potential_layers_exist_in_contract(
+        self, container: str, graph: ImportGraph
+    ) -> None:
+        declared_layers = set(layer.name for layer in self.layers)  # type: ignore
+        expected_layers = declared_layers | self.exhaustive_ignores  # type: ignore
+        missing_layers = set()
+
+        for potential_layer in graph.find_children(container):
+            _, _, layer_name = potential_layer.rpartition(".")
+            if layer_name not in expected_layers:
+                missing_layers.add(layer_name)
+
+        if missing_layers:
+            # Sorting isn't strictly neccessary, but it makes things predictable for testing
+            layers = ", ".join(sorted(f"'{name}'" for name in missing_layers))
+            # This message is gramatically bad when there is a single missing layer but it should
+            # still make sense
+            raise ValueError(
+                f"Missing potential layers from container '{container}': "
+                f"{layers} are not declared as layers in the contract."
+            )
 
     def _check_all_containerless_layers_exist(self, graph: ImportGraph) -> None:
         for layer in self.layers:  # type: ignore
