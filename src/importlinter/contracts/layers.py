@@ -196,7 +196,7 @@ class LayersContract(Contract):
             module_in_higher_layer, module_in_lower_layer, container
         """
         # If there are no containers, we still want to run the loop once.
-        quasi_containers = self.containers or [None]  # type: ignore
+        quasi_containers = self.containers or [None]
 
         for container in quasi_containers:  # type: ignore
             for index, higher_layer in enumerate(self.layers):  # type: ignore
@@ -398,7 +398,7 @@ class LayersContract(Contract):
         return collapsed_chains
 
     def _remove_other_layers(self, graph, container, layers_to_preserve):
-        for index, layer in enumerate(self.layers):  # type: ignore
+        for index, layer in enumerate(self.layers):
             candidate_layer = self._module_from_layer(layer, container)
             if candidate_layer.name in graph.modules and candidate_layer not in layers_to_preserve:
                 self._remove_layer(graph, layer_package=candidate_layer)
