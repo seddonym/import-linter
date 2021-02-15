@@ -3,7 +3,7 @@ from grimp.adaptors.graph import ImportGraph  # type: ignore
 
 from importlinter.application.app_config import settings
 from importlinter.contracts.layers import LayersContract
-from importlinter.domain.contract import ContractCheck
+from importlinter.domain.contract import ContractCheck, InvalidContractOptions
 from importlinter.domain.helpers import MissingImport
 from importlinter.domain.imports import Module
 from tests.adapters.printing import FakePrinter
@@ -333,7 +333,8 @@ class TestLayerContractPopulatesMetadata:
                         }
                     ],
                 },
-            ]
+            ],
+            "undeclared_modules": set(),
         }
 
     def test_layer_contract_populates_extra_firsts_one_indirect(self):
@@ -392,7 +393,8 @@ class TestLayerContractPopulatesMetadata:
                         }
                     ],
                 }
-            ]
+            ],
+            "undeclared_modules": set(),
         }
 
     def test_layer_contract_populates_extra_firsts_two_indirects(self):
@@ -457,7 +459,8 @@ class TestLayerContractPopulatesMetadata:
                         }
                     ],
                 }
-            ]
+            ],
+            "undeclared_modules": set(),
         }
 
     def test_layer_contract_populates_extra_lasts_one_indirect(self):
@@ -516,7 +519,8 @@ class TestLayerContractPopulatesMetadata:
                         }
                     ],
                 }
-            ]
+            ],
+            "undeclared_modules": set(),
         }
 
     def test_layer_contract_populates_extra_lasts_two_indirects(self):
@@ -581,7 +585,8 @@ class TestLayerContractPopulatesMetadata:
                         }
                     ],
                 }
-            ]
+            ],
+            "undeclared_modules": set(),
         }
 
     def test_layer_contract_populates_firsts_and_lasts_three_indirects(self):
@@ -664,7 +669,8 @@ class TestLayerContractPopulatesMetadata:
                         }
                     ],
                 }
-            ]
+            ],
+            "undeclared_modules": set(),
         }
 
     def _build_graph_without_imports(self):
@@ -1136,7 +1142,8 @@ def test_render_broken_contract():
                         }
                     ],
                 },
-            ]
+            ],
+            "undeclared_modules": {"mypackage.purple", "mypackage.green", "mypackage.brown"},
         },
     )
 
@@ -1176,6 +1183,15 @@ def test_render_broken_contract():
           mypackage.utils.brown -> mypackage.high.green (l.3)
                                    & mypackage.high.black (l.11)
 
+
+        The following modules are not listed as layers:
+
+        - mypackage.brown
+        - mypackage.green
+        - mypackage.purple
+
+        (Since this contract is marked as 'exhaustive', every child of every container """
+        """must be declared as a layer.)
 
         """
     )
@@ -1696,3 +1712,163 @@ class TestVerbosePrint:
             Found 0 illegal chains in 10s.
             """
         )
+
+
+class TestExhaustiveContracts:
+    def test_requires_containers(self):
+        with pytest.raises(InvalidContractOptions) as exc_info:
+            LayersContract(
+                name="Layer contract",
+                session_options={"root_packages": ["foo"]},
+                contract_options={"layers": ["red", "green"], "exhaustive": "true"},
+            )
+
+        assert exc_info.value.args[0] == {
+            "exhaustive": "The exhaustive option is not supported for contracts without containers."
+        }
+
+    def test_fails_for_single_missing_layer(self):
+        graph = self._setup_graph()
+        contract = LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["foo"]},
+            contract_options={
+                "containers": ["foo"],
+                "layers": ["red", "green"],
+                "exhaustive": "true",
+            },
+        )
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        assert contract_check.kept is False
+        assert contract_check.metadata == {
+            "invalid_chains": [],
+            "undeclared_modules": {"foo.blue"},
+        }
+
+    def test_kept_for_ignored_single_missing_layer(self):
+        graph = self._setup_graph()
+        contract = LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["foo"]},
+            contract_options={
+                "containers": ["foo"],
+                "layers": ["red", "green"],
+                "exhaustive": "true",
+                "exhaustive_ignores": ["blue"],
+            },
+        )
+
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        assert contract_check.kept
+
+    def test_not_kept_for_multiple_missing_layers(self):
+        graph = self._setup_graph()
+        contract = LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["foo"]},
+            contract_options={"containers": ["foo"], "layers": ["red"], "exhaustive": "true"},
+        )
+
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        assert contract_check.kept is False
+        assert contract_check.metadata == {
+            "invalid_chains": [],
+            "undeclared_modules": {"foo.blue", "foo.green"},
+        }
+
+    def test_not_kept_for_multiple_missing_layers_some_ignored(self):
+        graph = self._setup_graph()
+        contract = LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["foo"]},
+            contract_options={
+                "containers": ["foo"],
+                "layers": ["red"],
+                "exhaustive": "true",
+                "exhaustive_ignores": ["blue"],
+            },
+        )
+
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        assert contract_check.kept is False
+        assert contract_check.metadata == {
+            "invalid_chains": [],
+            "undeclared_modules": {"foo.green"},
+        }
+
+    def test_multiple_containers_valid_contract(self):
+        graph = self._setup_graph()
+        contract = LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["foo", "bar"]},
+            contract_options={
+                "containers": ["foo", "bar"],
+                "layers": ["red", "green"],
+                "exhaustive": "true",
+                "exhaustive_ignores": ["blue"],
+            },
+        )
+
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        assert contract_check.kept
+
+    @pytest.mark.parametrize("optional_layers_exist", (True, False))
+    def test_multiple_containers_optional_layers(self, optional_layers_exist):
+        graph = self._setup_graph()
+        contract = LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["foo", "bar"]},
+            contract_options={
+                "containers": ["foo", "bar"],
+                "layers": ["red", "green", "(blue)"],
+                "exhaustive": "true",
+            },
+        )
+        if optional_layers_exist:
+            graph.add_module("foo.blue")
+            graph.add_module("bar.blue")
+
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        assert contract_check.kept
+
+    def test_undeclared_modules_in_multiple_containers(self):
+        graph = self._setup_graph()
+        contract = LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["foo", "bar"]},
+            contract_options={
+                "containers": ["foo", "bar"],
+                "layers": ["red", "green"],
+                "exhaustive": "true",
+            },
+        )
+        # Add modules so the undeclared modules are different across containers.
+        graph.add_module("foo.brown")
+        graph.add_module("bar.yellow")
+
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        assert contract_check.kept is False
+        assert contract_check.metadata == {
+            "invalid_chains": [],
+            "undeclared_modules": {"bar.blue", "bar.yellow", "foo.blue", "foo.brown"},
+        }
+
+    def _setup_graph(self):
+        graph = ImportGraph()
+        for container in ("foo", "bar"):
+            for module in [
+                container,
+                f"{container}.red",
+                f"{container}.blue",
+                f"{container}.green",
+            ]:
+                graph.add_module(module)
+
+        return graph

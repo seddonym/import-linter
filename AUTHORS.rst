@@ -16,3 +16,4 @@ Contributors
 * Kai Mueller - https://github.com/kasium
 * Daniele Esposti - https://github.com/expobrain
 * Petter Friberg - https://github.com/flaeppe
+* James Owen - https://github.com/leamingrad

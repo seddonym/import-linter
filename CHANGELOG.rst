@@ -1,6 +1,11 @@
 Changelog
 =========
 
+latest
+------
+
+* Add exhaustiveness option to layers contracts.
+
 1.5.0 (2022-12-2)
 -----------------
 

@@ -115,6 +115,11 @@ doesn't exist. You can make a layer optional by wrapping it in parentheses.
 You may also define a set of 'containers'. These allow for a repeated pattern of layers across a project. If containers
 are provided, these are treated as the parent package of the layers.
 
+If you want to make sure that *every* module in each container is defined as a layer, you can mark the contract as
+'exhaustive'. This means that if a module is added to the code base in the same package as your layers, the contract
+will fail. Any such modules that shouldn't cause a failure can be added to an ``exhaustive_ignores`` list. At present,
+exhaustive contracts are only supported for layers that define containers.
+
 **Examples**
 
 .. code-block:: ini
@@ -175,6 +180,28 @@ as they are in different containers:
 Notice that ``medium`` is an optional layer. This means that if it is missing from any of the containers, Import Linter
 won't complain.
 
+This is an example of an 'exhaustive' contract.
+
+.. code-block:: ini
+
+    [importlinter:contract:1]
+    name = My multiple package layers contract
+    type = layers
+    layers=
+        high
+        (medium)
+        low
+    containers=
+        mypackage.foo
+        mypackage.bar
+        mypackage.baz
+    exhaustive = true
+    exhaustive_ignores =
+        utils
+
+If, say, a module existed called ``mypackage.foo.extra``, the contract will fail as it is not listed as a layer. However
+``mypackage.foo.utils`` would be allowed as it is listed in ``exhaustive_ignores``.
+
 **Configuration options**
 
     - ``layers``:
@@ -186,6 +213,9 @@ won't complain.
       ``mypackage.foo``. (Optional.)
     - ``ignore_imports``: See :ref:`Shared options`.
     - ``unmatched_ignore_imports_alerting``: See :ref:`Shared options`.
+    - ``exhaustive``. If true, check that the contract declares every possible layer in its list of layers to check.
+                      (Optional, default False.)
+    - ``exhaustive_ignores``. A list of layers to ignore in exhaustiveness checks. (Optional.)
 
 
 
