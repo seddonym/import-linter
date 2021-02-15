@@ -97,15 +97,18 @@ def _build_graph(
 def _build_report(graph: ImportGraph, user_options: UserOptions) -> Report:
     report = Report(graph=graph)
     for contract_options in user_options.contracts_options:
-        contract_class = registry.get_contract_class(contract_options["type"])
+        name = contract_options.pop("name")
+        type_ = contract_options.pop("type")
+
+        contract_class = registry.get_contract_class(type_)
         try:
             contract = contract_class(
-                name=contract_options["name"],
+                name=name,
                 session_options=user_options.session_options,
                 contract_options=contract_options,
             )
         except InvalidContractOptions as e:
-            report.add_invalid_contract_options(contract_options["name"], e)
+            report.add_invalid_contract_options(name, e)
             return report
 
         # Make a copy so that contracts can mutate the graph without affecting

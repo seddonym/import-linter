@@ -1,4 +1,5 @@
 import abc
+import copy
 from typing import Any, Dict, List, Optional, Type
 
 from . import fields
@@ -22,12 +23,14 @@ class Contract(abc.ABC):
         Raises:
             InvalidContractOptions if the contract options could not be matched to the fields.
         """
+        contract_options = copy.deepcopy(self.contract_options)
+
         errors = {}
         for field_name in self.__class__._get_field_names():
             field = self.__class__._get_field(field_name)
 
             try:
-                raw_data = self.contract_options[field_name]
+                raw_data = contract_options.pop(field_name)
             except KeyError:
                 if field.required:
                     errors[field_name] = "This is a required field."
@@ -45,6 +48,10 @@ class Contract(abc.ABC):
                 errors[field_name] = str(e)
                 continue
             setattr(self, field_name, clean_data)
+
+        # Any remaining options are not allowed for this contract
+        for field_name in contract_options.keys():
+            errors[field_name] = "This field does not exist for this contract."
 
         if errors:
             raise InvalidContractOptions(errors)

@@ -44,6 +44,10 @@ class AnotherContract(Contract):
         ),
         ({}, {"foo": "This is a required field."}),  # No data.
         ({"foo": "something invalid"}, {"foo": '"something invalid" is not a valid value.'}),
+        (
+            {"foo": "Good morning!", "some invalid field": "some value"},
+            {"some invalid field": "This field does not exist for this contract."},
+        ),
     ),
 )
 def test_contract_validation(contract_options, expected_errors):
