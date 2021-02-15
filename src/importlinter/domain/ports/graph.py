@@ -18,6 +18,9 @@ class ImportGraph(Protocol):
         """
         raise NotImplementedError
 
+    def find_children(self, module: str) -> Set[str]:
+        raise NotImplementedError
+
     def find_descendants(self, module: str) -> Set[str]:
         raise NotImplementedError
 
