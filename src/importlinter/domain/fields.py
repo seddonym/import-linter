@@ -73,6 +73,23 @@ class StringField(Field):
         return str(raw_data)
 
 
+class BooleanField(Field):
+    """
+    A field for single values of booleans.
+    """
+
+    def parse(self, raw_data: Union[str, List]) -> bool:
+        if isinstance(raw_data, list):
+            raise ValidationError("Expected a single value, got multiple values.")
+
+        if raw_data.lower() == "true":
+            return True
+        elif raw_data.lower() == "false":
+            return False
+        else:
+            raise ValidationError(f"Could not parse a boolean from '{raw_data}'.")
+
+
 class BaseMultipleValueField(Field):
     """
     An abstract field for multiple values of any type.
