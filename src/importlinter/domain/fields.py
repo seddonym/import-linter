@@ -1,5 +1,5 @@
 import abc
-from typing import Generic, Iterable, List, Set, TypeVar, Union
+from typing import Generic, Iterable, List, Optional, Set, TypeVar, Union
 
 from importlinter.domain.imports import DirectImport, Module
 
@@ -18,8 +18,9 @@ class Field(Generic[FieldValue], abc.ABC):
     Designed to be subclassed, Fields should override the ``parse`` method.
     """
 
-    def __init__(self, required: bool = True) -> None:
+    def __init__(self, required: bool = True, default: Optional[FieldValue] = None) -> None:
         self.required = required
+        self.default = default
 
     @abc.abstractmethod
     def parse(self, raw_data: Union[str, List[str]]) -> FieldValue:

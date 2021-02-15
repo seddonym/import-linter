@@ -65,6 +65,27 @@ def test_contract_validation(contract_options, expected_errors):
         assert False, "Did not raise InvalidContractOptions."  # pragma: nocover
 
 
+def test_default_values_are_used_if_values_not_provided():
+    class ContractWithDefaults(Contract):
+        no_default = MyField(required=False)
+        static_default = MyField(required=False, default="valid value")
+        dynamic_default = MyField(required=False, default=list)
+
+        def check(self, *args, **kwargs):
+            raise NotImplementedError
+
+        def render_broken_contract(self, *args, **kwargs):
+            raise NotImplementedError
+
+    contract_kwargs = dict(name="My contract", session_options={}, contract_options={})
+
+    contract = ContractWithDefaults(**contract_kwargs)
+
+    assert contract.no_default is None
+    assert contract.static_default == "valid value"
+    assert contract.dynamic_default == []
+
+
 class TestContractRegistry:
     @pytest.mark.parametrize(
         "name, expected_result",

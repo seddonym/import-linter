@@ -32,7 +32,11 @@ class Contract(abc.ABC):
                 if field.required:
                     errors[field_name] = "This is a required field."
                 else:
-                    setattr(self, field_name, None)
+                    # field.default is None if it isn't declared
+                    if callable(field.default):
+                        setattr(self, field_name, field.default())
+                    else:
+                        setattr(self, field_name, field.default)
                 continue
 
             try:
