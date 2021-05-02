@@ -35,37 +35,6 @@ class TestForbiddenContract:
             "invalid_chains": [
                 {
                     "upstream_module": "mypackage.green",
-                    "downstream_module": "mypackage.one",
-                    "chains": [
-                        [
-                            {
-                                "importer": "mypackage.one.alpha",
-                                "imported": "mypackage.green.beta",
-                                "line_numbers": (3,),
-                            }
-                        ]
-                    ],
-                },
-                {
-                    "upstream_module": "mypackage.purple",
-                    "downstream_module": "mypackage.two",
-                    "chains": [
-                        [
-                            {
-                                "importer": "mypackage.two",
-                                "imported": "mypackage.utils",
-                                "line_numbers": (9,),
-                            },
-                            {
-                                "importer": "mypackage.utils",
-                                "imported": "mypackage.purple",
-                                "line_numbers": (1,),
-                            },
-                        ]
-                    ],
-                },
-                {
-                    "upstream_module": "mypackage.green",
                     "downstream_module": "mypackage.three",
                     "chains": [
                         [
@@ -140,7 +109,7 @@ class TestForbiddenContract:
 
     @pytest.mark.parametrize(
         "allow_indirect_imports, contract_is_kept",
-        ((None, False), ("false", False), ("True", True), ("true", True), ("anything", False)),
+        ((None, True), ("false", True), ("True", False), ("true", False), ("anything", True)),
     )
     def test_allow_indirect_imports(self, allow_indirect_imports, contract_is_kept):
         graph = self._build_graph()
@@ -150,6 +119,73 @@ class TestForbiddenContract:
         )
         contract_check = contract.check(graph=graph)
         assert contract_check.kept == contract_is_kept
+
+    def test_is_broken_when_examining_indirect_imports(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            forbidden_modules=(
+                "mypackage.blue",
+                "mypackage.green",
+                "mypackage.yellow",
+                "mypackage.purple",
+            ),
+            allow_indirect_imports=True,
+        )
+
+        contract_check = contract.check(graph=graph)
+
+        assert not contract_check.kept
+
+        expected_metadata = {
+            "invalid_chains": [
+                {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.one",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.one.alpha",
+                                "imported": "mypackage.green.beta",
+                                "line_numbers": (3,),
+                            }
+                        ]
+                    ],
+                },
+                {
+                    "upstream_module": "mypackage.purple",
+                    "downstream_module": "mypackage.two",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.two",
+                                "imported": "mypackage.utils",
+                                "line_numbers": (9,),
+                            },
+                            {
+                                "importer": "mypackage.utils",
+                                "imported": "mypackage.purple",
+                                "line_numbers": (1,),
+                            },
+                        ]
+                    ],
+                },
+                {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.three",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.three",
+                                "imported": "mypackage.green",
+                                "line_numbers": (4,),
+                            }
+                        ]
+                    ],
+                },
+            ]
+        }
+
+        assert expected_metadata == contract_check.metadata
 
     def _build_graph(self):
         graph = ImportGraph()

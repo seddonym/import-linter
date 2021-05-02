@@ -52,6 +52,10 @@ class ForbiddenContract(Contract):
                 }
 
                 if str(self.allow_indirect_imports).lower() == "true":
+                    chains = graph.find_shortest_chains(
+                        importer=source_module.name, imported=forbidden_module.name
+                    )
+                else:
                     chains = {
                         cast(
                             Tuple[str, ...],
@@ -61,10 +65,6 @@ class ForbiddenContract(Contract):
                             importer=source_module.name, imported=forbidden_module.name
                         )
                     }
-                else:
-                    chains = graph.find_shortest_chains(
-                        importer=source_module.name, imported=forbidden_module.name
-                    )
                 if chains:
                     is_kept = False
                     for chain in chains:
