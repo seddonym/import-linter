@@ -49,7 +49,7 @@ setup(
         "Topic :: Utilities",
     ],
     python_requires=">=3.6",
-    install_requires=["click>=6,<8", "grimp>=1.2.3,<2"],
+    install_requires=["click>=6,<9", "grimp>=1.2.3,<2"],
     entry_points={
         "console_scripts": ["lint-imports = importlinter.cli:lint_imports_command"]
     },
