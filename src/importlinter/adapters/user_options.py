@@ -1,6 +1,13 @@
 import configparser
 from typing import Any, Dict, Optional
 
+try:
+    import toml
+
+    _HAS_TOML = True
+except ImportError:
+    _HAS_TOML = False
+
 from importlinter.application import file_finding
 from importlinter.application.app_config import settings
 from importlinter.application.ports import user_options as ports
@@ -29,7 +36,10 @@ class IniFileUserOptionReader(ports.UserOptionReader):
         for config_filename in config_filenames:
             config = configparser.ConfigParser()
             file_contents = settings.FILE_SYSTEM.read(config_filename)
-            config.read_string(file_contents)
+            try:
+                config.read_string(file_contents)
+            except configparser.Error:
+                return None
             if self.section_name in config.sections():
                 return self._build_from_config(config)
         return None
@@ -51,3 +61,37 @@ class IniFileUserOptionReader(ports.UserOptionReader):
             else:
                 section_dict[key] = value.strip().split("\n")
         return section_dict
+
+
+class TomlUserOptionReader(ports.UserOptionReader):
+    """
+    Reader that looks for and parses the contents of INI files.
+    """
+
+    section_name = "importlinter"
+
+    def read_options(self, config_filename: Optional[str] = None) -> Optional[UserOptions]:
+        if not _HAS_TOML:
+            return None
+
+        if config_filename:
+            config_filenames = file_finding.find_any(config_filename)
+            if not config_filenames:
+                raise FileNotFoundError(f"Could not find {config_filename}.")
+        else:
+            config_filenames = file_finding.find_any("pyproject.toml")
+            if not config_filenames:
+                return None
+
+        try:
+            data = toml.load(config_filenames[0])
+        except toml.TomlDecodeError:
+            return None
+
+        tool_data = data.get("tool", {})
+        session_options = tool_data.get("importlinter", {})
+        if not session_options:
+            return None
+
+        contracts = session_options.pop("contracts", [])
+        return UserOptions(session_options=session_options, contracts_options=contracts)

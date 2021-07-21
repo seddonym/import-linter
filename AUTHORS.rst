@@ -13,3 +13,4 @@ Contributors
 * Daniel Jurczak - https://github.com/danieljurczak
 * Ben Warren - https://github.com/bwarren
 * Aaron Gokaslan - https://github.com/Skylion007
+* Kai Mueller - https://github.com/kasium

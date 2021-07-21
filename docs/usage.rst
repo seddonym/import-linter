@@ -5,13 +5,12 @@ Usage
 Configuration file location
 ---------------------------
 
-Before running the linter, you need to supply configuration in a file, in INI format. Import Linter will look in the
-current directory for one of the following files:
-
+Before running the linter, you need to supply configuration in a file.
+If not specified over the command line, import linter will check the following files in that order:
 - ``setup.cfg``
 - ``.importlinter``
+- ``pyproject.toml``
 
-(Different filenames / locations can be specified as a command line argument, see below.)
 
 Top level configuration
 -----------------------
@@ -79,6 +78,29 @@ Every contract will always have the following key/value pairs:
     - ``type``: The type of contract to use (see :doc:`contract_types`.)
 
 Each contract type defines additional options that you supply here.
+
+TOML configuration
+------------------
+
+The toml configuration is very similar to the others with a few differences:
+
+- the sections must start with ``tool.``
+- contracts are defined by ``[[tool.importlinter.contracts]]``
+
+.. code-block:: toml
+
+    [tool.importlinter]
+    root_package = mypackage
+
+    [[tool.importlinter.contracts]]
+    name = Contract One
+
+    [[tool.importlinter.contracts]]
+    name = Contract Two
+
+Please note, that in order to use toml files, you need to install the extra require ``toml``::
+
+    pip install import-linter[toml]
 
 Running the linter
 ------------------
