@@ -83,8 +83,9 @@ class TomlUserOptionReader(ports.UserOptionReader):
             if not config_filenames:
                 return None
 
+        file_contents = settings.FILE_SYSTEM.read(config_filenames[0])
         try:
-            data = toml.load(config_filenames[0])
+            data = toml.loads(file_contents)
         except toml.TomlDecodeError:
             return None
 
