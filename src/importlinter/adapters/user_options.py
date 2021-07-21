@@ -65,7 +65,7 @@ class IniFileUserOptionReader(ports.UserOptionReader):
 
 class TomlUserOptionReader(ports.UserOptionReader):
     """
-    Reader that looks for and parses the contents of INI files.
+    Reader that looks for and parses the contents of TOML files.
     """
 
     section_name = "importlinter"
