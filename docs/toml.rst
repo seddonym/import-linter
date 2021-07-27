@@ -1,7 +1,7 @@
 TOML support
 ------------
 
-While all the examples are in INI format, Import Linter also supports TOML
+While all the examples are in INI format, Import Linter also supports TOML.
 
 The TOML configuration is very similar to the others with a few differences:
 
