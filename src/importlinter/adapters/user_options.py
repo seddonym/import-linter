@@ -39,7 +39,7 @@ class AbstractUserOptionReader(ports.UserOptionReader):
 
     @abc.abstractmethod
     def _read_config_filename(self, config_filename: str) -> Optional[UserOptions]:
-        pass
+        raise NotImplementedError
 
 
 class IniFileUserOptionReader(AbstractUserOptionReader):
