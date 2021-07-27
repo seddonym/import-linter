@@ -5,8 +5,8 @@ While all the examples are in INI format, Import Linter also supports TOML.
 
 The TOML configuration is very similar to the others with a few differences:
 
-- the sections must start with ``tool.``
-- contracts are defined by ``[[tool.importlinter.contracts]]``
+    - the sections must start with ``tool.``
+    - contracts are defined by ``[[tool.importlinter.contracts]]``
 
 .. code-block:: toml
 
