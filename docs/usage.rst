@@ -6,10 +6,10 @@ Configuration file location
 ---------------------------
 
 Before running the linter, you need to supply configuration in a file.
-If not specified over the command line, import linter will check the following files in that order:
-- ``setup.cfg``
-- ``.importlinter``
-- ``pyproject.toml``
+If not specified over the command line, import linter will check the following files in the current directory in that order:
+- ``setup.cfg`` (ini-file format)
+- ``.importlinter`` (ini-file format)
+- ``pyproject.toml`` (TOML format)
 
 
 Top level configuration
