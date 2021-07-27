@@ -79,29 +79,6 @@ Every contract will always have the following key/value pairs:
 
 Each contract type defines additional options that you supply here.
 
-TOML configuration
-------------------
-
-The TOML configuration is very similar to the others with a few differences:
-
-- the sections must start with ``tool.``
-- contracts are defined by ``[[tool.importlinter.contracts]]``
-
-.. code-block:: toml
-
-    [tool.importlinter]
-    root_package = mypackage
-
-    [[tool.importlinter.contracts]]
-    name = Contract One
-
-    [[tool.importlinter.contracts]]
-    name = Contract Two
-
-Please note, that in order to use TOML files, you need to install the extra require ``toml``::
-
-    pip install import-linter[toml]
-
 Running the linter
 ------------------
 

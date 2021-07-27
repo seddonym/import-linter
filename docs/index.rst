@@ -8,6 +8,7 @@ Contents
    readme
    installation
    usage
+   toml
    contract_types
    custom_contract_types
    contributing
