@@ -89,8 +89,7 @@ Running this will check that your project adheres to the contracts you've define
 **Arguments:**
 
 - ``--config``:
-  The configuration file to use. If not supplied, Import Linter will look for ``setup.cfg``
-  or ``.importlinter`` in the current directory. (Optional.)
+  The configuration file to use. This overrides the default file search strategy. (Optional.)
 
 **Default usage:**
 
