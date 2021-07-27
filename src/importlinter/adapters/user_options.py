@@ -1,5 +1,6 @@
 import configparser
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
+import abc
 
 try:
     import toml
@@ -14,13 +15,9 @@ from importlinter.application.ports import user_options as ports
 from importlinter.application.user_options import UserOptions
 
 
-class IniFileUserOptionReader(ports.UserOptionReader):
-    """
-    Reader that looks for and parses the contents of INI files.
-    """
+class AbstractUserOptionReader(ports.UserOptionReader):
 
-    potential_config_filenames = ("setup.cfg", ".importlinter")
-    section_name = "importlinter"
+    potential_config_filenames: List[str]
 
     def read_options(self, config_filename: Optional[str] = None) -> Optional[UserOptions]:
         if config_filename:
@@ -34,14 +31,34 @@ class IniFileUserOptionReader(ports.UserOptionReader):
                 return None
 
         for config_filename in config_filenames:
-            config = configparser.ConfigParser()
-            file_contents = settings.FILE_SYSTEM.read(config_filename)
-            try:
-                config.read_string(file_contents)
-            except configparser.Error:
-                return None
-            if self.section_name in config.sections():
-                return self._build_from_config(config)
+            options = self._read_config_filename(config_filename)
+            if options:
+                return options
+
+        return None
+
+    @abc.abstractmethod
+    def _read_config_filename(self, config_filename: str) -> Optional[UserOptions]:
+        pass
+
+
+class IniFileUserOptionReader(AbstractUserOptionReader):
+    """
+    Reader that looks for and parses the contents of INI files.
+    """
+
+    potential_config_filenames = ["setup.cfg", ".importlinter"]
+    section_name = "importlinter"
+
+    def _read_config_filename(self, config_filename: str) -> Optional[UserOptions]:
+        config = configparser.ConfigParser()
+        file_contents = settings.FILE_SYSTEM.read(config_filename)
+        try:
+            config.read_string(file_contents)
+        except configparser.Error:
+            return None
+        if self.section_name in config.sections():
+            return self._build_from_config(config)
         return None
 
     def _build_from_config(self, config: configparser.ConfigParser) -> UserOptions:
@@ -63,27 +80,19 @@ class IniFileUserOptionReader(ports.UserOptionReader):
         return section_dict
 
 
-class TomlFileUserOptionReader(ports.UserOptionReader):
+class TomlFileUserOptionReader(AbstractUserOptionReader):
     """
     Reader that looks for and parses the contents of TOML files.
     """
 
     section_name = "importlinter"
+    potential_config_filenames = ["pyproject.toml"]
 
-    def read_options(self, config_filename: Optional[str] = None) -> Optional[UserOptions]:
+    def _read_config_filename(self, config_filename: str) -> Optional[UserOptions]:
         if not _HAS_TOML:
             return None
 
-        if config_filename:
-            config_filenames = file_finding.find_any(config_filename)
-            if not config_filenames:
-                raise FileNotFoundError(f"Could not find {config_filename}.")
-        else:
-            config_filenames = file_finding.find_any("pyproject.toml")
-            if not config_filenames:
-                return None
-
-        file_contents = settings.FILE_SYSTEM.read(config_filenames[0])
+        file_contents = settings.FILE_SYSTEM.read(config_filename)
         try:
             data = toml.loads(file_contents)
         except toml.TomlDecodeError:
