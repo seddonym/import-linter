@@ -82,7 +82,7 @@ Each contract type defines additional options that you supply here.
 TOML configuration
 ------------------
 
-The toml configuration is very similar to the others with a few differences:
+The TOML configuration is very similar to the others with a few differences:
 
 - the sections must start with ``tool.``
 - contracts are defined by ``[[tool.importlinter.contracts]]``
@@ -98,7 +98,7 @@ The toml configuration is very similar to the others with a few differences:
     [[tool.importlinter.contracts]]
     name = Contract Two
 
-Please note, that in order to use toml files, you need to install the extra require ``toml``::
+Please note, that in order to use TOML files, you need to install the extra require ``toml``::
 
     pip install import-linter[toml]
 
