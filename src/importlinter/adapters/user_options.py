@@ -63,7 +63,7 @@ class IniFileUserOptionReader(ports.UserOptionReader):
         return section_dict
 
 
-class TomlUserOptionReader(ports.UserOptionReader):
+class TomlFileUserOptionReader(ports.UserOptionReader):
     """
     Reader that looks for and parses the contents of TOML files.
     """

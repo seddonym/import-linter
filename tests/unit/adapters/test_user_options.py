@@ -1,6 +1,6 @@
 import pytest
 
-from importlinter.adapters.user_options import IniFileUserOptionReader, TomlUserOptionReader
+from importlinter.adapters.user_options import IniFileUserOptionReader, TomlFileUserOptionReader
 from importlinter.application.app_config import settings
 from importlinter.application.user_options import UserOptions
 from tests.adapters.filesystem import FakeFileSystem
@@ -186,5 +186,5 @@ def test_toml_file_reader(contents, expected_options):
         )
     )
 
-    options = TomlUserOptionReader().read_options()
+    options = TomlFileUserOptionReader().read_options()
     assert expected_options == options
