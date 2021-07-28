@@ -1,0 +1,12 @@
+[tool.importlinter]
+root_package = "testpackage"
+contract_types = [
+    "forbidden_import: tests.helpers.contracts.ForbiddenImportContract"
+]
+
+
+[[tool.importlinter.contracts]]
+name = "Custom kept contract"
+type = "forbidden_import"
+importer = "testpackage.utils"
+imported = "testpackage.low"
