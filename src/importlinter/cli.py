@@ -12,7 +12,10 @@ from .application import use_cases
 from .application.app_config import settings
 
 settings.configure(
-    USER_OPTION_READERS=[IniFileUserOptionReader(), TomlFileUserOptionReader()],
+    USER_OPTION_READERS={
+        "ini": IniFileUserOptionReader(),
+        "toml": TomlFileUserOptionReader(),
+    },
     GRAPH_BUILDER=GraphBuilder(),
     PRINTER=ClickPrinter(),
     FILE_SYSTEM=FileSystem(),

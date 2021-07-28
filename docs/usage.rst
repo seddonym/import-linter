@@ -89,7 +89,8 @@ Running this will check that your project adheres to the contracts you've define
 **Arguments:**
 
 - ``--config``:
-  The configuration file to use. This overrides the default file search strategy. (Optional.)
+  (optional) The configuration file to use. This overrides the default file search strategy.
+  By default it's assumed that the file is an ini-file unless the file extension is ``toml``.
 
 **Default usage:**
 

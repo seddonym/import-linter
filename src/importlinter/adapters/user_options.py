@@ -53,10 +53,7 @@ class IniFileUserOptionReader(AbstractUserOptionReader):
     def _read_config_filename(self, config_filename: str) -> Optional[UserOptions]:
         config = configparser.ConfigParser()
         file_contents = settings.FILE_SYSTEM.read(config_filename)
-        try:
-            config.read_string(file_contents)
-        except configparser.Error:
-            return None
+        config.read_string(file_contents)
         if self.section_name in config.sections():
             return self._build_from_config(config)
         return None
@@ -93,10 +90,7 @@ class TomlFileUserOptionReader(AbstractUserOptionReader):
             return None
 
         file_contents = settings.FILE_SYSTEM.read(config_filename)
-        try:
-            data = toml.loads(file_contents)
-        except toml.TomlDecodeError:
-            return None
+        data = toml.loads(file_contents)
 
         tool_data = data.get("tool", {})
         session_options = tool_data.get("importlinter", {})

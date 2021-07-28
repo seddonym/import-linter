@@ -69,7 +69,14 @@ def create_report(user_options: UserOptions) -> Report:
 
 
 def _read_user_options(config_filename: Optional[str] = None) -> UserOptions:
-    for reader in settings.USER_OPTION_READERS:
+    readers = settings.USER_OPTION_READERS.values()
+    if config_filename:
+        if config_filename.endswith(".toml"):
+            readers = [settings.USER_OPTION_READERS["toml"]]
+        else:
+            readers = [settings.USER_OPTION_READERS["ini"]]
+
+    for reader in readers:
         options = reader.read_options(config_filename=config_filename)
         if options:
             normalized_options = _normalize_user_options(options)
