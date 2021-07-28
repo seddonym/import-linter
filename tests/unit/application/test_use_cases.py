@@ -329,3 +329,33 @@ class TestGraphCopying:
         result = lint_imports(is_debug_mode=True)
 
         assert result == SUCCESS
+
+
+class TestReadUserOptions:
+    @pytest.mark.parametrize("filename", [".importlinter", "setup.cfg", "foo", "foo.bar"])
+    def test_default_behavior(self, filename):
+        expected_error = RuntimeError("expected")
+
+        foo_reader = ExceptionRaisingUserOptionReader(AssertionError)
+        ini_reader = ExceptionRaisingUserOptionReader(expected_error)
+        toml_reader = ExceptionRaisingUserOptionReader(AssertionError)
+
+        settings.configure(
+            USER_OPTION_READERS={"foo": foo_reader, "ini": ini_reader, "toml": toml_reader},
+        )
+        with pytest.raises(RuntimeError, match="expected"):
+            lint_imports(filename, is_debug_mode=True)
+
+    @pytest.mark.parametrize("filename", ["pyproject.toml", "foo.toml"])
+    def test_toml_file(self, filename):
+        expected_error = RuntimeError("expected")
+
+        foo_reader = ExceptionRaisingUserOptionReader(AssertionError)
+        ini_reader = ExceptionRaisingUserOptionReader(AssertionError)
+        toml_reader = ExceptionRaisingUserOptionReader(expected_error)
+
+        settings.configure(
+            USER_OPTION_READERS={"foo": foo_reader, "ini": ini_reader, "toml": toml_reader},
+        )
+        with pytest.raises(RuntimeError, match="expected"):
+            lint_imports(filename, is_debug_mode=True)

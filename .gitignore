@@ -73,3 +73,4 @@ pip-wheel-metadata
 
 # vscode
 .vscode/
+.history/
