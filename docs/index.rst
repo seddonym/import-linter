@@ -10,6 +10,7 @@ Contents
    usage
    contract_types
    custom_contract_types
+   toml
    contributing
    authors
    changelog

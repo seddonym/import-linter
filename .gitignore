@@ -70,3 +70,7 @@ docs/_build
 .python-version
 
 pip-wheel-metadata
+
+# vscode
+.vscode/
+.history/
