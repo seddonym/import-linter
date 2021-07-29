@@ -7,12 +7,15 @@ import click
 from .adapters.building import GraphBuilder
 from .adapters.filesystem import FileSystem
 from .adapters.printing import ClickPrinter
-from .adapters.user_options import IniFileUserOptionReader
+from .adapters.user_options import IniFileUserOptionReader, TomlFileUserOptionReader
 from .application import use_cases
 from .application.app_config import settings
 
 settings.configure(
-    USER_OPTION_READERS=[IniFileUserOptionReader()],
+    USER_OPTION_READERS={
+        "ini": IniFileUserOptionReader(),
+        "toml": TomlFileUserOptionReader(),
+    },
     GRAPH_BUILDER=GraphBuilder(),
     PRINTER=ClickPrinter(),
     FILE_SYSTEM=FileSystem(),

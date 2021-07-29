@@ -1,6 +1,6 @@
 import pytest
 
-from importlinter.adapters.user_options import IniFileUserOptionReader
+from importlinter.adapters.user_options import IniFileUserOptionReader, TomlFileUserOptionReader
 from importlinter.application.app_config import settings
 from importlinter.application.user_options import UserOptions
 from tests.adapters.filesystem import FakeFileSystem
@@ -119,3 +119,94 @@ def test_respects_passed_filename(passed_filename, expected_foo_value):
     else:
         options = reader.read_options(config_filename=passed_filename)
         assert expected_options == options
+
+
+@pytest.mark.toml_installed
+@pytest.mark.parametrize(
+    "contents, expected_options",
+    (
+        (
+            """
+            [something]
+            # This file has no import-linter section.
+            foo = 1
+            bar = "hello"
+            """,
+            None,
+        ),
+        (
+            """
+            [something]
+            foo = 1
+            bar = "hello"
+
+            [tool.importlinter]
+            foo = "hello"
+            bar = 999
+            """,
+            UserOptions(session_options={"foo": "hello", "bar": 999}, contracts_options=[]),
+        ),
+        (
+            """
+            [tool.importlinter]
+            foo = "hello"
+
+            [[tool.importlinter.contracts]]
+            name = "Contract One"
+            key = "value"
+            multiple_values = [
+                "one",
+                "two",
+                "three",
+                "foo.one -> foo.two",
+            ]
+
+            [[tool.importlinter.contracts]]
+            name = "Contract Two"
+            baz = 3
+            """,
+            UserOptions(
+                session_options={"foo": "hello"},
+                contracts_options=[
+                    {
+                        "name": "Contract One",
+                        "key": "value",
+                        "multiple_values": ["one", "two", "three", "foo.one -> foo.two"],
+                    },
+                    {"name": "Contract Two", "baz": 3},
+                ],
+            ),
+        ),
+    ),
+)
+def test_toml_file_reader(contents, expected_options):
+    settings.configure(
+        FILE_SYSTEM=FakeFileSystem(
+            content_map={"/path/to/folder/pyproject.toml": contents},
+            working_directory="/path/to/folder",
+        )
+    )
+
+    options = TomlFileUserOptionReader().read_options()
+    assert expected_options == options
+
+
+@pytest.mark.toml_not_installed
+def test_toml_file_reader_returns_none_when_toml_not_installed():
+    valid_toml = """
+    [something]
+    foo = 1
+    bar = "hello"
+
+    [tool.importlinter]
+    foo = "hello"
+    bar = 999
+    """
+    settings.configure(
+        FILE_SYSTEM=FakeFileSystem(
+            content_map={"/path/to/folder/pyproject.toml": valid_toml},
+            working_directory="/path/to/folder",
+        )
+    )
+
+    assert TomlFileUserOptionReader().read_options() is None

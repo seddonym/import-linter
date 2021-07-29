@@ -1,6 +1,11 @@
 Changelog
 =========
 
+latest
+------
+
+* Add support for TOML configuration files.
+
 1.2.2 (2021-07-13)
 ------------------
 

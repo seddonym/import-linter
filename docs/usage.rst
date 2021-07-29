@@ -5,13 +5,12 @@ Usage
 Configuration file location
 ---------------------------
 
-Before running the linter, you need to supply configuration in a file, in INI format. Import Linter will look in the
-current directory for one of the following files:
+Before running the linter, you need to supply configuration in a file.
+If not specified over the command line, Import Linter will look in the current directory for one of the following files:
+    - ``setup.cfg`` (INI format)
+    - ``.importlinter`` (INI format)
+    - ``pyproject.toml`` (TOML format)
 
-- ``setup.cfg``
-- ``.importlinter``
-
-(Different filenames / locations can be specified as a command line argument, see below.)
 
 Top level configuration
 -----------------------
@@ -90,8 +89,8 @@ Running this will check that your project adheres to the contracts you've define
 **Arguments:**
 
 - ``--config``:
-  The configuration file to use. If not supplied, Import Linter will look for ``setup.cfg``
-  or ``.importlinter`` in the current directory. (Optional.)
+  (optional) The configuration file to use. This overrides the default file search strategy.
+  By default it's assumed that the file is an ini-file unless the file extension is ``toml``.
 
 **Default usage:**
 
