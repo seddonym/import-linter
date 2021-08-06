@@ -50,7 +50,7 @@ setup(
     ],
     python_requires=">=3.6",
     install_requires=["click>=6,<9", "grimp>=1.2.3,<2"],
-    extra_requires={"toml": ["toml"]},
+    extras_require={"toml": ["toml"]},
     entry_points={
         "console_scripts": ["lint-imports = importlinter.cli:lint_imports_command"]
     },
