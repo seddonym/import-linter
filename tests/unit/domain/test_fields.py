@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Type
 import pytest
 
 from importlinter.domain.fields import (
-    DirectImportField,
+    ImportExpressionField,
     Field,
     ListField,
     ModuleField,
@@ -11,7 +11,7 @@ from importlinter.domain.fields import (
     StringField,
     ValidationError,
 )
-from importlinter.domain.imports import DirectImport, Module
+from importlinter.domain.imports import ImportExpression, Module
 
 
 class BaseFieldTest:
@@ -64,7 +64,7 @@ class TestModuleField(BaseFieldTest):
     (
         (
             "mypackage.foo -> mypackage.bar",
-            DirectImport(importer=Module("mypackage.foo"), imported=Module("mypackage.bar")),
+            ImportExpression(importer="mypackage.foo", imported="mypackage.bar"),
         ),
         (
             ["one", "two", "three"],
@@ -76,12 +76,12 @@ class TestModuleField(BaseFieldTest):
         ),
         (
             "my-package.foo -> my-package.bar",
-            DirectImport(importer=Module("my-package.foo"), imported=Module("my-package.bar")),
+            ImportExpression(importer="my-package.foo", imported="my-package.bar"),
         ),
     ),
 )
-class TestDirectImportField(BaseFieldTest):
-    field_class = DirectImportField
+class TestImportExpressionField(BaseFieldTest):
+    field_class = ImportExpressionField
 
 
 @pytest.mark.parametrize(

@@ -1,6 +1,6 @@
 from typing import Dict, Iterable, List, Union
 
-from importlinter.domain.imports import DirectImport
+from importlinter.domain.imports import ImportExpression
 from importlinter.domain.ports.graph import ImportGraph
 
 
@@ -9,7 +9,7 @@ class MissingImport(Exception):
 
 
 def pop_imports(
-    graph: ImportGraph, imports: Iterable[DirectImport]
+    graph: ImportGraph, imports: Iterable[ImportExpression]
 ) -> List[Dict[str, Union[str, int]]]:
     """
     Removes the supplied direct imports from the graph.
@@ -22,15 +22,19 @@ def pop_imports(
     """
     removed_imports: List[Dict[str, Union[str, int]]] = []
     for import_to_remove in imports:
-        import_details = graph.get_import_details(
-            importer=import_to_remove.importer.name, imported=import_to_remove.imported.name
-        )
-        if not import_details:
+        was_any_removed = False
+
+        for (importer, imported) in import_to_remove.to_modules(graph):
+            import_details = graph.get_import_details(
+                importer=importer.name, imported=imported.name
+            )
+            if import_details:
+                was_any_removed = True
+                removed_imports.extend(import_details)
+                graph.remove_import(importer=importer.name, imported=imported.name)
+        if not was_any_removed:
             raise MissingImport(f"Ignored import {import_to_remove} not present in the graph.")
-        removed_imports.extend(import_details)
-        graph.remove_import(
-            importer=import_to_remove.importer.name, imported=import_to_remove.imported.name
-        )
+
     return removed_imports
 
 

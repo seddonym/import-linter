@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 
 import pytest
-from importlinter.domain.imports import DirectImport, Module
+from importlinter.domain.imports import ImportExpression, Module
 
 
 @contextmanager
@@ -49,30 +49,14 @@ class TestModule:
         assert child.is_child_of(parent) is expected_bool
 
 
-class TestDirectImport:
+class TestImportExpression:
     def test_object_representation(self):
-        test_object = DirectImport(
-            importer=Module("mypackage.foo"),
-            imported=Module("mypackage.bar"),
+        test_object = ImportExpression(
+            importer="mypackage.foo",
+            imported="mypackage.bar",
         )
-        assert repr(test_object) == "<DirectImport: mypackage.foo -> mypackage.bar>"
+        assert repr(test_object) == "<ImportExpression: mypackage.foo -> mypackage.bar>"
 
-    @pytest.mark.parametrize(
-        ("test_object", "expected_string"),
-        [
-            (
-                DirectImport(importer=Module("mypackage.foo"), imported=Module("mypackage.bar")),
-                "mypackage.foo -> mypackage.bar",
-            ),
-            (
-                DirectImport(
-                    importer=Module("mypackage.foo"),
-                    imported=Module("mypackage.bar"),
-                    line_number=10,
-                ),
-                "mypackage.foo -> mypackage.bar (l. 10)",
-            ),
-        ],
-    )
-    def test_string_object_representation(self, test_object, expected_string):
-        assert str(test_object) == expected_string
+    def test_string_object_representation(self):
+        expression = (ImportExpression(importer="mypackage.foo", imported="mypackage.bar"),)
+        assert str(expression) == "mypackage.foo -> mypackage.bar"

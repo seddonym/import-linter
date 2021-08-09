@@ -1,7 +1,7 @@
 import abc
 from typing import Generic, Iterable, List, Set, TypeVar, Union
 
-from importlinter.domain.imports import DirectImport, Module
+from importlinter.domain.imports import Module, ImportExpression
 
 FieldValue = TypeVar("FieldValue")
 
@@ -109,16 +109,14 @@ class ModuleField(Field):
         return Module(StringField().parse(raw_data))
 
 
-class DirectImportField(Field):
+class ImportExpressionField(Field):
     """
-    A field for DirectImports.
-
-    Expects raw data in the form: "mypackage.foo.importer -> mypackage.bar.imported".
+    A field for ImportExpressions.
     """
 
-    def parse(self, raw_data: Union[str, List]) -> DirectImport:
+    def parse(self, raw_data: Union[str, List]) -> ImportExpression:
         string = StringField().parse(raw_data)
         importer, _, imported = string.partition(" -> ")
         if not (importer and imported):
             raise ValidationError('Must be in the form "package.importer -> package.imported".')
-        return DirectImport(importer=Module(importer), imported=Module(imported))
+        return ImportExpression(importer=importer, imported=imported)

@@ -1,4 +1,7 @@
-from typing import Any, Optional
+from typing import Any, Iterable, Tuple
+import fnmatch
+import itertools
+from importlinter.domain.ports.graph import ImportGraph
 
 
 class ValueObject:
@@ -60,29 +63,29 @@ class Module(ValueObject):
         raise NotImplementedError
 
 
-class DirectImport(ValueObject):
+class ImportExpression(ValueObject):
     """
-    An import between one module and another.
+    A python import expression.
     """
 
-    def __init__(
-        self,
-        *,
-        importer: Module,
-        imported: Module,
-        line_number: Optional[int] = None,
-        line_contents: Optional[str] = None,
-    ) -> None:
+    def __init__(self, importer: str, imported: str) -> None:
         self.importer = importer
         self.imported = imported
-        self.line_number = line_number
-        self.line_contents = line_contents
+
+    def to_modules(self, graph: ImportGraph) -> Iterable[Tuple[Module, Module]]:
+        importer = []
+        imported = []
+
+        for module in graph.modules:
+            if fnmatch.fnmatch(module, self.importer):
+                importer.append(Module(module))
+            if fnmatch.fnmatch(module, self.imported):
+                imported.append(Module(module))
+
+        return itertools.product(importer, imported)
 
     def __str__(self) -> str:
-        if self.line_number:
-            return "{} -> {} (l. {})".format(self.importer, self.imported, self.line_number)
-        else:
-            return "{} -> {}".format(self.importer, self.imported)
+        return "{} -> {}".format(self.importer, self.imported)
 
     def __hash__(self) -> int:
-        return hash((str(self), self.line_contents))
+        return hash((self.importer, self.imported))

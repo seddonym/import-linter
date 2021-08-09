@@ -2,6 +2,17 @@
 Contract types
 ==============
 
+Shared options
+--------------
+
+The following options can be used in all contracts.
+
+- ``ignore_imports``: Optional list of imports, each in the form ``mypackage.foo.importer -> mypackage.bar.imported``.
+  These imports will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the
+  contract be kept instead.
+  Wildcards supported by ``fnmatch`` are can be used as well.
+
+
 Forbidden modules
 -----------------
 
@@ -62,10 +73,7 @@ Configuration options:
     - ``forbidden_modules``: A list of modules that should not be imported by the source modules. These may include
       root level external packages (i.e. ``django``, but not ``django.db.models``). If external packages are included,
       the top level configuration must have ``internal_external_packages = True``.
-    - ``ignore_imports``:
-      A list of imports, each in the form ``mypackage.foo.importer -> mypackage.bar.imported``. These imports
-      will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the
-      contract be kept instead. (Optional.)
+    - ``ignore_imports``: See above
     - ``allow_indirect_imports``: If ``True``, allow indirect imports to forbidden modules without interpreting them
       as a reason to mark the contract broken. (Optional.)
 
@@ -96,10 +104,8 @@ They do this by checking that there are no imports in any direction between the 
 **Configuration options**
 
     - ``modules``: A list of modules/subpackages that should be independent from each other.
-    - ``ignore_imports``:
-      A list of imports, each in the form ``mypackage.foo.importer -> mypackage.bar.imported``. These imports
-      will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the
-      contract be kept instead. (Optional.)
+    - ``ignore_imports``: See above
+
 
 Layers
 ------
@@ -187,10 +193,8 @@ won't complain.
     - ``containers``:
       List of the parent modules of the layers, as *absolute names* that you could import, such as
       ``mypackage.foo``. (Optional.)
-    - ``ignore_imports``:
-      A list of imports, each in the form ``mypackage.foo.importer -> mypackage.bar.imported``. These imports
-      will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the
-      contract be kept instead. (Optional.)
+    - ``ignore_imports``: See above
+
 
 
 Custom contract types

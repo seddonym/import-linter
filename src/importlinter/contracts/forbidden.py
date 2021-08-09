@@ -13,7 +13,7 @@ class ForbiddenContract(Contract):
     Configuration options:
         - source_modules:    A list of Modules that should not import the forbidden modules.
         - forbidden_modules: A list of Modules that should not be imported by the source modules.
-        - ignore_imports:    A set of DirectImports. These imports will be ignored: if the import
+        - ignore_imports:    A set of ImportExpressions. These imports will be ignored if the import
                              would cause a contract to be broken, adding it to the set will cause
                              the contract be kept instead. (Optional.)
         - allow_indirect_imports:  Whether to allow indirect imports to forbidden modules.
@@ -24,7 +24,7 @@ class ForbiddenContract(Contract):
 
     source_modules = fields.ListField(subfield=fields.ModuleField())
     forbidden_modules = fields.ListField(subfield=fields.ModuleField())
-    ignore_imports = fields.SetField(subfield=fields.DirectImportField(), required=False)
+    ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     allow_indirect_imports = fields.StringField(required=False)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
