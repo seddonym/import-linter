@@ -10,7 +10,12 @@ The following options can be used in all contracts.
 - ``ignore_imports``: Optional list of imports, each in the form ``mypackage.foo.importer -> mypackage.bar.imported``.
   These imports will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the
   contract be kept instead.
-  Wildcards supported by ``fnmatch`` are can be used as well.
+
+  Wildcards are supported as well.
+  These can stand in for a module name or part of a name, but they do not extend to subpackages.
+  For example, "mypackage.*" refers to every child subpackage of mypackage.
+  It does not, however, include more distant descendants such as mypackage.foo.bar.
+
 
 
 Forbidden modules
