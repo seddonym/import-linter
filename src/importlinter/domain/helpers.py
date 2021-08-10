@@ -62,7 +62,10 @@ def add_imports(graph: ImportGraph, import_details: List[Dict[str, Union[str, in
             line_contents=details["line_contents"],
         )
 
-def to_modules(expression: ImportExpression, graph: ImportGraph) -> Iterable[Tuple[Module, Module]]:
+
+def to_modules(
+    expression: ImportExpression, graph: ImportGraph
+) -> Iterable[Tuple[Module, Module]]:
     importer = []
     imported = []
 

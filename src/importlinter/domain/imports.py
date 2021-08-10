@@ -1,5 +1,4 @@
-from typing import Any
-from importlinter.domain.ports.graph import ImportGraph
+from typing import Any, Optional
 
 
 class ValueObject:
@@ -59,6 +58,34 @@ class Module(ValueObject):
         Practically, this corresponds to whether a module is an __init__.py file.
         """
         raise NotImplementedError
+
+
+class DirectImport(ValueObject):
+    """
+    An import between one module and another.
+    """
+
+    def __init__(
+        self,
+        *,
+        importer: Module,
+        imported: Module,
+        line_number: Optional[int] = None,
+        line_contents: Optional[str] = None,
+    ) -> None:
+        self.importer = importer
+        self.imported = imported
+        self.line_number = line_number
+        self.line_contents = line_contents
+
+    def __str__(self) -> str:
+        if self.line_number:
+            return "{} -> {} (l. {})".format(self.importer, self.imported, self.line_number)
+        else:
+            return "{} -> {}".format(self.importer, self.imported)
+
+    def __hash__(self) -> int:
+        return hash((str(self), self.line_contents))
 
 
 class ImportExpression(ValueObject):
