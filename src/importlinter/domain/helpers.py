@@ -1,5 +1,5 @@
 import itertools
-from typing import Dict, Iterable, List, Tuple, Union
+from typing import Dict, Iterable, List, Tuple, Union, Pattern
 import re
 
 from importlinter.domain.imports import ImportExpression, Module
@@ -63,7 +63,7 @@ def add_imports(graph: ImportGraph, import_details: List[Dict[str, Union[str, in
         )
 
 
-def _to_pattern(expression: str) -> re.Pattern:
+def _to_pattern(expression: str) -> Pattern:
     pattern_parts = []
     for part in expression.split("."):
         if "*" in part:

@@ -82,10 +82,10 @@ class TestImportExpression:
     def test_object_representation(self):
         test_object = ImportExpression(
             importer="mypackage.foo",
-            imported="mypackage.bar",
+            imported="mypackage.bar"
         )
         assert repr(test_object) == "<ImportExpression: mypackage.foo -> mypackage.bar>"
 
     def test_string_object_representation(self):
-        expression = (ImportExpression(importer="mypackage.foo", imported="mypackage.bar"),)
+        expression = ImportExpression(importer="mypackage.foo", imported="mypackage.bar")
         assert str(expression) == "mypackage.foo -> mypackage.bar"
