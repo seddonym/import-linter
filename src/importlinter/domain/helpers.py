@@ -1,6 +1,6 @@
-import fnmatch
 import itertools
 from typing import Dict, Iterable, List, Tuple, Union
+import re
 
 from importlinter.domain.imports import ImportExpression, Module
 from importlinter.domain.ports.graph import ImportGraph
@@ -63,16 +63,30 @@ def add_imports(graph: ImportGraph, import_details: List[Dict[str, Union[str, in
         )
 
 
+def _to_pattern(expression: str) -> re.Pattern:
+    pattern_parts = []
+    for part in expression.split("."):
+        if "*" in part:
+            pattern_parts.append(part.replace("*", r"[^\.]+"))
+        else:
+            pattern_parts.append(part)
+    return re.compile(r"\.".join(pattern_parts))
+
+
 def to_modules(
     expression: ImportExpression, graph: ImportGraph
 ) -> Iterable[Tuple[Module, Module]]:
     importer = []
     imported = []
 
+    importer_pattern = _to_pattern(expression.importer)
+    imported_expression = _to_pattern(expression.imported)
+
     for module in graph.modules:
-        if fnmatch.fnmatch(module, expression.importer):
+
+        if importer_pattern.match(module):
             importer.append(Module(module))
-        if fnmatch.fnmatch(module, expression.imported):
+        if imported_expression.match(module):
             imported.append(Module(module))
 
     return itertools.product(importer, imported)

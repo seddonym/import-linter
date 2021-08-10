@@ -90,7 +90,12 @@ class DirectImport(ValueObject):
 
 class ImportExpression(ValueObject):
     """
-    A python import expression.
+    Sets of imports are notated using * wildcards.
+    These wildcards can stand in for a module name or part of a name, but they do
+    not extend to subpackages.
+
+    For example, "mypackage.*" refers to every child subpackage of mypackage.
+    It does not, however, include more distant descendants such as mypackage.foo.bar.
     """
 
     def __init__(self, importer: str, imported: str) -> None:

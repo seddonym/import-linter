@@ -116,7 +116,7 @@ class ImportExpressionField(Field):
     Expects raw data in the form:
         "mypackage.foo.importer -> mypackage.bar.imported".
 
-    In addition, can handle wildcards supported by fnmatch:
+    In addition, it handle wildcards:
         "mypackage.*.importer -> mypackage.bar.imp*"
     """
 
