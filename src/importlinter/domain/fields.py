@@ -112,6 +112,12 @@ class ModuleField(Field):
 class ImportExpressionField(Field):
     """
     A field for ImportExpressions.
+
+    Expects raw data in the form:
+        "mypackage.foo.importer -> mypackage.bar.imported".
+
+    In addition, can handle wildcards supported by fnmatch:
+        "mypackage.*.importer -> mypackage.bar.imp*"
     """
 
     def parse(self, raw_data: Union[str, List]) -> ImportExpression:
