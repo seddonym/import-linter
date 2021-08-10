@@ -1,6 +1,8 @@
-from typing import Dict, Iterable, List, Union
+import fnmatch
+import itertools
+from typing import Dict, Iterable, List, Tuple, Union
 
-from importlinter.domain.imports import ImportExpression
+from importlinter.domain.imports import ImportExpression, Module
 from importlinter.domain.ports.graph import ImportGraph
 
 
@@ -24,7 +26,7 @@ def pop_imports(
     for import_to_remove in imports:
         was_any_removed = False
 
-        for (importer, imported) in import_to_remove.to_modules(graph):
+        for (importer, imported) in to_modules(import_to_remove, graph):
             import_details = graph.get_import_details(
                 importer=importer.name, imported=imported.name
             )
@@ -59,3 +61,15 @@ def add_imports(graph: ImportGraph, import_details: List[Dict[str, Union[str, in
             line_number=details["line_number"],
             line_contents=details["line_contents"],
         )
+
+def to_modules(expression: ImportExpression, graph: ImportGraph) -> Iterable[Tuple[Module, Module]]:
+    importer = []
+    imported = []
+
+    for module in graph.modules:
+        if fnmatch.fnmatch(module, expression.importer):
+            importer.append(Module(module))
+        if fnmatch.fnmatch(module, expression.imported):
+            imported.append(Module(module))
+
+    return itertools.product(importer, imported)

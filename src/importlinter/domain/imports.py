@@ -1,6 +1,4 @@
-from typing import Any, Iterable, Tuple
-import fnmatch
-import itertools
+from typing import Any
 from importlinter.domain.ports.graph import ImportGraph
 
 
@@ -71,18 +69,6 @@ class ImportExpression(ValueObject):
     def __init__(self, importer: str, imported: str) -> None:
         self.importer = importer
         self.imported = imported
-
-    def to_modules(self, graph: ImportGraph) -> Iterable[Tuple[Module, Module]]:
-        importer = []
-        imported = []
-
-        for module in graph.modules:
-            if fnmatch.fnmatch(module, self.importer):
-                importer.append(Module(module))
-            if fnmatch.fnmatch(module, self.imported):
-                imported.append(Module(module))
-
-        return itertools.product(importer, imported)
 
     def __str__(self) -> str:
         return "{} -> {}".format(self.importer, self.imported)
