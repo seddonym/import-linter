@@ -90,6 +90,8 @@ class DirectImport(ValueObject):
 
 class ImportExpression(ValueObject):
     """
+    A user-submitted expression describing an import or set of imports.
+    
     Sets of imports are notated using * wildcards.
     These wildcards can stand in for a module name or part of a name, but they do
     not extend to subpackages.
