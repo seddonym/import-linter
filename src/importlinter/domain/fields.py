@@ -116,7 +116,7 @@ class ImportExpressionField(Field):
     Expects raw data in the form:
         "mypackage.foo.importer -> mypackage.bar.imported".
 
-    In addition, it handle wildcards:
+    In addition, it handles wildcards:
         "mypackage.*.importer -> mypackage.bar.imp*"
     """
 
