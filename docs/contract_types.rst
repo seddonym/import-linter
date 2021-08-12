@@ -11,10 +11,11 @@ The following options can be used in all contracts.
   These imports will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the
   contract be kept instead.
 
-  Wildcards are supported as well.
-  These can stand in for a module name or part of a name, but they do not extend to subpackages.
-  For example, "mypackage.*" refers to every child subpackage of mypackage.
-  It does not, however, include more distant descendants such as mypackage.foo.bar.
+  Wildcards are supported as well. These can stand in for a module names, but they do not extend to subpackages.
+  Examples:
+
+  - mypackage.*:  matches mypackage.foo but not mypackage.foo.bar.
+  - mypackage.*.baz: matches mypackage.foo.baz but not mypackage.foo.bar.baz.
 
 
 

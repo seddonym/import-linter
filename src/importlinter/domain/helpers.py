@@ -83,7 +83,7 @@ def _to_pattern(expression: str) -> Pattern:
     """
     pattern_parts = []
     for part in expression.split("."):
-        if "*" in part:
+        if "*" == part:
             pattern_parts.append(part.replace("*", r"[^\.]+"))
         else:
             pattern_parts.append(part)
@@ -93,6 +93,9 @@ def _to_pattern(expression: str) -> Pattern:
 def _expression_to_modules(
     expression: ImportExpression, graph: ImportGraph
 ) -> Iterable[Tuple[Module, Module]]:
+    if not expression.has_wildcard_expression():
+        return [Module(expression.importer, expression.imported)]
+
     importer = []
     imported = []
 

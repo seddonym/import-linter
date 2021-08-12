@@ -104,6 +104,9 @@ class ImportExpression(ValueObject):
         self.importer = importer
         self.imported = imported
 
+    def has_wildcard_expression(self) -> bool:
+        return "*" in self.imported or "*" in self.importer
+
     def __str__(self) -> str:
         return "{} -> {}".format(self.importer, self.imported)
 
