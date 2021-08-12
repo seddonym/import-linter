@@ -64,6 +64,9 @@ def add_imports(graph: ImportGraph, import_details: List[Dict[str, Union[str, in
 
 
 def _to_pattern(expression: str) -> Pattern:
+    """
+    Function which translates an import expression into a regex pattern.
+    """
     pattern_parts = []
     for part in expression.split("."):
         if "*" in part:
