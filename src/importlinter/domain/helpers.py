@@ -2,7 +2,7 @@ import itertools
 from typing import Dict, Iterable, List, Tuple, Union, Pattern
 import re
 
-from importlinter.domain.imports import ImportExpression, Module
+from importlinter.domain.imports import ImportExpression, Module, DirectImport
 from importlinter.domain.ports.graph import ImportGraph
 
 
@@ -11,33 +11,47 @@ class MissingImport(Exception):
 
 
 def pop_imports(
-    graph: ImportGraph, imports: Iterable[ImportExpression]
+    graph: ImportGraph, imports: Iterable[DirectImport]
 ) -> List[Dict[str, Union[str, int]]]:
     """
     Removes the supplied direct imports from the graph.
-
     Returns:
         The list of import details that were removed, including any additional metadata.
-
     Raises:
         MissingImport if the import is not present in the graph.
     """
     removed_imports: List[Dict[str, Union[str, int]]] = []
     for import_to_remove in imports:
-        was_any_removed = False
+        import_details = graph.get_import_details(
+            importer=import_to_remove.importer.name, imported=import_to_remove.imported.name
+        )
+        if not import_details:
+            raise MissingImport(f"Ignored import {import_to_remove} not present in the graph.")
+        removed_imports.extend(import_details)
+        graph.remove_import(
+            importer=import_to_remove.importer.name, imported=import_to_remove.imported.name
+        )
+    return removed_imports
 
-        for (importer, imported) in to_modules(import_to_remove, graph):
+
+def pop_import_expressions(
+    graph: ImportGraph, expressions: Iterable[ImportExpression]
+) -> List[Dict[str, Union[str, int]]]:
+    imports: List[DirectImport] = []
+    for expression in expressions:
+        was_any_removed = False
+        for (importer, imported) in _expression_to_modules(expression, graph):
             import_details = graph.get_import_details(
                 importer=importer.name, imported=imported.name
             )
             if import_details:
+                imports.append(DirectImport(importer=imported, imported=imported))
                 was_any_removed = True
-                removed_imports.extend(import_details)
-                graph.remove_import(importer=importer.name, imported=imported.name)
         if not was_any_removed:
-            raise MissingImport(f"Ignored import {import_to_remove} not present in the graph.")
-
-    return removed_imports
+            raise MissingImport(
+                f"Ignored import expresion {expression} didn't match anything in the graph."
+            )
+    return pop_imports(graph, imports)
 
 
 def add_imports(graph: ImportGraph, import_details: List[Dict[str, Union[str, int]]]) -> None:
@@ -76,7 +90,7 @@ def _to_pattern(expression: str) -> Pattern:
     return re.compile(r"\.".join(pattern_parts))
 
 
-def to_modules(
+def _expression_to_modules(
     expression: ImportExpression, graph: ImportGraph
 ) -> Iterable[Tuple[Module, Module]]:
     importer = []

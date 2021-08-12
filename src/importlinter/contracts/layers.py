@@ -58,7 +58,7 @@ class LayersContract(Contract):
         invalid_chains = []
 
         direct_imports_to_ignore = self.ignore_imports if self.ignore_imports else []
-        helpers.pop_imports(graph, direct_imports_to_ignore)  # type: ignore
+        helpers.pop_import_expressions(graph, direct_imports_to_ignore)  # type: ignore
 
         if self.containers:
             self._validate_containers(graph)

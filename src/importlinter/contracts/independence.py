@@ -30,7 +30,7 @@ class IndependenceContract(Contract):
         is_kept = True
         invalid_chains = []
 
-        helpers.pop_imports(
+        helpers.pop_import_expressions(
             graph, self.ignore_imports if self.ignore_imports else []  # type: ignore
         )
 
