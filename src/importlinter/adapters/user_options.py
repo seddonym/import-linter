@@ -98,4 +98,14 @@ class TomlFileUserOptionReader(AbstractUserOptionReader):
             return None
 
         contracts = session_options.pop("contracts", [])
+
+        self._normalize_booleans(session_options)
+        for contract in contracts:
+            self._normalize_booleans(contract)
+
         return UserOptions(session_options=session_options, contracts_options=contracts)
+
+    def _normalize_booleans(self, data: dict) -> None:
+        for key, value in data.items():
+            if isinstance(value, bool):
+                data[key] = str(value)
