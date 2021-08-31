@@ -67,6 +67,18 @@ class TestModuleField(BaseFieldTest):
             ImportExpression(importer="mypackage.foo", imported="mypackage.bar"),
         ),
         (
+            "mypackage.foo.* -> mypackage.bar",
+            ImportExpression(importer="mypackage.foo.*", imported="mypackage.bar"),
+        ),
+        (
+            "mypackage.foo.*.baz -> mypackage.bar",
+            ImportExpression(importer="mypackage.foo.*.baz", imported="mypackage.bar"),
+        ),
+        (
+            "mypackage.foo -> mypackage.bar.*",
+            ImportExpression(importer="mypackage.foo", imported="mypackage.bar.*"),
+        ),
+        (
             ["one", "two", "three"],
             ValidationError("Expected a single value, got multiple values."),
         ),
@@ -77,6 +89,14 @@ class TestModuleField(BaseFieldTest):
         (
             "my-package.foo -> my-package.bar",
             ImportExpression(importer="my-package.foo", imported="my-package.bar"),
+        ),
+        (
+            "mypackage.foo.bar* -> mypackage.bar",
+            ValidationError("A wildcard can only replace a whole module"),
+        ),
+        (
+            "mypackage.foo.b*z -> mypackage.bar",
+            ValidationError("A wildcard can only replace a whole module"),
         ),
     ),
 )

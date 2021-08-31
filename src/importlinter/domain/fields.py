@@ -117,12 +117,22 @@ class ImportExpressionField(Field):
         "mypackage.foo.importer -> mypackage.bar.imported".
 
     In addition, it handles wildcards:
-        "mypackage.*.importer -> mypackage.bar.imp*"
+        "mypackage.*.importer -> mypackage.bar.imp"
     """
 
     def parse(self, raw_data: Union[str, List]) -> ImportExpression:
         string = StringField().parse(raw_data)
         importer, _, imported = string.partition(" -> ")
+
         if not (importer and imported):
             raise ValidationError('Must be in the form "package.importer -> package.imported".')
+
+        self._validate_wildcard(importer)
+        self._validate_wildcard(imported)
+
         return ImportExpression(importer=importer, imported=imported)
+
+    def _validate_wildcard(self, expression: str) -> None:
+        for part in expression.split("."):
+            if len(part) > 1 and "*" in part:
+                raise ValidationError("A wildcard can only replace a whole module")
