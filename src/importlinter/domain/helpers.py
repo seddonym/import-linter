@@ -45,7 +45,7 @@ def pop_import_expressions(
                 importer=importer.name, imported=imported.name
             )
             if import_details:
-                imports.append(DirectImport(importer=imported, imported=imported))
+                imports.append(DirectImport(importer=importer, imported=imported))
                 was_any_removed = True
         if not was_any_removed:
             raise MissingImport(
