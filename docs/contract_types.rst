@@ -2,6 +2,8 @@
 Contract types
 ==============
 
+.. _Shared options:
+
 Shared options
 --------------
 
@@ -79,7 +81,7 @@ Configuration options:
     - ``forbidden_modules``: A list of modules that should not be imported by the source modules. These may include
       root level external packages (i.e. ``django``, but not ``django.db.models``). If external packages are included,
       the top level configuration must have ``internal_external_packages = True``.
-    - ``ignore_imports``: See above
+    - ``ignore_imports``: See :ref:`Shared options`
     - ``allow_indirect_imports``: If ``True``, allow indirect imports to forbidden modules without interpreting them
       as a reason to mark the contract broken. (Optional.)
 
@@ -110,7 +112,7 @@ They do this by checking that there are no imports in any direction between the 
 **Configuration options**
 
     - ``modules``: A list of modules/subpackages that should be independent from each other.
-    - ``ignore_imports``: See above
+    - ``ignore_imports``: See :ref:`Shared options`
 
 
 Layers
@@ -199,7 +201,7 @@ won't complain.
     - ``containers``:
       List of the parent modules of the layers, as *absolute names* that you could import, such as
       ``mypackage.foo``. (Optional.)
-    - ``ignore_imports``: See above
+    - ``ignore_imports``: See :ref:`Shared options`
 
 
 
