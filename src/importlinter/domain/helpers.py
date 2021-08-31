@@ -34,7 +34,7 @@ def pop_imports(
     return removed_imports
 
 
-def pop_import_expressions(
+def import_expressions_to_imports(
     graph: ImportGraph, expressions: Iterable[ImportExpression]
 ) -> List[Dict[str, Union[str, int]]]:
     imports: List[DirectImport] = []
@@ -51,6 +51,13 @@ def pop_import_expressions(
             raise MissingImport(
                 f"Ignored import expresion {expression} didn't match anything in the graph."
             )
+    return imports
+
+
+def pop_import_expressions(
+    graph: ImportGraph, expressions: Iterable[ImportExpression]
+) -> List[Dict[str, Union[str, int]]]:
+    imports = import_expressions_to_imports(graph, expressions)
     return pop_imports(graph, imports)
 
 
