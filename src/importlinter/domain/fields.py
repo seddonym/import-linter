@@ -117,7 +117,7 @@ class ImportExpressionField(Field):
         "mypackage.foo.importer -> mypackage.bar.imported".
 
     In addition, it handles wildcards:
-        "mypackage.*.importer -> mypackage.bar.imp"
+        "mypackage.*.importer -> mypackage.bar.*"
     """
 
     def parse(self, raw_data: Union[str, List]) -> ImportExpression:
