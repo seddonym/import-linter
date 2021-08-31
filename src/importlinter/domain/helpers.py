@@ -94,7 +94,7 @@ def _expression_to_modules(
     expression: ImportExpression, graph: ImportGraph
 ) -> Iterable[Tuple[Module, Module]]:
     if not expression.has_wildcard_expression():
-        return [Module(expression.importer, expression.imported)]
+        return [(Module(expression.importer), Module(expression.imported))]
 
     importer = []
     imported = []

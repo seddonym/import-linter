@@ -86,3 +86,16 @@ class TestImportExpression:
     def test_string_object_representation(self):
         expression = ImportExpression(importer="mypackage.foo", imported="mypackage.bar")
         assert str(expression) == "mypackage.foo -> mypackage.bar"
+
+    @pytest.mark.parametrize(
+        "importer,imported,has_wildcard_expression",
+        [
+            ("a.x", "b.x", False),
+            ("a.*", "b.x", True),
+            ("a.x", "b.*", True),
+            ("a.*", "b.*", True),
+        ],
+    )
+    def test_has_wildcard_expression(self, importer, imported, has_wildcard_expression):
+        expression = ImportExpression(importer=importer, imported=imported)
+        assert expression.has_wildcard_expression() == has_wildcard_expression
