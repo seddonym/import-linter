@@ -5,7 +5,7 @@ Contract types
 Shared options
 --------------
 
-The following options can be used in all contracts.
+The following options can be used in all built-in contracts.
 
 - ``ignore_imports``: Optional list of imports, each in the form ``mypackage.foo.importer -> mypackage.bar.imported``.
   These imports will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the
