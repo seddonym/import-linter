@@ -1,8 +1,8 @@
-[tools.importlinter]
+[tool.importlinter]
 root_package = "testpackage"
 include_external_packages = true
 
-[[tools.importlinter.contracts]]
+[[tool.importlinter.contracts]]
 name = "External kept contract"
 type = "forbidden"
 source_modules = ["testpackage.high.blue"]
