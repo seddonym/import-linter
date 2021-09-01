@@ -23,16 +23,12 @@ def test_import_expressions_to_imports():
         importer="mypackage.a", imported="other.foo", line_number=1, line_contents="-"
     )
     graph.add_import(
-        importer="mypackage.b", imported="other.foo", line_number=1, line_contents="-"
-    )
-    graph.add_import(
         importer="mypackage.c", imported="other.baz", line_number=1, line_contents="-"
     )
 
     expression = ImportExpression(importer="mypackage.*", imported="other.foo")
     assert import_expressions_to_imports(graph, [expression]) == [
-        DirectImport(importer="mypackage.a", imported="other.foo"),
-        DirectImport(importer="mypackage.b", imported="other.foo"),
+        DirectImport(importer="mypackage.a", imported="other.foo")
     ]
 
 
