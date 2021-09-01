@@ -10,7 +10,7 @@ Import Linter
     :target: https://pypi.org/project/import-linter/
 
 .. image:: https://api.travis-ci.com/seddonym/import-linter.svg?branch=master
-    :target: https://travis-ci.com/seddonym/import-linter
+    :target: https://app.travis-ci.com/github/seddonym/import-linter
 
 
 Import Linter allows you to define and enforce rules for the imports within and between Python packages.
