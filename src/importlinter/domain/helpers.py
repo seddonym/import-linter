@@ -49,7 +49,7 @@ def import_expressions_to_imports(
                 was_any_removed = True
         if not was_any_removed:
             raise MissingImport(
-                f"Ignored import expresion {expression} didn't match anything in the graph."
+                f"Ignored import expression {expression} didn't match anything in the graph."
             )
     return imports
 
