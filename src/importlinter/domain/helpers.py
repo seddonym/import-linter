@@ -39,15 +39,15 @@ def import_expressions_to_imports(
 ) -> List[Dict[str, Union[str, int]]]:
     imports: List[DirectImport] = []
     for expression in expressions:
-        was_any_removed = False
+        matched = False
         for (importer, imported) in _expression_to_modules(expression, graph):
             import_details = graph.get_import_details(
                 importer=importer.name, imported=imported.name
             )
             if import_details:
                 imports.append(DirectImport(importer=importer, imported=imported))
-                was_any_removed = True
-        if not was_any_removed:
+                matched = True
+        if not matched:
             raise MissingImport(
                 f"Ignored import expression {expression} didn't match anything in the graph."
             )
