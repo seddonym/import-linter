@@ -36,7 +36,7 @@ def pop_imports(
 
 def import_expressions_to_imports(
     graph: ImportGraph, expressions: Iterable[ImportExpression]
-) -> List[Dict[str, Union[str, int]]]:
+) -> List[DirectImport]:
     imports: List[DirectImport] = []
     for expression in expressions:
         matched = False
