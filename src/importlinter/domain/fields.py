@@ -1,7 +1,7 @@
 import abc
 from typing import Generic, Iterable, List, Set, TypeVar, Union
 
-from importlinter.domain.imports import DirectImport, Module
+from importlinter.domain.imports import Module, ImportExpression
 
 FieldValue = TypeVar("FieldValue")
 
@@ -109,16 +109,30 @@ class ModuleField(Field):
         return Module(StringField().parse(raw_data))
 
 
-class DirectImportField(Field):
+class ImportExpressionField(Field):
     """
-    A field for DirectImports.
+    A field for ImportExpressions.
 
-    Expects raw data in the form: "mypackage.foo.importer -> mypackage.bar.imported".
+    Expects raw data in the form:
+        "mypackage.foo.importer -> mypackage.bar.imported".
+
+    In addition, it handles wildcards:
+        "mypackage.*.importer -> mypackage.bar.*"
     """
 
-    def parse(self, raw_data: Union[str, List]) -> DirectImport:
+    def parse(self, raw_data: Union[str, List]) -> ImportExpression:
         string = StringField().parse(raw_data)
         importer, _, imported = string.partition(" -> ")
+
         if not (importer and imported):
             raise ValidationError('Must be in the form "package.importer -> package.imported".')
-        return DirectImport(importer=Module(importer), imported=Module(imported))
+
+        self._validate_wildcard(importer)
+        self._validate_wildcard(imported)
+
+        return ImportExpression(importer=importer, imported=imported)
+
+    def _validate_wildcard(self, expression: str) -> None:
+        for part in expression.split("."):
+            if len(part) > 1 and "*" in part:
+                raise ValidationError("A wildcard can only replace a whole module.")

@@ -42,7 +42,7 @@ class LayersContract(Contract):
         - layers:         An ordered list of layers. Each layer is the name of a module relative
                           to its parent package. The order is from higher to lower level layers.
         - containers:     A list of the parent Modules of the layers (optional).
-        - ignore_imports: A set of DirectImports. These imports will be ignored: if the import
+        - ignore_imports: A set of ImportExpressions. These imports will be ignored: if the import
                           would cause a contract to be broken, adding it to the set will cause
                           the contract be kept instead. (Optional.)
     """
@@ -51,14 +51,14 @@ class LayersContract(Contract):
 
     layers = fields.ListField(subfield=LayerField())
     containers = fields.ListField(subfield=fields.StringField(), required=False)
-    ignore_imports = fields.SetField(subfield=fields.DirectImportField(), required=False)
+    ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
         invalid_chains = []
 
         direct_imports_to_ignore = self.ignore_imports if self.ignore_imports else []
-        helpers.pop_imports(graph, direct_imports_to_ignore)  # type: ignore
+        helpers.pop_import_expressions(graph, direct_imports_to_ignore)  # type: ignore
 
         if self.containers:
             self._validate_containers(graph)

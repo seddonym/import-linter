@@ -1,9 +1,9 @@
 import pytest
 from grimp.adaptors.graph import ImportGraph  # type: ignore
+
 from importlinter.application.app_config import settings
 from importlinter.contracts.forbidden import ForbiddenContract
 from importlinter.domain.contract import ContractCheck
-
 from tests.adapters.printing import FakePrinter
 
 
@@ -136,7 +136,35 @@ class TestForbiddenContract:
             ),
             include_external_packages=False,
         )
-        assert contract.check(graph=graph)
+
+        check = contract.check(graph=graph)
+        assert check.kept
+
+    def test_ignore_imports_with_wildcards(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            forbidden_modules=("mypackage.green",),
+            ignore_imports=("mypackage.*.alpha -> mypackage.*.beta",),
+        )
+
+        check = contract.check(graph=graph)
+        assert check.metadata == {
+            "invalid_chains": [
+                {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.three",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.three",
+                                "imported": "mypackage.green",
+                                "line_numbers": (4,),
+                            }
+                        ]
+                    ],
+                },
+            ],
+        }
 
     @pytest.mark.parametrize(
         "allow_indirect_imports, contract_is_kept",
@@ -148,7 +176,9 @@ class TestForbiddenContract:
             forbidden_modules=("mypackage.purple"),
             allow_indirect_imports=allow_indirect_imports,
         )
+
         contract_check = contract.check(graph=graph)
+
         assert contract_check.kept == contract_is_kept
 
     def _build_graph(self):

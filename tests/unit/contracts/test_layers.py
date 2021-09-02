@@ -673,10 +673,25 @@ class TestLayerContractPopulatesMetadata:
 
 
 class TestIgnoreImports:
-    def test_one_ignored_from_each_chain_means_contract_is_kept(self):
+    @pytest.mark.parametrize(
+        "expression",
+        [
+            "mypackage.low.black -> mypackage.medium.orange",
+            # Wildcards.
+            "*.low.black -> mypackage.medium.orange",
+            "mypackage.*.black -> mypackage.medium.orange",
+            "mypackage.low.* -> mypackage.medium.orange",
+            "mypackage.low.black -> *.medium.orange",
+            "mypackage.low.black -> mypackage.*.orange",
+            "mypackage.low.black -> mypackage.medium.*",
+            "mypackage.*.black -> mypackage.*.orange",
+            "mypackage.*.* -> mypackage.*.*",
+        ],
+    )
+    def test_one_ignored_from_each_chain_means_contract_is_kept(self, expression):
         contract = self._build_contract(
             ignore_imports=[
-                "mypackage.low.black -> mypackage.medium.orange",
+                expression,
                 "mypackage.utils.foo -> mypackage.utils.bar",
             ]
         )
@@ -747,19 +762,29 @@ class TestIgnoreImports:
             }
         ]
 
-    def test_ignore_from_nonexistent_importer_raises_missing_import(self):
-        contract = self._build_contract(
-            ignore_imports=["mypackage.nonexistent.foo -> mypackage.high"]
-        )
+    @pytest.mark.parametrize(
+        "expression",
+        [
+            "mypackage.nonexistent.foo -> mypackage.high",
+            "mypackage.nonexistent.* -> mypackage.high",
+        ],
+    )
+    def test_ignore_from_nonexistent_importer_raises_missing_import(self, expression):
+        contract = self._build_contract(ignore_imports=[expression])
         graph = self._build_graph()
 
         with pytest.raises(MissingImport):
             contract.check(graph=graph)
 
-    def test_ignore_from_nonexistent_imported_raises_missing_import(self):
-        contract = self._build_contract(
-            ignore_imports=["mypackage.high -> mypackage.nonexistent.foo"]
-        )
+    @pytest.mark.parametrize(
+        "expression",
+        [
+            "mypackage.high -> mypackage.nonexistent.foo",
+            "mypackage.high -> mypackage.nonexistent.*",
+        ],
+    )
+    def test_ignore_from_nonexistent_imported_raises_missing_import(self, expression):
+        contract = self._build_contract(ignore_imports=[expression])
         graph = self._build_graph()
 
         with pytest.raises(MissingImport):

@@ -15,6 +15,34 @@ multipleroots_directory = os.path.join(os.path.dirname(__file__), "..", "assets"
         (testpackage_directory, ".brokencontract.ini", cli.EXIT_STATUS_ERROR),
         (testpackage_directory, ".malformedcontract.ini", cli.EXIT_STATUS_ERROR),
         (testpackage_directory, ".customkeptcontract.ini", cli.EXIT_STATUS_SUCCESS),
+        (testpackage_directory, ".externalbrokencontract.ini", cli.EXIT_STATUS_ERROR),
+        (multipleroots_directory, ".multiplerootskeptcontract.ini", cli.EXIT_STATUS_SUCCESS),
+        (multipleroots_directory, ".multiplerootsbrokencontract.ini", cli.EXIT_STATUS_ERROR),
+        # TOML versions.
+        pytest.param(
+            testpackage_directory,
+            ".setup.toml",
+            cli.EXIT_STATUS_ERROR,
+            marks=pytest.mark.toml_not_installed,
+        ),
+        pytest.param(
+            testpackage_directory,
+            ".setup.toml",
+            cli.EXIT_STATUS_SUCCESS,
+            marks=pytest.mark.toml_installed,
+        ),
+        pytest.param(
+            testpackage_directory,
+            ".customkeptcontract.toml",
+            cli.EXIT_STATUS_ERROR,
+            marks=pytest.mark.toml_not_installed,
+        ),
+        pytest.param(
+            testpackage_directory,
+            ".customkeptcontract.toml",
+            cli.EXIT_STATUS_SUCCESS,
+            marks=pytest.mark.toml_installed,
+        ),
         pytest.param(
             testpackage_directory,
             ".customkeptcontract.toml",
@@ -34,9 +62,6 @@ multipleroots_directory = os.path.join(os.path.dirname(__file__), "..", "assets"
             cli.EXIT_STATUS_SUCCESS,
             marks=pytest.mark.toml_installed,
         ),
-        (testpackage_directory, ".externalbrokencontract.ini", cli.EXIT_STATUS_ERROR),
-        (multipleroots_directory, ".multiplerootskeptcontract.ini", cli.EXIT_STATUS_SUCCESS),
-        (multipleroots_directory, ".multiplerootsbrokencontract.ini", cli.EXIT_STATUS_ERROR),
     ),
 )
 def test_lint_imports(working_directory, config_filename, expected_result):

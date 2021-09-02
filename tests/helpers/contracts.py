@@ -53,7 +53,7 @@ class ForbiddenImportContract(Contract):
 class FieldsContract(Contract):
     single_field = fields.StringField()
     multiple_field = fields.ListField(subfield=fields.StringField())
-    import_field = fields.DirectImportField()
+    import_field = fields.ImportExpressionField()
     required_field = fields.StringField()  # Fields are required by default.
 
     def check(self, graph: ImportGraph) -> ContractCheck:

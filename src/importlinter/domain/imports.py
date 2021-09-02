@@ -86,3 +86,26 @@ class DirectImport(ValueObject):
 
     def __hash__(self) -> int:
         return hash((str(self), self.line_contents))
+
+
+class ImportExpression(ValueObject):
+    """
+    A user-submitted expression describing an import or set of imports.
+
+    Sets of imports are notated using * wildcards.
+    These wildcards can stand in for a module name or part of a name, but they do
+    not extend to subpackages.
+
+    For example, "mypackage.*" refers to every child subpackage of mypackage.
+    It does not, however, include more distant descendants such as mypackage.foo.bar.
+    """
+
+    def __init__(self, importer: str, imported: str) -> None:
+        self.importer = importer
+        self.imported = imported
+
+    def has_wildcard_expression(self) -> bool:
+        return "*" in self.imported or "*" in self.importer
+
+    def __str__(self) -> str:
+        return "{} -> {}".format(self.importer, self.imported)

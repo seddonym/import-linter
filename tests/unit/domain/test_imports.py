@@ -1,7 +1,8 @@
 from contextlib import contextmanager
 
 import pytest
-from importlinter.domain.imports import DirectImport, Module
+
+from importlinter.domain.imports import DirectImport, ImportExpression, Module
 
 
 @contextmanager
@@ -76,3 +77,55 @@ class TestDirectImport:
     )
     def test_string_object_representation(self, test_object, expected_string):
         assert str(test_object) == expected_string
+
+
+class TestImportExpression:
+    def test_object_representation(self):
+        test_object = ImportExpression(importer="mypackage.foo", imported="mypackage.bar")
+        assert repr(test_object) == "<ImportExpression: mypackage.foo -> mypackage.bar>"
+
+    def test_string_object_representation(self):
+        expression = ImportExpression(importer="mypackage.foo", imported="mypackage.bar")
+        assert str(expression) == "mypackage.foo -> mypackage.bar"
+
+    @pytest.mark.parametrize(
+        "first, second, expected",
+        [
+            (
+                ImportExpression(importer="mypackage.foo", imported="mypackage.bar"),
+                ImportExpression(importer="mypackage.foo", imported="mypackage.bar"),
+                True,
+            ),
+            (
+                ImportExpression(importer="mypackage.foo", imported="mypackage.bar"),
+                ImportExpression(importer="mypackage.bar", imported="mypackage.foo"),
+                False,
+            ),
+            (
+                ImportExpression(importer="mypackage.foo", imported="mypackage.bar"),
+                ImportExpression(importer="mypackage.foo", imported="mypackage.foobar"),
+                False,
+            ),
+            (
+                ImportExpression(importer="mypackage.foo", imported="mypackage.bar"),
+                ImportExpression(importer="mypackage.foobar", imported="mypackage.bar"),
+                False,
+            ),
+        ],
+    )
+    def test_equality(self, first, second, expected):
+        assert expected == (first == second)
+
+    @pytest.mark.parametrize(
+        "importer, imported, has_wildcard_expression",
+        [
+            ("mypackage.foo", "mypackage.bar", False),
+            ("mypackage.*", "mypackage.bar", True),
+            ("mypackage.foo", "mypackage.*", True),
+            ("mypackage.*", "mypackage.*", True),
+            ("mypackage.*.foo", "mypackage.*.bar", True),
+        ],
+    )
+    def test_has_wildcard_expression(self, importer, imported, has_wildcard_expression):
+        expression = ImportExpression(importer=importer, imported=imported)
+        assert expression.has_wildcard_expression() == has_wildcard_expression
