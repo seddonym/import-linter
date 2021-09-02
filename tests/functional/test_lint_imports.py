@@ -28,6 +28,12 @@ multipleroots_directory = os.path.join(os.path.dirname(__file__), "..", "assets"
             marks=pytest.mark.toml_installed,
         ),
         (testpackage_directory, ".externalkeptcontract.ini", cli.EXIT_STATUS_SUCCESS),
+        pytest.param(
+            testpackage_directory,
+            ".externalkeptcontract.toml",
+            cli.EXIT_STATUS_SUCCESS,
+            marks=pytest.mark.toml_installed,
+        ),
         (testpackage_directory, ".externalbrokencontract.ini", cli.EXIT_STATUS_ERROR),
         (multipleroots_directory, ".multiplerootskeptcontract.ini", cli.EXIT_STATUS_SUCCESS),
         (multipleroots_directory, ".multiplerootsbrokencontract.ini", cli.EXIT_STATUS_ERROR),
