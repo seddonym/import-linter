@@ -4,6 +4,7 @@ Changelog
 latest
 ------
 
+* Wildcard support for ignored imports.
 * Convert TOML booleans to strings in UserOptions, to make consistent with INI file parsing.
 
 1.2.4 (2021-08-09)

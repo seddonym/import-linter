@@ -62,10 +62,7 @@ Configuration options:
     - ``forbidden_modules``: A list of modules that should not be imported by the source modules. These may include
       root level external packages (i.e. ``django``, but not ``django.db.models``). If external packages are included,
       the top level configuration must have ``internal_external_packages = True``.
-    - ``ignore_imports``:
-      A list of imports, each in the form ``mypackage.foo.importer -> mypackage.bar.imported``. These imports
-      will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the
-      contract be kept instead. (Optional.)
+    - ``ignore_imports``: See :ref:`Shared options`.
     - ``allow_indirect_imports``: If ``True``, allow indirect imports to forbidden modules without interpreting them
       as a reason to mark the contract broken. (Optional.)
 
@@ -96,10 +93,8 @@ They do this by checking that there are no imports in any direction between the 
 **Configuration options**
 
     - ``modules``: A list of modules/subpackages that should be independent from each other.
-    - ``ignore_imports``:
-      A list of imports, each in the form ``mypackage.foo.importer -> mypackage.bar.imported``. These imports
-      will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the
-      contract be kept instead. (Optional.)
+    - ``ignore_imports``: See :ref:`Shared options`.
+
 
 Layers
 ------
@@ -187,10 +182,8 @@ won't complain.
     - ``containers``:
       List of the parent modules of the layers, as *absolute names* that you could import, such as
       ``mypackage.foo``. (Optional.)
-    - ``ignore_imports``:
-      A list of imports, each in the form ``mypackage.foo.importer -> mypackage.bar.imported``. These imports
-      will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the
-      contract be kept instead. (Optional.)
+    - ``ignore_imports``: See :ref:`Shared options`.
+
 
 
 Custom contract types
@@ -198,3 +191,23 @@ Custom contract types
 
 If none of the built in contract types meets your needs, you can define a custom contract type: see
 :doc:`custom_contract_types`.
+
+
+.. _Shared options:
+
+Options used by multiple contracts
+----------------------------------
+
+- ``ignore_imports``: Optional list of imports, each in the form ``mypackage.foo.importer -> mypackage.bar.imported``.
+  These imports will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the
+  contract be kept instead.
+
+  Wildcards (in the form of ``*``) are supported. These can stand in for a module names, but they do not extend to
+  subpackages.
+
+  Examples:
+
+  - ``mypackage.*``:  matches ``mypackage.foo`` but not ``mypackage.foo.bar``.
+  - ``mypackage.*.baz``: matches ``mypackage.foo.baz`` but not ``mypackage.foo.bar.baz``.
+  - ``mypackage.*.*``: matches ``mypackage.foo.bar`` and ``mypackage.foobar.baz``.
+  - ``mypackage.foo*``: not a valid expression. (The wildcard must replace a whole module name.)

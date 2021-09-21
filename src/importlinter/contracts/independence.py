@@ -16,7 +16,7 @@ class IndependenceContract(Contract):
     Configuration options:
 
         - modules:        A list of Modules that should be independent from each other.
-        - ignore_imports: A set of DirectImports. These imports will be ignored: if the import
+        - ignore_imports: A set of ImportExpressions. These imports will be ignored: if the import
                           would cause a contract to be broken, adding it to the set will cause
                           the contract be kept instead. (Optional.)
     """
@@ -24,13 +24,13 @@ class IndependenceContract(Contract):
     type_name = "independence"
 
     modules = fields.ListField(subfield=fields.ModuleField())
-    ignore_imports = fields.SetField(subfield=fields.DirectImportField(), required=False)
+    ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
         invalid_chains = []
 
-        helpers.pop_imports(
+        helpers.pop_import_expressions(
             graph, self.ignore_imports if self.ignore_imports else []  # type: ignore
         )
 

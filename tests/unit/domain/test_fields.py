@@ -3,15 +3,15 @@ from typing import Any, Dict, Optional, Type
 import pytest
 
 from importlinter.domain.fields import (
-    DirectImportField,
     Field,
+    ImportExpressionField,
     ListField,
     ModuleField,
     SetField,
     StringField,
     ValidationError,
 )
-from importlinter.domain.imports import DirectImport, Module
+from importlinter.domain.imports import ImportExpression, Module
 
 
 class BaseFieldTest:
@@ -64,8 +64,32 @@ class TestModuleField(BaseFieldTest):
     (
         (
             "mypackage.foo -> mypackage.bar",
-            DirectImport(importer=Module("mypackage.foo"), imported=Module("mypackage.bar")),
+            ImportExpression(importer="mypackage.foo", imported="mypackage.bar"),
         ),
+        (
+            "my_package.foo -> my_package.foo_bar",  # Underscores are supported.
+            ImportExpression(importer="my_package.foo", imported="my_package.foo_bar"),
+        ),
+        # Wildcards
+        # ---------
+        (
+            "mypackage.foo.* -> mypackage.bar",
+            ImportExpression(importer="mypackage.foo.*", imported="mypackage.bar"),
+        ),
+        (
+            "mypackage.foo.*.baz -> mypackage.bar",
+            ImportExpression(importer="mypackage.foo.*.baz", imported="mypackage.bar"),
+        ),
+        (
+            "mypackage.foo -> mypackage.bar.*",
+            ImportExpression(importer="mypackage.foo", imported="mypackage.bar.*"),
+        ),
+        (
+            "*.*.* -> mypackage.*.foo.*",
+            ImportExpression(importer="*.*.*", imported="mypackage.*.foo.*"),
+        ),
+        # Invalid expressions
+        # -------------------
         (
             ["one", "two", "three"],
             ValidationError("Expected a single value, got multiple values."),
@@ -75,13 +99,25 @@ class TestModuleField(BaseFieldTest):
             ValidationError('Must be in the form "package.importer -> package.imported".'),
         ),
         (
-            "my-package.foo -> my-package.bar",
-            DirectImport(importer=Module("my-package.foo"), imported=Module("my-package.bar")),
+            "mypackage.foo.bar* -> mypackage.bar",
+            ValidationError("A wildcard can only replace a whole module."),
+        ),
+        (
+            "mypackage.foo.b*z -> mypackage.bar",
+            ValidationError("A wildcard can only replace a whole module."),
+        ),
+        (
+            "mypackage.**.bar -> mypackage.baz",
+            ValidationError("A wildcard can only replace a whole module."),
+        ),
+        (
+            "*.*.* -> mypackage.*.foo.*",
+            ImportExpression(importer="*.*.*", imported="mypackage.*.foo.*"),
         ),
     ),
 )
-class TestDirectImportField(BaseFieldTest):
-    field_class = DirectImportField
+class TestImportExpressionField(BaseFieldTest):
+    field_class = ImportExpressionField
 
 
 @pytest.mark.parametrize(
