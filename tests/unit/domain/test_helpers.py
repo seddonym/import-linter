@@ -114,6 +114,20 @@ class TestImportExpressionsToImports:
             line_number=1,
             line_contents="-",
         ),
+        # Direct imports of external packages can appear more than once, as the external package
+        # is squashed.
+        DirectImport(
+            importer=Module("mypackage.brown"),
+            imported=Module("someotherpackage"),
+            line_number=1,
+            line_contents="from someotherpackage import one",
+        ),
+        DirectImport(
+            importer=Module("mypackage.brown"),
+            imported=Module("someotherpackage"),
+            line_number=2,
+            line_contents="from someotherpackage import two",
+        ),
     ]
 
     @pytest.mark.parametrize(
@@ -174,6 +188,13 @@ class TestImportExpressionsToImports:
                     ImportExpression(importer="mypackage.green", imported="mypackage.blue"),
                 ],
                 [DIRECT_IMPORTS[1]],
+            ),
+            (
+                "Multiple imports of external package with same importer",
+                [
+                    ImportExpression(importer="mypackage.brown", imported="someotherpackage"),
+                ],
+                DIRECT_IMPORTS[6:8],
             ),
         ],
     )
