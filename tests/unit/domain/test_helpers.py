@@ -3,6 +3,7 @@ from typing import Dict, List, Union, cast
 
 import pytest
 from grimp.adaptors.graph import ImportGraph  # type: ignore
+from networkx.exception import NetworkXError
 
 from importlinter.domain.helpers import (
     MissingImport,
@@ -68,6 +69,46 @@ class TestPopImports:
             match=re.escape(f"Ignored import {non_existent_import} not present in the graph."),
         ):
             pop_imports(graph, [non_existent_import])
+
+    @pytest.mark.xfail(raises=NetworkXError, strict=True)
+    def test_works_with_multiple_external_imports_from_same_module(self):
+        imports_to_pop = [
+            dict(
+                importer="mypackage.green",
+                imported="someexternalpackage",
+                line_number=2,
+                line_contents="from someexternalpackage import one",
+            ),
+            dict(
+                importer="mypackage.green",
+                imported="someexternalpackage",
+                line_number=2,
+                line_contents="from someexternalpackage import two",
+            ),
+        ]
+        imports = self.IMPORTS + imports_to_pop
+        graph = self._build_graph(imports=imports)
+
+        result = pop_imports(
+            graph,
+            [
+                DirectImport(
+                    importer=Module(i["importer"]),
+                    imported=Module(i["imported"]),
+                    line_number=i["line_number"],
+                    line_contents=i["line_contents"],
+                )
+                for i in imports_to_pop
+            ],
+        )
+
+        assert result == imports_to_pop
+        one_of_the_popped_imports = imports_to_pop[0]
+        assert not graph.direct_import_exists(
+            importer=one_of_the_popped_imports["importer"],
+            imported=one_of_the_popped_imports["imported"],
+        )
+        assert graph.count_imports() == len(self.IMPORTS)
 
     def _build_graph(self, imports):
         graph = ImportGraph()
