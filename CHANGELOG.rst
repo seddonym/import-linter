@@ -1,8 +1,8 @@
 Changelog
 =========
 
-latest
-------
+1.2.6 (2021-09-24)
+------------------
 
 * Fix bug with ignoring external imports that occur multiple times in the same module.
 
