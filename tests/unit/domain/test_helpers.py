@@ -65,9 +65,51 @@ class TestPopImports:
         )
         with pytest.raises(
             MissingImport,
-            match=re.escape(f"Ignored import {non_existent_import} not present in the graph."),
+            match=re.escape(
+                "Ignored import mypackage.nonexistent -> mypackage.yellow "
+                "not present in the graph."
+            ),
         ):
             pop_imports(graph, [non_existent_import])
+
+    def test_works_with_multiple_external_imports_from_same_module(self):
+        imports_to_pop = [
+            dict(
+                importer="mypackage.green",
+                imported="someexternalpackage",
+                line_number=2,
+                line_contents="from someexternalpackage import one",
+            ),
+            dict(
+                importer="mypackage.green",
+                imported="someexternalpackage",
+                line_number=2,
+                line_contents="from someexternalpackage import two",
+            ),
+        ]
+        imports = self.IMPORTS + imports_to_pop
+        graph = self._build_graph(imports=imports)
+
+        result = pop_imports(
+            graph,
+            [
+                DirectImport(
+                    importer=Module(i["importer"]),
+                    imported=Module(i["imported"]),
+                    line_number=i["line_number"],
+                    line_contents=i["line_contents"],
+                )
+                for i in imports_to_pop
+            ],
+        )
+
+        assert result == imports_to_pop
+        one_of_the_popped_imports = imports_to_pop[0]
+        assert not graph.direct_import_exists(
+            importer=one_of_the_popped_imports["importer"],
+            imported=one_of_the_popped_imports["imported"],
+        )
+        assert graph.count_imports() == len(self.IMPORTS)
 
     def _build_graph(self, imports):
         graph = ImportGraph()
@@ -113,6 +155,20 @@ class TestImportExpressionsToImports:
             imported=Module("mypackage.orange.mice"),
             line_number=1,
             line_contents="-",
+        ),
+        # Direct imports of external packages can appear more than once, as the external package
+        # is squashed.
+        DirectImport(
+            importer=Module("mypackage.brown"),
+            imported=Module("someotherpackage"),
+            line_number=1,
+            line_contents="from someotherpackage import one",
+        ),
+        DirectImport(
+            importer=Module("mypackage.brown"),
+            imported=Module("someotherpackage"),
+            line_number=2,
+            line_contents="from someotherpackage import two",
         ),
     ]
 
@@ -174,6 +230,13 @@ class TestImportExpressionsToImports:
                     ImportExpression(importer="mypackage.green", imported="mypackage.blue"),
                 ],
                 [DIRECT_IMPORTS[1]],
+            ),
+            (
+                "Multiple imports of external package with same importer",
+                [
+                    ImportExpression(importer="mypackage.brown", imported="someotherpackage"),
+                ],
+                DIRECT_IMPORTS[6:8],
             ),
         ],
     )
