@@ -23,16 +23,22 @@ def pop_imports(
         MissingImport if an import is not present in the graph.
     """
     removed_imports: List[Dict[str, Union[str, int]]] = []
-    for import_to_remove in imports:
+
+    imports_to_remove = _dedupe_imports(imports)
+
+    for import_to_remove in imports_to_remove:
         import_details = graph.get_import_details(
             importer=import_to_remove.importer.name, imported=import_to_remove.imported.name
         )
         if not import_details:
             raise MissingImport(f"Ignored import {import_to_remove} not present in the graph.")
-        removed_imports.extend(import_details)
+
         graph.remove_import(
             importer=import_to_remove.importer.name, imported=import_to_remove.imported.name
         )
+
+        removed_imports.extend(import_details)
+
     return removed_imports
 
 
@@ -108,6 +114,48 @@ def add_imports(graph: ImportGraph, import_details: List[Dict[str, Union[str, in
             line_number=details["line_number"],
             line_contents=details["line_contents"],
         )
+
+
+def _dedupe_imports(imports: Iterable[DirectImport]) -> Iterable[DirectImport]:
+    """
+    Return the imports with the metadata and any duplicates removed.
+
+    For example:
+
+        _dedupe_imports([
+            DirectImport(
+                importer="blue",
+                imported="green",
+                line_number=1,
+                line_contents="from blue import green.one",
+            ),
+            DirectImport(
+                importer="blue",
+                imported="green",
+                line_number=3,
+                line_contents="from blue import green.two",
+            ),
+        ]) == {
+            DirectImport(
+                importer="blue",
+                imported="green",
+            ),
+        }
+
+    This is to make it easy for the calling function to remove the set of imports from a graph
+    without attempting to remove certain imports twice.
+    """
+    deduped_imports: List[DirectImport] = []
+
+    # Why don't we use a set here? Because we want to preserve the order (mainly for testability).
+    imports_without_metadata = [
+        DirectImport(imported=i.imported, importer=i.importer) for i in imports
+    ]
+    for import_without_metadata in imports_without_metadata:
+        if import_without_metadata not in deduped_imports:
+            deduped_imports.append(import_without_metadata)
+
+    return deduped_imports
 
 
 def _to_pattern(expression: str) -> Pattern:

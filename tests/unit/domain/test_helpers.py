@@ -3,7 +3,6 @@ from typing import Dict, List, Union, cast
 
 import pytest
 from grimp.adaptors.graph import ImportGraph  # type: ignore
-from networkx.exception import NetworkXError
 
 from importlinter.domain.helpers import (
     MissingImport,
@@ -66,11 +65,13 @@ class TestPopImports:
         )
         with pytest.raises(
             MissingImport,
-            match=re.escape(f"Ignored import {non_existent_import} not present in the graph."),
+            match=re.escape(
+                "Ignored import mypackage.nonexistent -> mypackage.yellow "
+                "not present in the graph."
+            ),
         ):
             pop_imports(graph, [non_existent_import])
 
-    @pytest.mark.xfail(raises=NetworkXError, strict=True)
     def test_works_with_multiple_external_imports_from_same_module(self):
         imports_to_pop = [
             dict(
