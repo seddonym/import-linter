@@ -30,6 +30,9 @@ jobs:
     - python: '3.9'
       env:
         - TOXENV=py39-toml,report
+    - python: '3.10'
+      env:
+        - TOXENV=py310-toml,report
 before_install:
   - python --version
   - uname -a
