@@ -7,9 +7,6 @@ env:
     - SEGFAULT_SIGNALS=all
 jobs:
   include:
-    - python: '3.6'
-      env:
-        - TOXENV=py36-notoml,report,check,docs
     - python: '3.7'
       env:
         - TOXENV=py37-notoml,report
@@ -19,9 +16,6 @@ jobs:
     - python: '3.9'
       env:
         - TOXENV=py39-notoml,report
-    - python: '3.6'
-      env:
-        - TOXENV=py36-toml,report
     - python: '3.7'
       env:
         - TOXENV=py37-toml,report
