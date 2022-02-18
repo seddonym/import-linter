@@ -1,9 +1,18 @@
+import enum
 import itertools
 import re
-from typing import Dict, Iterable, List, Pattern, Set, Tuple, Union, cast
+from typing import Any, Dict, Iterable, List, Pattern, Set, Tuple, Union, cast
+from importlinter.application import output
 
 from importlinter.domain.imports import DirectImport, ImportExpression, Module
 from importlinter.domain.ports.graph import ImportGraph
+
+
+@enum.unique
+class AlertingLevels(enum.Enum):
+    NONE = "none"
+    WARN = "warn"
+    ERROR = "error"
 
 
 class MissingImport(Exception):
@@ -43,7 +52,7 @@ def pop_imports(
 
 
 def import_expressions_to_imports(
-    graph: ImportGraph, expressions: Iterable[ImportExpression]
+    graph: ImportGraph, expressions: Iterable[ImportExpression], if_not_matched: AlertingLevels
 ) -> List[DirectImport]:
     """
     Returns a list of imports in a graph, given some import expressions.
@@ -71,14 +80,24 @@ def import_expressions_to_imports(
                     )
                 matched = True
         if not matched:
-            raise MissingImport(
-                f"Ignored import expression {expression} didn't match anything in the graph."
-            )
+            if if_not_matched == AlertingLevels.NONE:
+                return []
+
+            message = f"Ignored import expression {expression} didn't match anything in the graph."
+
+            if if_not_matched == AlertingLevels.WARN:
+                output.print_warning(message)
+                return []
+            else:
+                raise MissingImport(message)
+
     return list(imports)
 
 
 def pop_import_expressions(
-    graph: ImportGraph, expressions: Iterable[ImportExpression]
+    graph: ImportGraph,
+    expressions: Iterable[ImportExpression],
+    if_not_matched: AlertingLevels = AlertingLevels.ERROR,
 ) -> List[Dict[str, Union[str, int]]]:
     """
     Removes any imports matching the supplied import expressions from the graph.
@@ -89,7 +108,7 @@ def pop_import_expressions(
         MissingImport if an import is not present in the graph. For a wildcarded import expression,
         this is raised if there is not at least one match.
     """
-    imports = import_expressions_to_imports(graph, expressions)
+    imports = import_expressions_to_imports(graph, expressions, if_not_matched)
     return pop_imports(graph, imports)
 
 
@@ -191,3 +210,21 @@ def _expression_to_modules(
             imported.append(Module(module))
 
     return itertools.product(set(importer), set(imported))
+
+
+def parse_unmatched_ignore_imports_alerting(value: Any) -> AlertingLevels:
+    if value is None:
+        return AlertingLevels.ERROR
+
+    value_str = str(value).strip()
+
+    if value_str == "":
+        return AlertingLevels.ERROR
+
+    try:
+        return AlertingLevels[value_str.upper()]
+    except KeyError:
+        raise ValueError(
+            f"Invalid value `{value}` for unmatched_ignore_imports_alerting; "
+            f"must be one of {[member.value for member in AlertingLevels]}"
+        )

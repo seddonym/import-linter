@@ -19,19 +19,28 @@ class IndependenceContract(Contract):
         - ignore_imports: A set of ImportExpressions. These imports will be ignored: if the import
                           would cause a contract to be broken, adding it to the set will cause
                           the contract be kept instead. (Optional.)
+        - unmatched_ignore_imports_alerting: Decides how to report when the expression in the
+                          `ignore_imports` set is not found in the graph. Valid values are
+                          "none", "warn", "error". Default value is "error".
     """
 
     type_name = "independence"
 
     modules = fields.ListField(subfield=fields.ModuleField())
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
+    unmatched_ignore_imports_alerting = fields.StringField(required=False)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
         invalid_chains = []
+        alerting_level = helpers.parse_unmatched_ignore_imports_alerting(
+            self.unmatched_ignore_imports_alerting
+        )
 
         helpers.pop_import_expressions(
-            graph, self.ignore_imports if self.ignore_imports else []  # type: ignore
+            graph,
+            self.ignore_imports if self.ignore_imports else [],  # type: ignore
+            if_not_matched=alerting_level,
         )
 
         self._check_all_modules_exist_in_graph(graph)

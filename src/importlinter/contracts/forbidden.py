@@ -17,7 +17,10 @@ class ForbiddenContract(Contract):
                              would cause a contract to be broken, adding it to the set will cause
                              the contract be kept instead. (Optional.)
         - allow_indirect_imports:  Whether to allow indirect imports to forbidden modules.
-                            "True" or "true" will be treated as True. (Optional.)
+                             "True" or "true" will be treated as True. (Optional.)
+        - unmatched_ignore_imports_alerting: Decides how to report when the expression in the
+                             `ignore_imports` set is not found in the graph. Valid values are
+                             "none", "warn", "error". Default value is "error".
     """
 
     type_name = "forbidden"
@@ -26,13 +29,19 @@ class ForbiddenContract(Contract):
     forbidden_modules = fields.ListField(subfield=fields.ModuleField())
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     allow_indirect_imports = fields.StringField(required=False)
+    unmatched_ignore_imports_alerting = fields.StringField(required=False)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
         invalid_chains = []
+        alerting_level = helpers.parse_unmatched_ignore_imports_alerting(
+            self.unmatched_ignore_imports_alerting
+        )
 
         helpers.pop_import_expressions(
-            graph, self.ignore_imports if self.ignore_imports else []  # type: ignore
+            graph,
+            self.ignore_imports if self.ignore_imports else [],  # type: ignore
+            if_not_matched=alerting_level,
         )
 
         self._check_all_modules_exist_in_graph(graph)

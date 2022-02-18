@@ -5,9 +5,11 @@ import pytest
 from grimp.adaptors.graph import ImportGraph  # type: ignore
 
 from importlinter.domain.helpers import (
+    AlertingLevels,
     MissingImport,
     add_imports,
     import_expressions_to_imports,
+    parse_unmatched_ignore_imports_alerting,
     pop_import_expressions,
     pop_imports,
 )
@@ -242,10 +244,13 @@ class TestImportExpressionsToImports:
     )
     def test_succeeds(self, description, expressions, expected):
         graph = self._build_graph(self.DIRECT_IMPORTS)
+        actual = sorted(
+            import_expressions_to_imports(graph, expressions, AlertingLevels.ERROR),
+            key=_direct_import_sort_key,
+        )
+        expected = sorted(expected, key=_direct_import_sort_key)
 
-        assert sorted(
-            import_expressions_to_imports(graph, expressions), key=_direct_import_sort_key
-        ) == sorted(expected, key=_direct_import_sort_key)
+        assert actual == expected
 
     def test_raises_missing_import(self):
         graph = ImportGraph()
@@ -256,8 +261,9 @@ class TestImportExpressionsToImports:
         )
 
         expression = ImportExpression(importer="mypackage.a.*", imported="other.foo")
+
         with pytest.raises(MissingImport):
-            import_expressions_to_imports(graph, [expression])
+            import_expressions_to_imports(graph, [expression], AlertingLevels.ERROR)
 
     def _build_graph(self, direct_imports):
         graph = ImportGraph()
@@ -371,3 +377,30 @@ def _direct_import_sort_key(direct_import: DirectImport):
         direct_import.imported.name,
         direct_import.line_number,
     )
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        # values
+        pytest.param("", AlertingLevels.ERROR),
+        pytest.param("error", AlertingLevels.ERROR),
+        pytest.param("warn", AlertingLevels.WARN),
+        pytest.param("none", AlertingLevels.NONE),
+        # trailing/leading spaces
+        pytest.param(" ", AlertingLevels.ERROR),
+        pytest.param(" none  ", AlertingLevels.NONE),
+    ],
+)
+def test_parse_unmatched_ignore_imports_alerting(value: str, expected: AlertingLevels) -> None:
+    actual = parse_unmatched_ignore_imports_alerting(value)
+
+    assert actual == expected
+
+
+def test_parse_unmatched_ignore_imports_alerting_raise_if_not_valid() -> None:
+    value = "invalid"
+    message = f"Invalid value `{value}` for unmatched_ignore_imports_alerting"
+
+    with pytest.raises(ValueError, match=message):
+        parse_unmatched_ignore_imports_alerting(value)

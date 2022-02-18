@@ -5,7 +5,8 @@ from .ports.printing import Printer
 
 ERROR = "error"
 SUCCESS = "success"
-COLORS = {ERROR: "red", SUCCESS: "green"}
+WARNING = "warning"
+COLORS = {ERROR: "red", SUCCESS: "green", WARNING: "yellow"}
 
 HEADING_LEVEL_ONE = 1
 HEADING_LEVEL_TWO = 2
@@ -95,6 +96,12 @@ class Output:
         """
         self.printer.print(text, color=COLORS[ERROR], bold=bold)
 
+    def print_warning(self, text):
+        """
+        Prints a line to the console, formatted as a warning.
+        """
+        self.printer.print(text, color=COLORS[WARNING])
+
     @property
     def printer(self) -> Printer:
         return settings.PRINTER
@@ -109,3 +116,4 @@ new_line = _instance.new_line
 print_success = _instance.print_success
 print_heading = _instance.print_heading
 print_error = _instance.print_error
+print_warning = _instance.print_warning

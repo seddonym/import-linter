@@ -45,6 +45,9 @@ class LayersContract(Contract):
         - ignore_imports: A set of ImportExpressions. These imports will be ignored: if the import
                           would cause a contract to be broken, adding it to the set will cause
                           the contract be kept instead. (Optional.)
+        - unmatched_ignore_imports_alerting: Decides how to report when the expression in the
+                          `ignore_imports` set is not found in the graph. Valid values are
+                          "none", "warn", "error". Default value is "error".
     """
 
     type_name = "layers"
@@ -52,13 +55,19 @@ class LayersContract(Contract):
     layers = fields.ListField(subfield=LayerField())
     containers = fields.ListField(subfield=fields.StringField(), required=False)
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
+    unmatched_ignore_imports_alerting = fields.StringField(required=False)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
         invalid_chains = []
-
         direct_imports_to_ignore = self.ignore_imports if self.ignore_imports else []
-        helpers.pop_import_expressions(graph, direct_imports_to_ignore)  # type: ignore
+        alerting_level = helpers.parse_unmatched_ignore_imports_alerting(
+            self.unmatched_ignore_imports_alerting
+        )
+
+        helpers.pop_import_expressions(
+            graph, direct_imports_to_ignore, if_not_matched=alerting_level  # type: ignore
+        )
 
         if self.containers:
             self._validate_containers(graph)
