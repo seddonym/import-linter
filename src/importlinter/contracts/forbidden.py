@@ -17,7 +17,7 @@ class ForbiddenContract(Contract):
                              would cause a contract to be broken, adding it to the set will cause
                              the contract be kept instead. (Optional.)
         - allow_indirect_imports:  Whether to allow indirect imports to forbidden modules.
-                            "True" or "true" will be treated as True. (Optional.)```
+                            "True" or "true" will be treated as True. (Optional.)
     """
 
     type_name = "forbidden"
