@@ -48,7 +48,7 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Utilities",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     install_requires=["click>=6,<9", "grimp>=1.2.3,<2"],
     extras_require={"toml": ["toml"]},
     entry_points={
