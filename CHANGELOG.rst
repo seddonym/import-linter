@@ -1,11 +1,11 @@
 Changelog
 =========
 
-Next release
-------------------
+Latest
+------
 
-* Added official support for Python 3.10
-* Dropped support for Python 3.6 which is now EOL
+* Officially support Python 3.10.
+* Drop support for Python 3.6.
 
 
 1.2.6 (2021-09-24)
