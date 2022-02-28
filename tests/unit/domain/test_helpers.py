@@ -383,13 +383,13 @@ def _direct_import_sort_key(direct_import: DirectImport):
     "value, expected",
     [
         # values
-        pytest.param("", AlertLevel.ERROR),
-        pytest.param("error", AlertLevel.ERROR),
-        pytest.param("warn", AlertLevel.WARN),
-        pytest.param("none", AlertLevel.NONE),
+        ("", AlertLevel.ERROR),
+        ("error", AlertLevel.ERROR),
+        ("warn", AlertLevel.WARN),
+        ("none", AlertLevel.NONE),
         # trailing/leading spaces
-        pytest.param(" ", AlertLevel.ERROR),
-        pytest.param(" none  ", AlertLevel.NONE),
+        (" ", AlertLevel.ERROR),
+        (" none  ", AlertLevel.NONE),
     ],
 )
 def test_parse_unmatched_ignore_imports_alerting(value: str, expected: AlertLevel) -> None:
