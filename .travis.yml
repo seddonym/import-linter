@@ -1,14 +1,13 @@
 language: python
 cache: pip
+dist: bionic
 env:
   global:
     - LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
     - SEGFAULT_SIGNALS=all
 jobs:
   include:
-    - python: '3.6'
-      env:
-        - TOXENV=py36-notoml,report,check,docs
+    # Each Python version, without toml.
     - python: '3.7'
       env:
         - TOXENV=py37-notoml,report
@@ -18,9 +17,10 @@ jobs:
     - python: '3.9'
       env:
         - TOXENV=py39-notoml,report
-    - python: '3.6'
+    - python: '3.10'
       env:
-        - TOXENV=py36-toml,report
+        - TOXENV=py310-notoml,report
+    # Each Python version, with toml.
     - python: '3.7'
       env:
         - TOXENV=py37-toml,report
@@ -30,6 +30,9 @@ jobs:
     - python: '3.9'
       env:
         - TOXENV=py39-toml,report
+    - python: '3.10'
+      env:
+        - TOXENV=py310-toml,report,check,docs
 before_install:
   - python --version
   - uname -a
@@ -37,7 +40,6 @@ before_install:
 install:
   - pip install tox
   - virtualenv --version
-  - easy_install --version
   - pip --version
   - tox --version
 script:
