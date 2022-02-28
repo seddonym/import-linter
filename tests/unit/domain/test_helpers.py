@@ -5,7 +5,7 @@ import pytest
 from grimp.adaptors.graph import ImportGraph  # type: ignore
 
 from importlinter.domain.helpers import (
-    AlertingLevels,
+    AlertLevel,
     MissingImport,
     add_imports,
     import_expressions_to_imports,
@@ -245,7 +245,7 @@ class TestImportExpressionsToImports:
     def test_succeeds(self, description, expressions, expected):
         graph = self._build_graph(self.DIRECT_IMPORTS)
         actual = sorted(
-            import_expressions_to_imports(graph, expressions, AlertingLevels.ERROR),
+            import_expressions_to_imports(graph, expressions, AlertLevel.ERROR),
             key=_direct_import_sort_key,
         )
         expected = sorted(expected, key=_direct_import_sort_key)
@@ -263,7 +263,7 @@ class TestImportExpressionsToImports:
         expression = ImportExpression(importer="mypackage.a.*", imported="other.foo")
 
         with pytest.raises(MissingImport):
-            import_expressions_to_imports(graph, [expression], AlertingLevels.ERROR)
+            import_expressions_to_imports(graph, [expression], AlertLevel.ERROR)
 
     def _build_graph(self, direct_imports):
         graph = ImportGraph()
@@ -383,16 +383,16 @@ def _direct_import_sort_key(direct_import: DirectImport):
     "value, expected",
     [
         # values
-        pytest.param("", AlertingLevels.ERROR),
-        pytest.param("error", AlertingLevels.ERROR),
-        pytest.param("warn", AlertingLevels.WARN),
-        pytest.param("none", AlertingLevels.NONE),
+        pytest.param("", AlertLevel.ERROR),
+        pytest.param("error", AlertLevel.ERROR),
+        pytest.param("warn", AlertLevel.WARN),
+        pytest.param("none", AlertLevel.NONE),
         # trailing/leading spaces
-        pytest.param(" ", AlertingLevels.ERROR),
-        pytest.param(" none  ", AlertingLevels.NONE),
+        pytest.param(" ", AlertLevel.ERROR),
+        pytest.param(" none  ", AlertLevel.NONE),
     ],
 )
-def test_parse_unmatched_ignore_imports_alerting(value: str, expected: AlertingLevels) -> None:
+def test_parse_unmatched_ignore_imports_alerting(value: str, expected: AlertLevel) -> None:
     actual = parse_unmatched_ignore_imports_alerting(value)
 
     assert actual == expected

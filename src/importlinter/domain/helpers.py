@@ -9,7 +9,7 @@ from importlinter.domain.ports.graph import ImportGraph
 
 
 @enum.unique
-class AlertingLevels(enum.Enum):
+class AlertLevel(enum.Enum):
     NONE = "none"
     WARN = "warn"
     ERROR = "error"
@@ -52,7 +52,7 @@ def pop_imports(
 
 
 def import_expressions_to_imports(
-    graph: ImportGraph, expressions: Iterable[ImportExpression], if_not_matched: AlertingLevels
+    graph: ImportGraph, expressions: Iterable[ImportExpression], if_not_matched: AlertLevel
 ) -> List[DirectImport]:
     """
     Returns a list of imports in a graph, given some import expressions.
@@ -80,12 +80,12 @@ def import_expressions_to_imports(
                     )
                 matched = True
         if not matched:
-            if if_not_matched == AlertingLevels.NONE:
+            if if_not_matched == AlertLevel.NONE:
                 return []
 
             message = f"Ignored import expression {expression} didn't match anything in the graph."
 
-            if if_not_matched == AlertingLevels.WARN:
+            if if_not_matched == AlertLevel.WARN:
                 output.print_warning(message)
                 return []
             else:
@@ -97,7 +97,7 @@ def import_expressions_to_imports(
 def pop_import_expressions(
     graph: ImportGraph,
     expressions: Iterable[ImportExpression],
-    if_not_matched: AlertingLevels = AlertingLevels.ERROR,
+    if_not_matched: AlertLevel = AlertLevel.ERROR,
 ) -> List[Dict[str, Union[str, int]]]:
     """
     Removes any imports matching the supplied import expressions from the graph.
@@ -212,19 +212,19 @@ def _expression_to_modules(
     return itertools.product(set(importer), set(imported))
 
 
-def parse_unmatched_ignore_imports_alerting(value: Any) -> AlertingLevels:
+def parse_unmatched_ignore_imports_alerting(value: Any) -> AlertLevel:
     if value is None:
-        return AlertingLevels.ERROR
+        return AlertLevel.ERROR
 
     value_str = str(value).strip()
 
     if value_str == "":
-        return AlertingLevels.ERROR
+        return AlertLevel.ERROR
 
     try:
-        return AlertingLevels[value_str.upper()]
+        return AlertLevel[value_str.upper()]
     except KeyError:
         raise ValueError(
             f"Invalid value `{value}` for unmatched_ignore_imports_alerting; "
-            f"must be one of {[member.value for member in AlertingLevels]}"
+            f"must be one of {[member.value for member in AlertLevel]}"
         )
