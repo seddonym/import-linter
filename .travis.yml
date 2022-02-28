@@ -7,15 +7,20 @@ env:
     - SEGFAULT_SIGNALS=all
 jobs:
   include:
+    # Each Python version, without toml.
     - python: '3.7'
       env:
-        - TOXENV=py37-notoml,report,check,docs
+        - TOXENV=py37-notoml,report
     - python: '3.8'
       env:
         - TOXENV=py38-notoml,report
     - python: '3.9'
       env:
         - TOXENV=py39-notoml,report
+    - python: '3.10'
+      env:
+        - TOXENV=py310-notoml,report
+    # Each Python version, with toml.
     - python: '3.7'
       env:
         - TOXENV=py37-toml,report
@@ -27,7 +32,7 @@ jobs:
         - TOXENV=py39-toml,report
     - python: '3.10'
       env:
-        - TOXENV=py310-toml,report
+        - TOXENV=py310-toml,report,check,docs
 before_install:
   - python --version
   - uname -a
