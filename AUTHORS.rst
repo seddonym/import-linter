@@ -14,3 +14,4 @@ Contributors
 * Ben Warren - https://github.com/bwarren
 * Aaron Gokaslan - https://github.com/Skylion007
 * Kai Mueller - https://github.com/kasium
+* Daniele Esposti - https://github.com/expobrain
