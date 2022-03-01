@@ -55,18 +55,19 @@ class LayersContract(Contract):
     layers = fields.ListField(subfield=LayerField())
     containers = fields.ListField(subfield=fields.StringField(), required=False)
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
-    unmatched_ignore_imports_alerting = fields.StringField(required=False)
+    unmatched_ignore_imports_alerting = fields.EnumField(
+        helpers.AlertLevel, default=helpers.AlertLevel.ERROR, required=False
+    )
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
         invalid_chains = []
         direct_imports_to_ignore = self.ignore_imports if self.ignore_imports else []
-        alerting_level = helpers.parse_unmatched_ignore_imports_alerting(
-            self.unmatched_ignore_imports_alerting
-        )
 
         helpers.pop_import_expressions(
-            graph, direct_imports_to_ignore, if_not_matched=alerting_level  # type: ignore
+            graph,
+            direct_imports_to_ignore,  # type: ignore
+            if_not_matched=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
 
         if self.containers:

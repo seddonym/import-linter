@@ -1,7 +1,7 @@
 import enum
 import itertools
 import re
-from typing import Any, Dict, Iterable, List, Pattern, Set, Tuple, Union, cast
+from typing import Dict, Iterable, List, Pattern, Set, Tuple, Union, cast
 from importlinter.application import output
 
 from importlinter.domain.imports import DirectImport, ImportExpression, Module
@@ -210,21 +210,3 @@ def _expression_to_modules(
             imported.append(Module(module))
 
     return itertools.product(set(importer), set(imported))
-
-
-def parse_unmatched_ignore_imports_alerting(value: Any) -> AlertLevel:
-    if value is None:
-        return AlertLevel.ERROR
-
-    value_str = str(value).strip()
-
-    if value_str == "":
-        return AlertLevel.ERROR
-
-    try:
-        return AlertLevel[value_str.upper()]
-    except KeyError:
-        raise ValueError(
-            f"Invalid value `{value}` for unmatched_ignore_imports_alerting; "
-            f"must be one of {[member.value for member in AlertLevel]}"
-        )

@@ -9,7 +9,6 @@ from importlinter.domain.helpers import (
     MissingImport,
     add_imports,
     import_expressions_to_imports,
-    parse_unmatched_ignore_imports_alerting,
     pop_import_expressions,
     pop_imports,
 )
@@ -377,30 +376,3 @@ def _direct_import_sort_key(direct_import: DirectImport):
         direct_import.imported.name,
         direct_import.line_number,
     )
-
-
-@pytest.mark.parametrize(
-    "value, expected",
-    [
-        # values
-        ("", AlertLevel.ERROR),
-        ("error", AlertLevel.ERROR),
-        ("warn", AlertLevel.WARN),
-        ("none", AlertLevel.NONE),
-        # trailing/leading spaces
-        (" ", AlertLevel.ERROR),
-        (" none  ", AlertLevel.NONE),
-    ],
-)
-def test_parse_unmatched_ignore_imports_alerting(value: str, expected: AlertLevel) -> None:
-    actual = parse_unmatched_ignore_imports_alerting(value)
-
-    assert actual == expected
-
-
-def test_parse_unmatched_ignore_imports_alerting_raise_if_not_valid() -> None:
-    value = "invalid"
-    message = f"Invalid value `{value}` for unmatched_ignore_imports_alerting"
-
-    with pytest.raises(ValueError, match=message):
-        parse_unmatched_ignore_imports_alerting(value)

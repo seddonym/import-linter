@@ -29,19 +29,18 @@ class ForbiddenContract(Contract):
     forbidden_modules = fields.ListField(subfield=fields.ModuleField())
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     allow_indirect_imports = fields.StringField(required=False)
-    unmatched_ignore_imports_alerting = fields.StringField(required=False)
+    unmatched_ignore_imports_alerting = fields.EnumField(
+        helpers.AlertLevel, default=helpers.AlertLevel.ERROR, required=False
+    )
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
         invalid_chains = []
-        alerting_level = helpers.parse_unmatched_ignore_imports_alerting(
-            self.unmatched_ignore_imports_alerting
-        )
 
         helpers.pop_import_expressions(
             graph,
             self.ignore_imports if self.ignore_imports else [],  # type: ignore
-            if_not_matched=alerting_level,
+            if_not_matched=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
 
         self._check_all_modules_exist_in_graph(graph)
