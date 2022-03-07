@@ -1,18 +1,9 @@
-import enum
 import itertools
 import re
 from typing import Dict, Iterable, List, Pattern, Set, Tuple, Union, cast
-from importlinter.application import output
 
 from importlinter.domain.imports import DirectImport, ImportExpression, Module
 from importlinter.domain.ports.graph import ImportGraph
-
-
-@enum.unique
-class AlertLevel(enum.Enum):
-    NONE = "none"
-    WARN = "warn"
-    ERROR = "error"
 
 
 class MissingImport(Exception):
@@ -51,8 +42,44 @@ def pop_imports(
     return removed_imports
 
 
+def import_expression_to_imports(
+    graph: ImportGraph, expression: ImportExpression
+) -> List[DirectImport]:
+    """
+    Returns a list of imports in a graph, given some import expression.
+
+    Raises:
+        MissingImport if an import is not present in the graph. For a wildcarded import expression,
+        this is raised if there is not at least one match.
+    """
+    imports: Set[DirectImport] = set()
+    matched = False
+
+    for (importer, imported) in _expression_to_modules(expression, graph):
+        import_details = graph.get_import_details(importer=importer.name, imported=imported.name)
+
+        if import_details:
+            for individual_import_details in import_details:
+                imports.add(
+                    DirectImport(
+                        importer=Module(cast(str, individual_import_details["importer"])),
+                        imported=Module(cast(str, individual_import_details["imported"])),
+                        line_number=cast(int, individual_import_details["line_number"]),
+                        line_contents=cast(str, individual_import_details["line_contents"]),
+                    )
+                )
+            matched = True
+
+    if not matched:
+        raise MissingImport(
+            f"Ignored import expression {expression} didn't match anything in the graph."
+        )
+
+    return list(imports)
+
+
 def import_expressions_to_imports(
-    graph: ImportGraph, expressions: Iterable[ImportExpression], if_not_matched: AlertLevel
+    graph: ImportGraph, expressions: Iterable[ImportExpression]
 ) -> List[DirectImport]:
     """
     Returns a list of imports in a graph, given some import expressions.
@@ -61,43 +88,52 @@ def import_expressions_to_imports(
         MissingImport if an import is not present in the graph. For a wildcarded import expression,
         this is raised if there is not at least one match.
     """
-    imports: Set[DirectImport] = set()
-    for expression in expressions:
-        matched = False
-        for (importer, imported) in _expression_to_modules(expression, graph):
-            import_details = graph.get_import_details(
-                importer=importer.name, imported=imported.name
+    return list(
+        set(
+            itertools.chain(
+                *(import_expression_to_imports(graph, expression) for expression in expressions)
             )
-            if import_details:
-                for individual_import_details in import_details:
-                    imports.add(
-                        DirectImport(
-                            importer=Module(cast(str, individual_import_details["importer"])),
-                            imported=Module(cast(str, individual_import_details["imported"])),
-                            line_number=cast(int, individual_import_details["line_number"]),
-                            line_contents=cast(str, individual_import_details["line_contents"]),
-                        )
-                    )
-                matched = True
-        if not matched:
-            if if_not_matched == AlertLevel.NONE:
-                return []
+        )
+    )
 
-            message = f"Ignored import expression {expression} didn't match anything in the graph."
 
-            if if_not_matched == AlertLevel.WARN:
-                output.print_warning(message)
-                return []
-            else:
-                raise MissingImport(message)
+def unresolved_import_expressions_to_imports(
+    graph: ImportGraph, expressions: Iterable[ImportExpression]
+) -> Tuple[List[DirectImport], List[ImportExpression]]:
+    """
+    Returns a tuple of imports in a graph and unresolved imports, given some import expressions.
+    """
+    resolved_imports = set()
+    unresolved_imports = set()
 
-    return list(imports)
+    for expression in expressions:
+        try:
+            resolved_imports.update(import_expression_to_imports(graph, expression))
+        except MissingImport:
+            unresolved_imports.add(expression)
+
+    return (list(resolved_imports), list(unresolved_imports))
+
+
+def pop_unresolved_import_expressions(
+    graph: ImportGraph, expressions: Iterable[ImportExpression]
+) -> Tuple[List[Dict[str, Union[str, int]]], List[ImportExpression]]:
+    """
+    Removes any imports matching the supplied import expressions from the graph.
+
+    Returns:
+        A tuple with the list of imports that were removed, including any additional metadata,
+        and the list of unresolved imports.
+    """
+    resolved_imports, unresolved_imports = unresolved_import_expressions_to_imports(
+        graph, expressions
+    )
+
+    return (pop_imports(graph, resolved_imports), unresolved_imports)
 
 
 def pop_import_expressions(
-    graph: ImportGraph,
-    expressions: Iterable[ImportExpression],
-    if_not_matched: AlertLevel = AlertLevel.ERROR,
+    graph: ImportGraph, expressions: Iterable[ImportExpression]
 ) -> List[Dict[str, Union[str, int]]]:
     """
     Removes any imports matching the supplied import expressions from the graph.
@@ -108,7 +144,7 @@ def pop_import_expressions(
         MissingImport if an import is not present in the graph. For a wildcarded import expression,
         this is raised if there is not at least one match.
     """
-    imports = import_expressions_to_imports(graph, expressions, if_not_matched)
+    imports = import_expressions_to_imports(graph, expressions)
     return pop_imports(graph, imports)
 
 

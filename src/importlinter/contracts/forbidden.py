@@ -1,8 +1,10 @@
-from typing import Tuple, cast
+from typing import Sequence, Tuple, cast
 
 from importlinter.application import output
 from importlinter.domain import fields, helpers
 from importlinter.domain.contract import Contract, ContractCheck
+from importlinter.domain.imports import ImportExpression
+from importlinter.domain.output import AlertLevel
 from importlinter.domain.ports.graph import ImportGraph
 
 
@@ -30,19 +32,21 @@ class ForbiddenContract(Contract):
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     allow_indirect_imports = fields.StringField(required=False)
     unmatched_ignore_imports_alerting = fields.EnumField(
-        helpers.AlertLevel, default=helpers.AlertLevel.ERROR, required=False
+        AlertLevel, default=AlertLevel.ERROR, required=False
     )
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
         invalid_chains = []
 
-        helpers.pop_import_expressions(
-            graph,
-            self.ignore_imports if self.ignore_imports else [],  # type: ignore
-            if_not_matched=self.unmatched_ignore_imports_alerting,  # type: ignore
+        _, unresolved = helpers.pop_unresolved_import_expressions(
+            graph, self.ignore_imports if self.ignore_imports else []  # type: ignore
         )
 
+        self._check_unresolved_imports(
+            unresolved,
+            self.unmatched_ignore_imports_alerting,  # type: ignore
+        )
         self._check_all_modules_exist_in_graph(graph)
         self._check_external_forbidden_modules(graph)
 
@@ -143,3 +147,31 @@ class ForbiddenContract(Contract):
 
     def _graph_was_built_with_externals(self) -> bool:
         return str(self.session_options.get("include_external_packages")).lower() == "true"
+
+    def _check_unresolved_imports(
+        self, unresolved_imports: Sequence[ImportExpression], alert_level: AlertLevel
+    ) -> None:
+        if len(unresolved_imports) == 0 or alert_level == AlertLevel.NONE:
+            # Skip if no unresolved imports or no alerting
+            return
+
+        elif alert_level == AlertLevel.WARN:
+            # Print warnings for each unresolved import
+            for unresolved_import in unresolved_imports:
+                output.print_warning(
+                    f"Ignored import expression {unresolved_import} "
+                    "didn't match anything in the graph."
+                )
+            return
+
+        else:
+            # Raise exception for first unresolved import
+            unresolved_imports_str = (
+                str(unresolved_import) for unresolved_import in unresolved_imports
+            )
+            unresolved_import_str = sorted(unresolved_imports_str)[0]
+
+            raise ValueError(
+                f"Ignored import expression {unresolved_import_str} "
+                "didn't match anything in the graph."
+            )
