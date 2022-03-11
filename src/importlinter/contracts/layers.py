@@ -5,7 +5,6 @@ from importlinter.application import contract_utils, output
 from importlinter.domain import fields, helpers
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.imports import Module
-from importlinter.domain.output import AlertLevel
 from importlinter.domain.ports.graph import ImportGraph
 
 
