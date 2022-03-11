@@ -99,39 +99,24 @@ def import_expressions_to_imports(
 
 def resolve_import_expressions(
     graph: ImportGraph, expressions: Iterable[ImportExpression]
-) -> Tuple[List[DirectImport], List[ImportExpression]]:
+) -> Tuple[Set[DirectImport], Set[ImportExpression]]:
     """
     Find any imports in the graph that match the supplied import expressions.
 
     Returns tuple of:
-        - List of resolved imports.
-        - List of import expressions that didn't match any imports.
+        - Set of resolved imports.
+        - Set of import expressions that didn't match any imports.
     """
     resolved_imports = set()
-    unresolved_imports = set()
+    unresolved_expressions = set()
 
     for expression in expressions:
         try:
             resolved_imports.update(import_expression_to_imports(graph, expression))
         except MissingImport:
-            unresolved_imports.add(expression)
+            unresolved_expressions.add(expression)
 
-    return (list(resolved_imports), list(unresolved_imports))
-
-
-def pop_unresolved_import_expressions(
-    graph: ImportGraph, expressions: Iterable[ImportExpression]
-) -> Tuple[List[Dict[str, Union[str, int]]], List[ImportExpression]]:
-    """
-    Remove any imports matching the supplied import expressions from the graph.
-
-    Returns tuple with:
-        - List of imports that were removed, including any additional metadata.
-        - List of any import expressions that did not match any imports.
-    """
-    resolved_imports, unresolved_imports = resolve_import_expressions(graph, expressions)
-
-    return (pop_imports(graph, resolved_imports), unresolved_imports)
+    return (resolved_imports, unresolved_expressions)
 
 
 def pop_import_expressions(
