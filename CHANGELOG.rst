@@ -6,6 +6,7 @@ Latest
 
 * Officially support Python 3.10.
 * Drop support for Python 3.6.
+* Add support for default Field values.
 
 
 1.2.6 (2021-09-24)

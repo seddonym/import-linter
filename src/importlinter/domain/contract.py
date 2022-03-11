@@ -29,7 +29,9 @@ class Contract(abc.ABC):
             try:
                 raw_data = self.contract_options[field_name]
             except KeyError:
-                if field.required:
+                if field.default is not fields.NotSupplied:
+                    setattr(self, field_name, field.default)
+                elif field.required:
                     errors[field_name] = "This is a required field."
                 else:
                     setattr(self, field_name, None)
