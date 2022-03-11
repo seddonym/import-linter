@@ -477,7 +477,7 @@ class LayersContract(Contract):
             )
             unresolved_import_str = sorted(unresolved_imports_str)[0]
 
-            raise ValueError(
+            raise helpers.MissingImport(
                 f"Ignored import expression {unresolved_import_str} "
                 "didn't match anything in the graph."
             )

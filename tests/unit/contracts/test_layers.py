@@ -769,12 +769,12 @@ class TestIgnoreImports:
             "mypackage.nonexistent.* -> mypackage.high",
         ],
     )
-    def test_ignore_from_nonexistent_importer_raises_value(self, expression):
+    def test_ignore_from_nonexistent_importer_raises_missing_import(self, expression):
         contract = self._build_contract(ignore_imports=[expression])
         graph = self._build_graph()
         message = f"Ignored import expression {expression} didn't match anything in the graph."
 
-        with pytest.raises(ValueError, match=message):
+        with pytest.raises(MissingImport, match=message):
             contract.check(graph=graph)
 
     @pytest.mark.parametrize(
@@ -784,12 +784,12 @@ class TestIgnoreImports:
             "mypackage.high -> mypackage.nonexistent.*",
         ],
     )
-    def test_ignore_from_nonexistent_imported_raises_value(self, expression):
+    def test_ignore_from_nonexistent_imported_raises_missing_import(self, expression):
         contract = self._build_contract(ignore_imports=[expression])
         graph = self._build_graph()
         message = f"Ignored import expression {expression} didn't match anything in the graph."
 
-        with pytest.raises(ValueError, match=message):
+        with pytest.raises(MissingImport, match=message):
             contract.check(graph=graph)
 
     def test_ignore_imports_tolerates_duplicates(self):
