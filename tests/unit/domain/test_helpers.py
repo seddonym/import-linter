@@ -11,7 +11,7 @@ from importlinter.domain.helpers import (
     pop_import_expressions,
     pop_imports,
     pop_unresolved_import_expressions,
-    unresolved_import_expressions_to_imports,
+    resolve_import_expressions,
 )
 from importlinter.domain.imports import DirectImport, ImportExpression, Module
 
@@ -273,7 +273,7 @@ class TestImportExpressionsToImports:
         return graph
 
 
-class TestUnresolvedImportExpressionsToImports:
+class TestResolveImportExpressions:
     DIRECT_IMPORTS = [
         DirectImport(
             importer=Module("mypackage.green"),
@@ -400,10 +400,11 @@ class TestUnresolvedImportExpressionsToImports:
     ):
         graph = self._build_graph(self.DIRECT_IMPORTS)
 
-        actual = unresolved_import_expressions_to_imports(graph, expressions)
-        actual_resolved_imports, acautl_unresolved_imports = actual
+        actual_resolved_imports, actual_unresolved_expressions = resolve_import_expressions(
+            graph, expressions
+        )
 
-        assert acautl_unresolved_imports == []
+        assert actual_unresolved_expressions == []
         assert sorted(actual_resolved_imports, key=_direct_import_sort_key) == sorted(
             expected, key=_direct_import_sort_key
         )
@@ -418,7 +419,7 @@ class TestUnresolvedImportExpressionsToImports:
 
         expression = ImportExpression(importer="mypackage.a.*", imported="other.foo")
 
-        actual = unresolved_import_expressions_to_imports(graph, [expression])
+        actual = resolve_import_expressions(graph, [expression])
         expected = ([], [ImportExpression(imported="other.foo", importer="mypackage.a.*")])
 
         assert actual == expected
