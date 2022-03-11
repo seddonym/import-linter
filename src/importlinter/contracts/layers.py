@@ -1,10 +1,10 @@
 import copy
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
-from importlinter.application import output
+from importlinter.application import contract_utils, output
 from importlinter.domain import fields, helpers
 from importlinter.domain.contract import Contract, ContractCheck
-from importlinter.domain.imports import ImportExpression, Module
+from importlinter.domain.imports import Module
 from importlinter.domain.output import AlertLevel
 from importlinter.domain.ports.graph import ImportGraph
 
@@ -70,7 +70,7 @@ class LayersContract(Contract):
             direct_imports_to_ignore,  # type: ignore
         )
 
-        self._check_unresolved_imports(
+        contract_utils.handle_unresolved_import_expressions(
             unresolved,
             self.unmatched_ignore_imports_alerting,  # type: ignore
         )
@@ -453,31 +453,3 @@ class LayersContract(Contract):
                     import_details_list.append(import_details)
                     graph.remove_import(importer=lower_layer_module, imported=imported_module)
         return import_details_list
-
-    def _check_unresolved_imports(
-        self, unresolved_imports: Sequence[ImportExpression], alert_level: AlertLevel
-    ) -> None:
-        if len(unresolved_imports) == 0 or alert_level == AlertLevel.NONE:
-            # Skip if no unresolved imports or no alerting
-            return
-
-        elif alert_level == AlertLevel.WARN:
-            # Print warnings for each unresolved import
-            for unresolved_import in unresolved_imports:
-                output.print_warning(
-                    f"Ignored import expression {unresolved_import} "
-                    "didn't match anything in the graph."
-                )
-            return
-
-        else:
-            # Raise exception for first unresolved import
-            unresolved_imports_str = (
-                str(unresolved_import) for unresolved_import in unresolved_imports
-            )
-            unresolved_import_str = sorted(unresolved_imports_str)[0]
-
-            raise helpers.MissingImport(
-                f"Ignored import expression {unresolved_import_str} "
-                "didn't match anything in the graph."
-            )
