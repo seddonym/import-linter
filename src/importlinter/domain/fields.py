@@ -169,24 +169,59 @@ class ImportExpressionField(Field):
 
 
 class EnumField(Field):
-    """ """
+    """
+    A field constrained by the values of an Enum.
 
-    def __init__(self, enum: Type[Enum], default: Enum, required: bool = True) -> None:
-        super().__init__(required)
+    Currently only Enums with string values are supported.
 
-        self._enum = enum
-        self._default = default
+    Raises a ValidationError if the supplied string value does not match one of the Enum
+    members' values.
 
-    def parse(self, raw_data: Union[str, List[str]]) -> Enum:
-        string = StringField().parse(raw_data).strip()
+    Example:
 
-        if string == "":
-            return self._default
+        import enum
 
+        class Color(enum.Enum):
+            RED = "red"
+            BLUE = "blue"
+            LIGHT_BLUE = "light blue"
+
+        field = EnumField(Color, default=Color.RED)
+
+        assert field.parse("blue") == Color.BLUE
+        assert field.parse("light blue") == Color.LIGHT_BLUE
+        assert field.parse("") == Color.RED
+    """
+
+    def __init__(self, enum: Type[Enum], *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        self._check_supported_enum_class(enum)
+        self.enum = enum
+
+    def parse(self, raw_data: Union[str, List]) -> Enum:
+        if isinstance(raw_data, list):
+            raise ValidationError("Expected a single value, got multiple values.")
+
+        stripped_data = raw_data.strip()
+
+        if stripped_data == "":
+            return cast(Enum, self.default)
+
+        member_by_value = {m.value: m for m in self.enum}
         try:
-            return self._enum[string.upper()]
+            return member_by_value[stripped_data]
         except KeyError:
+            values = list(member_by_value.keys())
+            expectation_string = ", ".join(f"'{i}'" for i in values[:-1]) + f" or '{values[-1]}'"
             raise ValidationError(
-                f"Invalid value `{string}` "
-                f"must be one of {[member.value for member in self._enum]}"
+                f"Invalid value '{stripped_data}': " f"expected {expectation_string}."
             )
+
+    def _check_supported_enum_class(self, enum: Type[Enum]) -> None:
+        for member in enum:
+            # Check it's a string.
+            if not isinstance(member.value, str):
+                raise TypeError(
+                    "Unsupported Enum for EnumField: member values must all be strings."
+                )
