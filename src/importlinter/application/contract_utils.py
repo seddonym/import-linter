@@ -3,7 +3,14 @@ from typing import Sequence
 from importlinter.application import output
 from importlinter.domain.helpers import MissingImport
 from importlinter.domain.imports import ImportExpression
-from importlinter.domain.output import AlertLevel
+from importlinter.application.contract_utils import AlertLevel
+
+
+@enum.unique
+class AlertLevel(enum.Enum):
+    NONE = "none"
+    WARN = "warn"
+    ERROR = "error"
 
 
 def handle_unresolved_import_expressions(

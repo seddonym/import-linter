@@ -1,9 +1,9 @@
 from itertools import permutations
 
 from importlinter.application import contract_utils, output
+from importlinter.application.contract_utils import AlertLevel
 from importlinter.domain import fields, helpers
 from importlinter.domain.contract import Contract, ContractCheck
-from importlinter.domain.output import AlertLevel
 from importlinter.domain.ports.graph import ImportGraph
 
 
