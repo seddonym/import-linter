@@ -2,7 +2,7 @@ from typing import Tuple, cast
 
 from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
-from importlinter.domain import fields, helpers
+from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.ports.graph import ImportGraph
 
@@ -30,22 +30,18 @@ class ForbiddenContract(Contract):
     forbidden_modules = fields.ListField(subfield=fields.ModuleField())
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     allow_indirect_imports = fields.StringField(required=False)
-    unmatched_ignore_imports_alerting = fields.EnumField(
-        AlertLevel, default=AlertLevel.ERROR, required=False
-    )
+    unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
         invalid_chains = []
 
-        _, unresolved = helpers.pop_unresolved_import_expressions(
-            graph, self.ignore_imports if self.ignore_imports else []  # type: ignore
+        contract_utils.remove_ignored_imports(
+            graph=graph,
+            ignore_imports=self.ignore_imports,  # type: ignore
+            unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
 
-        contract_utils.handle_unresolved_import_expressions(
-            unresolved,
-            self.unmatched_ignore_imports_alerting,  # type: ignore
-        )
         self._check_all_modules_exist_in_graph(graph)
         self._check_external_forbidden_modules(graph)
 

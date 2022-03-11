@@ -119,11 +119,11 @@ def pop_unresolved_import_expressions(
     graph: ImportGraph, expressions: Iterable[ImportExpression]
 ) -> Tuple[List[Dict[str, Union[str, int]]], List[ImportExpression]]:
     """
-    Removes any imports matching the supplied import expressions from the graph.
+    Remove any imports matching the supplied import expressions from the graph.
 
-    Returns:
-        A tuple with the list of imports that were removed, including any additional metadata,
-        and the list of unresolved imports.
+    Returns tuple with:
+        - List of imports that were removed, including any additional metadata.
+        - List of any import expressions that did not match any imports.
     """
     resolved_imports, unresolved_imports = unresolved_import_expressions_to_imports(
         graph, expressions

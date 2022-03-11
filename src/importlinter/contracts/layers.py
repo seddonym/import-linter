@@ -2,7 +2,8 @@ import copy
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from importlinter.application import contract_utils, output
-from importlinter.domain import fields, helpers
+from importlinter.application.contract_utils import AlertLevel
+from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.imports import Module
 from importlinter.domain.ports.graph import ImportGraph
@@ -55,23 +56,16 @@ class LayersContract(Contract):
     layers = fields.ListField(subfield=LayerField())
     containers = fields.ListField(subfield=fields.StringField(), required=False)
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
-    unmatched_ignore_imports_alerting = fields.EnumField(
-        AlertLevel, default=AlertLevel.ERROR, required=False
-    )
+    unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
         invalid_chains = []
-        direct_imports_to_ignore = self.ignore_imports if self.ignore_imports else []
 
-        _, unresolved = helpers.pop_unresolved_import_expressions(
-            graph,
-            direct_imports_to_ignore,  # type: ignore
-        )
-
-        contract_utils.handle_unresolved_import_expressions(
-            unresolved,
-            self.unmatched_ignore_imports_alerting,  # type: ignore
+        contract_utils.remove_ignored_imports(
+            graph=graph,
+            ignore_imports=self.ignore_imports,  # type: ignore
+            unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
 
         if self.containers:

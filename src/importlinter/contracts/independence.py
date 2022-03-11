@@ -2,7 +2,7 @@ from itertools import permutations
 
 from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
-from importlinter.domain import fields, helpers
+from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.ports.graph import ImportGraph
 
@@ -29,22 +29,18 @@ class IndependenceContract(Contract):
 
     modules = fields.ListField(subfield=fields.ModuleField())
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
-    unmatched_ignore_imports_alerting = fields.EnumField(
-        AlertLevel, default=AlertLevel.ERROR, required=False
-    )
+    unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
         invalid_chains = []
 
-        _, unresolved = helpers.pop_unresolved_import_expressions(
-            graph, self.ignore_imports if self.ignore_imports else []  # type: ignore
+        contract_utils.remove_ignored_imports(
+            graph=graph,
+            ignore_imports=self.ignore_imports,  # type: ignore
+            unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
 
-        contract_utils.handle_unresolved_import_expressions(
-            unresolved,
-            self.unmatched_ignore_imports_alerting,  # type: ignore
-        )
         self._check_all_modules_exist_in_graph(graph)
 
         for subpackage_1, subpackage_2 in permutations(self.modules, r=2):  # type: ignore
