@@ -1,10 +1,16 @@
 import abc
 from enum import Enum
-from typing import Generic, Iterable, List, Set, Type, TypeVar, Union
+from typing import Generic, Iterable, List, Set, Type, TypeVar, Union, cast
 
-from importlinter.domain.imports import Module, ImportExpression
+from importlinter.domain.imports import ImportExpression, Module
 
 FieldValue = TypeVar("FieldValue")
+
+
+class NotSupplied:
+    """Sentinel to use in place of None for a default argument value."""
+
+    pass
 
 
 class ValidationError(Exception):
@@ -16,11 +22,34 @@ class Field(Generic[FieldValue], abc.ABC):
     """
     Base class for containers for some data on a Contract.
 
+    Arguments:
+        - required: if the field requires a value (default True).
+        - default: a value to use if no value is supplied.
+
     Designed to be subclassed, Fields should override the ``parse`` method.
     """
 
-    def __init__(self, required: bool = True) -> None:
-        self.required = required
+    def __init__(
+        self,
+        required: Union[bool, Type[NotSupplied]] = NotSupplied,
+        default: Union[FieldValue, Type[NotSupplied]] = NotSupplied,
+    ) -> None:
+
+        if default is NotSupplied:
+            if required is NotSupplied:
+                self.required = True
+            else:
+                required = cast(bool, required)
+                self.required = required
+        else:
+            # A default was supplied.
+            if required is True:
+                # It doesn't make sense to require a field and provide a default.
+                raise ValueError("A required field cannot also provide a default value.")
+            else:
+                self.required = False
+
+        self.default = default
 
     @abc.abstractmethod
     def parse(self, raw_data: Union[str, List[str]]) -> FieldValue:

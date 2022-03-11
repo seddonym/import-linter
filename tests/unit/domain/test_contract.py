@@ -19,6 +19,7 @@ class MyField(fields.Field):
 class MyContract(Contract):
     foo = MyField()
     bar = MyField(required=False)
+    baz = MyField(default="some default")
 
     def check(self, *args, **kwargs):
         raise NotImplementedError
@@ -63,6 +64,21 @@ def test_contract_validation(contract_options, expected_errors):
         assert e.errors == expected_errors
     else:
         assert False, "Did not raise InvalidContractOptions."  # pragma: nocover
+
+
+@pytest.mark.parametrize("provide_value_for_field", (True, False))
+def test_contract_populated_with_default(provide_value_for_field):
+    contract_options = {"foo": "Something for foo"}
+    if provide_value_for_field:
+        contract_options["baz"] = expected_value = "a non-default value"
+    else:
+        expected_value = "some default"
+
+    contract = MyContract(
+        name="My contract", session_options={}, contract_options=contract_options
+    )
+
+    assert contract.baz == expected_value
 
 
 class TestContractRegistry:

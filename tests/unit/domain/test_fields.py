@@ -1,5 +1,5 @@
 import enum
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, List, Optional, Type, Union
 
 import pytest
 
@@ -21,6 +21,15 @@ class MyEnum(enum.Enum):
     NONE = "none"
     ONE = "one"
     TWO = "two"
+
+
+def test_field_cannot_be_instantiated_with_default_and_required():
+    class SomeField(Field):
+        def parse(self, raw_data: Union[str, List]) -> str:
+            raise NotImplementedError
+
+    with pytest.raises(ValueError, match="A required field cannot also provide a default value."):
+        SomeField(required=True, default="something")
 
 
 class BaseFieldTest:
