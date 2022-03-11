@@ -16,13 +16,6 @@ from importlinter.domain.fields import (
 from importlinter.domain.imports import ImportExpression, Module
 
 
-@enum.unique
-class MyEnum(enum.Enum):
-    NONE = "none"
-    ONE = "one"
-    TWO = "two"
-
-
 def test_field_cannot_be_instantiated_with_default_and_required():
     class SomeField(Field):
         def parse(self, raw_data: Union[str, List]) -> str:
@@ -164,24 +157,76 @@ class TestSetField(BaseFieldTest):
     field_kwargs = dict(subfield=ModuleField())
 
 
+class MyEnum(enum.Enum):
+    RED = "red"
+    GREEN = "green"
+    blue = "blue"
+    NONMATCHING_ORANGE = "orange"
+
+
 @pytest.mark.parametrize(
     "raw_data, expected_value",
     (
-        # values
-        (None, MyEnum.NONE),
-        ("", MyEnum.NONE),
-        ("one", MyEnum.ONE),
-        ("two", MyEnum.TWO),
-        # upper/lower cases
-        ("One", MyEnum.ONE),
-        ("ONE", MyEnum.ONE),
-        # trailing/leading spaces
-        (" ", MyEnum.NONE),
-        (" one ", MyEnum.ONE),
-        # exceptions
-        ("three", ValidationError("Invalid value `three` must be one of ['none', 'one', 'two']")),
+        # Values:
+        ("", MyEnum.RED),
+        ("green", MyEnum.GREEN),
+        # Lowercase attributes:
+        ("blue", MyEnum.blue),
+        # Values that don't match attributes:
+        ("orange", MyEnum.NONMATCHING_ORANGE),
+        # Trailing/leading spaces:
+        (" ", MyEnum.RED),
+        ("  green  ", MyEnum.GREEN),
+        # Invalid choices:
+        (
+            "yellow",
+            ValidationError(
+                "Invalid value 'yellow': expected 'red', 'green', 'blue' or 'orange'."
+            ),
+        ),
+        # Case sensitive:
+        (
+            "GREEN",
+            ValidationError("Invalid value 'GREEN': expected 'red', 'green', 'blue' or 'orange'."),
+        ),
     ),
 )
 class TestEnumField(BaseFieldTest):
     field_class = EnumField
-    field_kwargs = dict(enum=MyEnum, default=MyEnum.NONE)
+    field_kwargs = dict(enum=MyEnum, default=MyEnum.RED)
+
+
+class TestEnumFieldExtras:
+    """
+    Extra tests for the EnumField.
+    """
+
+    def test_works_with_no_default_provided(self):
+        assert EnumField(MyEnum).parse("green") == MyEnum.GREEN
+
+    @pytest.mark.parametrize("required", (True, False))
+    def test_required_attribute_is_set_when_provided(self, required):
+        assert EnumField(MyEnum, required=required).required is required
+
+    def test_required_attribute_is_true_by_default(self):
+        assert EnumField(MyEnum).required is True
+
+    def test_validation_message_for_two_value_enum(self):
+        class TwoValueEnum(enum.Enum):
+            GREEN = "green"
+            BLUE = "blue"
+
+        with pytest.raises(
+            ValidationError, match="Invalid value 'purple': expected 'green' or 'blue'."
+        ):
+            EnumField(TwoValueEnum).parse("purple")
+
+    def test_requires_string_members(self):
+        class InvalidEnum(enum.Enum):
+            GREEN = "green"
+            BLUE = 2
+
+        with pytest.raises(
+            TypeError, match="Unsupported Enum for EnumField: member values must all be strings."
+        ):
+            EnumField(InvalidEnum)
