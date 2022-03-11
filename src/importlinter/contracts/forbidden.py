@@ -1,8 +1,10 @@
-from typing import Tuple, cast
+from typing import Sequence, Tuple, cast
 
 from importlinter.application import output
 from importlinter.domain import fields, helpers
 from importlinter.domain.contract import Contract, ContractCheck
+from importlinter.domain.imports import ImportExpression
+from importlinter.domain.output import AlertLevel
 from importlinter.domain.ports.graph import ImportGraph
 
 
@@ -17,7 +19,10 @@ class ForbiddenContract(Contract):
                              would cause a contract to be broken, adding it to the set will cause
                              the contract be kept instead. (Optional.)
         - allow_indirect_imports:  Whether to allow indirect imports to forbidden modules.
-                            "True" or "true" will be treated as True. (Optional.)```
+                             "True" or "true" will be treated as True. (Optional.)
+        - unmatched_ignore_imports_alerting: Decides how to report when the expression in the
+                             `ignore_imports` set is not found in the graph. Valid values are
+                             "none", "warn", "error". Default value is "error".
     """
 
     type_name = "forbidden"
@@ -26,15 +31,22 @@ class ForbiddenContract(Contract):
     forbidden_modules = fields.ListField(subfield=fields.ModuleField())
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     allow_indirect_imports = fields.StringField(required=False)
+    unmatched_ignore_imports_alerting = fields.EnumField(
+        AlertLevel, default=AlertLevel.ERROR, required=False
+    )
 
     def check(self, graph: ImportGraph) -> ContractCheck:
         is_kept = True
         invalid_chains = []
 
-        helpers.pop_import_expressions(
+        _, unresolved = helpers.pop_unresolved_import_expressions(
             graph, self.ignore_imports if self.ignore_imports else []  # type: ignore
         )
 
+        self._check_unresolved_imports(
+            unresolved,
+            self.unmatched_ignore_imports_alerting,  # type: ignore
+        )
         self._check_all_modules_exist_in_graph(graph)
         self._check_external_forbidden_modules(graph)
 
@@ -135,3 +147,31 @@ class ForbiddenContract(Contract):
 
     def _graph_was_built_with_externals(self) -> bool:
         return str(self.session_options.get("include_external_packages")).lower() == "true"
+
+    def _check_unresolved_imports(
+        self, unresolved_imports: Sequence[ImportExpression], alert_level: AlertLevel
+    ) -> None:
+        if len(unresolved_imports) == 0 or alert_level == AlertLevel.NONE:
+            # Skip if no unresolved imports or no alerting
+            return
+
+        elif alert_level == AlertLevel.WARN:
+            # Print warnings for each unresolved import
+            for unresolved_import in unresolved_imports:
+                output.print_warning(
+                    f"Ignored import expression {unresolved_import} "
+                    "didn't match anything in the graph."
+                )
+            return
+
+        else:
+            # Raise exception for first unresolved import
+            unresolved_imports_str = (
+                str(unresolved_import) for unresolved_import in unresolved_imports
+            )
+            unresolved_import_str = sorted(unresolved_imports_str)[0]
+
+            raise ValueError(
+                f"Ignored import expression {unresolved_import_str} "
+                "didn't match anything in the graph."
+            )

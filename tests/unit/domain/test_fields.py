@@ -1,8 +1,10 @@
+import enum
 from typing import Any, Dict, Optional, Type
 
 import pytest
 
 from importlinter.domain.fields import (
+    EnumField,
     Field,
     ImportExpressionField,
     ListField,
@@ -12,6 +14,13 @@ from importlinter.domain.fields import (
     ValidationError,
 )
 from importlinter.domain.imports import ImportExpression, Module
+
+
+@enum.unique
+class MyEnum(enum.Enum):
+    NONE = "none"
+    ONE = "one"
+    TWO = "two"
 
 
 class BaseFieldTest:
@@ -144,3 +153,26 @@ class TestListField(BaseFieldTest):
 class TestSetField(BaseFieldTest):
     field_class = SetField
     field_kwargs = dict(subfield=ModuleField())
+
+
+@pytest.mark.parametrize(
+    "raw_data, expected_value",
+    (
+        # values
+        (None, MyEnum.NONE),
+        ("", MyEnum.NONE),
+        ("one", MyEnum.ONE),
+        ("two", MyEnum.TWO),
+        # upper/lower cases
+        ("One", MyEnum.ONE),
+        ("ONE", MyEnum.ONE),
+        # trailing/leading spaces
+        (" ", MyEnum.NONE),
+        (" one ", MyEnum.ONE),
+        # exceptions
+        ("three", ValidationError("Invalid value `three` must be one of ['none', 'one', 'two']")),
+    ),
+)
+class TestEnumField(BaseFieldTest):
+    field_class = EnumField
+    field_kwargs = dict(enum=MyEnum, default=MyEnum.NONE)

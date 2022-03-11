@@ -42,6 +42,42 @@ def pop_imports(
     return removed_imports
 
 
+def import_expression_to_imports(
+    graph: ImportGraph, expression: ImportExpression
+) -> List[DirectImport]:
+    """
+    Returns a list of imports in a graph, given some import expression.
+
+    Raises:
+        MissingImport if an import is not present in the graph. For a wildcarded import expression,
+        this is raised if there is not at least one match.
+    """
+    imports: Set[DirectImport] = set()
+    matched = False
+
+    for (importer, imported) in _expression_to_modules(expression, graph):
+        import_details = graph.get_import_details(importer=importer.name, imported=imported.name)
+
+        if import_details:
+            for individual_import_details in import_details:
+                imports.add(
+                    DirectImport(
+                        importer=Module(cast(str, individual_import_details["importer"])),
+                        imported=Module(cast(str, individual_import_details["imported"])),
+                        line_number=cast(int, individual_import_details["line_number"]),
+                        line_contents=cast(str, individual_import_details["line_contents"]),
+                    )
+                )
+            matched = True
+
+    if not matched:
+        raise MissingImport(
+            f"Ignored import expression {expression} didn't match anything in the graph."
+        )
+
+    return list(imports)
+
+
 def import_expressions_to_imports(
     graph: ImportGraph, expressions: Iterable[ImportExpression]
 ) -> List[DirectImport]:
@@ -52,29 +88,48 @@ def import_expressions_to_imports(
         MissingImport if an import is not present in the graph. For a wildcarded import expression,
         this is raised if there is not at least one match.
     """
-    imports: Set[DirectImport] = set()
+    return list(
+        set(
+            itertools.chain(
+                *(import_expression_to_imports(graph, expression) for expression in expressions)
+            )
+        )
+    )
+
+
+def unresolved_import_expressions_to_imports(
+    graph: ImportGraph, expressions: Iterable[ImportExpression]
+) -> Tuple[List[DirectImport], List[ImportExpression]]:
+    """
+    Returns a tuple of imports in a graph and unresolved imports, given some import expressions.
+    """
+    resolved_imports = set()
+    unresolved_imports = set()
+
     for expression in expressions:
-        matched = False
-        for (importer, imported) in _expression_to_modules(expression, graph):
-            import_details = graph.get_import_details(
-                importer=importer.name, imported=imported.name
-            )
-            if import_details:
-                for individual_import_details in import_details:
-                    imports.add(
-                        DirectImport(
-                            importer=Module(cast(str, individual_import_details["importer"])),
-                            imported=Module(cast(str, individual_import_details["imported"])),
-                            line_number=cast(int, individual_import_details["line_number"]),
-                            line_contents=cast(str, individual_import_details["line_contents"]),
-                        )
-                    )
-                matched = True
-        if not matched:
-            raise MissingImport(
-                f"Ignored import expression {expression} didn't match anything in the graph."
-            )
-    return list(imports)
+        try:
+            resolved_imports.update(import_expression_to_imports(graph, expression))
+        except MissingImport:
+            unresolved_imports.add(expression)
+
+    return (list(resolved_imports), list(unresolved_imports))
+
+
+def pop_unresolved_import_expressions(
+    graph: ImportGraph, expressions: Iterable[ImportExpression]
+) -> Tuple[List[Dict[str, Union[str, int]]], List[ImportExpression]]:
+    """
+    Removes any imports matching the supplied import expressions from the graph.
+
+    Returns:
+        A tuple with the list of imports that were removed, including any additional metadata,
+        and the list of unresolved imports.
+    """
+    resolved_imports, unresolved_imports = unresolved_import_expressions_to_imports(
+        graph, expressions
+    )
+
+    return (pop_imports(graph, resolved_imports), unresolved_imports)
 
 
 def pop_import_expressions(
