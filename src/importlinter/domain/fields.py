@@ -1,5 +1,6 @@
 import abc
-from typing import Generic, Iterable, List, Set, TypeVar, Union
+from enum import Enum
+from typing import Generic, Iterable, List, Set, Type, TypeVar, Union
 
 from importlinter.domain.imports import Module, ImportExpression
 
@@ -136,3 +137,27 @@ class ImportExpressionField(Field):
         for part in expression.split("."):
             if len(part) > 1 and "*" in part:
                 raise ValidationError("A wildcard can only replace a whole module.")
+
+
+class EnumField(Field):
+    """ """
+
+    def __init__(self, enum: Type[Enum], default: Enum, required: bool = True) -> None:
+        super().__init__(required)
+
+        self._enum = enum
+        self._default = default
+
+    def parse(self, raw_data: Union[str, List[str]]) -> Enum:
+        string = StringField().parse(raw_data).strip()
+
+        if string == "":
+            return self._default
+
+        try:
+            return self._enum[string.upper()]
+        except KeyError:
+            raise ValidationError(
+                f"Invalid value `{string}` "
+                f"must be one of {[member.value for member in self._enum]}"
+            )
