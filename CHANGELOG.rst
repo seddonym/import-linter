@@ -8,6 +8,7 @@ Latest
 * Drop support for Python 3.6.
 * Add support for default Field values.
 * Add EnumField.
+* Add unmatched_ignore_imports_alerting option for each contract.
 
 
 1.2.6 (2021-09-24)
