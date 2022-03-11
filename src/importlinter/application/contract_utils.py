@@ -1,5 +1,5 @@
 import enum
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Set
 
 from importlinter.application import output
 from importlinter.domain import helpers
@@ -30,13 +30,16 @@ def remove_ignored_imports(
                             AlertLevel.WARN will warn for each one, and AlertLevel.ERROR will raise
                             an exception for the first one encountered.
     """
-    unresolved = helpers.pop_unresolved_import_expressions(
-        graph, ignore_imports if ignore_imports else []  # type: ignore
-    )[1]
+    imports, unresolved_expressions = helpers.resolve_import_expressions(
+        graph=graph, expressions=ignore_imports if ignore_imports else []
+    )
+
     _handle_unresolved_import_expressions(
-        unresolved,
+        unresolved_expressions,
         unmatched_alerting,  # type: ignore
     )
+
+    helpers.pop_imports(graph, imports)
 
 
 # Private functions
@@ -44,7 +47,7 @@ def remove_ignored_imports(
 
 
 def _handle_unresolved_import_expressions(
-    expressions: Sequence[ImportExpression], alert_level: AlertLevel
+    expressions: Set[ImportExpression], alert_level: AlertLevel
 ) -> None:
     """
     Handle any unresolved import expressions based on the supplied alert level.

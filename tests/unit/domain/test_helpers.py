@@ -10,7 +10,6 @@ from importlinter.domain.helpers import (
     import_expressions_to_imports,
     pop_import_expressions,
     pop_imports,
-    pop_unresolved_import_expressions,
     resolve_import_expressions,
 )
 from importlinter.domain.imports import DirectImport, ImportExpression, Module
@@ -328,7 +327,7 @@ class TestResolveImportExpressions:
     ]
 
     @pytest.mark.parametrize(
-        "description, expressions, expected",
+        "description, expressions, expected_imports",
         [
             (
                 "No wildcards",
@@ -338,35 +337,35 @@ class TestResolveImportExpressions:
                         imported=DIRECT_IMPORTS[0].imported.name,
                     ),
                 ],
-                [DIRECT_IMPORTS[0]],
+                {DIRECT_IMPORTS[0]},
             ),
             (
                 "Importer wildcard",
                 [
                     ImportExpression(importer="mypackage.*", imported="mypackage.blue"),
                 ],
-                [DIRECT_IMPORTS[1]],
+                {DIRECT_IMPORTS[1]},
             ),
             (
                 "Imported wildcard",
                 [
                     ImportExpression(importer="mypackage.green", imported="mypackage.*"),
                 ],
-                DIRECT_IMPORTS[0:2],
+                set(DIRECT_IMPORTS[0:2]),
             ),
             (
                 "Importer and imported wildcards",
                 [
                     ImportExpression(importer="mypackage.*", imported="mypackage.*"),
                 ],
-                DIRECT_IMPORTS[0:3],
+                set(DIRECT_IMPORTS[0:3]),
             ),
             (
                 "Inner wildcard",
                 [
                     ImportExpression(importer="mypackage.*.cats", imported="mypackage.*.dogs"),
                 ],
-                DIRECT_IMPORTS[3:5],
+                set(DIRECT_IMPORTS[3:5]),
             ),
             (
                 "Multiple expressions, non-overlapping",
@@ -376,7 +375,7 @@ class TestResolveImportExpressions:
                         importer="mypackage.green.cats", imported="mypackage.orange.*"
                     ),
                 ],
-                DIRECT_IMPORTS[0:2] + DIRECT_IMPORTS[4:6],
+                set(DIRECT_IMPORTS[0:2] + DIRECT_IMPORTS[4:6]),
             ),
             (
                 "Multiple expressions, overlapping",
@@ -384,47 +383,46 @@ class TestResolveImportExpressions:
                     ImportExpression(importer="mypackage.*", imported="mypackage.blue"),
                     ImportExpression(importer="mypackage.green", imported="mypackage.blue"),
                 ],
-                [DIRECT_IMPORTS[1]],
+                {DIRECT_IMPORTS[1]},
             ),
             (
                 "Multiple imports of external package with same importer",
                 [
                     ImportExpression(importer="mypackage.brown", imported="someotherpackage"),
                 ],
-                DIRECT_IMPORTS[6:8],
+                set(DIRECT_IMPORTS[6:8]),
             ),
         ],
     )
     def test_succeeds(
-        self, description: str, expressions: List[ImportExpression], expected: List[DirectImport]
+        self,
+        description: str,
+        expressions: List[ImportExpression],
+        expected_imports: List[DirectImport],
     ):
         graph = self._build_graph(self.DIRECT_IMPORTS)
 
-        actual_resolved_imports, actual_unresolved_expressions = resolve_import_expressions(
-            graph, expressions
-        )
+        imports, unresolved_expressions = resolve_import_expressions(graph, expressions)
 
-        assert actual_unresolved_expressions == []
-        assert sorted(actual_resolved_imports, key=_direct_import_sort_key) == sorted(
-            expected, key=_direct_import_sort_key
-        )
+        assert unresolved_expressions == set()
+        assert imports == expected_imports
 
-    def test_returns_missing_import(self):
+    def test_detects_unresolved_expression(self):
         graph = ImportGraph()
         graph.add_module("mypackage")
         graph.add_module("other")
         graph.add_import(
             importer="mypackage.b", imported="other.foo", line_number=1, line_contents="-"
         )
-
         expression = ImportExpression(importer="mypackage.a.*", imported="other.foo")
 
-        actual = resolve_import_expressions(graph, [expression])
-        expected = ([], [ImportExpression(imported="other.foo", importer="mypackage.a.*")])
+        imports, unresolved_expressions = resolve_import_expressions(graph, [expression])
 
-        assert actual == expected
+        assert (imports, unresolved_expressions) == (
+            set(),
+            {ImportExpression(imported="other.foo", importer="mypackage.a.*")},
+        )
 
-    # fixme: make a base class
     def _build_graph(self, direct_imports):
         graph = ImportGraph()
         for direct_import in direct_imports:
@@ -497,97 +495,6 @@ class TestPopImportExpressions:
             key=_direct_import_sort_key,
         )
         assert popped_direct_imports == expected
-        assert graph.count_imports() == 2
-
-    def _build_graph(self, direct_imports):
-        graph = ImportGraph()
-        for direct_import in direct_imports:
-            graph.add_import(
-                importer=direct_import.importer.name,
-                imported=direct_import.imported.name,
-                line_number=direct_import.line_number,
-                line_contents=direct_import.line_contents,
-            )
-        return graph
-
-    def _dict_to_direct_import(self, import_details: Dict[str, Union[str, int]]) -> DirectImport:
-        return DirectImport(
-            importer=Module(cast(str, import_details["importer"])),
-            imported=Module(cast(str, import_details["imported"])),
-            line_number=cast(int, import_details["line_number"]),
-            line_contents=cast(str, import_details["line_contents"]),
-        )
-
-
-class TestPopUnresolvedImportExpressions:
-    # fixme: make shared class
-    DIRECT_IMPORTS = [
-        DirectImport(
-            importer=Module("mypackage.green"),
-            imported=Module("mypackage.yellow"),
-            line_number=1,
-            line_contents="-",
-        ),
-        DirectImport(
-            importer=Module("mypackage.green"),
-            imported=Module("mypackage.blue"),
-            line_number=1,
-            line_contents="-",
-        ),
-        DirectImport(
-            importer=Module("mypackage.blue"),
-            imported=Module("mypackage.green"),
-            line_number=1,
-            line_contents="-",
-        ),
-        DirectImport(
-            importer=Module("mypackage.blue.cats"),
-            imported=Module("mypackage.purple.dogs"),
-            line_number=1,
-            line_contents="-",
-        ),
-        DirectImport(
-            importer=Module("mypackage.green.cats"),
-            imported=Module("mypackage.orange.dogs"),
-            line_number=1,
-            line_contents="-",
-        ),
-    ]
-
-    def test_succeeds(self):
-        graph = self._build_graph(self.DIRECT_IMPORTS)
-        expressions = [
-            ImportExpression(importer="mypackage.green", imported="mypackage.*"),
-            # Expressions can overlap.
-            ImportExpression(importer="mypackage.green", imported="mypackage.blue"),
-            ImportExpression(importer="mypackage.blue.cats", imported="mypackage.purple.dogs"),
-            # Missing import
-            ImportExpression(importer="mypackage.green", imported="mypackage.black.*"),
-        ]
-
-        # popped_imports: List[Dict[str, Union[str, int]]] = pop_unresolved_import_expressions(
-        popped_imports = pop_unresolved_import_expressions(graph, expressions)
-
-        popped_resolved_imports, popped_unresolved_imports = popped_imports
-
-        # Cast to direct imports to make comparison easier.
-        popped_direct_imports: List[DirectImport] = sorted(
-            map(self._dict_to_direct_import, popped_resolved_imports), key=_direct_import_sort_key
-        )
-        expected_resolved_imports = sorted(
-            [
-                self.DIRECT_IMPORTS[0],
-                self.DIRECT_IMPORTS[1],
-                self.DIRECT_IMPORTS[3],
-            ],
-            key=_direct_import_sort_key,
-        )
-        expected_unresolved_imports = [
-            ImportExpression(importer="mypackage.green", imported="mypackage.black.*")
-        ]
-
-        assert popped_direct_imports == expected_resolved_imports
-        assert popped_unresolved_imports == expected_unresolved_imports
         assert graph.count_imports() == 2
 
     def _build_graph(self, direct_imports):
