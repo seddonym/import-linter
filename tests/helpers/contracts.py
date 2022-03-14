@@ -5,8 +5,10 @@ from importlinter.domain.ports.graph import ImportGraph
 
 
 class AlwaysPassesContract(Contract):
+    warnings = fields.ListField(subfield=fields.StringField(), required=False)
+
     def check(self, graph: ImportGraph) -> ContractCheck:
-        return ContractCheck(kept=True)
+        return ContractCheck(kept=True, warnings=self.warnings)  # type: ignore
 
     def render_broken_contract(self, check: "ContractCheck") -> None:
         # No need to implement, will never fail.
@@ -14,8 +16,10 @@ class AlwaysPassesContract(Contract):
 
 
 class AlwaysFailsContract(Contract):
+    warnings = fields.ListField(subfield=fields.StringField(), required=False)
+
     def check(self, graph: ImportGraph) -> ContractCheck:
-        return ContractCheck(kept=False)
+        return ContractCheck(kept=False, warnings=self.warnings)  # type: ignore
 
     def render_broken_contract(self, check: "ContractCheck") -> None:
         output.print("This contract will always fail.")
