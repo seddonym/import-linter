@@ -1,9 +1,9 @@
 import pytest
 from grimp.adaptors.graph import ImportGraph  # type: ignore
+
 from importlinter.application.app_config import settings
 from importlinter.contracts.independence import IndependenceContract
 from importlinter.domain.contract import ContractCheck
-
 from tests.adapters.printing import FakePrinter
 
 
@@ -301,6 +301,33 @@ def test_ignore_imports(ignore_imports, is_kept):
     contract_check = contract.check(graph=graph)
 
     assert is_kept == contract_check.kept
+
+
+def test_ignore_imports_adds_warnings():
+    graph = ImportGraph()
+    graph.add_module("mypackage")
+    graph.add_import(
+        importer="mypackage.green", imported="mypackage.blue", line_number=1, line_contents="-"
+    )
+    contract = IndependenceContract(
+        name="Independence contract",
+        session_options={"root_packages": ["mypackage"]},
+        contract_options={
+            "modules": ("mypackage.green", "mypackage.blue"),
+            "ignore_imports": [
+                "mypackage.green.* -> mypackage.blue",
+                "mypackage.nonexistent -> mypackage.blue",
+            ],
+            "unmatched_ignore_imports_alerting": "warn",
+        },
+    )
+
+    contract_check = contract.check(graph=graph)
+
+    assert set(contract_check.warnings) == {
+        "No matches for ignored import mypackage.green.* -> mypackage.blue.",
+        "No matches for ignored import mypackage.nonexistent -> mypackage.blue.",
+    }
 
 
 def test_render_broken_contract():

@@ -35,7 +35,7 @@ class IndependenceContract(Contract):
         is_kept = True
         invalid_chains = []
 
-        contract_utils.remove_ignored_imports(
+        warnings = contract_utils.remove_ignored_imports(
             graph=graph,
             ignore_imports=self.ignore_imports,  # type: ignore
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
@@ -75,7 +75,9 @@ class IndependenceContract(Contract):
             if subpackage_chain_data["chains"]:
                 invalid_chains.append(subpackage_chain_data)
 
-        return ContractCheck(kept=is_kept, metadata={"invalid_chains": invalid_chains})
+        return ContractCheck(
+            kept=is_kept, warnings=warnings, metadata={"invalid_chains": invalid_chains}
+        )
 
     def render_broken_contract(self, check: "ContractCheck") -> None:
         count = 0
