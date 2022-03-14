@@ -772,7 +772,7 @@ class TestIgnoreImports:
     def test_ignore_from_nonexistent_importer_raises_missing_import(self, expression):
         contract = self._build_contract(ignore_imports=[expression])
         graph = self._build_graph()
-        message = f"Ignored import expression {expression} didn't match anything in the graph."
+        message = f"No matches for ignored import {expression}."
 
         with pytest.raises(MissingImport, match=message):
             contract.check(graph=graph)
@@ -787,7 +787,7 @@ class TestIgnoreImports:
     def test_ignore_from_nonexistent_imported_raises_missing_import(self, expression):
         contract = self._build_contract(ignore_imports=[expression])
         graph = self._build_graph()
-        message = f"Ignored import expression {expression} didn't match anything in the graph."
+        message = f"No matches for ignored import {expression}."
 
         with pytest.raises(MissingImport, match=message):
             contract.check(graph=graph)
