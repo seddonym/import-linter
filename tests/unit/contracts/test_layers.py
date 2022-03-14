@@ -806,6 +806,29 @@ class TestIgnoreImports:
 
         assert contract_check.kept
 
+    def test_ignore_imports_adds_warnings(self):
+        contract = LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options={
+                "containers": ["mypackage"],
+                "layers": ["high", "medium", "low"],
+                "ignore_imports": [
+                    "mypackage.high -> mypackage.nonexistent.*",
+                    "mypackage.high -> mypackage.nonexistent.foo",
+                ],
+                "unmatched_ignore_imports_alerting": "warn",
+            },
+        )
+        graph = self._build_graph()
+
+        contract_check = contract.check(graph=graph)
+
+        assert set(contract_check.warnings) == {
+            "No matches for ignored import mypackage.high -> mypackage.nonexistent.*.",
+            "No matches for ignored import mypackage.high -> mypackage.nonexistent.foo.",
+        }
+
     def _build_graph(self):
         graph = ImportGraph()
         for module in (
