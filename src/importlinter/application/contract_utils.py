@@ -1,7 +1,6 @@
 import enum
-from typing import Optional, Sequence, Set
+from typing import List, Optional, Sequence, Set
 
-from importlinter.application import output
 from importlinter.domain import helpers
 from importlinter.domain.helpers import MissingImport
 from importlinter.domain.imports import ImportExpression
@@ -18,7 +17,7 @@ def remove_ignored_imports(
     graph: ImportGraph,
     ignore_imports: Optional[Sequence[ImportExpression]],
     unmatched_alerting: AlertLevel,
-) -> None:
+) -> List[str]:
     """
     Remove any ignored imports from the graph.
 
@@ -28,18 +27,23 @@ def remove_ignored_imports(
         unmatched_alerting: An AlertLevel that indicates how to handle any import expressions that
                             don't match any imports. AlertLevel.NONE will ignore them,
                             AlertLevel.WARN will warn for each one, and AlertLevel.ERROR will raise
-                            an exception for the first one encountered.
+                            a MissingImport for the first one encountered.
+
+    Returns:
+        A list of any warnings to be surfaced to the user.
     """
     imports, unresolved_expressions = helpers.resolve_import_expressions(
         graph=graph, expressions=ignore_imports if ignore_imports else []
     )
 
-    _handle_unresolved_import_expressions(
+    warnings = _handle_unresolved_import_expressions(
         unresolved_expressions,
         unmatched_alerting,  # type: ignore
     )
 
     helpers.pop_imports(graph, imports)
+
+    return warnings
 
 
 # Private functions
@@ -48,24 +52,26 @@ def remove_ignored_imports(
 
 def _handle_unresolved_import_expressions(
     expressions: Set[ImportExpression], alert_level: AlertLevel
-) -> None:
+) -> List[str]:
     """
     Handle any unresolved import expressions based on the supplied alert level.
 
     Intended to be called while checking a contract.
+
+    Returns:
+        A list of any warnings to be surfaced to the user.
     """
     if alert_level is AlertLevel.NONE:
-        return
+        return []
     if not expressions:
-        return
+        return []
 
     if alert_level is AlertLevel.WARN:
-        for expression in expressions:
-            output.print_warning(
-                f"Ignored import expression {expression} " "didn't match anything in the graph."
-            )
+        return [_build_missing_import_message(expression) for expression in expressions]
     else:  # AlertLevel.ERROR
-        expression_str = sorted(str(expression) for expression in expressions)[0]
-        raise MissingImport(
-            f"Ignored import expression {expression_str} " "didn't match anything in the graph."
-        )
+        first_expression = sorted(expressions, key=lambda expression: str(expression))[0]
+        raise MissingImport(_build_missing_import_message(first_expression))
+
+
+def _build_missing_import_message(expression: ImportExpression) -> str:
+    return f"No matches for ignored import {expression}."
