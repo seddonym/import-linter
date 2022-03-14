@@ -181,6 +181,29 @@ class TestForbiddenContract:
 
         assert contract_check.kept == contract_is_kept
 
+    def test_ignore_imports_adds_warnings(self):
+        graph = self._build_graph()
+        contract = ForbiddenContract(
+            name="Forbid contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options={
+                "source_modules": ("mypackage.one", "mypackage.two", "mypackage.three"),
+                "forbidden_modules": "mypackage.purple",
+                "ignore_imports": [
+                    "mypackage.one -> mypackage.two.nonexistent",
+                    "mypackage.*.nonexistent -> mypackage.three",
+                ],
+                "unmatched_ignore_imports_alerting": "warn",
+            },
+        )
+
+        contract_check = contract.check(graph=graph)
+
+        assert set(contract_check.warnings) == {
+            "No matches for ignored import mypackage.one -> mypackage.two.nonexistent.",
+            "No matches for ignored import mypackage.*.nonexistent -> mypackage.three.",
+        }
+
     def _build_graph(self):
         graph = ImportGraph()
         for module in (
