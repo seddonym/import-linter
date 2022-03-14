@@ -1,11 +1,13 @@
 import os
+from pathlib import Path
 
 import pytest
 
 from importlinter import cli
 
-testpackage_directory = os.path.join(os.path.dirname(__file__), "..", "assets", "testpackage")
-multipleroots_directory = os.path.join(os.path.dirname(__file__), "..", "assets", "multipleroots")
+this_directory = Path(__file__).parent
+testpackage_directory = this_directory / ".." / "assets" / "testpackage"
+multipleroots_directory = this_directory / ".." / "assets" / "multipleroots"
 
 
 @pytest.mark.parametrize(
