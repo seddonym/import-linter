@@ -6,8 +6,11 @@ import pytest
 from importlinter import cli
 
 this_directory = Path(__file__).parent
-testpackage_directory = this_directory / ".." / "assets" / "testpackage"
-multipleroots_directory = this_directory / ".." / "assets" / "multipleroots"
+assets_directory = this_directory / ".." / "assets"
+
+testpackage_directory = assets_directory / "testpackage"
+multipleroots_directory = assets_directory / "multipleroots"
+unmatched_ignore_imports_directory = testpackage_directory / "unmatched_ignore_imports_alerting"
 
 
 @pytest.mark.parametrize(
@@ -63,6 +66,28 @@ multipleroots_directory = this_directory / ".." / "assets" / "multipleroots"
             ".externalkeptcontract.toml",
             cli.EXIT_STATUS_SUCCESS,
             marks=pytest.mark.toml_installed,
+        ),
+        # Unmatched ignore imports alerting.
+        # The return value depends on what this is set to.
+        (
+            testpackage_directory,
+            str(unmatched_ignore_imports_directory / "unspecified.ini"),
+            cli.EXIT_STATUS_ERROR,
+        ),
+        (
+            testpackage_directory,
+            str(unmatched_ignore_imports_directory / "error.ini"),
+            cli.EXIT_STATUS_ERROR,
+        ),
+        (
+            testpackage_directory,
+            str(unmatched_ignore_imports_directory / "warn.ini"),
+            cli.EXIT_STATUS_SUCCESS,
+        ),
+        (
+            testpackage_directory,
+            str(unmatched_ignore_imports_directory / "none.ini"),
+            cli.EXIT_STATUS_SUCCESS,
         ),
     ),
 )
