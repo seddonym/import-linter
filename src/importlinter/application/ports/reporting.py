@@ -20,6 +20,7 @@ class Report:
         self.contains_failures = False
         self.contracts: List[Contract] = []
         self._check_map: Dict[Contract, ContractCheck] = {}
+        self.warnings_count = 0
         self.broken_count = 0
         self.kept_count = 0
         self.module_count = len(graph.modules)
@@ -28,6 +29,7 @@ class Report:
     def add_contract_check(self, contract: Contract, contract_check: ContractCheck) -> None:
         self.contracts.append(contract)
         self._check_map[contract] = contract_check
+        self.warnings_count += len(contract_check.warnings)
         if contract_check.kept:
             self.kept_count += 1
         else:

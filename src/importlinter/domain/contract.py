@@ -85,9 +85,15 @@ class ContractCheck:
     Data class to store the result of checking a contract.
     """
 
-    def __init__(self, kept: bool, metadata: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self,
+        kept: bool,
+        metadata: Optional[Dict[str, Any]] = None,
+        warnings: Optional[List[str]] = None,
+    ) -> None:
         self.kept = kept
-        self.metadata = metadata if metadata else {}
+        self.metadata = metadata or {}
+        self.warnings = warnings or []
 
 
 class NoSuchContractType(Exception):

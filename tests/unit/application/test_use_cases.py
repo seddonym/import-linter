@@ -114,6 +114,67 @@ class TestCheckContractsAndPrintReport:
             """
         )
 
+    def test_warnings(self):
+        self._configure(
+            contracts_options=[
+                {
+                    "type": "always_passes",
+                    "name": "Contract foo",
+                    "warnings": ["Some warning.", "Another warning."],
+                },
+                {"type": "always_fails", "name": "Contract bar", "warnings": ["A third warning."]},
+            ]
+        )
+
+        result = lint_imports()
+
+        assert result == FAILURE
+
+        settings.PRINTER.pop_and_assert(
+            """
+            =============
+            Import Linter
+            =============
+
+            ---------
+            Contracts
+            ---------
+
+            Analyzed 26 files, 10 dependencies.
+            -----------------------------------
+
+            Contract foo KEPT (2 warnings)
+            Contract bar BROKEN (1 warning)
+
+            Contracts: 1 kept, 1 broken.
+
+            --------
+            Warnings
+            --------
+
+            Contract foo
+            ------------
+
+            - Some warning.
+            - Another warning.
+
+            Contract bar
+            ------------
+
+            - A third warning.
+
+
+            ----------------
+            Broken contracts
+            ----------------
+
+            Contract bar
+            ------------
+
+            This contract will always fail.
+            """
+        )
+
     def test_forbidden_import(self):
         """
         Tests the ForbiddenImportContract - a simple contract that

@@ -24,13 +24,19 @@ def render_report(report: Report) -> None:
 
     for contract, contract_check in report.get_contracts_and_checks():
         result_text = "KEPT" if contract_check.kept else "BROKEN"
+        warning_text = _build_warning_text(warnings_count=len(contract_check.warnings))
         color_key = output.SUCCESS if contract_check.kept else output.ERROR
         color = output.COLORS[color_key]
         output.print(f"{contract.name} ", newline=False)
-        output.print(result_text, color=color)
+        output.print(result_text, color=color, newline=False)
+        output.print(warning_text, color=output.COLORS[output.WARNING])
     output.new_line()
 
     output.print(f"Contracts: {report.kept_count} kept, {report.broken_count} broken.")
+
+    if report.warnings_count:
+        output.new_line()
+        _render_warnings(report)
 
     if report.broken_count:
         output.new_line()
@@ -55,6 +61,29 @@ def _render_could_not_run(report: Report) -> None:
         for field_name, message in exception.errors.items():
             output.indent_cursor()
             output.print_error(f"{field_name}: {message}", bold=False)
+
+
+def _build_warning_text(warnings_count: int) -> str:
+    if warnings_count:
+        noun = "warning" if warnings_count == 1 else "warnings"
+        return f" ({warnings_count} {noun})"
+    else:
+        return ""
+
+
+def _render_warnings(report: Report) -> None:
+    output.print_heading("Warnings", output.HEADING_LEVEL_TWO, style=output.WARNING)
+    no_contract_outputted_yet = True
+
+    for contract, check in report.get_contracts_and_checks():
+        if check.warnings:
+            if no_contract_outputted_yet:
+                no_contract_outputted_yet = False
+            else:
+                output.new_line()
+            output.print_heading(contract.name, output.HEADING_LEVEL_THREE, style=output.WARNING)
+            for warning in check.warnings:
+                output.print_warning(f"- {warning}")
 
 
 def _render_broken_contracts_details(report: Report) -> None:
