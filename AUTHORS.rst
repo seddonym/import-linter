@@ -8,6 +8,7 @@ Authors
 Contributors
 ============
 
+* John-Anthony Thevos - https://github.com/jthevos
 * Anthony Sottile - https://github.com/asottile
 * Łukasz Skarżyński - https://github.com/skarzi
 * Daniel Jurczak - https://github.com/danieljurczak
