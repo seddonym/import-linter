@@ -110,3 +110,7 @@ def test_lint_imports_debug_mode(is_debug_mode):
             cli.lint_imports(**kwargs)
     else:
         assert cli.EXIT_STATUS_ERROR == cli.lint_imports(**kwargs)
+
+
+def test_show_timings_smoke_test():
+    assert cli.EXIT_STATUS_SUCCESS == cli.lint_imports(show_timings=True)

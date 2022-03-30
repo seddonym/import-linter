@@ -16,7 +16,9 @@ SUCCESS = True
 FAILURE = False
 
 
-def lint_imports(config_filename: Optional[str] = None, is_debug_mode: bool = False) -> bool:
+def lint_imports(
+    config_filename: Optional[str] = None, is_debug_mode: bool = False, show_timings: bool = False
+) -> bool:
     """
     Analyse whether a Python package follows a set of contracts, and report on the results.
 
@@ -26,6 +28,8 @@ def lint_imports(config_filename: Optional[str] = None, is_debug_mode: bool = Fa
         config_filename: the filename to use to parse user options.
         is_debug_mode:   whether debugging should be turned on. In debug mode, exceptions are
                          not swallowed at the top level, so the stack trace can be seen.
+        show_timings:    whether to show the times taken to build the graph and to check
+                         each contract.
 
     Returns:
         True if the linting passed, False if it didn't.
@@ -33,7 +37,7 @@ def lint_imports(config_filename: Optional[str] = None, is_debug_mode: bool = Fa
     try:
         user_options = _read_user_options(config_filename=config_filename)
         _register_contract_types(user_options)
-        report = create_report(user_options)
+        report = create_report(user_options, show_timings)
     except Exception as e:
         if is_debug_mode:
             raise e
@@ -48,7 +52,7 @@ def lint_imports(config_filename: Optional[str] = None, is_debug_mode: bool = Fa
         return SUCCESS
 
 
-def create_report(user_options: UserOptions) -> Report:
+def create_report(user_options: UserOptions, show_timings: bool = False) -> Report:
     """
     Analyse whether a Python package follows a set of contracts, returning a report on the results.
 
@@ -57,11 +61,19 @@ def create_report(user_options: UserOptions) -> Report:
                             such as a module that could not be imported.
     """
     include_external_packages = _get_include_external_packages(user_options)
-    graph = _build_graph(
-        root_package_names=user_options.session_options["root_packages"],
-        include_external_packages=include_external_packages,
+    with settings.TIMER as timer:
+        graph = _build_graph(
+            root_package_names=user_options.session_options["root_packages"],
+            include_external_packages=include_external_packages,
+        )
+    graph_building_duration = timer.duration_in_s
+
+    return _build_report(
+        graph=graph,
+        graph_building_duration=graph_building_duration,
+        user_options=user_options,
+        show_timings=show_timings,
     )
-    return _build_report(graph=graph, user_options=user_options)
 
 
 # Private functions
@@ -101,8 +113,12 @@ def _build_graph(
     )
 
 
-def _build_report(graph: ImportGraph, user_options: UserOptions) -> Report:
-    report = Report(graph=graph)
+def _build_report(
+    graph: ImportGraph, graph_building_duration: int, user_options: UserOptions, show_timings: bool
+) -> Report:
+    report = Report(
+        graph=graph, show_timings=show_timings, graph_building_duration=graph_building_duration
+    )
     for contract_options in user_options.contracts_options:
         contract_class = registry.get_contract_class(contract_options["type"])
         try:
@@ -115,11 +131,12 @@ def _build_report(graph: ImportGraph, user_options: UserOptions) -> Report:
             report.add_invalid_contract_options(contract_options["name"], e)
             return report
 
-        # Make a copy so that contracts can mutate the graph without affecting
-        # other contract checks.
-        copy_of_graph = deepcopy(graph)
-        check = contract.check(copy_of_graph)
-        report.add_contract_check(contract, check)
+        with settings.TIMER as timer:
+            # Make a copy so that contracts can mutate the graph without affecting
+            # other contract checks.
+            copy_of_graph = deepcopy(graph)
+            check = contract.check(copy_of_graph)
+        report.add_contract_check(contract, check, duration=timer.duration_in_s)
     return report
 
 
@@ -189,3 +206,15 @@ def _get_include_external_packages(user_options: UserOptions) -> Optional[bool]:
         return None
     # Cast the string to a boolean.
     return include_external_packages_str in ("True", "true")
+
+
+def _get_show_timings(user_options: UserOptions) -> bool:
+    """
+    Get a boolean (or None) for the show_timings option in user_options.
+    """
+    try:
+        show_timings_str = user_options.session_options["show_timings"]
+    except KeyError:
+        return False
+    # Cast the string to a boolean.
+    return show_timings_str in ("True", "true")

@@ -9,6 +9,7 @@ from importlinter.application.use_cases import FAILURE, SUCCESS, create_report, 
 from importlinter.application.user_options import UserOptions
 from tests.adapters.building import FakeGraphBuilder
 from tests.adapters.printing import FakePrinter
+from tests.adapters.timing import FakeTimer
 from tests.adapters.user_options import ExceptionRaisingUserOptionReader, FakeUserOptionReader
 
 
@@ -175,6 +176,53 @@ class TestCheckContractsAndPrintReport:
             """
         )
 
+    def test_timings(self):
+        timer = FakeTimer()
+        timer.setup(tick_duration=5, increment=10)
+        self._configure(
+            contracts_options=[
+                {
+                    "type": "always_passes",
+                    "name": "Contract foo",
+                },
+                {"type": "always_passes", "name": "Contract bar", "warnings": ["A warning."]},
+            ],
+            timer=timer,
+        )
+
+        lint_imports(show_timings=True)
+
+        settings.PRINTER.pop_and_assert(
+            """
+            =============
+            Import Linter
+            =============
+
+            Building graph took 5s.
+
+            ---------
+            Contracts
+            ---------
+
+            Analyzed 26 files, 10 dependencies.
+            -----------------------------------
+
+            Contract foo KEPT [15s]
+            Contract bar KEPT (1 warning) [25s]
+
+            Contracts: 2 kept, 0 broken.
+
+            --------
+            Warnings
+            --------
+
+            Contract bar
+            ------------
+
+            - A warning.
+            """
+        )
+
     def test_forbidden_import(self):
         """
         Tests the ForbiddenImportContract - a simple contract that
@@ -284,10 +332,12 @@ class TestCheckContractsAndPrintReport:
     def _configure(
         self,
         contracts_options: List[Dict[str, Any]],
+        session_options: Optional[Dict[str, Any]] = None,
         contract_types: Optional[List[str]] = None,
         graph: Optional[ImportGraph] = None,
+        timer: Optional[FakeTimer] = None,
     ):
-        session_options = {"root_package": "mypackage"}
+        session_options = session_options or {"root_package": "mypackage"}
         if not contract_types:
             contract_types = [
                 "always_passes: tests.helpers.contracts.AlwaysPassesContract",
@@ -304,6 +354,7 @@ class TestCheckContractsAndPrintReport:
             USER_OPTION_READERS={"foo": reader},
             GRAPH_BUILDER=FakeGraphBuilder(),
             PRINTER=FakePrinter(),
+            TIMER=timer or FakeTimer(),
         )
         if graph is None:
             graph = self._build_default_graph()
