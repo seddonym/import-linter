@@ -92,6 +92,8 @@ Running this will check that your project adheres to the contracts you've define
 - ``--config``:
   (optional) The configuration file to use. This overrides the default file search strategy.
   By default it's assumed that the file is an ini-file unless the file extension is ``toml``.
+- ``show_timings``:
+  Display the times taken to build the graph and check each contract.
 
 **Default usage:**
 
@@ -104,3 +106,9 @@ Running this will check that your project adheres to the contracts you've define
 .. code-block:: text
 
     lint-imports --config path/to/alternative-config.ini
+
+**Showing timings:**
+
+.. code-block:: text
+
+    lint-imports --show-timings

@@ -10,6 +10,7 @@ Latest
 * Add EnumField.
 * Support warnings in contract checks.
 * Add unmatched_ignore_imports_alerting option for each contract.
+* Add command line argument for showing timings.
 
 1.2.6 (2021-09-24)
 ------------------

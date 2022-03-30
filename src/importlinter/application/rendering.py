@@ -14,6 +14,11 @@ def render_report(report: Report) -> None:
         return
 
     output.print_heading("Import Linter", output.HEADING_LEVEL_ONE)
+
+    if report.show_timings:
+        output.print(f"Building graph took {report.graph_building_duration}s.")
+        output.new_line()
+
     output.print_heading("Contracts", output.HEADING_LEVEL_TWO)
     file_count = report.module_count
     dependency_count = report.import_count
@@ -29,7 +34,11 @@ def render_report(report: Report) -> None:
         color = output.COLORS[color_key]
         output.print(f"{contract.name} ", newline=False)
         output.print(result_text, color=color, newline=False)
-        output.print(warning_text, color=output.COLORS[output.WARNING])
+        output.print(warning_text, color=output.COLORS[output.WARNING], newline=False)
+        if report.show_timings:
+            output.print(f" [{report.get_duration(contract)}s]", newline=False)
+        output.new_line()
+
     output.new_line()
 
     output.print(f"Contracts: {report.kept_count} kept, {report.broken_count} broken.")
