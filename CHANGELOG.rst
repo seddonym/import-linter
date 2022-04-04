@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Latest
-------
+1.2.7 (2022-04-04)
+------------------
 
 * Officially support Python 3.10.
 * Drop support for Python 3.6.
