@@ -52,6 +52,29 @@ Or, with multiple root packages:
 
 .. _the Grimp build_graph documentation: https://grimp.readthedocs.io/en/latest/usage.html#grimp.build_graph
 
+**Interpolations**
+
+When using `.ini` file, extended interpolation may be used, which may be helpful when
+groups of modules need to be referenced in multiple places.
+
+.. code-block:: ini
+
+    [importlinter:contract:1]
+    name = Ports should not depend on adapters.
+    type = forbidden
+    source_modules = ${ports:all}
+    forbidden_modules = ${adapters:all}
+
+    [ports]
+    all =
+        mypackage.inbound
+        yourpackage.outbound
+
+    [adapters]
+    all =
+        mypackage.adapters
+        yourpackage.adapters
+
 Contracts
 ---------
 

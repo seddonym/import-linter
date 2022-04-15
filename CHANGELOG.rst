@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Snapshot
+--------
+
+* Added support for extended interpolation for .ini files.
+
 1.2.7 (2022-04-04)
 ------------------
 

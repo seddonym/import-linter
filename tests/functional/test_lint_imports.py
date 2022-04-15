@@ -18,6 +18,7 @@ unmatched_ignore_imports_directory = testpackage_directory / "unmatched_ignore_i
     (
         (testpackage_directory, None, cli.EXIT_STATUS_SUCCESS),
         (testpackage_directory, ".brokencontract.ini", cli.EXIT_STATUS_ERROR),
+        (testpackage_directory, ".interpolationcontract.ini", cli.EXIT_STATUS_SUCCESS),
         (testpackage_directory, ".malformedcontract.ini", cli.EXIT_STATUS_ERROR),
         (testpackage_directory, ".customkeptcontract.ini", cli.EXIT_STATUS_SUCCESS),
         (testpackage_directory, ".externalbrokencontract.ini", cli.EXIT_STATUS_ERROR),
