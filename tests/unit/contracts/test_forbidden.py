@@ -181,6 +181,51 @@ class TestForbiddenContract:
 
         assert contract_check.kept == contract_is_kept
 
+    @pytest.mark.xfail(reason="Bug with allow indirect imports")
+    def test_allow_indirect_imports_checks_descendants(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            forbidden_modules=("mypackage.green",),
+            allow_indirect_imports=True,
+        )
+
+        contract_check = contract.check(graph=graph)
+
+        assert not contract_check.kept
+
+        expected_metadata = {
+            "invalid_chains": [
+                {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.one",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.one.alpha",
+                                "imported": "mypackage.green.beta",
+                                "line_numbers": (3,),
+                            }
+                        ]
+                    ],
+                },
+                {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.three",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.three",
+                                "imported": "mypackage.green",
+                                "line_numbers": (4,),
+                            }
+                        ]
+                    ],
+                },
+            ]
+        }
+
+        assert expected_metadata == contract_check.metadata
+
     def test_ignore_imports_adds_warnings(self):
         graph = self._build_graph()
         contract = ForbiddenContract(
