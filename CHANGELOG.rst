@@ -1,6 +1,11 @@
 Changelog
 =========
 
+latest
+------
+
+* Add Python API for reading configuration.
+
 1.2.7 (2022-04-04)
 ------------------
 

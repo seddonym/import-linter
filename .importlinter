@@ -8,6 +8,8 @@ containers =
     importlinter
 layers=
     cli
+    api
+    configuration
     adapters
     contracts
     application

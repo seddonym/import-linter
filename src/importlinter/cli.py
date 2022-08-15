@@ -4,24 +4,10 @@ from typing import Optional
 
 import click
 
-from .adapters.building import GraphBuilder
-from .adapters.filesystem import FileSystem
-from .adapters.printing import ClickPrinter
-from .adapters.timing import SystemClockTimer
-from .adapters.user_options import IniFileUserOptionReader, TomlFileUserOptionReader
+from . import configuration
 from .application import use_cases
-from .application.app_config import settings
 
-settings.configure(
-    USER_OPTION_READERS={
-        "ini": IniFileUserOptionReader(),
-        "toml": TomlFileUserOptionReader(),
-    },
-    GRAPH_BUILDER=GraphBuilder(),
-    PRINTER=ClickPrinter(),
-    FILE_SYSTEM=FileSystem(),
-    TIMER=SystemClockTimer(),
-)
+configuration.configure()
 
 EXIT_STATUS_SUCCESS = 0
 EXIT_STATUS_ERROR = 1
