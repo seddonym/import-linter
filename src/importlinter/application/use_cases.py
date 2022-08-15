@@ -35,7 +35,7 @@ def lint_imports(
         True if the linting passed, False if it didn't.
     """
     try:
-        user_options = _read_user_options(config_filename=config_filename)
+        user_options = read_user_options(config_filename=config_filename)
         _register_contract_types(user_options)
         report = create_report(user_options, show_timings)
     except Exception as e:
@@ -50,6 +50,31 @@ def lint_imports(
         return FAILURE
     else:
         return SUCCESS
+
+
+def read_user_options(config_filename: Optional[str] = None) -> UserOptions:
+    """
+    Return the UserOptions object from the supplied config file.
+
+    If no filename is supplied, look in the default location
+    (see importlinter.cli.lint_imports).
+
+    Raises:
+        FileNotFoundError if no configuration file could be found.
+    """
+    readers = settings.USER_OPTION_READERS.values()
+    if config_filename:
+        if config_filename.endswith(".toml"):
+            readers = [settings.USER_OPTION_READERS["toml"]]
+        else:
+            readers = [settings.USER_OPTION_READERS["ini"]]
+
+    for reader in readers:
+        options = reader.read_options(config_filename=config_filename)
+        if options:
+            normalized_options = _normalize_user_options(options)
+            return normalized_options
+    raise FileNotFoundError("Could not read any configuration.")
 
 
 def create_report(user_options: UserOptions, show_timings: bool = False) -> Report:
@@ -80,28 +105,14 @@ def create_report(user_options: UserOptions, show_timings: bool = False) -> Repo
 # -----------------
 
 
-def _read_user_options(config_filename: Optional[str] = None) -> UserOptions:
-    readers = settings.USER_OPTION_READERS.values()
-    if config_filename:
-        if config_filename.endswith(".toml"):
-            readers = [settings.USER_OPTION_READERS["toml"]]
-        else:
-            readers = [settings.USER_OPTION_READERS["ini"]]
-
-    for reader in readers:
-        options = reader.read_options(config_filename=config_filename)
-        if options:
-            normalized_options = _normalize_user_options(options)
-            return normalized_options
-    raise RuntimeError("Could not read any configuration.")
-
-
 def _normalize_user_options(user_options: UserOptions) -> UserOptions:
     normalized_options = copy(user_options)
     if "root_packages" not in normalized_options.session_options:
         normalized_options.session_options["root_packages"] = [
             normalized_options.session_options["root_package"]
         ]
+    if "root_package" in normalized_options.session_options:
+        del normalized_options.session_options["root_package"]
     return normalized_options
 
 
