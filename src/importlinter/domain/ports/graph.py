@@ -1,32 +1,29 @@
-import abc
 from typing import Dict, List, Optional, Set, Tuple, Union
 
+# N.B. typing_extensions can be changed to typing once drop support for Python 3.7.
+from typing_extensions import Protocol
 
-class ImportGraph(abc.ABC):
+
+class ImportGraph(Protocol):
     @property
-    @abc.abstractmethod
     def modules(self) -> Set[str]:
         """
         The names of all the modules in the graph.
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
     def count_imports(self) -> int:
         """
         Return the number of imports in the graph.
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
     def find_descendants(self, module: str) -> Set[str]:
         raise NotImplementedError
 
-    @abc.abstractmethod
     def find_shortest_chain(self, importer: str, imported: str) -> Optional[Tuple[str, ...]]:
         raise NotImplementedError
 
-    @abc.abstractmethod
     def find_shortest_chains(self, importer: str, imported: str) -> Set[Tuple[str, ...]]:
         """
         Find the shortest import chains that exist between the importer and imported, and
@@ -39,7 +36,6 @@ class ImportGraph(abc.ABC):
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
     def get_import_details(
         self, *, importer: str, imported: str
     ) -> List[Dict[str, Union[str, int]]]:
@@ -57,7 +53,6 @@ class ImportGraph(abc.ABC):
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
     def add_import(
         self,
         *,
@@ -68,6 +63,5 @@ class ImportGraph(abc.ABC):
     ) -> None:
         raise NotImplementedError
 
-    @abc.abstractmethod
     def remove_import(self, *, importer: str, imported: str) -> None:
         raise NotImplementedError
