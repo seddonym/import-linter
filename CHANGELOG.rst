@@ -5,6 +5,7 @@ latest
 ------
 
 * Add Python API for reading configuration.
+* Add support for namespace packages.
 
 1.2.7 (2022-04-04)
 ------------------

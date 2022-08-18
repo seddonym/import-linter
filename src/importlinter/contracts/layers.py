@@ -154,8 +154,12 @@ class LayersContract(Contract):
 
     def _validate_containers(self, graph: ImportGraph) -> None:
         root_package_names = self.session_options["root_packages"]
+        root_packages = tuple(Module(name) for name in root_package_names)
+
         for container in self.containers:  # type: ignore
-            if Module(container).root_package_name not in root_package_names:
+            if not any(
+                Module(container).is_in_package(root_package) for root_package in root_packages
+            ):
                 if len(root_package_names) == 1:
                     root_package_name = root_package_names[0]
                     error_message = (

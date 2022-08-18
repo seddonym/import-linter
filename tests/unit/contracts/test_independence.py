@@ -450,3 +450,53 @@ def test_ignore_imports_tolerates_duplicates():
     contract_check = contract.check(graph=graph)
 
     assert contract_check.kept
+
+
+@pytest.mark.parametrize(
+    "independent_modules, is_kept",
+    (
+        (("namespace.portionone.blue", "namespace.subnamespace.portiontwo.blue"), True),
+        (("namespace.portionone.blue", "namespace.subnamespace.portiontwo.green"), False),
+        (
+            ("namespace.subnamespace.portiontwo.blue", "namespace.subnamespace.portiontwo.green"),
+            False,
+        ),
+    ),
+)
+def test_namespace_packages(independent_modules, is_kept):
+    graph = ImportGraph()
+    for module in (
+        "portionone",
+        "portionone.blue",
+        "subnamespace.portiontwo",
+        "subnamespace.portiontwo.green",
+        "subnamespace.portiontwo.blue",
+    ):
+        graph.add_module(f"namespace.{module}")
+    # Add imports between portions to another.
+    graph.add_import(
+        importer="namespace.portionone.blue",
+        imported="namespace.subnamespace.portiontwo.green",
+        line_number=3,
+        line_contents="-",
+    )
+    graph.add_import(
+        importer="namespace.subnamespace.portiontwo.blue",
+        imported="namespace.subnamespace.portiontwo.green",
+        line_number=3,
+        line_contents="-",
+    )
+
+    contract = IndependenceContract(
+        name="Independence contract",
+        session_options={
+            "root_packages": ["namespace.portionone", "namespace.subnamespace.portiontwo"]
+        },
+        contract_options={
+            "modules": independent_modules,
+        },
+    )
+
+    contract_check = contract.check(graph=graph)
+
+    assert contract_check.kept == is_kept

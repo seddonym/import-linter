@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,12 @@ assets_directory = this_directory / ".." / "assets"
 testpackage_directory = assets_directory / "testpackage"
 multipleroots_directory = assets_directory / "multipleroots"
 unmatched_ignore_imports_directory = testpackage_directory / "unmatched_ignore_imports_alerting"
+namespace_packages_directory = assets_directory / "namespacepackages"
+
+# Add namespace packages to Python path
+sys.path.extend(
+    [str(namespace_packages_directory / location) for location in ("locationone", "locationtwo")],
+)
 
 
 @pytest.mark.parametrize(
@@ -89,6 +96,9 @@ unmatched_ignore_imports_directory = testpackage_directory / "unmatched_ignore_i
             str(unmatched_ignore_imports_directory / "none.ini"),
             cli.EXIT_STATUS_SUCCESS,
         ),
+        # Namespace packages
+        (namespace_packages_directory, "keptcontract.ini", cli.EXIT_STATUS_SUCCESS),
+        (namespace_packages_directory, "brokencontract.ini", cli.EXIT_STATUS_ERROR),
     ),
 )
 def test_lint_imports(working_directory, config_filename, expected_result):
@@ -104,6 +114,8 @@ def test_lint_imports(working_directory, config_filename, expected_result):
 
 @pytest.mark.parametrize("is_debug_mode", (True, False))
 def test_lint_imports_debug_mode(is_debug_mode):
+    os.chdir(testpackage_directory)
+
     kwargs = dict(config_filename=".nonexistentcontract.ini", is_debug_mode=is_debug_mode)
     if is_debug_mode:
         with pytest.raises(FileNotFoundError):
@@ -113,4 +125,5 @@ def test_lint_imports_debug_mode(is_debug_mode):
 
 
 def test_show_timings_smoke_test():
+    os.chdir(testpackage_directory)
     assert cli.EXIT_STATUS_SUCCESS == cli.lint_imports(show_timings=True)
