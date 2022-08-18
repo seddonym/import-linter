@@ -51,6 +51,9 @@ class Module(ValueObject):
     def is_descendant_of(self, module: "Module") -> bool:
         return self.name.startswith(f"{module.name}.")
 
+    def is_in_package(self, package: "Module") -> bool:
+        return self == package or self.is_descendant_of(package)
+
 
 class DirectImport(ValueObject):
     """
