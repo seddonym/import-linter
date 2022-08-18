@@ -273,6 +273,64 @@ class TestForbiddenContract:
         )
 
 
+class TestForbiddenContractForNamespacePackages:
+    @pytest.mark.parametrize(
+        "forbidden, is_kept",
+        [
+            ("namespace.subnamespace.portiontwo.green", False),
+            ("namespace.subnamespace.portiontwo.blue", True),
+        ],
+    )
+    def test_allows_forbidding_of_inter_portion_imports(self, forbidden, is_kept):
+        graph = ImportGraph()
+        for module in (
+            "portionone",
+            "portionone.blue",
+            "subnamespace.portiontwo",
+            "subnamespace.portiontwo.green",
+            "subnamespace.portiontwo.blue",
+        ):
+            graph.add_module(f"namespace.{module}")
+        for external_module in ("sqlalchemy", "requests"):
+            graph.add_module(external_module, is_squashed=True)
+        # Add import from one portion to another.
+        graph.add_import(
+            importer="namespace.portionone.blue",
+            imported="namespace.subnamespace.portiontwo.green",
+            line_number=3,
+            line_contents="-",
+        )
+        contract = self._build_contract(
+            root_packages=["namespace.portionone", "namespace.subnamespace.portiontwo"],
+            source_modules=("namespace.portionone.blue",),
+            forbidden_modules=(forbidden,),
+        )
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept == is_kept
+
+    def _build_contract(
+        self,
+        root_packages,
+        source_modules,
+        forbidden_modules,
+        include_external_packages=False,
+    ):
+        session_options = {"root_packages": root_packages}
+        if include_external_packages:
+            session_options["include_external_packages"] = "True"
+
+        return ForbiddenContract(
+            name="Forbid contract",
+            session_options=session_options,
+            contract_options={
+                "source_modules": source_modules,
+                "forbidden_modules": forbidden_modules,
+            },
+        )
+
+
 def test_render_broken_contract():
     settings.configure(PRINTER=FakePrinter())
     contract = ForbiddenContract(

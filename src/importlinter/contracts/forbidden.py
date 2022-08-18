@@ -4,6 +4,7 @@ from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
 from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
+from importlinter.domain.imports import Module
 from importlinter.domain.ports.graph import ImportGraph
 
 
@@ -137,9 +138,10 @@ class ForbiddenContract(Contract):
             )
 
     def _contains_external_forbidden_modules(self, graph: ImportGraph) -> bool:
-        root_packages = self.session_options["root_packages"]
+        root_packages = [Module(name) for name in self.session_options["root_packages"]]
         return not all(
-            m.root_package_name in root_packages for m in self.forbidden_modules  # type: ignore
+            any(forbidden_module.is_in_package(root_package) for root_package in root_packages)
+            for forbidden_module in self.forbidden_modules  # type: ignore
         )
 
     def _graph_was_built_with_externals(self) -> bool:

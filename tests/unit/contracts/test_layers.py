@@ -1428,6 +1428,75 @@ class TestGetIndirectCollapsedChains:
         return detailed_chain
 
 
+class TestLayersContractForNamespacePackages:
+    @pytest.mark.parametrize(
+        "containers, is_kept",
+        [
+            (("namespace.subnamespace.portiontwo.green", "namespace.portionone.blue"), True),
+            (
+                (
+                    "namespace.subnamespace.portiontwo.green",
+                    "namespace.subnamespace.portiontwo.blue",
+                ),
+                False,
+            ),
+        ],
+    )
+    def test_allows_namespace_containers(self, containers, is_kept):
+        graph = ImportGraph()
+        for module in (
+            "portionone",
+            "portionone.blue",
+            "portionone.blue.high",
+            "portionone.blue.middle",
+            "portionone.blue.low",
+            "subnamespace.portiontwo",
+            "subnamespace.portiontwo.green",
+            "subnamespace.portiontwo.green.high",
+            "subnamespace.portiontwo.green.middle",
+            "subnamespace.portiontwo.green.low",
+            "subnamespace.portiontwo.blue",
+            "subnamespace.portiontwo.blue.high",
+            "subnamespace.portiontwo.blue.middle",
+            "subnamespace.portiontwo.blue.low",
+        ):
+            graph.add_module(f"namespace.{module}")
+        # Add legal imports
+        for package in (
+            "portionone.blue",
+            "subnamespace.portiontwo.green",
+            "subnamespace.portiontwo.blue",
+        ):
+            for importer_name, imported_name in (("high", "middle"), ("middle", "low")):
+                graph.add_import(
+                    importer=f"namespace.{package}.{importer_name}",
+                    imported=f"namespace.{package}.{imported_name}",
+                    line_number=3,
+                    line_contents="-",
+                )
+        # Add an illegal import
+        graph.add_import(
+            importer="namespace.subnamespace.portiontwo.blue.low",
+            imported="namespace.subnamespace.portiontwo.blue.middle",
+            line_number=3,
+            line_contents="-",
+        )
+        contract = LayersContract(
+            name="Layers contract",
+            session_options={
+                "root_packages": ["namespace.portionone", "namespace.subnamespace.portiontwo"]
+            },
+            contract_options={
+                "layers": ["high", "middle", "low"],
+                "containers": containers,
+            },
+        )
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept == is_kept
+
+
 class TestPopDirectImports:
     def test_direct_import_between_descendants(self):
         graph = self._build_graph()

@@ -16,7 +16,7 @@ class IndependenceContract(Contract):
 
     Configuration options:
 
-        - modules:        A list of Modules that should be independent from each other.
+        - modules:        A list of Modules that should be independent of each other.
         - ignore_imports: A set of ImportExpressions. These imports will be ignored: if the import
                           would cause a contract to be broken, adding it to the set will cause
                           the contract be kept instead. (Optional.)

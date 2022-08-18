@@ -39,11 +39,15 @@ Or, with multiple root packages:
 **Options:**
 
 - ``root_package``:
-  The name of the top-level Python package to validate. This package must be importable: usually this
-  means it is has been installed using pip, or it's in the current directory. (Either this or ``root_packages`` is required.)
+  The name of the Python package to validate. For regular packages, this must be the top level package (i.e. one with no
+  dots in its name). However, in the special case of `namespace packages`_, the name of the `portion`_ should be
+  supplied, for example ``'mynamespace.foo'``.
+  This package must be importable: usually this means it is has been installed using pip, or it's in the current
+  directory. (Either this or ``root_packages`` is required.)
 - ``root_packages``:
-  The names of the top-level Python packages to validate. This should be used in place of ``root_package`` if you want
-  to analyse the imports of multiple packages. (Either this or ``root_package`` is required.)
+  The names of the Python packages to validate. This should be used in place of ``root_package`` if you want
+  to analyse the imports of multiple packages, and is subject to the same requirements. (Either this or
+  ``root_package`` is required.)
 - ``include_external_packages``:
   Whether to include external packages when building the import graph. Unlike root packages, external packages are
   *not* statically analyzed, so no imports from external packages will be checked. However, imports *of* external
@@ -112,3 +116,6 @@ Running this will check that your project adheres to the contracts you've define
 .. code-block:: text
 
     lint-imports --show-timings
+
+.. _namespace packages: https://docs.python.org/3/glossary.html#term-namespace-package
+.. _portion: https://docs.python.org/3/glossary.html#term-portion

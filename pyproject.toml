@@ -8,3 +8,7 @@ force_grid_wrap = 0
 use_parentheses = "True"
 line_length = 99
 
+[tool.mypy]
+exclude = [
+    '^tests/assets/',
+]
