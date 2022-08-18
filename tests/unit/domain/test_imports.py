@@ -49,6 +49,23 @@ class TestModule:
     def test_is_child_of(self, child, parent, expected_bool):
         assert child.is_child_of(parent) is expected_bool
 
+    @pytest.mark.parametrize(
+        ("candidate", "package", "expected_bool"),
+        [
+            (Module("somepackage"), Module("somepackage"), True),
+            (Module("somepackage.foo"), Module("somepackage"), True),
+            (Module("somepackage.foo.blue"), Module("somepackage"), True),
+            (Module("somepackage.foo.blue"), Module("somepackage.foo"), True),
+            (Module("somepackage.foo.blue.one.alpha"), Module("somepackage.foo.blue"), True),
+            (Module("somepackage"), Module("somepackage.foo"), False),
+            (Module("somepackage"), Module("differentpackage"), False),
+            (Module("somepackage.foo"), Module("differentpackage"), False),
+            (Module("somepackage.foo.blue.one.alpha"), Module("somepackage.foo.green"), False),
+        ],
+    )
+    def test_is_in_package(self, candidate, package, expected_bool):
+        assert candidate.is_in_package(package) is expected_bool
+
 
 class TestDirectImport:
     def test_object_representation(self):
