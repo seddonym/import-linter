@@ -51,14 +51,6 @@ class Module(ValueObject):
     def is_descendant_of(self, module: "Module") -> bool:
         return self.name.startswith(f"{module.name}.")
 
-    def is_package(self) -> bool:
-        """
-        Whether the module can contain other modules.
-
-        Practically, this corresponds to whether a module is an __init__.py file.
-        """
-        raise NotImplementedError
-
 
 class DirectImport(ValueObject):
     """
