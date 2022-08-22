@@ -1,6 +1,11 @@
 Changelog
 =========
 
+latest
+------
+
+* Include py.typed file in package data to support type checking
+
 1.3.0 (2022-08-22)
 ------------------
 
