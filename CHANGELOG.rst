@@ -1,8 +1,8 @@
 Changelog
 =========
 
-latest
-------
+1.3.0 (2022-08-22)
+------------------
 
 * Add Python API for reading configuration.
 * Add support for namespace packages.
