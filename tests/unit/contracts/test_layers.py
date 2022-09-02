@@ -107,6 +107,22 @@ class TestLayerMultipleContainers:
 
         assert contract_check.kept is False
 
+    def test_import_via_noncontainer_means_contract_is_broken(self):
+        contract = self._build_contract()
+        graph = self._build_graph()
+        graph.add_import(
+            importer="mypackage.one.medium.orange", imported="mypackage.noncontainer.blue"
+        )
+        graph.add_import(
+            importer="mypackage.noncontainer.blue", imported="mypackage.two.high.red.alpha"
+        )
+        graph.add_import(
+            importer="mypackage.two.high.red.alpha", imported="mypackage.one.high.green"
+        )
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept is False
+
     def _build_graph(self):
         graph = ImportGraph()
         for module in (
@@ -142,6 +158,8 @@ class TestLayerMultipleContainers:
             "mypackage.three.medium.purple",
             "mypackage.three.low",
             "mypackage.three.low.cyan",
+            "mypackage.noncontainer",
+            "mypackage.noncontainer.blue",
         ):
             graph.add_module(module)
 
