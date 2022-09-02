@@ -1,5 +1,5 @@
 import copy
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Union
 
 from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
@@ -328,12 +328,77 @@ class LayersContract(Contract):
         temp_graph.squash_module(importer_package.name)
         temp_graph.squash_module(imported_package.name)
 
+        # Check more cheaply for indirect imports. This is an optimisation that assumes that, most
+        # of the time,there won't be any illegal imports, so it's better to get a quick 'no' but
+        # potentially spend longer getting the details once we know that there are indeed illegal
+        # imports. This is particularly impactful for packages deep in the module hierarchy.
+        if not cls._has_any_indirect_imports_using_cheaper_check(
+            temp_graph, importer_package, imported_package
+        ):
+            return []
+
         segments = cls._find_segments(
             temp_graph, importer=importer_package, imported=imported_package
         )
         return cls._segments_to_collapsed_chains(
             graph, segments, importer=importer_package, imported=imported_package
         )
+
+    @classmethod
+    def _has_any_indirect_imports_using_cheaper_check(
+        cls, graph: ImportGraph, importer_package: Module, imported_package: Module
+    ) -> bool:
+        """Return whether there are any indirect imports between the two packages.
+
+        This is an optimisation step that gives _get_indirect_collapsed_chains
+        the chance to exit early if there are no chains. It assumes that the supplied
+        packages are squashed and that their siblings have been removed from the graph.
+        """
+        temp_graph = copy.deepcopy(graph)
+
+        cls._recursively_squash_non_direct_ancestors(temp_graph, imported_package)
+
+        return bool(temp_graph.find_shortest_chain(importer_package.name, imported_package.name))
+
+    @classmethod
+    def _recursively_squash_non_direct_ancestors(cls, graph: ImportGraph, module: Module) -> None:
+        """
+        Squash packages in the graph that are not direct ancestors of the supplied module.
+
+        This includes any unsquashed top level packages. It also includes siblings, though when
+        this is called the siblings should already have been removed or squashed, it just makes
+        for a simpler implementation.
+        """
+        is_top_level_module = module.name == module.root_package_name
+        if is_top_level_module:
+            modules_to_squash = cls._find_top_level_modules(graph) - {module}
+        else:
+            if module.parent.name not in graph.modules:
+                # This happens for namespace packages; in this case we don't bother.
+                # TODO: make it possible to tell using Grimp.
+                modules_to_squash = set()
+            else:
+                modules_to_squash = cls._find_siblings(graph, module)
+
+        for module_to_squash in modules_to_squash:
+            if not graph.is_module_squashed(module_to_squash.name):
+                graph.squash_module(module_to_squash.name)
+
+        if not is_top_level_module:
+            cls._recursively_squash_non_direct_ancestors(graph, module.parent)
+
+    @classmethod
+    def _find_siblings(cls, graph: ImportGraph, module: Module) -> Set[Module]:
+        return {
+            Module(child)
+            for child in graph.find_children(module.parent.name)
+            if child != module.name
+        }
+
+    @classmethod
+    def _find_top_level_modules(cls, graph: ImportGraph) -> Set[Module]:
+        # TODO: this is pretty inefficient, it should be a method on the graph.
+        return {Module(module_name) for module_name in graph.modules if "." not in module_name}
 
     @classmethod
     def _find_segments(cls, graph: ImportGraph, importer: Module, imported: Module):

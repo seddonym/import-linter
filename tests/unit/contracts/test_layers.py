@@ -1608,3 +1608,70 @@ class TestPopDirectImports:
             assert graph.direct_import_exists(
                 importer=other_import["importer"], imported=other_import["imported"]
             )
+
+
+class TestRecursivelySquashNonDirectAncestors:
+    def test_top_level_module(self):
+        graph = self._build_graph()
+        graph.squash_module("mypackage")
+
+        LayersContract._recursively_squash_non_direct_ancestors(graph, Module("mypackage"))
+
+        assert graph.modules == {"mypackage", "another", "yetanother"}
+
+    def test_second_level_module(self):
+        graph = self._build_graph()
+        graph.squash_module("mypackage.green")
+
+        LayersContract._recursively_squash_non_direct_ancestors(graph, Module("mypackage.green"))
+
+        assert graph.modules == {
+            "mypackage",
+            "mypackage.green",
+            "mypackage.blue",
+            "mypackage.orange",
+            "another",
+            "yetanother",
+        }
+
+    def test_third_level_module(self):
+        graph = self._build_graph()
+
+        LayersContract._recursively_squash_non_direct_ancestors(
+            graph, Module("mypackage.green.two")
+        )
+
+        assert graph.modules == {
+            "mypackage",
+            "mypackage.green",
+            "mypackage.green.one",
+            "mypackage.green.two",
+            "mypackage.green.three",
+            "mypackage.blue",
+            "mypackage.orange",
+            "another",
+            "yetanother",
+        }
+
+    def _build_graph(self):
+        graph = ImportGraph()
+        graph.add_module("mypackage")
+        graph.add_module("mypackage.green")
+        graph.add_module("mypackage.green.one")
+        graph.add_module("mypackage.green.one.alpha")
+        graph.add_module("mypackage.green.one.beta")
+        graph.add_module("mypackage.green.one.gamma")
+        graph.add_module("mypackage.green.two")
+        graph.add_module("mypackage.green.three")
+        graph.add_module("mypackage.blue")
+        graph.add_module("mypackage.blue.one")
+        graph.add_module("mypackage.blue.two")
+        graph.add_module("mypackage.blue.three")
+        graph.add_module("mypackage.orange")
+        graph.add_module("another")
+        graph.add_module("another.blue")
+        graph.add_module("another.blue.one")
+        graph.add_module("yetanother")
+        graph.add_module("yetanother.orange")
+        graph.add_module("yetanother.orange.two")
+        return graph

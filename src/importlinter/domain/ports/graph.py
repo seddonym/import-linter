@@ -18,6 +18,9 @@ class ImportGraph(Protocol):
         """
         raise NotImplementedError
 
+    def find_children(self, module: str) -> Set[str]:
+        raise NotImplementedError
+
     def find_descendants(self, module: str) -> Set[str]:
         raise NotImplementedError
 
@@ -73,6 +76,9 @@ class ImportGraph(Protocol):
         raise NotImplementedError
 
     def squash_module(self, module: str) -> None:
+        raise NotImplementedError
+
+    def is_module_squashed(self, module: str) -> bool:
         raise NotImplementedError
 
     def remove_module(self, module: str) -> None:
