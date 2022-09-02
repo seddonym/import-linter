@@ -299,7 +299,9 @@ class LayersContract(Contract):
         return layer_chain_data
 
     @classmethod
-    def _get_indirect_collapsed_chains(cls, graph, importer_package, imported_package):
+    def _get_indirect_collapsed_chains(
+        cls, graph: ImportGraph, importer_package: Module, imported_package: Module
+    ) -> List:
         """
         Squashes the two packages.
         Gets a list of paths between them, called segments.
@@ -334,7 +336,7 @@ class LayersContract(Contract):
         )
 
     @classmethod
-    def _find_segments(cls, graph, importer: Module, imported: Module):
+    def _find_segments(cls, graph: ImportGraph, importer: Module, imported: Module):
         """
         Return list of headless and tailless detailed chains.
         """
@@ -345,18 +347,26 @@ class LayersContract(Contract):
             if len(chain) == 2:
                 raise ValueError("Direct chain found - these should have been removed.")
             detailed_chain = []
-            for importer, imported in [(chain[i], chain[i + 1]) for i in range(len(chain) - 1)]:
-                import_details = graph.get_import_details(importer=importer, imported=imported)
+            for importer_in_chain, imported_in_chain in [
+                (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
+            ]:
+                import_details = graph.get_import_details(
+                    importer=importer_in_chain, imported=imported_in_chain
+                )
                 line_numbers = tuple(set(j["line_number"] for j in import_details))
                 detailed_chain.append(
-                    {"importer": importer, "imported": imported, "line_numbers": line_numbers}
+                    {
+                        "importer": importer_in_chain,
+                        "imported": imported_in_chain,
+                        "line_numbers": line_numbers,
+                    }
                 )
             segments.append(detailed_chain)
         return segments
 
     @classmethod
-    def _pop_shortest_chains(cls, graph, importer, imported):
-        chain = True
+    def _pop_shortest_chains(cls, graph: ImportGraph, importer: str, imported: str):
+        chain: Union[Optional[Tuple[str, ...]], bool] = True
         while chain:
             chain = graph.find_shortest_chain(importer, imported)
             if chain:
@@ -366,7 +376,9 @@ class LayersContract(Contract):
                 yield chain
 
     @classmethod
-    def _segments_to_collapsed_chains(cls, graph, segments, importer: Module, imported: Module):
+    def _segments_to_collapsed_chains(
+        cls, graph: ImportGraph, segments, importer: Module, imported: Module
+    ):
         collapsed_chains = []
         for segment in segments:
             head_imports = []
@@ -411,19 +423,19 @@ class LayersContract(Contract):
 
         return collapsed_chains
 
-    def _remove_other_layers(self, graph, container, layers_to_preserve):
+    def _remove_other_layers(self, graph: ImportGraph, container, layers_to_preserve):
         for index, layer in enumerate(self.layers):  # type: ignore
             candidate_layer = self._module_from_layer(layer, container)
             if candidate_layer.name in graph.modules and candidate_layer not in layers_to_preserve:
                 self._remove_layer(graph, layer_package=candidate_layer)
 
-    def _remove_layer(self, graph, layer_package):
+    def _remove_layer(self, graph: ImportGraph, layer_package):
         for module in graph.find_descendants(layer_package.name):
             graph.remove_module(module)
         graph.remove_module(layer_package.name)
 
     @classmethod
-    def _pop_direct_imports(cls, higher_layer_package, lower_layer_package, graph):
+    def _pop_direct_imports(cls, higher_layer_package, lower_layer_package, graph: ImportGraph):
         import_details_list = []
         lower_layer_modules = {lower_layer_package.name} | graph.find_descendants(
             lower_layer_package.name

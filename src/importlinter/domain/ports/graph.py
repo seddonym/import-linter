@@ -65,3 +65,15 @@ class ImportGraph(Protocol):
 
     def remove_import(self, *, importer: str, imported: str) -> None:
         raise NotImplementedError
+
+    def find_modules_directly_imported_by(self, module: str) -> Set[str]:
+        raise NotImplementedError
+
+    def find_modules_that_directly_import(self, module: str) -> Set[str]:
+        raise NotImplementedError
+
+    def squash_module(self, module: str) -> None:
+        raise NotImplementedError
+
+    def remove_module(self, module: str) -> None:
+        raise NotImplementedError
