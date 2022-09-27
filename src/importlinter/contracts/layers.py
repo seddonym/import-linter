@@ -329,16 +329,21 @@ class LayersContract(Contract):
         temp_graph.squash_module(imported_package.name)
 
         segments = cls._find_segments(
-            temp_graph, importer=importer_package, imported=imported_package
+            temp_graph, reference_graph=graph, importer=importer_package, imported=imported_package
         )
         return cls._segments_to_collapsed_chains(
             graph, segments, importer=importer_package, imported=imported_package
         )
 
     @classmethod
-    def _find_segments(cls, graph: ImportGraph, importer: Module, imported: Module):
+    def _find_segments(
+        cls, graph: ImportGraph, reference_graph: ImportGraph, importer: Module, imported: Module
+    ):
         """
         Return list of headless and tailless detailed chains.
+
+        Two graphs are passed in: the first is mutated, the second is used purely as a reference to
+        look up import details which are otherwise removed during mutation.
         """
         segments = []
         for chain in cls._pop_shortest_chains(
@@ -350,7 +355,7 @@ class LayersContract(Contract):
             for importer_in_chain, imported_in_chain in [
                 (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
             ]:
-                import_details = graph.get_import_details(
+                import_details = reference_graph.get_import_details(
                     importer=importer_in_chain, imported=imported_in_chain
                 )
                 line_numbers = tuple(set(j["line_number"] for j in import_details))
@@ -441,7 +446,7 @@ class LayersContract(Contract):
             lower_layer_package.name
         )
         for lower_layer_module in lower_layer_modules:
-            imported_modules = graph.find_modules_directly_imported_by(lower_layer_module)
+            imported_modules = graph.find_modules_directly_imported_by(lower_layer_module).copy()
             for imported_module in imported_modules:
                 if Module(imported_module) == higher_layer_package or Module(
                     imported_module
