@@ -5,6 +5,8 @@ latest
 ------
 
 * Include py.typed file in package data to support type checking
+* Remove upper bounds on dependencies. This allows usage of Grimp 2.0, which should significantly speed up checking of
+  layers contracts.
 
 1.3.0 (2022-08-22)
 ------------------
