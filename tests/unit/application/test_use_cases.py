@@ -66,6 +66,10 @@ class TestCheckContractsAndPrintReport:
 
         settings.PRINTER.pop_and_assert(
             """
+            =============
+            Import Linter
+            =============
+
             Contract "Contract foo" is not configured correctly:
                 single_field: Expected a single value, got multiple values.
                 import_field: Must be in the form "package.importer -> package.imported".
@@ -223,6 +227,75 @@ class TestCheckContractsAndPrintReport:
             """
         )
 
+    @pytest.mark.parametrize(
+        "verbose, expected_output",
+        [
+            (
+                True,
+                """
+                =============
+                Import Linter
+                =============
+
+                Verbose mode.
+                Building import graph...
+                Built graph in 5s.
+                Checking Contract foo...
+                Hello from the noisy contract!
+                Contract foo KEPT [15s]
+                Checking Contract bar...
+                Contract bar KEPT [25s]
+
+                ---------
+                Contracts
+                ---------
+
+                Analyzed 26 files, 10 dependencies.
+                -----------------------------------
+
+                Contract foo KEPT
+                Contract bar KEPT
+
+                Contracts: 2 kept, 0 broken.
+                """,
+            ),
+            (
+                False,
+                """
+            =============
+            Import Linter
+            =============
+
+            ---------
+            Contracts
+            ---------
+
+            Analyzed 26 files, 10 dependencies.
+            -----------------------------------
+
+            Contract foo KEPT
+            Contract bar KEPT
+
+            Contracts: 2 kept, 0 broken.
+            """,
+            ),
+        ],
+    )
+    def test_verbose_mode(self, verbose, expected_output):
+        timer = FakeTimer()
+        timer.setup(tick_duration=5, increment=10)
+        self._configure(
+            contracts_options=[
+                {"type": "noisy", "name": "Contract foo"},
+                {"type": "always_passes", "name": "Contract bar"},
+            ],
+            timer=timer,
+        )
+
+        lint_imports(verbose=verbose, is_debug_mode=True)
+
+        settings.PRINTER.pop_and_assert(expected_output)
+
     def test_forbidden_import(self):
         """
         Tests the ForbiddenImportContract - a simple contract that
@@ -325,7 +398,12 @@ class TestCheckContractsAndPrintReport:
         lint_imports(is_debug_mode=False)
 
         settings.PRINTER.pop_and_assert(
-            """There was some sort of exception.
+            """
+            =============
+            Import Linter
+            =============
+
+            There was some sort of exception.
             """
         )
 
@@ -344,6 +422,7 @@ class TestCheckContractsAndPrintReport:
                 "always_fails: tests.helpers.contracts.AlwaysFailsContract",
                 "fields: tests.helpers.contracts.FieldsContract",
                 "forbidden: tests.helpers.contracts.ForbiddenImportContract",
+                "noisy: tests.helpers.contracts.NoisyContract",
             ]
         session_options["contract_types"] = contract_types  # type: ignore
 

@@ -94,10 +94,13 @@ Running this will check that your project adheres to the contracts you've define
 **Arguments:**
 
 - ``--config``:
-  (optional) The configuration file to use. This overrides the default file search strategy.
+  The configuration file to use. This overrides the default file search strategy.
   By default it's assumed that the file is an ini-file unless the file extension is ``toml``.
-- ``show_timings``:
-  Display the times taken to build the graph and check each contract.
+  (Optional.)
+- ``--show_timings``:
+  Display the times taken to build the graph and check each contract. (Optional.)
+- ``--verbose``:
+  Noisily output progress as it goes along. (Optional.)
 
 **Default usage:**
 
@@ -116,6 +119,14 @@ Running this will check that your project adheres to the contracts you've define
 .. code-block:: text
 
     lint-imports --show-timings
+
+.. _verbose-mode:
+
+**Verbose mode:**
+
+.. code-block:: text
+
+    lint-imports --verbose
 
 .. _namespace packages: https://docs.python.org/3/glossary.html#term-namespace-package
 .. _portion: https://docs.python.org/3/glossary.html#term-portion

@@ -9,8 +9,8 @@ containers =
 layers=
     cli
     api
+    contracts
     configuration
     adapters
-    contracts
     application
     domain

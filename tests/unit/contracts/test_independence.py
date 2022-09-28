@@ -5,6 +5,7 @@ from importlinter.application.app_config import settings
 from importlinter.contracts.independence import IndependenceContract
 from importlinter.domain.contract import ContractCheck
 from tests.adapters.printing import FakePrinter
+from tests.adapters.timing import FakeTimer
 
 
 class TestIndependenceContract:
@@ -33,7 +34,7 @@ class TestIndependenceContract:
                 "modules": ("mypackage.blue", "mypackage.green", "mypackage.yellow")
             },
         )
-        return contract.check(graph=graph)
+        return contract.check(graph=graph, verbose=False)
 
     def test_when_modules_are_independent(self):
         graph = self._build_default_graph()
@@ -298,7 +299,7 @@ def test_ignore_imports(ignore_imports, is_kept):
         },
     )
 
-    contract_check = contract.check(graph=graph)
+    contract_check = contract.check(graph=graph, verbose=False)
 
     assert is_kept == contract_check.kept
 
@@ -322,7 +323,7 @@ def test_ignore_imports_adds_warnings():
         },
     )
 
-    contract_check = contract.check(graph=graph)
+    contract_check = contract.check(graph=graph, verbose=False)
 
     assert set(contract_check.warnings) == {
         "No matches for ignored import mypackage.green.* -> mypackage.blue.",
@@ -422,7 +423,7 @@ def test_missing_module():
     )
 
     with pytest.raises(ValueError, match=("Module 'mypackage.bar' does not exist.")):
-        contract.check(graph=graph)
+        contract.check(graph=graph, verbose=False)
 
 
 def test_ignore_imports_tolerates_duplicates():
@@ -447,7 +448,7 @@ def test_ignore_imports_tolerates_duplicates():
         },
     )
 
-    contract_check = contract.check(graph=graph)
+    contract_check = contract.check(graph=graph, verbose=False)
 
     assert contract_check.kept
 
@@ -497,6 +498,74 @@ def test_namespace_packages(independent_modules, is_kept):
         },
     )
 
-    contract_check = contract.check(graph=graph)
+    contract_check = contract.check(graph=graph, verbose=False)
 
     assert contract_check.kept == is_kept
+
+
+class TestVerbosePrint:
+    def test_verbose(self):
+        timer = FakeTimer()
+        timer.setup(tick_duration=10, increment=0)
+        settings.configure(PRINTER=FakePrinter(), TIMER=timer)
+
+        graph = ImportGraph()
+        for module in (
+            "mypackage",
+            "mypackage.blue",
+            "mypackage.blue.alpha",
+            "mypackage.blue.beta",
+            "mypackage.blue.beta.foo",
+            "mypackage.green",
+            "mypackage.yellow",
+            "mypackage.yellow.gamma",
+            "mypackage.yellow.delta",
+            "mypackage.other",
+        ):
+            graph.add_module(module)
+
+            # Add some illegal imports.
+            graph.add_import(
+                importer="mypackage.blue.alpha",
+                imported="mypackage.yellow.gamma",
+                line_number=5,
+                line_contents="-",
+            )
+            graph.add_import(
+                importer="mypackage.blue.alpha",
+                imported="mypackage.other",
+                line_number=10,
+                line_contents="-",
+            )
+            graph.add_import(
+                importer="mypackage.other",
+                imported="mypackage.green",
+                line_number=11,
+                line_contents="-",
+            )
+        contract = IndependenceContract(
+            name="Independence contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options={
+                "modules": ("mypackage.blue", "mypackage.green", "mypackage.yellow")
+            },
+        )
+
+        contract.check(graph=graph, verbose=True)
+
+        settings.PRINTER.pop_and_assert(
+            """
+            Searching for import chains from mypackage.blue to mypackage.green...
+            Found 1 illegal chain in 10s.
+            Searching for import chains from mypackage.blue to mypackage.yellow...
+            Found 1 illegal chain in 10s.
+            Searching for import chains from mypackage.green to mypackage.blue...
+            Found 0 illegal chains in 10s.
+            Searching for import chains from mypackage.green to mypackage.yellow...
+            Found 0 illegal chains in 10s.
+            Searching for import chains from mypackage.yellow to mypackage.blue...
+            Found 0 illegal chains in 10s.
+            Searching for import chains from mypackage.yellow to mypackage.green...
+            Found 0 illegal chains in 10s.
+            """
+        )

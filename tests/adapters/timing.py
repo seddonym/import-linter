@@ -9,6 +9,7 @@ class FakeTimer(Timer):
     ARBITRARY_SECONDS_SINCE_EPOCH = 1_000_000
 
     def __init__(self) -> None:
+        super().__init__()
         self._current_time = float(self.ARBITRARY_SECONDS_SINCE_EPOCH)
         self._tick_duration = 1
         self._increment = 0

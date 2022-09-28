@@ -1,10 +1,11 @@
 import pytest
 from grimp.adaptors.graph import ImportGraph  # type: ignore
 
-from importlinter.application.app_config import settings
+from importlinter.configuration import settings
 from importlinter.contracts.forbidden import ForbiddenContract
 from importlinter.domain.contract import ContractCheck
 from tests.adapters.printing import FakePrinter
+from tests.adapters.timing import FakeTimer
 
 
 class TestForbiddenContract:
@@ -12,7 +13,7 @@ class TestForbiddenContract:
         graph = self._build_graph()
         contract = self._build_contract(forbidden_modules=("mypackage.blue", "mypackage.yellow"))
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept
 
@@ -27,7 +28,7 @@ class TestForbiddenContract:
             )
         )
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert not contract_check.kept
 
@@ -88,7 +89,7 @@ class TestForbiddenContract:
             forbidden_modules=("sqlalchemy", "requests"), include_external_packages=True
         )
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert not contract_check.kept
 
@@ -123,7 +124,7 @@ class TestForbiddenContract:
                 "when there are external forbidden modules."
             ),
         ):
-            contract.check(graph=graph)
+            contract.check(graph=graph, verbose=False)
 
     def test_ignore_imports_tolerates_duplicates(self):
         graph = self._build_graph()
@@ -137,7 +138,7 @@ class TestForbiddenContract:
             include_external_packages=False,
         )
 
-        check = contract.check(graph=graph)
+        check = contract.check(graph=graph, verbose=False)
         assert check.kept
 
     def test_ignore_imports_with_wildcards(self):
@@ -147,7 +148,7 @@ class TestForbiddenContract:
             ignore_imports=("mypackage.*.alpha -> mypackage.*.beta",),
         )
 
-        check = contract.check(graph=graph)
+        check = contract.check(graph=graph, verbose=False)
         assert check.metadata == {
             "invalid_chains": [
                 {
@@ -177,7 +178,7 @@ class TestForbiddenContract:
             allow_indirect_imports=allow_indirect_imports,
         )
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept == contract_is_kept
 
@@ -197,7 +198,7 @@ class TestForbiddenContract:
             },
         )
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert set(contract_check.warnings) == {
             "No matches for ignored import mypackage.one -> mypackage.two.nonexistent.",
@@ -306,7 +307,7 @@ class TestForbiddenContractForNamespacePackages:
             forbidden_modules=(forbidden,),
         )
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept == is_kept
 
@@ -402,3 +403,98 @@ def test_render_broken_contract():
 
         """
     )
+
+
+class TestVerbosePrint:
+    def test_verbose(self):
+        timer = FakeTimer()
+        timer.setup(tick_duration=10, increment=0)
+        settings.configure(PRINTER=FakePrinter(), TIMER=timer)
+
+        graph = ImportGraph()
+        for module in (
+            "one",
+            "one.alpha",
+            "two",
+            "three",
+            "blue",
+            "green",
+            "green.beta",
+            "yellow",
+            "purple",
+            "utils",
+        ):
+            graph.add_module(f"mypackage.{module}")
+        graph.add_import(
+            importer="mypackage.one.alpha",
+            imported="mypackage.green.beta",
+            line_number=3,
+            line_contents="foo",
+        )
+        graph.add_import(
+            importer="mypackage.three",
+            imported="mypackage.green",
+            line_number=4,
+            line_contents="foo",
+        )
+        graph.add_import(
+            importer="mypackage.two",
+            imported="mypackage.utils",
+            line_number=9,
+            line_contents="foo",
+        )
+        graph.add_import(
+            importer="mypackage.utils",
+            imported="mypackage.purple",
+            line_number=1,
+            line_contents="foo",
+        )
+        graph.add_import(
+            importer="mypackage.three", imported="sqlalchemy", line_number=1, line_contents="foo"
+        )
+        contract = ForbiddenContract(
+            name="Forbid contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options={
+                "source_modules": ("mypackage.one", "mypackage.two", "mypackage.three"),
+                "forbidden_modules": (
+                    "mypackage.blue",
+                    "mypackage.green",
+                    "mypackage.yellow",
+                    "mypackage.purple",
+                ),
+                "ignore_imports": [],
+                "allow_indirect_imports": False,
+            },
+        )
+
+        contract.check(graph=graph, verbose=True)
+
+        settings.PRINTER.pop_and_assert(
+            """
+            Searching for import chains from mypackage.one to mypackage.blue...
+            Found 0 illegal chains in 10s.
+            Searching for import chains from mypackage.one to mypackage.green...
+            Found 1 illegal chain in 10s.
+            Searching for import chains from mypackage.one to mypackage.yellow...
+            Found 0 illegal chains in 10s.
+            Searching for import chains from mypackage.one to mypackage.purple...
+            Found 0 illegal chains in 10s.
+            Searching for import chains from mypackage.two to mypackage.blue...
+            Found 0 illegal chains in 10s.
+            Searching for import chains from mypackage.two to mypackage.green...
+            Found 0 illegal chains in 10s.
+            Searching for import chains from mypackage.two to mypackage.yellow...
+            Found 0 illegal chains in 10s.
+            Searching for import chains from mypackage.two to mypackage.purple...
+            Found 1 illegal chain in 10s.
+            Searching for import chains from mypackage.three to mypackage.blue...
+            Found 0 illegal chains in 10s.
+            Searching for import chains from mypackage.three to mypackage.green...
+            Found 1 illegal chain in 10s.
+            Searching for import chains from mypackage.three to mypackage.yellow...
+            Found 0 illegal chains in 10s.
+            Searching for import chains from mypackage.three to mypackage.purple...
+            Found 0 illegal chains in 10s.
+            """
+        )

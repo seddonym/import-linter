@@ -7,7 +7,7 @@ from importlinter.domain.ports.graph import ImportGraph
 class AlwaysPassesContract(Contract):
     warnings = fields.ListField(subfield=fields.StringField(), required=False)
 
-    def check(self, graph: ImportGraph) -> ContractCheck:
+    def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
         return ContractCheck(kept=True, warnings=self.warnings)  # type: ignore
 
     def render_broken_contract(self, check: "ContractCheck") -> None:
@@ -18,11 +18,21 @@ class AlwaysPassesContract(Contract):
 class AlwaysFailsContract(Contract):
     warnings = fields.ListField(subfield=fields.StringField(), required=False)
 
-    def check(self, graph: ImportGraph) -> ContractCheck:
+    def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
         return ContractCheck(kept=False, warnings=self.warnings)  # type: ignore
 
     def render_broken_contract(self, check: "ContractCheck") -> None:
         output.print("This contract will always fail.")
+
+
+class NoisyContract(Contract):
+    def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
+        output.verbose_print(verbose, "Hello from the noisy contract!")
+        return ContractCheck(kept=True)
+
+    def render_broken_contract(self, check: "ContractCheck") -> None:
+        # No need to implement, will never fail.
+        raise NotImplementedError  # pragma: nocover
 
 
 class ForbiddenImportContract(Contract):
@@ -34,7 +44,7 @@ class ForbiddenImportContract(Contract):
     importer = fields.ModuleField()
     imported = fields.ModuleField()
 
-    def check(self, graph: ImportGraph) -> ContractCheck:
+    def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
         forbidden_import_details = graph.get_import_details(
             importer=self.importer.name, imported=self.imported.name  # type: ignore
         )
@@ -60,7 +70,7 @@ class FieldsContract(Contract):
     import_field = fields.ImportExpressionField()
     required_field = fields.StringField()  # Fields are required by default.
 
-    def check(self, graph: ImportGraph) -> ContractCheck:
+    def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
         raise NotImplementedError
 
     def render_broken_contract(self, check: "ContractCheck") -> None:
@@ -79,7 +89,7 @@ class MutationCheckContract(Contract):
     number_of_modules = fields.StringField()
     number_of_imports = fields.StringField()
 
-    def check(self, graph: ImportGraph) -> ContractCheck:
+    def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
         number_of_modules: int = int(self.number_of_modules)  # type: ignore
         number_of_imports: int = int(self.number_of_imports)  # type: ignore
         if not all(

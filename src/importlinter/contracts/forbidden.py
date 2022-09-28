@@ -2,6 +2,7 @@ from typing import Tuple, cast
 
 from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
+from importlinter.configuration import settings
 from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.imports import Module
@@ -33,7 +34,7 @@ class ForbiddenContract(Contract):
     allow_indirect_imports = fields.StringField(required=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
 
-    def check(self, graph: ImportGraph) -> ContractCheck:
+    def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
         is_kept = True
         invalid_chains = []
 
@@ -53,47 +54,60 @@ class ForbiddenContract(Contract):
 
         for source_module in self.source_modules:  # type: ignore
             for forbidden_module in forbidden_modules_in_graph:
-                subpackage_chain_data = {
-                    "upstream_module": forbidden_module.name,
-                    "downstream_module": source_module.name,
-                    "chains": [],
-                }
+                output.verbose_print(
+                    verbose,
+                    "Searching for import chains from "
+                    f"{source_module} to {forbidden_module}...",
+                )
+                with settings.TIMER as timer:
+                    subpackage_chain_data = {
+                        "upstream_module": forbidden_module.name,
+                        "downstream_module": source_module.name,
+                        "chains": [],
+                    }
 
-                if str(self.allow_indirect_imports).lower() == "true":
-                    chains = {
-                        cast(
-                            Tuple[str, ...],
-                            (str(import_det["importer"]), str(import_det["imported"])),
-                        )
-                        for import_det in graph.get_import_details(
+                    if str(self.allow_indirect_imports).lower() == "true":
+                        chains = {
+                            cast(
+                                Tuple[str, ...],
+                                (str(import_det["importer"]), str(import_det["imported"])),
+                            )
+                            for import_det in graph.get_import_details(
+                                importer=source_module.name, imported=forbidden_module.name
+                            )
+                        }
+                    else:
+                        chains = graph.find_shortest_chains(
                             importer=source_module.name, imported=forbidden_module.name
                         )
-                    }
-                else:
-                    chains = graph.find_shortest_chains(
-                        importer=source_module.name, imported=forbidden_module.name
-                    )
-                if chains:
-                    is_kept = False
-                    for chain in chains:
-                        chain_data = []
-                        for importer, imported in [
-                            (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
-                        ]:
-                            import_details = graph.get_import_details(
-                                importer=importer, imported=imported
-                            )
-                            line_numbers = tuple(j["line_number"] for j in import_details)
-                            chain_data.append(
-                                {
-                                    "importer": importer,
-                                    "imported": imported,
-                                    "line_numbers": line_numbers,
-                                }
-                            )
-                        subpackage_chain_data["chains"].append(chain_data)
+                    if chains:
+                        is_kept = False
+                        for chain in chains:
+                            chain_data = []
+                            for importer, imported in [
+                                (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
+                            ]:
+                                import_details = graph.get_import_details(
+                                    importer=importer, imported=imported
+                                )
+                                line_numbers = tuple(j["line_number"] for j in import_details)
+                                chain_data.append(
+                                    {
+                                        "importer": importer,
+                                        "imported": imported,
+                                        "line_numbers": line_numbers,
+                                    }
+                                )
+                            subpackage_chain_data["chains"].append(chain_data)
                 if subpackage_chain_data["chains"]:
                     invalid_chains.append(subpackage_chain_data)
+                if verbose:
+                    chain_count = len(subpackage_chain_data["chains"])
+                    pluralized = "s" if chain_count != 1 else ""
+                    output.print(
+                        f"Found {chain_count} illegal chain{pluralized} "
+                        f"in {timer.duration_in_s}s.",
+                    )
 
         return ContractCheck(
             kept=is_kept, warnings=warnings, metadata={"invalid_chains": invalid_chains}

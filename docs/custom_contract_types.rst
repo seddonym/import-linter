@@ -15,12 +15,14 @@ Step one: implementing a Contract class
 You define a custom contract type by subclassing ``importlinter.Contract`` and implementing the
 following methods:
 
-- ``check(graph)``:
+- ``check(graph: ImportGraph, verbose: bool) -> ContractCheck``:
     Given an import graph of your project, return a ``ContractCheck`` describing whether the contract was adhered to.
 
     Arguments:
         - ``graph``: a Grimp ``ImportGraph`` of your project, which can be used to inspect / analyse any dependencies.
           For full details of how to use this, see the `Grimp documentation`_.
+        - ``verbose``: Whether we're in :ref:`verbose mode <verbose-mode>`. You can use this flag to determine whether to output text
+          during the check, using ``output.verbose_print``, as in the example below.
 
     Returns:
         - An ``importlinter.ContractCheck`` instance. This is a simple dataclass with two attributes,
@@ -28,7 +30,7 @@ following methods:
           check). The metadata can contain anything you want, as it is only used in the ``render_broken_contract``
           method that you also define in this class.
 
-- ``render_broken_contract(check)``:
+- ``render_broken_contract(check: ContractCheck) -> None``:
 
     Renders the results of a broken contract check. For output, this should use the
     ``importlinter.output`` module.
@@ -56,7 +58,11 @@ see ``importlinter.contracts.layers``.
         importer = fields.StringField()
         imported = fields.StringField()
 
-        def check(self, graph):
+        def check(self, graph, verbose):
+            output.verbose_print(
+                verbose,
+                f"Getting import details from {self.importer} to {self.imported}..."
+            )
             forbidden_import_details = graph.get_import_details(
                 importer=self.importer,
                 imported=self.imported,

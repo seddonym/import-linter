@@ -60,7 +60,13 @@ class Contract(abc.ABC):
         return getattr(cls, field_name)
 
     @abc.abstractmethod
-    def check(self, graph: ImportGraph) -> "ContractCheck":
+    def check(self, graph: ImportGraph, verbose: bool) -> "ContractCheck":
+        """
+        Args:
+            graph:   Copy of the ImportGraph. May be mutated without affecting other contracts.
+            verbose: Whether to output progress noisily. Can be used as a flag to pass
+                     to output.verbose_print.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod

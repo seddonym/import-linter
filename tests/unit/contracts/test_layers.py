@@ -7,6 +7,7 @@ from importlinter.domain.contract import ContractCheck
 from importlinter.domain.helpers import MissingImport
 from importlinter.domain.imports import Module
 from tests.adapters.printing import FakePrinter
+from tests.adapters.timing import FakeTimer
 
 
 class TestLayerContractSingleContainers:
@@ -14,7 +15,7 @@ class TestLayerContractSingleContainers:
         contract = self._build_contract()
         graph = self._build_graph()
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept is True
 
@@ -23,7 +24,7 @@ class TestLayerContractSingleContainers:
         graph = self._build_graph()
         graph.add_import(importer="mypackage.medium.orange", imported="mypackage.high.green")
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept is False
 
@@ -32,7 +33,7 @@ class TestLayerContractSingleContainers:
         graph = self._build_graph()
         graph.add_import(importer="mypackage.low.white.gamma", imported="mypackage.medium.red")
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept is False
 
@@ -78,7 +79,7 @@ class TestLayerMultipleContainers:
         contract = self._build_contract()
         graph = self._build_graph()
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept is True
 
@@ -92,7 +93,7 @@ class TestLayerMultipleContainers:
             importer="mypackage.three.low.cyan", imported="mypackage.two.high.red.alpha"
         )
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept is True
 
@@ -103,7 +104,7 @@ class TestLayerMultipleContainers:
             importer="mypackage.two.medium.green.beta", imported="mypackage.two.high.red.alpha"
         )
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept is False
 
@@ -119,7 +120,7 @@ class TestLayerMultipleContainers:
         graph.add_import(
             importer="mypackage.two.high.red.alpha", imported="mypackage.one.high.green"
         )
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept is False
 
@@ -256,7 +257,7 @@ class TestLayerContractPopulatesMetadata:
             line_contents="-",
         ),
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
         assert contract_check.kept is False
 
         assert contract_check.metadata == {
@@ -349,7 +350,7 @@ class TestLayerContractPopulatesMetadata:
             line_contents="-",
         )
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.metadata == {
             "invalid_chains": [
@@ -414,7 +415,7 @@ class TestLayerContractPopulatesMetadata:
             line_contents="-",
         )
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.metadata == {
             "invalid_chains": [
@@ -473,7 +474,7 @@ class TestLayerContractPopulatesMetadata:
                 line_contents="-",
             )
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.metadata == {
             "invalid_chains": [
@@ -538,7 +539,7 @@ class TestLayerContractPopulatesMetadata:
                 line_contents="-",
             )
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.metadata == {
             "invalid_chains": [
@@ -610,7 +611,7 @@ class TestLayerContractPopulatesMetadata:
                 line_contents="-",
             )
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.metadata == {
             "invalid_chains": [
@@ -715,7 +716,7 @@ class TestIgnoreImports:
         )
         graph = self._build_graph()
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept is True
 
@@ -725,7 +726,7 @@ class TestIgnoreImports:
         )
         graph = self._build_graph()
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept is False
         assert contract_check.metadata["invalid_chains"] == [
@@ -757,7 +758,7 @@ class TestIgnoreImports:
         )
         graph = self._build_graph()
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept is False
         assert contract_check.metadata["invalid_chains"] == [
@@ -793,7 +794,7 @@ class TestIgnoreImports:
         message = f"No matches for ignored import {expression}."
 
         with pytest.raises(MissingImport, match=message):
-            contract.check(graph=graph)
+            contract.check(graph=graph, verbose=False)
 
     @pytest.mark.parametrize(
         "expression",
@@ -808,7 +809,7 @@ class TestIgnoreImports:
         message = f"No matches for ignored import {expression}."
 
         with pytest.raises(MissingImport, match=message):
-            contract.check(graph=graph)
+            contract.check(graph=graph, verbose=False)
 
     def test_ignore_imports_tolerates_duplicates(self):
         contract = self._build_contract(
@@ -820,7 +821,7 @@ class TestIgnoreImports:
         )
         graph = self._build_graph()
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept
 
@@ -840,7 +841,7 @@ class TestIgnoreImports:
         )
         graph = self._build_graph()
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert set(contract_check.warnings) == {
             "No matches for ignored import mypackage.high -> mypackage.nonexistent.*.",
@@ -951,9 +952,9 @@ def test_optional_layers(include_parentheses, should_raise_exception):
                 "module mypackage.foo.medium does not exist."
             ),
         ):
-            contract.check(graph=graph)
+            contract.check(graph=graph, verbose=False)
     else:
-        contract.check(graph=graph)
+        contract.check(graph=graph, verbose=False)
 
 
 def test_missing_containerless_layers_raise_value_error():
@@ -968,7 +969,7 @@ def test_missing_containerless_layers_raise_value_error():
     )
 
     with pytest.raises(ValueError, match=("Missing layer 'baz': module baz does not exist.")):
-        contract.check(graph=graph)
+        contract.check(graph=graph, verbose=False)
 
 
 def test_render_broken_contract():
@@ -1215,7 +1216,7 @@ def test_invalid_container(container):
             "mypackage, or mypackage itself."
         ),
     ):
-        contract.check(graph=graph)
+        contract.check(graph=graph, verbose=False)
 
 
 def test_invalid_container_multiple_packages():
@@ -1234,7 +1235,7 @@ def test_invalid_container_multiple_packages():
             r"or a subpackage of one of them. \(The root packages are: packageone, packagetwo.\)"
         ),
     ):
-        contract.check(graph=graph)
+        contract.check(graph=graph, verbose=False)
 
 
 class TestLayerContractNoContainer:
@@ -1244,7 +1245,7 @@ class TestLayerContractNoContainer:
         )
         graph = self._build_legal_graph(container="mypackage")
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept is True
 
@@ -1255,7 +1256,7 @@ class TestLayerContractNoContainer:
         graph = self._build_legal_graph(container="mypackage")
         graph.add_import(importer="mypackage.medium.orange", imported="mypackage.high.green")
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept is False
 
@@ -1264,7 +1265,7 @@ class TestLayerContractNoContainer:
             root_packages=["high", "medium", "low", "utils"], layers=["high", "medium", "low"]
         )
         graph = self._build_legal_graph()
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept is True
 
@@ -1273,7 +1274,7 @@ class TestLayerContractNoContainer:
         graph = self._build_legal_graph()
         graph.add_import(importer="medium.orange", imported="high.green")
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept is False
 
@@ -1510,7 +1511,7 @@ class TestLayersContractForNamespacePackages:
             },
         )
 
-        contract_check = contract.check(graph=graph)
+        contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept == is_kept
 
@@ -1608,3 +1609,85 @@ class TestPopDirectImports:
             assert graph.direct_import_exists(
                 importer=other_import["importer"], imported=other_import["imported"]
             )
+
+
+class TestVerbosePrint:
+    def test_multiple_containers(self):
+        timer = FakeTimer()
+        timer.setup(tick_duration=10, increment=0)
+        settings.configure(PRINTER=FakePrinter(), TIMER=timer)
+
+        graph = ImportGraph()
+        for module in (
+            "mypackage",
+            "mypackage.one",
+            "mypackage.one.high",
+            "mypackage.one.high.green",
+            "mypackage.one.high.blue",
+            "mypackage.one.high.yellow",
+            "mypackage.one.high.yellow.alpha",
+            "mypackage.one.medium",
+            "mypackage.one.medium.orange",
+            "mypackage.one.medium.orange.beta",
+            "mypackage.one.medium.red",
+            "mypackage.one.low",
+            "mypackage.one.low.black",
+            "mypackage.one.low.white",
+            "mypackage.one.low.white.gamma",
+            "mypackage.two",
+            "mypackage.two.high",
+            "mypackage.two.high.red",
+            "mypackage.two.high.red.alpha",
+            "mypackage.two.medium",
+            "mypackage.two.medium.green",
+            "mypackage.two.medium.green.beta",
+            "mypackage.two.low",
+            "mypackage.two.low.blue",
+            "mypackage.two.low.blue.gamma",
+        ):
+            graph.add_module(module)
+            # Add some legal imports.
+            graph.add_import(
+                importer="mypackage.one.high.green", imported="mypackage.one.medium.orange"
+            )
+            graph.add_import(
+                importer="mypackage.two.high.red.alpha", imported="mypackage.two.low.blue.gamma"
+            )
+            # Add some illegal imports.
+            graph.add_import(
+                importer="mypackage.one.low.blue.gamma", imported="mypackage.one.medium.orange"
+            )
+            graph.add_import(
+                importer="mypackage.two.medium.green.beta", imported="mypackage.two.high.red"
+            )
+            graph.add_import(
+                importer="mypackage.two.medium.green", imported="mypackage.one.low.white"
+            )
+            graph.add_import(importer="mypackage.one.low.white", imported="mypackage.two.high.red")
+        contract = LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options={
+                "containers": ["mypackage.one", "mypackage.two"],
+                "layers": ["high", "medium", "low"],
+            },
+        )
+
+        contract.check(graph=graph, verbose=True)
+
+        settings.PRINTER.pop_and_assert(
+            """
+            Searching for import chains from mypackage.one.medium to mypackage.one.high...
+            Found 0 illegal chains in 10s.
+            Searching for import chains from mypackage.one.low to mypackage.one.high...
+            Found 0 illegal chains in 10s.
+            Searching for import chains from mypackage.one.low to mypackage.one.medium...
+            Found 1 illegal chain in 10s.
+            Searching for import chains from mypackage.two.medium to mypackage.two.high...
+            Found 2 illegal chains in 10s.
+            Searching for import chains from mypackage.two.low to mypackage.two.high...
+            Found 0 illegal chains in 10s.
+            Searching for import chains from mypackage.two.low to mypackage.two.medium...
+            Found 0 illegal chains in 10s.
+            """
+        )
