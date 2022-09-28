@@ -18,8 +18,12 @@ class Timer(abc.ABC):
         print(timer.duration_in_s)
     """
 
+    def __init__(self) -> None:
+        # We use a stack so context managers can be nested.
+        self._start_stack: list[float] = []
+
     def __enter__(self) -> Timer:
-        self.start = self.get_current_time()
+        self._start_stack.append(self.get_current_time())
         return self
 
     def __exit__(
@@ -28,8 +32,9 @@ class Timer(abc.ABC):
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
-        self.end = self.get_current_time()
-        self.duration_in_s = int(self.end - self.start)
+        end = self.get_current_time()
+        start = self._start_stack.pop()
+        self.duration_in_s = int(end - start)
 
     @abc.abstractmethod
     def get_current_time(self) -> float:

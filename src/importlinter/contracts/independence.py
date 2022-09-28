@@ -2,6 +2,7 @@ from itertools import permutations
 
 from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
+from importlinter.configuration import settings
 from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.ports.graph import ImportGraph
@@ -31,7 +32,7 @@ class IndependenceContract(Contract):
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
 
-    def check(self, graph: ImportGraph) -> ContractCheck:
+    def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
         is_kept = True
         invalid_chains = []
 
@@ -44,36 +45,48 @@ class IndependenceContract(Contract):
         self._check_all_modules_exist_in_graph(graph)
 
         for subpackage_1, subpackage_2 in permutations(self.modules, r=2):  # type: ignore
-            subpackage_chain_data = {
-                "upstream_module": subpackage_2.name,
-                "downstream_module": subpackage_1.name,
-                "chains": [],
-            }
-            assert isinstance(subpackage_chain_data["chains"], list)  # For type checker.
-            chains = graph.find_shortest_chains(
-                importer=subpackage_1.name, imported=subpackage_2.name
+            output.verbose_print(
+                verbose,
+                "Searching for import chains from " f"{subpackage_1} to {subpackage_2}...",
             )
-            if chains:
-                is_kept = False
-                for chain in chains:
-                    chain_data = []
-                    for importer, imported in [
-                        (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
-                    ]:
-                        import_details = graph.get_import_details(
-                            importer=importer, imported=imported
-                        )
-                        line_numbers = tuple(j["line_number"] for j in import_details)
-                        chain_data.append(
-                            {
-                                "importer": importer,
-                                "imported": imported,
-                                "line_numbers": line_numbers,
-                            }
-                        )
-                subpackage_chain_data["chains"].append(chain_data)
+            with settings.TIMER as timer:
+                subpackage_chain_data = {
+                    "upstream_module": subpackage_2.name,
+                    "downstream_module": subpackage_1.name,
+                    "chains": [],
+                }
+                assert isinstance(subpackage_chain_data["chains"], list)  # For type checker.
+                chains = graph.find_shortest_chains(
+                    importer=subpackage_1.name, imported=subpackage_2.name
+                )
+                if chains:
+                    is_kept = False
+                    for chain in chains:
+                        chain_data = []
+                        for importer, imported in [
+                            (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
+                        ]:
+                            import_details = graph.get_import_details(
+                                importer=importer, imported=imported
+                            )
+                            line_numbers = tuple(j["line_number"] for j in import_details)
+                            chain_data.append(
+                                {
+                                    "importer": importer,
+                                    "imported": imported,
+                                    "line_numbers": line_numbers,
+                                }
+                            )
+                    subpackage_chain_data["chains"].append(chain_data)
             if subpackage_chain_data["chains"]:
                 invalid_chains.append(subpackage_chain_data)
+            if verbose:
+                chain_count = len(subpackage_chain_data["chains"])
+                pluralized = "s" if chain_count != 1 else ""
+                output.print(
+                    f"Found {chain_count} illegal chain{pluralized} "
+                    f"in {timer.duration_in_s}s.",
+                )
 
         return ContractCheck(
             kept=is_kept, warnings=warnings, metadata={"invalid_chains": invalid_chains}

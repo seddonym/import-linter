@@ -3,6 +3,7 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
+from importlinter.configuration import settings
 from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.imports import Module
@@ -58,7 +59,7 @@ class LayersContract(Contract):
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
 
-    def check(self, graph: ImportGraph) -> ContractCheck:
+    def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
         is_kept = True
         invalid_chains = []
 
@@ -78,16 +79,29 @@ class LayersContract(Contract):
             lower_layer_package,
             container,
         ) in self._generate_module_permutations(graph):
-            layer_chain_data = self._build_layer_chain_data(
-                higher_layer_package=higher_layer_package,
-                lower_layer_package=lower_layer_package,
-                container=container,
-                graph=graph,
+            output.verbose_print(
+                verbose,
+                "Searching for import chains from "
+                f"{lower_layer_package} to {higher_layer_package}...",
             )
+            with settings.TIMER as timer:
+                layer_chain_data = self._build_layer_chain_data(
+                    higher_layer_package=higher_layer_package,
+                    lower_layer_package=lower_layer_package,
+                    container=container,
+                    graph=graph,
+                )
 
             if layer_chain_data["chains"]:
                 is_kept = False
                 invalid_chains.append(layer_chain_data)
+            if verbose:
+                chain_count = len(layer_chain_data["chains"])
+                pluralized = "s" if chain_count != 1 else ""
+                output.print(
+                    f"Found {chain_count} illegal chain{pluralized} "
+                    f"in {timer.duration_in_s}s.",
+                )
 
         return ContractCheck(
             kept=is_kept, warnings=warnings, metadata={"invalid_chains": invalid_chains}

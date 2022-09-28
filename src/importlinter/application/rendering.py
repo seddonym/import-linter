@@ -1,3 +1,7 @@
+from typing import Optional
+
+from importlinter.domain.contract import Contract, ContractCheck
+
 from . import output
 from .ports.reporting import Report
 
@@ -13,8 +17,6 @@ def render_report(report: Report) -> None:
         _render_could_not_run(report)
         return
 
-    output.print_heading("Import Linter", output.HEADING_LEVEL_ONE)
-
     if report.show_timings:
         output.print(f"Building graph took {report.graph_building_duration}s.")
         output.new_line()
@@ -28,16 +30,8 @@ def render_report(report: Report) -> None:
     )
 
     for contract, contract_check in report.get_contracts_and_checks():
-        result_text = "KEPT" if contract_check.kept else "BROKEN"
-        warning_text = _build_warning_text(warnings_count=len(contract_check.warnings))
-        color_key = output.SUCCESS if contract_check.kept else output.ERROR
-        color = output.COLORS[color_key]
-        output.print(f"{contract.name} ", newline=False)
-        output.print(result_text, color=color, newline=False)
-        output.print(warning_text, color=output.COLORS[output.WARNING], newline=False)
-        if report.show_timings:
-            output.print(f" [{report.get_duration(contract)}s]", newline=False)
-        output.new_line()
+        duration = report.get_duration(contract) if report.show_timings else None
+        render_contract_result_line(contract, contract_check, duration=duration)
 
     output.new_line()
 
@@ -51,6 +45,29 @@ def render_report(report: Report) -> None:
         output.new_line()
         output.new_line()
         _render_broken_contracts_details(report)
+
+
+def render_contract_result_line(
+    contract: Contract, contract_check: ContractCheck, duration: Optional[int]
+) -> None:
+    """
+    Render the one-line contract check result.
+
+    Args:
+        ...
+        duration: The number of seconds the contract took to check (optional).
+                  The duration will only be displayed if it is provided.
+    """
+    result_text = "KEPT" if contract_check.kept else "BROKEN"
+    warning_text = _build_warning_text(warnings_count=len(contract_check.warnings))
+    color_key = output.SUCCESS if contract_check.kept else output.ERROR
+    color = output.COLORS[color_key]
+    output.print(f"{contract.name} ", newline=False)
+    output.print(result_text, color=color, newline=False)
+    output.print(warning_text, color=output.COLORS[output.WARNING], newline=False)
+    if duration is not None:
+        output.print(f" [{duration}s]", newline=False)
+    output.new_line()
 
 
 def render_exception(exception: Exception) -> None:

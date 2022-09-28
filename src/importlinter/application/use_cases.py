@@ -2,8 +2,10 @@ import importlib
 from copy import copy, deepcopy
 from typing import List, Optional, Tuple, Type
 
+from ..application import rendering
 from ..domain.contract import Contract, InvalidContractOptions, registry
 from ..domain.ports.graph import ImportGraph
+from . import output
 from .app_config import settings
 from .ports.reporting import Report
 from .rendering import render_exception, render_report
@@ -17,7 +19,10 @@ FAILURE = False
 
 
 def lint_imports(
-    config_filename: Optional[str] = None, is_debug_mode: bool = False, show_timings: bool = False
+    config_filename: Optional[str] = None,
+    is_debug_mode: bool = False,
+    show_timings: bool = False,
+    verbose: bool = False,
 ) -> bool:
     """
     Analyse whether a Python package follows a set of contracts, and report on the results.
@@ -30,14 +35,17 @@ def lint_imports(
                          not swallowed at the top level, so the stack trace can be seen.
         show_timings:    whether to show the times taken to build the graph and to check
                          each contract.
+        verbose:         if True, noisily output progress as it goes along.
 
     Returns:
         True if the linting passed, False if it didn't.
     """
+    output.print_heading("Import Linter", output.HEADING_LEVEL_ONE)
+    output.verbose_print(verbose, "Verbose mode.")
     try:
         user_options = read_user_options(config_filename=config_filename)
         _register_contract_types(user_options)
-        report = create_report(user_options, show_timings)
+        report = create_report(user_options, show_timings, verbose)
     except Exception as e:
         if is_debug_mode:
             raise e
@@ -77,7 +85,9 @@ def read_user_options(config_filename: Optional[str] = None) -> UserOptions:
     raise FileNotFoundError("Could not read any configuration.")
 
 
-def create_report(user_options: UserOptions, show_timings: bool = False) -> Report:
+def create_report(
+    user_options: UserOptions, show_timings: bool = False, verbose: bool = False
+) -> Report:
     """
     Analyse whether a Python package follows a set of contracts, returning a report on the results.
 
@@ -86,18 +96,21 @@ def create_report(user_options: UserOptions, show_timings: bool = False) -> Repo
                             such as a module that could not be imported.
     """
     include_external_packages = _get_include_external_packages(user_options)
+    output.verbose_print(verbose, "Building import graph...")
     with settings.TIMER as timer:
         graph = _build_graph(
             root_package_names=user_options.session_options["root_packages"],
             include_external_packages=include_external_packages,
         )
     graph_building_duration = timer.duration_in_s
+    output.verbose_print(verbose, f"Built graph in {graph_building_duration}s.")
 
     return _build_report(
         graph=graph,
         graph_building_duration=graph_building_duration,
         user_options=user_options,
         show_timings=show_timings,
+        verbose=verbose,
     )
 
 
@@ -125,7 +138,11 @@ def _build_graph(
 
 
 def _build_report(
-    graph: ImportGraph, graph_building_duration: int, user_options: UserOptions, show_timings: bool
+    graph: ImportGraph,
+    graph_building_duration: int,
+    user_options: UserOptions,
+    show_timings: bool,
+    verbose: bool,
 ) -> Report:
     report = Report(
         graph=graph, show_timings=show_timings, graph_building_duration=graph_building_duration
@@ -142,12 +159,17 @@ def _build_report(
             report.add_invalid_contract_options(contract_options["name"], e)
             return report
 
+        output.verbose_print(verbose, f"Checking {contract.name}...")
         with settings.TIMER as timer:
             # Make a copy so that contracts can mutate the graph without affecting
             # other contract checks.
             copy_of_graph = deepcopy(graph)
-            check = contract.check(copy_of_graph)
+            check = contract.check(copy_of_graph, verbose=verbose)
         report.add_contract_check(contract, check, duration=timer.duration_in_s)
+        if verbose:
+            rendering.render_contract_result_line(contract, check, duration=timer.duration_in_s)
+
+    output.verbose_print(verbose, newline=True)
     return report
 
 

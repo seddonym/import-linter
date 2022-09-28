@@ -117,3 +117,18 @@ print_success = _instance.print_success
 print_heading = _instance.print_heading
 print_error = _instance.print_error
 print_warning = _instance.print_warning
+
+
+def verbose_print(
+    verbose: bool,
+    text: str = "",
+    bold: bool = False,
+    color: Optional[str] = None,
+    newline: bool = True,
+) -> None:
+    """
+    Print a message, but only if we're in verbose mode.
+    """
+    if verbose:
+        printer: Printer = settings.PRINTER
+        printer.print(text, bold, color, newline)

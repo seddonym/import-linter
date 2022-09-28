@@ -21,18 +21,28 @@ EXIT_STATUS_ERROR = 1
     is_flag=True,
     help="Show times taken to build the graph and to check each contract.",
 )
-def lint_imports_command(config: Optional[str], debug: bool, show_timings: bool) -> int:
+@click.option(
+    "--verbose",
+    is_flag=True,
+    help="Noisily output progress as we go along.",
+)
+def lint_imports_command(
+    config: Optional[str], debug: bool, show_timings: bool, verbose: bool
+) -> int:
     """
     The entry point for the CLI command.
     """
     exit_code = lint_imports(
-        config_filename=config, is_debug_mode=debug, show_timings=show_timings
+        config_filename=config, is_debug_mode=debug, show_timings=show_timings, verbose=verbose
     )
     sys.exit(exit_code)
 
 
 def lint_imports(
-    config_filename: Optional[str] = None, is_debug_mode: bool = False, show_timings: bool = False
+    config_filename: Optional[str] = None,
+    is_debug_mode: bool = False,
+    show_timings: bool = False,
+    verbose: bool = False,
 ) -> int:
     """
     Check that a project adheres to a set of contracts.
@@ -46,6 +56,7 @@ def lint_imports(
                          not swallowed at the top level, so the stack trace can be seen.
         show_timings:    Whether to show the times taken to build the graph and to check
                          each contract.
+        verbose:         If True, noisily output progress as we go along.
 
     Returns:
         EXIT_STATUS_SUCCESS or EXIT_STATUS_ERROR.
@@ -54,7 +65,10 @@ def lint_imports(
     sys.path.insert(0, os.getcwd())
 
     passed = use_cases.lint_imports(
-        config_filename=config_filename, is_debug_mode=is_debug_mode, show_timings=show_timings
+        config_filename=config_filename,
+        is_debug_mode=is_debug_mode,
+        show_timings=show_timings,
+        verbose=verbose,
     )
 
     if passed:
