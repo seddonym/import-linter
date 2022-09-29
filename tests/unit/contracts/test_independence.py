@@ -8,6 +8,11 @@ from tests.adapters.printing import FakePrinter
 from tests.adapters.timing import FakeTimer
 
 
+@pytest.fixture(scope="module", autouse=True)
+def configure():
+    settings.configure(TIMER=FakeTimer())
+
+
 class TestIndependenceContract:
     def _build_default_graph(self):
         graph = ImportGraph()

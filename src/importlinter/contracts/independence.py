@@ -1,11 +1,30 @@
 from itertools import permutations
+from typing import List, Tuple, cast
+
+from typing_extensions import TypedDict
 
 from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
 from importlinter.configuration import settings
 from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
+from importlinter.domain.imports import Module
 from importlinter.domain.ports.graph import ImportGraph
+
+
+class _Link(TypedDict):
+    importer: str
+    imported: str
+    line_numbers: Tuple[int, ...]
+
+
+_Chain = List[_Link]
+
+
+class _SubpackageChainData(TypedDict):
+    upstream_module: str
+    downstream_module: str
+    chains: List[_Chain]
 
 
 class IndependenceContract(Contract):
@@ -33,7 +52,6 @@ class IndependenceContract(Contract):
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
 
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
-        is_kept = True
         invalid_chains = []
 
         warnings = contract_utils.remove_ignored_imports(
@@ -50,34 +68,11 @@ class IndependenceContract(Contract):
                 "Searching for import chains from " f"{subpackage_1} to {subpackage_2}...",
             )
             with settings.TIMER as timer:
-                subpackage_chain_data = {
-                    "upstream_module": subpackage_2.name,
-                    "downstream_module": subpackage_1.name,
-                    "chains": [],
-                }
-                assert isinstance(subpackage_chain_data["chains"], list)  # For type checker.
-                chains = graph.find_shortest_chains(
-                    importer=subpackage_1.name, imported=subpackage_2.name
+                subpackage_chain_data = self._build_subpackage_chain_data(
+                    upstream_module=subpackage_2,
+                    downstream_module=subpackage_1,
+                    graph=graph,
                 )
-                if chains:
-                    is_kept = False
-                    for chain in chains:
-                        chain_data = []
-                        for importer, imported in [
-                            (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
-                        ]:
-                            import_details = graph.get_import_details(
-                                importer=importer, imported=imported
-                            )
-                            line_numbers = tuple(j["line_number"] for j in import_details)
-                            chain_data.append(
-                                {
-                                    "importer": importer,
-                                    "imported": imported,
-                                    "line_numbers": line_numbers,
-                                }
-                            )
-                    subpackage_chain_data["chains"].append(chain_data)
             if subpackage_chain_data["chains"]:
                 invalid_chains.append(subpackage_chain_data)
             if verbose:
@@ -89,7 +84,9 @@ class IndependenceContract(Contract):
                 )
 
         return ContractCheck(
-            kept=is_kept, warnings=warnings, metadata={"invalid_chains": invalid_chains}
+            kept=not bool(invalid_chains),
+            warnings=warnings,
+            metadata={"invalid_chains": invalid_chains},
         )
 
     def render_broken_contract(self, check: "ContractCheck") -> None:
@@ -122,3 +119,37 @@ class IndependenceContract(Contract):
         for module in self.modules:  # type: ignore
             if module.name not in graph.modules:
                 raise ValueError(f"Module '{module.name}' does not exist.")
+
+    def _build_subpackage_chain_data(
+        self, upstream_module: Module, downstream_module: Module, graph: ImportGraph
+    ) -> _SubpackageChainData:
+        """
+        Return any import chains from the upstream to downstream module.
+        """
+        subpackage_chain_data: _SubpackageChainData = {
+            "upstream_module": upstream_module.name,
+            "downstream_module": downstream_module.name,
+            "chains": [],
+        }
+        assert isinstance(subpackage_chain_data["chains"], list)  # For type checker.
+        chains = graph.find_shortest_chains(
+            importer=downstream_module.name, imported=upstream_module.name
+        )
+        if chains:
+            for chain in chains:
+                chain_data: List[_Link] = []
+                for importer, imported in [
+                    (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
+                ]:
+                    import_details = graph.get_import_details(importer=importer, imported=imported)
+                    line_numbers = tuple(cast(int, j["line_number"]) for j in import_details)
+                    chain_data.append(
+                        {
+                            "importer": importer,
+                            "imported": imported,
+                            "line_numbers": line_numbers,
+                        }
+                    )
+                subpackage_chain_data["chains"].append(chain_data)
+
+        return subpackage_chain_data
