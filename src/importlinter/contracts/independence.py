@@ -1,5 +1,5 @@
 from itertools import permutations
-from typing import List, Tuple, cast, Optional
+from typing import List, cast
 
 from typing_extensions import TypedDict
 
@@ -11,26 +11,13 @@ from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.imports import Module
 from importlinter.domain.ports.graph import ImportGraph
 
-
-class _Link(TypedDict):
-    importer: str
-    imported: str
-    line_numbers: Tuple[int, ...]
-
-
-_Chain = List[_Link]
-
-
-class _DetailedChain(TypedDict):
-    chain: _Chain
-    extra_firsts: List[_Link]
-    extra_lasts: List[_Link]
+from ._common import DetailedChain, Link, render_chain_data
 
 
 class _SubpackageChainData(TypedDict):
     upstream_module: str
     downstream_module: str
-    chains: List[_DetailedChain]
+    chains: List[DetailedChain]
 
 
 class IndependenceContract(Contract):
@@ -96,88 +83,19 @@ class IndependenceContract(Contract):
         )
 
     def render_broken_contract(self, check: "ContractCheck") -> None:
-        # count = 0
-        # for chains_data in check.metadata["invalid_chains"]:
-        #     downstream, upstream = (
-        #         chains_data["downstream_module"],
-        #         chains_data["upstream_module"],
-        #     )
-        #     output.print_error(f"{downstream} is not allowed to import {upstream}:")
-        #     output.new_line()
-        #     count += len(chains_data["chains"])
-        #     for chain in chains_data["chains"]:
-        #         first_line = True
-        #         for direct_import in chain:
-        #             importer, imported = (direct_import["importer"], direct_import["imported"])
-        #             line_numbers = ", ".join(f"l.{n}" for n in direct_import["line_numbers"])
-        #             import_string = f"{importer} -> {imported} ({line_numbers})"
-        #             if first_line:
-        #                 output.print_error(f"-   {import_string}", bold=False)
-        #                 first_line = False
-        #             else:
-        #                 output.indent_cursor()
-        #                 output.print_error(import_string, bold=False)
-        #         output.new_line()
-        #
-        #     output.new_line()
-
         for chains_data in cast(List[_SubpackageChainData], check.metadata["invalid_chains"]):
-            downstream, upstream = (chains_data["downstream_module"], chains_data["upstream_module"])
+            downstream, upstream = (
+                chains_data["downstream_module"],
+                chains_data["upstream_module"],
+            )
             output.print(f"{downstream} is not allowed to import {upstream}:")
             output.new_line()
 
             for chain_data in chains_data["chains"]:
-                self._render_chain_data(chain_data)
+                render_chain_data(chain_data)
                 output.new_line()
 
             output.new_line()
-
-    def _render_chain_data(self, chain_data: _DetailedChain) -> None:
-        main_chain = chain_data["chain"]
-        self._render_direct_import(
-            main_chain[0], extra_firsts=chain_data["extra_firsts"], first_line=True
-        )
-
-        for direct_import in main_chain[1:-1]:
-            self._render_direct_import(direct_import)
-
-        if len(main_chain) > 1:
-            self._render_direct_import(main_chain[-1], extra_lasts=chain_data["extra_lasts"])
-
-    def _render_direct_import(
-        self,
-        direct_import,
-        first_line: bool = False,
-        extra_firsts: Optional[List] = None,
-        extra_lasts: Optional[List] = None,
-    ) -> None:
-        import_strings = []
-        if extra_firsts:
-            for position, source in enumerate([direct_import] + extra_firsts[:-1]):
-                prefix = "& " if position > 0 else ""
-                importer = source["importer"]
-                line_numbers = ", ".join(f"l.{n}" for n in source["line_numbers"])
-                import_strings.append(f"{prefix}{importer} ({line_numbers})")
-            importer, imported = extra_firsts[-1]["importer"], extra_firsts[-1]["imported"]
-            line_numbers = ", ".join(f"l.{n}" for n in extra_firsts[-1]["line_numbers"])
-            import_strings.append(f"& {importer} -> {imported} ({line_numbers})")
-        else:
-            importer, imported = direct_import["importer"], direct_import["imported"]
-            line_numbers = ", ".join(f"l.{n}" for n in direct_import["line_numbers"])
-            import_strings.append(f"{importer} -> {imported} ({line_numbers})")
-
-        if extra_lasts:
-            indent_string = (len(direct_import["importer"]) + 4) * " "
-            for destination in extra_lasts:
-                imported = destination["imported"]
-                line_numbers = ", ".join(f"l.{n}" for n in destination["line_numbers"])
-                import_strings.append(f"{indent_string}& {imported} ({line_numbers})")
-
-        for position, import_string in enumerate(import_strings):
-            if first_line and position == 0:
-                output.print_error(f"- {import_string}", bold=False)
-            else:
-                output.print_error(f"  {import_string}", bold=False)
 
     def _check_all_modules_exist_in_graph(self, graph: ImportGraph) -> None:
         for module in self.modules:  # type: ignore
@@ -201,7 +119,7 @@ class IndependenceContract(Contract):
         )
         if chains:
             for chain in chains:
-                chain_data: List[_Link] = []
+                chain_data: List[Link] = []
                 for importer, imported in [
                     (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
                 ]:
@@ -214,7 +132,7 @@ class IndependenceContract(Contract):
                             "line_numbers": line_numbers,
                         }
                     )
-                detailed_chain: _DetailedChain = {
+                detailed_chain: DetailedChain = {
                     "chain": chain_data,
                     "extra_firsts": [],
                     "extra_lasts": [],
