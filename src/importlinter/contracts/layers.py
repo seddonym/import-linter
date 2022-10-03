@@ -11,6 +11,8 @@ from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.imports import Module
 from importlinter.domain.ports.graph import ImportGraph
 
+from ._common import Chain, DetailedChain, Link, render_chain_data
+
 
 class Layer:
     def __init__(self, name: str, is_optional: bool = False) -> None:
@@ -30,25 +32,10 @@ class LayerField(fields.Field):
         return Layer(name=layer_name, is_optional=is_optional)
 
 
-class _Link(TypedDict):
-    importer: str
-    imported: str
-    line_numbers: Tuple[int, ...]
-
-
-_Chain = List[_Link]
-
-
-class _DetailedChain(TypedDict):
-    chain: _Chain
-    extra_firsts: List[_Link]
-    extra_lasts: List[_Link]
-
-
 class _LayerChainData(TypedDict):
     higher_layer: str
     lower_layer: str
-    chains: List[_DetailedChain]
+    chains: List[DetailedChain]
 
 
 class LayersContract(Contract):
@@ -137,57 +124,10 @@ class LayersContract(Contract):
             output.new_line()
 
             for chain_data in chains_data["chains"]:
-                self._render_chain_data(chain_data)
+                render_chain_data(chain_data)
                 output.new_line()
 
             output.new_line()
-
-    def _render_chain_data(self, chain_data: _DetailedChain) -> None:
-        main_chain = chain_data["chain"]
-        self._render_direct_import(
-            main_chain[0], extra_firsts=chain_data["extra_firsts"], first_line=True
-        )
-
-        for direct_import in main_chain[1:-1]:
-            self._render_direct_import(direct_import)
-
-        if len(main_chain) > 1:
-            self._render_direct_import(main_chain[-1], extra_lasts=chain_data["extra_lasts"])
-
-    def _render_direct_import(
-        self,
-        direct_import,
-        first_line: bool = False,
-        extra_firsts: Optional[List] = None,
-        extra_lasts: Optional[List] = None,
-    ) -> None:
-        import_strings = []
-        if extra_firsts:
-            for position, source in enumerate([direct_import] + extra_firsts[:-1]):
-                prefix = "& " if position > 0 else ""
-                importer = source["importer"]
-                line_numbers = ", ".join(f"l.{n}" for n in source["line_numbers"])
-                import_strings.append(f"{prefix}{importer} ({line_numbers})")
-            importer, imported = extra_firsts[-1]["importer"], extra_firsts[-1]["imported"]
-            line_numbers = ", ".join(f"l.{n}" for n in extra_firsts[-1]["line_numbers"])
-            import_strings.append(f"& {importer} -> {imported} ({line_numbers})")
-        else:
-            importer, imported = direct_import["importer"], direct_import["imported"]
-            line_numbers = ", ".join(f"l.{n}" for n in direct_import["line_numbers"])
-            import_strings.append(f"{importer} -> {imported} ({line_numbers})")
-
-        if extra_lasts:
-            indent_string = (len(direct_import["importer"]) + 4) * " "
-            for destination in extra_lasts:
-                imported = destination["imported"]
-                line_numbers = ", ".join(f"l.{n}" for n in destination["line_numbers"])
-                import_strings.append(f"{indent_string}& {imported} ({line_numbers})")
-
-        for position, import_string in enumerate(import_strings):
-            if first_line and position == 0:
-                output.print_error(f"- {import_string}", bold=False)
-            else:
-                output.print_error(f"  {import_string}", bold=False)
 
     def _validate_containers(self, graph: ImportGraph) -> None:
         root_package_names = self.session_options["root_packages"]
@@ -298,7 +238,7 @@ class LayersContract(Contract):
             lower_layer_package=lower_layer_package,
             graph=temp_graph,
         )
-        collapsed_direct_chains: List[_DetailedChain] = []
+        collapsed_direct_chains: List[DetailedChain] = []
         for import_details_list in import_details_between_layers:
             line_numbers = tuple(j["line_number"] for j in import_details_list)
             collapsed_direct_chains.append(
@@ -331,7 +271,7 @@ class LayersContract(Contract):
     @classmethod
     def _get_indirect_collapsed_chains(
         cls, graph: ImportGraph, importer_package: Module, imported_package: Module
-    ) -> List[_DetailedChain]:
+    ) -> List[DetailedChain]:
         """
         Squashes the two packages.
         Gets a list of paths between them, called segments.
@@ -368,7 +308,7 @@ class LayersContract(Contract):
     @classmethod
     def _find_segments(
         cls, graph: ImportGraph, reference_graph: ImportGraph, importer: Module, imported: Module
-    ) -> List[_Chain]:
+    ) -> List[Chain]:
         """
         Return list of headless and tailless chains.
 
@@ -381,7 +321,7 @@ class LayersContract(Contract):
         ):
             if len(chain) == 2:
                 raise ValueError("Direct chain found - these should have been removed.")
-            segment: List[_Link] = []
+            segment: List[Link] = []
             for importer_in_chain, imported_in_chain in [
                 (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
             ]:
@@ -412,11 +352,11 @@ class LayersContract(Contract):
 
     @classmethod
     def _segments_to_collapsed_chains(
-        cls, graph: ImportGraph, segments: List[_Chain], importer: Module, imported: Module
-    ) -> List[_DetailedChain]:
-        collapsed_chains: List[_DetailedChain] = []
+        cls, graph: ImportGraph, segments: List[Chain], importer: Module, imported: Module
+    ) -> List[DetailedChain]:
+        collapsed_chains: List[DetailedChain] = []
         for segment in segments:
-            head_imports: List[_Link] = []
+            head_imports: List[Link] = []
             imported_module = segment[0]["imported"]
             candidate_modules = sorted(graph.find_modules_that_directly_import(imported_module))
             for module in [
@@ -432,7 +372,7 @@ class LayersContract(Contract):
                     {"importer": module, "imported": imported_module, "line_numbers": line_numbers}
                 )
 
-            tail_imports: List[_Link] = []
+            tail_imports: List[Link] = []
             importer_module = segment[-1]["importer"]
             candidate_modules = sorted(graph.find_modules_directly_imported_by(importer_module))
             for module in [
