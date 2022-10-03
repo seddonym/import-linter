@@ -79,13 +79,17 @@ class TestIndependenceContract:
                     "upstream_module": "mypackage.green",
                     "downstream_module": "mypackage.blue",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.blue",
-                                "imported": "mypackage.green",
-                                "line_numbers": (10,),
-                            }
-                        ]
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.blue",
+                                    "imported": "mypackage.green",
+                                    "line_numbers": (10,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        },
                     ],
                 }
             ]
@@ -117,18 +121,22 @@ class TestIndependenceContract:
                     "upstream_module": "mypackage.green",
                     "downstream_module": "mypackage.blue",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.blue",
-                                "imported": "mypackage.other",
-                                "line_numbers": (10,),
-                            },
-                            {
-                                "importer": "mypackage.other",
-                                "imported": "mypackage.green",
-                                "line_numbers": (11,),
-                            },
-                        ]
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.blue",
+                                    "imported": "mypackage.other",
+                                    "line_numbers": (10,),
+                                },
+                                {
+                                    "importer": "mypackage.other",
+                                    "imported": "mypackage.green",
+                                    "line_numbers": (11,),
+                                },
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        },
                     ],
                 }
             ]
@@ -162,44 +170,56 @@ class TestIndependenceContract:
                     "upstream_module": "mypackage.green",
                     "downstream_module": "mypackage.blue",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.blue",
-                                "imported": "mypackage.green",
-                                "line_numbers": (10,),
-                            }
-                        ]
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.blue",
+                                    "imported": "mypackage.green",
+                                    "line_numbers": (10,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        },
                     ],
                 },
                 {
                     "upstream_module": "mypackage.blue",
                     "downstream_module": "mypackage.yellow",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.yellow",
-                                "imported": "mypackage.blue",
-                                "line_numbers": (11,),
-                            }
-                        ]
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.yellow",
+                                    "imported": "mypackage.blue",
+                                    "line_numbers": (11,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        },
                     ],
                 },
                 {
                     "upstream_module": "mypackage.green",
                     "downstream_module": "mypackage.yellow",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.yellow",
-                                "imported": "mypackage.blue",
-                                "line_numbers": (11,),
-                            },
-                            {
-                                "importer": "mypackage.blue",
-                                "imported": "mypackage.green",
-                                "line_numbers": (10,),
-                            },
-                        ]
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.yellow",
+                                    "imported": "mypackage.blue",
+                                    "line_numbers": (11,),
+                                },
+                                {
+                                    "importer": "mypackage.blue",
+                                    "imported": "mypackage.green",
+                                    "line_numbers": (10,),
+                                },
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        },
                     ],
                 },
             ]
@@ -225,13 +245,17 @@ class TestIndependenceContract:
                     "upstream_module": "mypackage.yellow",
                     "downstream_module": "mypackage.blue",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.blue.alpha",
-                                "imported": "mypackage.yellow.gamma",
-                                "line_numbers": (5,),
-                            }
-                        ]
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.blue.alpha",
+                                    "imported": "mypackage.yellow.gamma",
+                                    "line_numbers": (5,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        },
                     ],
                 }
             ]
@@ -257,13 +281,17 @@ class TestIndependenceContract:
                     "upstream_module": "mypackage.green",
                     "downstream_module": "mypackage.blue",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.blue.beta.foo",
-                                "imported": "mypackage.green",
-                                "line_numbers": (8,),
-                            }
-                        ]
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.blue.beta.foo",
+                                    "imported": "mypackage.green",
+                                    "line_numbers": (8,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        },
                     ],
                 }
             ]
@@ -351,43 +379,104 @@ def test_render_broken_contract():
                     "upstream_module": "mypackage.yellow",
                     "downstream_module": "mypackage.blue",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.blue.foo",
-                                "imported": "mypackage.utils.red",
-                                "line_numbers": (16, 102),
-                            },
-                            {
-                                "importer": "mypackage.utils.red",
-                                "imported": "mypackage.utils.brown",
-                                "line_numbers": (1,),
-                            },
-                            {
-                                "importer": "mypackage.utils.brown",
-                                "imported": "mypackage.yellow.bar",
-                                "line_numbers": (3,),
-                            },
-                        ],
-                        [
-                            {
-                                "importer": "mypackage.blue.bar",
-                                "imported": "mypackage.yellow.baz",
-                                "line_numbers": (5,),
-                            }
-                        ],
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.blue.foo",
+                                    "imported": "mypackage.utils.red",
+                                    "line_numbers": (16, 102),
+                                },
+                                {
+                                    "importer": "mypackage.utils.red",
+                                    "imported": "mypackage.utils.brown",
+                                    "line_numbers": (1,),
+                                },
+                                {
+                                    "importer": "mypackage.utils.brown",
+                                    "imported": "mypackage.yellow.bar",
+                                    "line_numbers": (3,),
+                                },
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        },
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.blue.bar",
+                                    "imported": "mypackage.yellow.baz",
+                                    "line_numbers": (5,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        },
                     ],
                 },
                 {
                     "upstream_module": "mypackage.green",
                     "downstream_module": "mypackage.yellow",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.yellow.foo",
-                                "imported": "mypackage.green.bar",
-                                "line_numbers": (15,),
-                            }
-                        ]
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.yellow.foo",
+                                    "imported": "mypackage.green.bar",
+                                    "line_numbers": (15,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        }
+                    ],
+                },
+                {
+                    "upstream_module": "mypackage.orange",
+                    "downstream_module": "mypackage.brown",
+                    "chains": [
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.brown.foo",
+                                    "imported": "mypackage.green.bar",
+                                    "line_numbers": (15,),
+                                },
+                                {
+                                    "importer": "mypackage.green.bar",
+                                    "imported": "mypackage.yellow.foo",
+                                    "line_numbers": (4,),
+                                },
+                                {
+                                    "importer": "mypackage.yellow.foo",
+                                    "imported": "mypackage.orange.foobar",
+                                    "line_numbers": (41,),
+                                },
+                            ],
+                            "extra_firsts": [
+                                {
+                                    "importer": "mypackage.brown.bar.alpha",
+                                    "imported": "mypackage.green.bar",
+                                    "line_numbers": (1, 2),
+                                },
+                                {
+                                    "importer": "mypackage.brown.bar.beta",
+                                    "imported": "mypackage.green.bar",
+                                    "line_numbers": (31,),
+                                },
+                            ],
+                            "extra_lasts": [
+                                {
+                                    "importer": "mypackage.yellow.foo",
+                                    "imported": "mypackage.orange.delta",
+                                    "line_numbers": (1,),
+                                },
+                                {
+                                    "importer": "mypackage.yellow.foo",
+                                    "imported": "mypackage.orange.gamma",
+                                    "line_numbers": (3, 16),
+                                },
+                            ],
+                        }
                     ],
                 },
             ]
@@ -400,16 +489,27 @@ def test_render_broken_contract():
         """
         mypackage.blue is not allowed to import mypackage.yellow:
 
-        -   mypackage.blue.foo -> mypackage.utils.red (l.16, l.102)
-            mypackage.utils.red -> mypackage.utils.brown (l.1)
-            mypackage.utils.brown -> mypackage.yellow.bar (l.3)
+        - mypackage.blue.foo -> mypackage.utils.red (l.16, l.102)
+          mypackage.utils.red -> mypackage.utils.brown (l.1)
+          mypackage.utils.brown -> mypackage.yellow.bar (l.3)
 
-        -   mypackage.blue.bar -> mypackage.yellow.baz (l.5)
+        - mypackage.blue.bar -> mypackage.yellow.baz (l.5)
 
 
         mypackage.yellow is not allowed to import mypackage.green:
 
-        -   mypackage.yellow.foo -> mypackage.green.bar (l.15)
+        - mypackage.yellow.foo -> mypackage.green.bar (l.15)
+
+
+        mypackage.brown is not allowed to import mypackage.orange:
+
+        - mypackage.brown.foo (l.15)
+          & mypackage.brown.bar.alpha (l.1, l.2)
+          & mypackage.brown.bar.beta -> mypackage.green.bar (l.31)
+          mypackage.green.bar -> mypackage.yellow.foo (l.4)
+          mypackage.yellow.foo -> mypackage.orange.foobar (l.41)
+                                  & mypackage.orange.delta (l.1)
+                                  & mypackage.orange.gamma (l.3, l.16)
 
 
         """
