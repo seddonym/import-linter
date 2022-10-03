@@ -1,5 +1,7 @@
 import copy
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Iterator, List, Optional, Tuple, Union, cast
+
+from typing_extensions import TypedDict
 
 from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
@@ -26,6 +28,27 @@ class LayerField(fields.Field):
             layer_name = raw_string
             is_optional = False
         return Layer(name=layer_name, is_optional=is_optional)
+
+
+class _Link(TypedDict):
+    importer: str
+    imported: str
+    line_numbers: Tuple[int, ...]
+
+
+_Chain = List[_Link]
+
+
+class _DetailedChain(TypedDict):
+    chain: _Chain
+    extra_firsts: List[_Link]
+    extra_lasts: List[_Link]
+
+
+class _LayerChainData(TypedDict):
+    higher_layer: str
+    lower_layer: str
+    chains: List[_DetailedChain]
 
 
 class LayersContract(Contract):
@@ -108,7 +131,7 @@ class LayersContract(Contract):
         )
 
     def render_broken_contract(self, check: ContractCheck) -> None:
-        for chains_data in check.metadata["invalid_chains"]:
+        for chains_data in cast(List[_LayerChainData], check.metadata["invalid_chains"]):
             higher_layer, lower_layer = (chains_data["higher_layer"], chains_data["lower_layer"])
             output.print(f"{lower_layer} is not allowed to import {higher_layer}:")
             output.new_line()
@@ -119,7 +142,7 @@ class LayersContract(Contract):
 
             output.new_line()
 
-    def _render_chain_data(self, chain_data: Dict) -> None:
+    def _render_chain_data(self, chain_data: _DetailedChain) -> None:
         main_chain = chain_data["chain"]
         self._render_direct_import(
             main_chain[0], extra_firsts=chain_data["extra_firsts"], first_line=True
@@ -255,7 +278,7 @@ class LayersContract(Contract):
         lower_layer_package: Module,
         container: Optional[str],
         graph: ImportGraph,
-    ) -> Dict[str, Any]:
+    ) -> _LayerChainData:
         """
         Build a dictionary of illegal chains between two layers, in the form:
 
@@ -263,13 +286,6 @@ class LayersContract(Contract):
             lower_layer (str):  Lower layer package name.
             chains (list):      List of <detailed chain> lists.
         """
-        layer_chain_data = {
-            "higher_layer": higher_layer_package.name,
-            "lower_layer": lower_layer_package.name,
-            "chains": [],
-        }
-        assert isinstance(layer_chain_data["chains"], list)  # For type checker.
-
         temp_graph = copy.deepcopy(graph)
         self._remove_other_layers(
             temp_graph,
@@ -282,7 +298,7 @@ class LayersContract(Contract):
             lower_layer_package=lower_layer_package,
             graph=temp_graph,
         )
-        collapsed_direct_chains = []
+        collapsed_direct_chains: List[_DetailedChain] = []
         for import_details_list in import_details_between_layers:
             line_numbers = tuple(j["line_number"] for j in import_details_list)
             collapsed_direct_chains.append(
@@ -299,7 +315,7 @@ class LayersContract(Contract):
                 }
             )
 
-        layer_chain_data = {
+        layer_chain_data: _LayerChainData = {
             "higher_layer": higher_layer_package.name,
             "lower_layer": lower_layer_package.name,
             "chains": collapsed_direct_chains,  # type: ignore
@@ -315,7 +331,7 @@ class LayersContract(Contract):
     @classmethod
     def _get_indirect_collapsed_chains(
         cls, graph: ImportGraph, importer_package: Module, imported_package: Module
-    ) -> List:
+    ) -> List[_DetailedChain]:
         """
         Squashes the two packages.
         Gets a list of paths between them, called segments.
@@ -352,9 +368,9 @@ class LayersContract(Contract):
     @classmethod
     def _find_segments(
         cls, graph: ImportGraph, reference_graph: ImportGraph, importer: Module, imported: Module
-    ):
+    ) -> List[_Chain]:
         """
-        Return list of headless and tailless detailed chains.
+        Return list of headless and tailless chains.
 
         Two graphs are passed in: the first is mutated, the second is used purely as a reference to
         look up import details which are otherwise removed during mutation.
@@ -365,22 +381,22 @@ class LayersContract(Contract):
         ):
             if len(chain) == 2:
                 raise ValueError("Direct chain found - these should have been removed.")
-            detailed_chain = []
+            segment: List[_Link] = []
             for importer_in_chain, imported_in_chain in [
                 (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
             ]:
                 import_details = reference_graph.get_import_details(
                     importer=importer_in_chain, imported=imported_in_chain
                 )
-                line_numbers = tuple(set(j["line_number"] for j in import_details))
-                detailed_chain.append(
+                line_numbers = tuple(set(cast(int, j["line_number"]) for j in import_details))
+                segment.append(
                     {
                         "importer": importer_in_chain,
                         "imported": imported_in_chain,
                         "line_numbers": line_numbers,
                     }
                 )
-            segments.append(detailed_chain)
+            segments.append(segment)
         return segments
 
     @classmethod
@@ -396,11 +412,11 @@ class LayersContract(Contract):
 
     @classmethod
     def _segments_to_collapsed_chains(
-        cls, graph: ImportGraph, segments, importer: Module, imported: Module
-    ):
-        collapsed_chains = []
+        cls, graph: ImportGraph, segments: List[_Chain], importer: Module, imported: Module
+    ) -> List[_DetailedChain]:
+        collapsed_chains: List[_DetailedChain] = []
         for segment in segments:
-            head_imports = []
+            head_imports: List[_Link] = []
             imported_module = segment[0]["imported"]
             candidate_modules = sorted(graph.find_modules_that_directly_import(imported_module))
             for module in [
@@ -411,12 +427,12 @@ class LayersContract(Contract):
                 import_details_list = graph.get_import_details(
                     importer=module, imported=imported_module
                 )
-                line_numbers = tuple(set(j["line_number"] for j in import_details_list))
+                line_numbers = tuple(set(cast(int, j["line_number"]) for j in import_details_list))
                 head_imports.append(
                     {"importer": module, "imported": imported_module, "line_numbers": line_numbers}
                 )
 
-            tail_imports = []
+            tail_imports: List[_Link] = []
             importer_module = segment[-1]["importer"]
             candidate_modules = sorted(graph.find_modules_directly_imported_by(importer_module))
             for module in [
@@ -427,7 +443,7 @@ class LayersContract(Contract):
                 import_details_list = graph.get_import_details(
                     importer=importer_module, imported=module
                 )
-                line_numbers = tuple(set(j["line_number"] for j in import_details_list))
+                line_numbers = tuple(set(cast(int, j["line_number"]) for j in import_details_list))
                 tail_imports.append(
                     {"importer": importer_module, "imported": module, "line_numbers": line_numbers}
                 )
