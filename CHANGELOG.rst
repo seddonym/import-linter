@@ -8,6 +8,11 @@ latest
 * Remove upper bounds on dependencies. This allows usage of Grimp 2.0, which should significantly speed up checking of
   layers contracts.
 * Add --verbose flag to lint-imports command.
+* Improve algorithm for independence contracts, in the following ways:
+    - It is significantly faster.
+    - As with layers contracts, reports of illegal indirect imports reports now include multiple start
+      and end points (if they exist).
+    - Illegal indirect imports that are via other modules listed in the contract are no longer listed.
 
 1.3.0 (2022-08-22)
 ------------------

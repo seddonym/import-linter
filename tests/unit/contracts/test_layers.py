@@ -10,6 +10,11 @@ from tests.adapters.printing import FakePrinter
 from tests.adapters.timing import FakeTimer
 
 
+@pytest.fixture(scope="module", autouse=True)
+def configure():
+    settings.configure(TIMER=FakeTimer())
+
+
 class TestLayerContractSingleContainers:
     def test_no_illegal_imports_means_contract_is_kept(self):
         contract = self._build_contract()

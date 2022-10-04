@@ -143,9 +143,7 @@ class TestIndependenceContract:
         }
         assert expected_metadata == contract_check.metadata
 
-    def test_chains_via_other_independent_modules(self):
-        # In this case, all chains are included, even though they are repeated elsewhere in the
-        # contract check (we may want to change this).
+    def test_chains_via_other_independent_modules_are_not_included(self):
         graph = self._build_default_graph()
         graph.add_import(
             importer="mypackage.blue",
@@ -194,28 +192,6 @@ class TestIndependenceContract:
                                     "imported": "mypackage.blue",
                                     "line_numbers": (11,),
                                 }
-                            ],
-                            "extra_firsts": [],
-                            "extra_lasts": [],
-                        },
-                    ],
-                },
-                {
-                    "upstream_module": "mypackage.green",
-                    "downstream_module": "mypackage.yellow",
-                    "chains": [
-                        {
-                            "chain": [
-                                {
-                                    "importer": "mypackage.yellow",
-                                    "imported": "mypackage.blue",
-                                    "line_numbers": (11,),
-                                },
-                                {
-                                    "importer": "mypackage.blue",
-                                    "imported": "mypackage.green",
-                                    "line_numbers": (10,),
-                                },
                             ],
                             "extra_firsts": [],
                             "extra_lasts": [],
@@ -294,6 +270,145 @@ class TestIndependenceContract:
                         },
                     ],
                 }
+            ]
+        }
+        assert expected_metadata == contract_check.metadata
+
+    def test_extra_firsts_and_lasts(self):
+        graph = self._build_default_graph()
+        graph.add_import(
+            importer="mypackage.yellow.foo",
+            imported="mypackage.green.bar",
+            line_number=15,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.green.foo",
+            imported="mypackage.orange.bar",
+            line_number=15,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.orange.bar",
+            imported="mypackage.purple",
+            line_number=4,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.purple",
+            imported="mypackage.blue.foobar",
+            line_number=41,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.green.bar",
+            imported="mypackage.orange.bar",
+            line_number=1,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.green.bar",
+            imported="mypackage.orange.bar",
+            line_number=2,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.green.bar.beta",
+            imported="mypackage.orange.bar",
+            line_number=31,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.purple",
+            imported="mypackage.blue",
+            line_number=1,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.purple",
+            imported="mypackage.blue.baz.alpha",
+            line_number=3,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.purple",
+            imported="mypackage.blue.baz.alpha",
+            line_number=16,
+            line_contents="-",
+        )
+
+        contract_check = self._check_default_contract(graph)
+
+        assert not contract_check.kept
+
+        expected_metadata = {
+            "invalid_chains": [
+                {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.yellow",
+                    "chains": [
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.yellow.foo",
+                                    "imported": "mypackage.green.bar",
+                                    "line_numbers": (15,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        }
+                    ],
+                },
+                {
+                    "upstream_module": "mypackage.blue",
+                    "downstream_module": "mypackage.green",
+                    "chains": [
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.green.bar",
+                                    "imported": "mypackage.orange.bar",
+                                    "line_numbers": (1, 2),
+                                },
+                                {
+                                    "importer": "mypackage.orange.bar",
+                                    "imported": "mypackage.purple",
+                                    "line_numbers": (4,),
+                                },
+                                {
+                                    "importer": "mypackage.purple",
+                                    "imported": "mypackage.blue",
+                                    "line_numbers": (1,),
+                                },
+                            ],
+                            "extra_firsts": [
+                                {
+                                    "importer": "mypackage.green.bar.beta",
+                                    "imported": "mypackage.orange.bar",
+                                    "line_numbers": (31,),
+                                },
+                                {
+                                    "importer": "mypackage.green.foo",
+                                    "imported": "mypackage.orange.bar",
+                                    "line_numbers": (15,),
+                                },
+                            ],
+                            "extra_lasts": [
+                                {
+                                    "importer": "mypackage.purple",
+                                    "imported": "mypackage.blue.baz.alpha",
+                                    "line_numbers": (3, 16),
+                                },
+                                {
+                                    "importer": "mypackage.purple",
+                                    "imported": "mypackage.blue.foobar",
+                                    "line_numbers": (41,),
+                                },
+                            ],
+                        }
+                    ],
+                },
             ]
         }
         assert expected_metadata == contract_check.metadata
@@ -660,17 +775,29 @@ class TestVerbosePrint:
 
         settings.PRINTER.pop_and_assert(
             """
-            Searching for import chains from mypackage.blue to mypackage.green...
+            Searching for direct imports from mypackage.blue to mypackage.green...
+            Found 0 illegal chains in 10s.
+            Searching for direct imports from mypackage.blue to mypackage.yellow...
             Found 1 illegal chain in 10s.
-            Searching for import chains from mypackage.blue to mypackage.yellow...
+            Searching for direct imports from mypackage.green to mypackage.blue...
+            Found 0 illegal chains in 10s.
+            Searching for direct imports from mypackage.green to mypackage.yellow...
+            Found 0 illegal chains in 10s.
+            Searching for direct imports from mypackage.yellow to mypackage.blue...
+            Found 0 illegal chains in 10s.
+            Searching for direct imports from mypackage.yellow to mypackage.green...
+            Found 0 illegal chains in 10s.
+            Searching for indirect imports from mypackage.blue to mypackage.green...
             Found 1 illegal chain in 10s.
-            Searching for import chains from mypackage.green to mypackage.blue...
+            Searching for indirect imports from mypackage.blue to mypackage.yellow...
             Found 0 illegal chains in 10s.
-            Searching for import chains from mypackage.green to mypackage.yellow...
+            Searching for indirect imports from mypackage.green to mypackage.blue...
             Found 0 illegal chains in 10s.
-            Searching for import chains from mypackage.yellow to mypackage.blue...
+            Searching for indirect imports from mypackage.green to mypackage.yellow...
             Found 0 illegal chains in 10s.
-            Searching for import chains from mypackage.yellow to mypackage.green...
+            Searching for indirect imports from mypackage.yellow to mypackage.blue...
+            Found 0 illegal chains in 10s.
+            Searching for indirect imports from mypackage.yellow to mypackage.green...
             Found 0 illegal chains in 10s.
             """
         )

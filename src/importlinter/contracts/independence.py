@@ -1,3 +1,4 @@
+import copy
 from itertools import permutations
 from typing import List, cast
 
@@ -11,7 +12,13 @@ from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.imports import Module
 from importlinter.domain.ports.graph import ImportGraph
 
-from ._common import DetailedChain, Link, render_chain_data
+from ._common import (
+    DetailedChain,
+    Link,
+    find_segments,
+    render_chain_data,
+    segments_to_collapsed_chains,
+)
 
 
 class _SubpackageChainData(TypedDict):
@@ -45,7 +52,8 @@ class IndependenceContract(Contract):
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
 
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
-        invalid_chains = []
+        invalid_chains: List[_SubpackageChainData] = []
+        modules = cast(List[Module], self.modules)
 
         warnings = contract_utils.remove_ignored_imports(
             graph=graph,
@@ -55,21 +63,65 @@ class IndependenceContract(Contract):
 
         self._check_all_modules_exist_in_graph(graph)
 
-        for subpackage_1, subpackage_2 in permutations(self.modules, r=2):  # type: ignore
+        temp_graph = copy.deepcopy(graph)
+        # First pass: direct imports.
+        for subpackage_1, subpackage_2 in permutations(modules, r=2):  # type: ignore
             output.verbose_print(
                 verbose,
-                "Searching for import chains from " f"{subpackage_1} to {subpackage_2}...",
+                "Searching for direct imports from " f"{subpackage_1} to {subpackage_2}...",
             )
             with settings.TIMER as timer:
-                subpackage_chain_data = self._build_subpackage_chain_data(
-                    upstream_module=subpackage_2,
-                    downstream_module=subpackage_1,
-                    graph=graph,
+                direct_chains = self._pop_direct_imports(
+                    importer_package=subpackage_1,
+                    imported_package=subpackage_2,
+                    graph=temp_graph,
                 )
-            if subpackage_chain_data["chains"]:
-                invalid_chains.append(subpackage_chain_data)
+            if direct_chains:
+                invalid_chains.append(
+                    {
+                        "upstream_module": subpackage_2.name,
+                        "downstream_module": subpackage_1.name,
+                        "chains": direct_chains,
+                    }
+                )
             if verbose:
-                chain_count = len(subpackage_chain_data["chains"])
+                chain_count = len(direct_chains)
+                pluralized = "s" if chain_count != 1 else ""
+                output.print(
+                    f"Found {chain_count} illegal chain{pluralized} "
+                    f"in {timer.duration_in_s}s.",
+                )
+
+        # Second pass: indirect imports.
+        self._squash_modules(graph=temp_graph, modules_to_squash=modules)
+        for subpackage_1, subpackage_2 in permutations(modules, r=2):  # type: ignore
+            output.verbose_print(
+                verbose,
+                "Searching for indirect imports from " f"{subpackage_1} to {subpackage_2}...",
+            )
+            with settings.TIMER as timer:
+                other_independent_packages = [
+                    m for m in modules if m not in (subpackage_1, subpackage_2)
+                ]
+                trimmed_graph = self._make_graph_with_packages_removed(
+                    temp_graph, packages_to_remove=other_independent_packages
+                )
+                indirect_chains = self._get_indirect_collapsed_chains(
+                    trimmed_graph=trimmed_graph,
+                    reference_graph=graph,
+                    importer_package=subpackage_1,
+                    imported_package=subpackage_2,
+                )
+                if indirect_chains:
+                    invalid_chains.append(
+                        {
+                            "upstream_module": subpackage_2.name,
+                            "downstream_module": subpackage_1.name,
+                            "chains": indirect_chains,
+                        }
+                    )
+            if verbose:
+                chain_count = len(indirect_chains)
                 pluralized = "s" if chain_count != 1 else ""
                 output.print(
                     f"Found {chain_count} illegal chain{pluralized} "
@@ -101,6 +153,80 @@ class IndependenceContract(Contract):
         for module in self.modules:  # type: ignore
             if module.name not in graph.modules:
                 raise ValueError(f"Module '{module.name}' does not exist.")
+
+    def _squash_modules(self, graph: ImportGraph, modules_to_squash: List[Module]) -> None:
+        for module in modules_to_squash:
+            graph.squash_module(module.name)
+
+    def _make_graph_with_packages_removed(
+        self, graph: ImportGraph, packages_to_remove: List[Module]
+    ) -> ImportGraph:
+        """
+        Assumes the packages are squashed.
+        """
+        new_graph = copy.deepcopy(graph)
+        for package in packages_to_remove:
+            new_graph.remove_module(package.name)
+        return new_graph
+
+    def _get_indirect_collapsed_chains(
+        self,
+        trimmed_graph: ImportGraph,
+        reference_graph: ImportGraph,
+        importer_package: Module,
+        imported_package: Module,
+    ) -> List[DetailedChain]:
+        """
+        Return chains from the importer to the imported package.
+
+        Assumes the packages are both squashed.
+        """
+        segments = find_segments(
+            trimmed_graph,
+            reference_graph=reference_graph,
+            importer=importer_package,
+            imported=imported_package,
+        )
+        return segments_to_collapsed_chains(
+            reference_graph, segments, importer=importer_package, imported=imported_package
+        )
+
+    def _pop_direct_imports(
+        self,
+        importer_package: Module,
+        imported_package: Module,
+        graph: ImportGraph,
+    ) -> List[DetailedChain]:
+        """
+        Remove and return direct imports from the importer to the imported package.
+        """
+        direct_imports: List[DetailedChain] = []
+        importer_modules = {importer_package.name} | graph.find_descendants(importer_package.name)
+        imported_modules = {imported_package.name} | graph.find_descendants(imported_package.name)
+
+        for importer_module in importer_modules:
+            for imported_module in imported_modules:
+                import_details = graph.get_import_details(
+                    importer=importer_module, imported=imported_module
+                )
+                if import_details:
+                    line_numbers = tuple(cast(int, i["line_number"]) for i in import_details)
+                    direct_imports.append(
+                        {
+                            "chain": [
+                                {
+                                    "importer": cast(str, import_details[0]["importer"]),
+                                    "imported": cast(str, import_details[0]["imported"]),
+                                    "line_numbers": line_numbers,
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        }
+                    )
+                    graph.remove_import(importer=importer_module, imported=imported_module)
+
+        return direct_imports
 
     def _build_subpackage_chain_data(
         self, upstream_module: Module, downstream_module: Module, graph: ImportGraph
