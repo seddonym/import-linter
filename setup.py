@@ -16,7 +16,7 @@ def read(*names, **kwargs):
 
 setup(
     name="import-linter",
-    version="1.3.0",
+    version="1.4.0",
     license="BSD 2-Clause License",
     description="Enforces rules for the imports within and between Python packages.",
     long_description=read("README.rst"),
