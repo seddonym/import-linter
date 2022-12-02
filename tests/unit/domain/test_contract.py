@@ -21,6 +21,10 @@ class MyContract(Contract):
     bar = MyField(required=False)
     baz = MyField(default="some default")
 
+    def validate(self) -> None:
+        if self.foo == self.baz:
+            raise InvalidContractOptions(errors={"baz": "Baz must not equal foo."})
+
     def check(self, *args, **kwargs):
         raise NotImplementedError
 
@@ -45,6 +49,7 @@ class AnotherContract(Contract):
         ),
         ({}, {"foo": "This is a required field."}),  # No data.
         ({"foo": "something invalid"}, {"foo": '"something invalid" is not a valid value.'}),
+        ({"foo": "hello", "baz": "hello"}, {"baz": "Baz must not equal foo."}),
     ),
 )
 def test_contract_validation(contract_options, expected_errors):

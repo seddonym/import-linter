@@ -47,6 +47,16 @@ class Contract(abc.ABC):
         if errors:
             raise InvalidContractOptions(errors)
 
+        self.validate()
+
+    def validate(self) -> None:
+        """
+        Hook method for validating inter-field dependencies.
+
+        Raise InvalidContractOptions with an error dictionary keyed with the relevant field.
+        """
+        pass
+
     @classmethod
     def _get_field_names(cls) -> List[str]:
         """
