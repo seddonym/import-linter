@@ -1,8 +1,8 @@
 Changelog
 =========
 
-latest
-------
+1.5.0 (2022-12-2)
+-----------------
 
 * Officially support Python 3.11.
 
