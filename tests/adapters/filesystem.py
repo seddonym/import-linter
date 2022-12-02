@@ -8,9 +8,9 @@ from importlinter.application.ports import filesystem as ports
 class FakeFileSystem(ports.FileSystem):
     def __init__(
         self,
-        contents: str = None,
-        content_map: Dict[str, str] = None,
-        working_directory: str = None,
+        contents: Optional[str] = None,
+        content_map: Optional[Dict[str, str]] = None,
+        working_directory: Optional[str] = None,
     ) -> None:
         """
         Files can be declared as existing in the file system in two different ways, either

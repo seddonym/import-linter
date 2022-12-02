@@ -74,3 +74,5 @@ pip-wheel-metadata
 # vscode
 .vscode/
 .history/
+
+*/pyvenv.cfg

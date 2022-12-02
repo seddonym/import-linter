@@ -9,9 +9,9 @@ Import Linter
     :alt: Python versions
     :target: https://pypi.org/project/import-linter/
 
-.. image:: https://api.travis-ci.com/seddonym/import-linter.svg?branch=master
-    :target: https://app.travis-ci.com/github/seddonym/import-linter
-
+.. image:: https://github.com/seddonym/import-linter/workflows/CI/badge.svg?branch=master
+     :target: https://github.com/seddonym/import-linter/actions?workflow=CI
+     :alt: CI Status
 
 Import Linter allows you to define and enforce rules for the imports within and between Python packages.
 
