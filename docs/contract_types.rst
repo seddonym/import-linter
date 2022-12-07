@@ -214,7 +214,7 @@ If, say, a module existed called ``mypackage.foo.extra``, the contract will fail
     - ``ignore_imports``: See :ref:`Shared options`.
     - ``unmatched_ignore_imports_alerting``: See :ref:`Shared options`.
     - ``exhaustive``. If true, check that the contract declares every possible layer in its list of layers to check.
-                      (Optional, default False.)
+      (Optional, default False.)
     - ``exhaustive_ignores``. A list of layers to ignore in exhaustiveness checks. (Optional.)
 
 
