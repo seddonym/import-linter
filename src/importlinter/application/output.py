@@ -46,13 +46,13 @@ class Output:
         """
         self.printer.print(text, bold, color, newline)
 
-    def indent_cursor(self):
+    def indent_cursor(self) -> None:
         """
         Indents the cursor ready to print a line.
         """
         self.printer.print(" " * INDENT_SIZE, newline=False)
 
-    def new_line(self):
+    def new_line(self) -> None:
         """
         Print a blank line.
         """
@@ -84,19 +84,19 @@ class Output:
         self.printer.print(heading_line, bold=is_bold, color=color)
         self.printer.print()
 
-    def print_success(self, text, bold=True):
+    def print_success(self, text: str, bold: bool = True) -> None:
         """
         Prints a line to the console, formatted as a success.
         """
         self.printer.print(text, color=COLORS[SUCCESS], bold=bold)
 
-    def print_error(self, text, bold=True):
+    def print_error(self, text: str, bold: bool = True) -> None:
         """
         Prints a line to the console, formatted as an error.
         """
         self.printer.print(text, color=COLORS[ERROR], bold=bold)
 
-    def print_warning(self, text):
+    def print_warning(self, text: str) -> None:
         """
         Prints a line to the console, formatted as a warning.
         """
