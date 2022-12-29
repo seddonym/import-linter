@@ -51,8 +51,12 @@ setup(
         "Topic :: Utilities",
     ],
     python_requires=">=3.7",
-    install_requires=["click>=6", "grimp>=2.0", "typing-extensions>=3.10.0.0"],
-    extras_require={"toml": ["toml"]},
+    install_requires=[
+        "click>=6",
+        "grimp>=2.0",
+        "tomli>=1.2.1; python_version < '3.11'",
+        "typing-extensions>=3.10.0.0",
+    ],
     entry_points={
         "console_scripts": ["lint-imports = importlinter.cli:lint_imports_command"]
     },
