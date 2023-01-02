@@ -20,9 +20,10 @@ def pop_imports(
         The list of import details that were removed, including any additional metadata.
 
     Raises:
-        MissingImport if an import is not present in the graph.
+        MissingImport if any of the imports are not present in the graph.
     """
     removed_imports: List[Dict[str, Union[str, int]]] = []
+    missing_imports: List[DirectImport] = []
 
     imports_to_remove = _dedupe_imports(imports)
 
@@ -31,13 +32,22 @@ def pop_imports(
             importer=import_to_remove.importer.name, imported=import_to_remove.imported.name
         )
         if not import_details:
-            raise MissingImport(f"Ignored import {import_to_remove} not present in the graph.")
+            missing_imports.append(import_to_remove)
+            continue
 
         graph.remove_import(
             importer=import_to_remove.importer.name, imported=import_to_remove.imported.name
         )
 
         removed_imports.extend(import_details)
+
+    if missing_imports:
+        # Sort the output to make it more helpful
+        missing_import_strings = sorted([str(i) for i in missing_imports])
+        message = "\n".join(
+            f"Ignored import {i} not present in the graph." for i in missing_import_strings
+        )
+        raise MissingImport(message)
 
     return removed_imports
 
