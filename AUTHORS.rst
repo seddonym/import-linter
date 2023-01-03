@@ -17,3 +17,4 @@ Contributors
 * Daniele Esposti - https://github.com/expobrain
 * Petter Friberg - https://github.com/flaeppe
 * James Owen - https://github.com/leamingrad
+* Matthew Gamble - https://github.com/mwgamble
