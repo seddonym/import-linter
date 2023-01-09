@@ -1,6 +1,6 @@
 from typing import List
 
-import grimp  # type: ignore
+import grimp
 from importlinter.application.ports import building as ports
 from importlinter.domain.ports.graph import ImportGraph
 
