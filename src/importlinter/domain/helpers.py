@@ -1,6 +1,8 @@
 import itertools
 import re
-from typing import Dict, Iterable, List, Pattern, Set, Tuple, Union, cast
+from typing import Iterable, List, Pattern, Set, Tuple, cast
+
+from grimp import DetailedImport
 
 from importlinter.domain.imports import DirectImport, ImportExpression, Module
 from importlinter.domain.ports.graph import ImportGraph
@@ -10,9 +12,7 @@ class MissingImport(Exception):
     pass
 
 
-def pop_imports(
-    graph: ImportGraph, imports: Iterable[DirectImport]
-) -> List[Dict[str, Union[str, int]]]:
+def pop_imports(graph: ImportGraph, imports: Iterable[DirectImport]) -> List[DetailedImport]:
     """
     Removes the supplied direct imports from the graph.
 
@@ -22,7 +22,7 @@ def pop_imports(
     Raises:
         MissingImport if an import is not present in the graph.
     """
-    removed_imports: List[Dict[str, Union[str, int]]] = []
+    removed_imports: List[DetailedImport] = []
 
     imports_to_remove = _dedupe_imports(imports)
 
@@ -121,7 +121,7 @@ def resolve_import_expressions(
 
 def pop_import_expressions(
     graph: ImportGraph, expressions: Iterable[ImportExpression]
-) -> List[Dict[str, Union[str, int]]]:
+) -> List[DetailedImport]:
     """
     Removes any imports matching the supplied import expressions from the graph.
 
@@ -135,7 +135,7 @@ def pop_import_expressions(
     return pop_imports(graph, imports)
 
 
-def add_imports(graph: ImportGraph, import_details: List[Dict[str, Union[str, int]]]) -> None:
+def add_imports(graph: ImportGraph, import_details: List[DetailedImport]) -> None:
     """
     Adds the supplied import details to the graph.
 
