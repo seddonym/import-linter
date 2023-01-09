@@ -3,7 +3,7 @@ from typing import List
 
 import pytest
 from grimp import DetailedImport
-from grimp.adaptors.graph import ImportGraph  # type: ignore
+from grimp.adaptors.graph import ImportGraph
 
 from importlinter.domain.helpers import (
     MissingImport,
