@@ -392,7 +392,7 @@ class LayersContract(Contract):
                             {
                                 "importer": lower_layer_module,
                                 "imported": imported_module,
-                                "line_number": "?",
+                                "line_number": -1,
                                 "line_contents": "",
                             }
                         ]
