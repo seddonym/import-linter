@@ -311,13 +311,13 @@ class LayersContract(Contract):
         layer_chain_data: _LayerChainData = {
             "higher_layer": higher_layer_package.name,
             "lower_layer": lower_layer_package.name,
-            "chains": collapsed_direct_chains,  # type: ignore
+            "chains": collapsed_direct_chains,
         }
 
         indirect_chain_data = self._get_indirect_collapsed_chains(
             temp_graph, importer_package=lower_layer_package, imported_package=higher_layer_package
         )
-        layer_chain_data["chains"].extend(indirect_chain_data)  # type: ignore
+        layer_chain_data["chains"].extend(indirect_chain_data)
 
         return layer_chain_data
 
