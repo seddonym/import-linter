@@ -40,7 +40,3 @@ Following, an example with a layered configuration:
         "medium",
         "low",
     ]
-
-Please note, that in order to use TOML files, you need to install the extra require ``toml``::
-
-    pip install import-linter[toml]

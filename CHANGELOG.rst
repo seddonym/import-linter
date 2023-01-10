@@ -1,6 +1,11 @@
 Changelog
 =========
 
+latest
+------
+
+* Switch from optional dependency of ``toml`` to required dependency of ``tomli`` for Python versions < 3.11.
+
 1.6.0 (2022-12-7)
 -----------------
 

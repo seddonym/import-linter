@@ -1,13 +1,12 @@
 import configparser
 from typing import Any, Dict, Optional, List
 import abc
+import sys
 
-try:
-    import toml
-
-    _HAS_TOML = True
-except ImportError:
-    _HAS_TOML = False
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 from importlinter.application import file_finding
 from importlinter.application.app_config import settings
@@ -86,11 +85,8 @@ class TomlFileUserOptionReader(AbstractUserOptionReader):
     potential_config_filenames = ["pyproject.toml"]
 
     def _read_config_filename(self, config_filename: str) -> Optional[UserOptions]:
-        if not _HAS_TOML:
-            return None
-
         file_contents = settings.FILE_SYSTEM.read(config_filename)
-        data = toml.loads(file_contents)
+        data = tomllib.loads(file_contents)
 
         tool_data = data.get("tool", {})
         session_options = tool_data.get("importlinter", {})

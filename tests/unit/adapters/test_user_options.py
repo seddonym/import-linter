@@ -121,7 +121,6 @@ def test_respects_passed_filename(passed_filename, expected_foo_value):
         assert expected_options == options
 
 
-@pytest.mark.toml_installed
 @pytest.mark.parametrize(
     "contents, expected_options",
     (
@@ -190,24 +189,3 @@ def test_toml_file_reader(contents, expected_options):
 
     options = TomlFileUserOptionReader().read_options()
     assert expected_options == options
-
-
-@pytest.mark.toml_not_installed
-def test_toml_file_reader_returns_none_when_toml_not_installed():
-    valid_toml = """
-    [something]
-    foo = 1
-    bar = "hello"
-
-    [tool.importlinter]
-    foo = "hello"
-    bar = 999
-    """
-    settings.configure(
-        FILE_SYSTEM=FakeFileSystem(
-            content_map={"/path/to/folder/pyproject.toml": valid_toml},
-            working_directory="/path/to/folder",
-        )
-    )
-
-    assert TomlFileUserOptionReader().read_options() is None
