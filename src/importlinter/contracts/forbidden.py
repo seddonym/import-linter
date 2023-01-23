@@ -126,7 +126,7 @@ class ForbiddenContract(Contract):
                 first_line = True
                 for direct_import in chain:
                     importer, imported = direct_import["importer"], direct_import["imported"]
-                    line_numbers = ", ".join(format_line_numbers(direct_import["line_numbers"]))
+                    line_numbers = format_line_numbers(direct_import["line_numbers"])
                     import_string = f"{importer} -> {imported} ({line_numbers})"
                     if first_line:
                         output.print_error(f"-   {import_string}", bold=False)
