@@ -6,7 +6,7 @@ relying on it for a custom contract type, be aware things may change
 without warning.
 """
 
-from typing import List, Iterator, Optional, Sequence, Tuple, Union, cast
+from typing import List, Optional, Sequence, Tuple, Union, cast
 
 from typing_extensions import TypedDict
 
@@ -18,7 +18,8 @@ from importlinter.domain.ports.graph import ImportGraph
 class Link(TypedDict):
     importer: str
     imported: str
-    line_numbers: Tuple[int, ...]
+    # If the graph has been built manually, we may not know the line number.
+    line_numbers: Tuple[Optional[int], ...]
 
 
 Chain = List[Link]
@@ -136,12 +137,13 @@ def _pop_shortest_chains(graph: ImportGraph, importer: str, imported: str):
             yield chain
 
 
-def format_line_numbers(line_numbers: Sequence[int]) -> Iterator[str]:
-    for line_number in line_numbers:
-        if line_number == -1:
-            yield "l.?"
-        else:
-            yield f"l.{line_number}"
+def format_line_numbers(line_numbers: Sequence[int]) -> Tuple[str, ...]:
+    known_line_numbers = tuple(number for number in line_numbers if number is not None)
+    unknown_line_numbers = tuple(number for number in line_numbers if number is None)
+    return tuple(
+        "l.?" if line_number is None else f"l.{line_number}"
+        for line_number in (known_line_numbers + unknown_line_numbers)
+    )
 
 
 def _render_direct_import(

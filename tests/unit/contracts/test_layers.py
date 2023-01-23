@@ -224,43 +224,43 @@ class TestLayerContractPopulatesMetadata:
             imported="mypackage.utils.foo",
             line_number=3,
             line_contents="-",
-        ),
+        )
         graph.add_import(
             importer="mypackage.utils.foo",
             imported="mypackage.utils.bar",
             line_number=1,
             line_contents="-",
-        ),
+        )
         graph.add_import(
             importer="mypackage.utils.foo",
             imported="mypackage.utils.bar",
             line_number=101,
             line_contents="-",
-        ),
+        )
         graph.add_import(
             importer="mypackage.utils.bar",
             imported="mypackage.high.yellow.alpha",
             line_number=13,
             line_contents="-",
-        ),
+        )
         graph.add_import(
             importer="mypackage.medium.orange.beta",
             imported="mypackage.high.blue",
             line_number=2,
             line_contents="-",
-        ),
+        )
         graph.add_import(
             importer="mypackage.low.black",
             imported="mypackage.utils.baz",
             line_number=2,
             line_contents="-",
-        ),
+        )
         graph.add_import(
             importer="mypackage.utils.baz",
             imported="mypackage.medium.red",
             line_number=3,
             line_contents="-",
-        ),
+        )
 
         contract_check = contract.check(graph=graph, verbose=False)
         assert contract_check.kept is False
@@ -673,6 +673,73 @@ class TestLayerContractPopulatesMetadata:
             "undeclared_modules": set(),
         }
 
+    @pytest.mark.parametrize(
+        "graph_line_numbers, expected_line_numbers",
+        [
+            # Add a single import without line number. In this case we expect a None to indicate
+            # that there was an import, but we don't where from.
+            ((None,), (None,)),
+            # Also add three similar imports between the same modules, only two of which contain the
+            # line number. There is no way to tell from Grimp's API that there was actually a third
+            # import added to the graph, so we expect just to display two line numbers.
+            (
+                (3, None, 20),
+                (
+                    3,
+                    20,
+                ),
+            ),
+        ],
+    )
+    def test_accepts_missing_line_numbers(self, graph_line_numbers, expected_line_numbers):
+        """
+        It's theoretically possible for a graph to have an import without an import details
+        associated with it (if it's been manually put together). This test checks that
+        the line number of such an import is encoded as a None value in the contract metadata.
+        """
+        graph = self._build_graph_without_imports()
+        contract = self._create_contract()
+
+        for line_number in graph_line_numbers:
+            if line_number is None:
+                import_kwargs = {}
+            else:
+                import_kwargs = dict(
+                    line_number=line_number,
+                    line_contents="-",
+                )
+            graph.add_import(
+                importer="mypackage.low.white.gamma",
+                imported="mypackage.high.yellow.alpha",
+                **import_kwargs,
+            )
+
+        contract_check = contract.check(graph=graph, verbose=False)
+        assert contract_check.kept is False
+
+        assert contract_check.metadata == {
+            "invalid_chains": [
+                {
+                    "lower_layer": "mypackage.low",
+                    "higher_layer": "mypackage.high",
+                    "chains": [
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.white.gamma",
+                                    "imported": "mypackage.high.yellow.alpha",
+                                    "line_numbers": expected_line_numbers,
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        },
+                    ],
+                },
+            ],
+            "undeclared_modules": set(),
+        }
+
     def _build_graph_without_imports(self):
         graph = ImportGraph()
         for module in (
@@ -1035,7 +1102,7 @@ def test_render_broken_contract():
                                 {
                                     "importer": "mypackage.utils.yellow",
                                     "imported": "mypackage.utils.brown",
-                                    "line_numbers": (10,),
+                                    "line_numbers": (None,),
                                 },
                                 {
                                     "importer": "mypackage.utils.brown",
@@ -1064,7 +1131,7 @@ def test_render_broken_contract():
                                 {
                                     "importer": "mypackage.utils.brown",
                                     "imported": "mypackage.high.white",
-                                    "line_numbers": (8, 16),
+                                    "line_numbers": (8, None, 16),
                                 },
                             ],
                         },
@@ -1078,7 +1145,7 @@ def test_render_broken_contract():
                                 {
                                     "importer": "mypackage.utils.yellow",
                                     "imported": "mypackage.utils.brown",
-                                    "line_numbers": (10,),
+                                    "line_numbers": (None,),
                                 },
                             ],
                             "extra_firsts": [],
@@ -1117,7 +1184,7 @@ def test_render_broken_contract():
                                 {
                                     "importer": "mypackage.utils.yellow",
                                     "imported": "mypackage.utils.brown",
-                                    "line_numbers": (10,),
+                                    "line_numbers": (None,),
                                 },
                                 {
                                     "importer": "mypackage.utils.brown",
@@ -1161,13 +1228,13 @@ def test_render_broken_contract():
           & mypackage.low.purple (l.11)
           & mypackage.low.white -> mypackage.utils.red (l.1)
           mypackage.utils.red -> mypackage.utils.yellow (l.2)
-          mypackage.utils.yellow -> mypackage.utils.brown (l.10)
+          mypackage.utils.yellow -> mypackage.utils.brown (l.?)
           mypackage.utils.brown -> mypackage.high.green (l.3)
                                    & mypackage.high.black (l.11)
-                                   & mypackage.high.white (l.8, l.16)
+                                   & mypackage.high.white (l.8, l.16, l.?)
 
         - mypackage.low.purple -> mypackage.utils.yellow (l.9)
-          mypackage.utils.yellow -> mypackage.utils.brown (l.10)
+          mypackage.utils.yellow -> mypackage.utils.brown (l.?)
 
 
         mypackage.low is not allowed to import mypackage.medium:
@@ -1179,7 +1246,7 @@ def test_render_broken_contract():
 
         - mypackage.medium.blue (l.8)
           & mypackage.medium.white -> mypackage.utils.yellow (l.1, l.10)
-          mypackage.utils.yellow -> mypackage.utils.brown (l.10)
+          mypackage.utils.yellow -> mypackage.utils.brown (l.?)
           mypackage.utils.brown -> mypackage.high.green (l.3)
                                    & mypackage.high.black (l.11)
 
