@@ -160,7 +160,7 @@ def _render_direct_import(
         for position, source in enumerate([direct_import] + extra_firsts[:-1]):
             prefix = "& " if position > 0 else ""
             importer = source["importer"]
-            line_numbers = format_line_numbers((source["line_numbers"]))
+            line_numbers = format_line_numbers(source["line_numbers"])
             import_strings.append(f"{prefix}{importer} ({line_numbers})")
         importer, imported = extra_firsts[-1]["importer"], extra_firsts[-1]["imported"]
         line_numbers = format_line_numbers(extra_firsts[-1]["line_numbers"])
