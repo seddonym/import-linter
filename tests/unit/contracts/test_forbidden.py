@@ -1,5 +1,5 @@
 import pytest
-from grimp.adaptors.graph import ImportGraph  # type: ignore
+from grimp.adaptors.graph import ImportGraph
 
 from importlinter.configuration import settings
 from importlinter.contracts.forbidden import ForbiddenContract

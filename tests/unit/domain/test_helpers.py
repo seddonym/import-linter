@@ -1,8 +1,9 @@
 import re
-from typing import Dict, List, Union, cast
+from typing import List
 
 import pytest
-from grimp.adaptors.graph import ImportGraph  # type: ignore
+from grimp import DetailedImport
+from grimp.adaptors.graph import ImportGraph
 
 from importlinter.domain.helpers import (
     MissingImport,
@@ -16,7 +17,7 @@ from importlinter.domain.imports import DirectImport, ImportExpression, Module
 
 
 class TestPopImports:
-    IMPORTS = [
+    IMPORTS: List[DetailedImport] = [
         dict(
             importer="mypackage.green",
             imported="mypackage.yellow",
@@ -74,7 +75,7 @@ class TestPopImports:
             pop_imports(graph, [non_existent_import])
 
     def test_works_with_multiple_external_imports_from_same_module(self):
-        imports_to_pop = [
+        imports_to_pop: List[DetailedImport] = [
             dict(
                 importer="mypackage.green",
                 imported="someexternalpackage",
@@ -478,9 +479,7 @@ class TestPopImportExpressions:
             ImportExpression(importer="mypackage.blue.cats", imported="mypackage.purple.dogs"),
         ]
 
-        popped_imports: List[Dict[str, Union[str, int]]] = pop_import_expressions(
-            graph, expressions
-        )
+        popped_imports: List[DetailedImport] = pop_import_expressions(graph, expressions)
 
         # Cast to direct imports to make comparison easier.
         popped_direct_imports: List[DirectImport] = sorted(
@@ -508,18 +507,18 @@ class TestPopImportExpressions:
             )
         return graph
 
-    def _dict_to_direct_import(self, import_details: Dict[str, Union[str, int]]) -> DirectImport:
+    def _dict_to_direct_import(self, import_details: DetailedImport) -> DirectImport:
         return DirectImport(
-            importer=Module(cast(str, import_details["importer"])),
-            imported=Module(cast(str, import_details["imported"])),
-            line_number=cast(int, import_details["line_number"]),
-            line_contents=cast(str, import_details["line_contents"]),
+            importer=Module(import_details["importer"]),
+            imported=Module(import_details["imported"]),
+            line_number=import_details["line_number"],
+            line_contents=import_details["line_contents"],
         )
 
 
 def test_add_imports():
     graph = ImportGraph()
-    import_details = [
+    import_details: List[DetailedImport] = [
         {"importer": "a", "imported": "b", "line_number": 1, "line_contents": "lorem ipsum"},
         {"importer": "c", "imported": "d", "line_number": 2, "line_contents": "lorem ipsum 2"},
     ]

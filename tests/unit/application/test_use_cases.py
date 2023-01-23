@@ -2,7 +2,7 @@ import string
 from typing import Any, Dict, List, Optional
 
 import pytest
-from grimp.adaptors.graph import ImportGraph  # type: ignore
+from grimp.adaptors.graph import ImportGraph
 
 from importlinter.application.app_config import settings
 from importlinter.application.use_cases import FAILURE, SUCCESS, create_report, lint_imports

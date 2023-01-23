@@ -1,7 +1,9 @@
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import List, Optional, Set, Tuple
 
 # N.B. typing_extensions can be changed to typing once drop support for Python 3.7.
 from typing_extensions import Protocol
+
+from grimp import DetailedImport
 
 
 class ImportGraph(Protocol):
@@ -39,9 +41,7 @@ class ImportGraph(Protocol):
         """
         raise NotImplementedError
 
-    def get_import_details(
-        self, *, importer: str, imported: str
-    ) -> List[Dict[str, Union[str, int]]]:
+    def get_import_details(self, *, importer: str, imported: str) -> List[DetailedImport]:
         """
         Returns a list of the details of every direct import between two modules, in the form:
         [

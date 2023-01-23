@@ -6,7 +6,7 @@ relying on it for a custom contract type, be aware things may change
 without warning.
 """
 
-from typing import List, Optional, Tuple, Union, cast
+from typing import List, Optional, Sequence, Tuple, Union, cast
 
 from typing_extensions import TypedDict
 
@@ -18,7 +18,8 @@ from importlinter.domain.ports.graph import ImportGraph
 class Link(TypedDict):
     importer: str
     imported: str
-    line_numbers: Tuple[int, ...]
+    # If the graph has been built manually, we may not know the line number.
+    line_numbers: Tuple[Optional[int], ...]
 
 
 Chain = List[Link]
@@ -136,6 +137,18 @@ def _pop_shortest_chains(graph: ImportGraph, importer: str, imported: str):
             yield chain
 
 
+def format_line_numbers(line_numbers: Sequence[Optional[int]]) -> str:
+    """
+    Return a human-readable string of the supplied line numbers.
+
+    Unknown line numbers should be provided as a None value in the sequence. E.g.
+    (None,) will be returned as "l.?".
+    """
+    return ", ".join(
+        "l.?" if line_number is None else f"l.{line_number}" for line_number in line_numbers
+    )
+
+
 def _render_direct_import(
     direct_import,
     first_line: bool = False,
@@ -147,21 +160,21 @@ def _render_direct_import(
         for position, source in enumerate([direct_import] + extra_firsts[:-1]):
             prefix = "& " if position > 0 else ""
             importer = source["importer"]
-            line_numbers = ", ".join(f"l.{n}" for n in source["line_numbers"])
+            line_numbers = format_line_numbers(source["line_numbers"])
             import_strings.append(f"{prefix}{importer} ({line_numbers})")
         importer, imported = extra_firsts[-1]["importer"], extra_firsts[-1]["imported"]
-        line_numbers = ", ".join(f"l.{n}" for n in extra_firsts[-1]["line_numbers"])
+        line_numbers = format_line_numbers(extra_firsts[-1]["line_numbers"])
         import_strings.append(f"& {importer} -> {imported} ({line_numbers})")
     else:
         importer, imported = direct_import["importer"], direct_import["imported"]
-        line_numbers = ", ".join(f"l.{n}" for n in direct_import["line_numbers"])
+        line_numbers = format_line_numbers(direct_import["line_numbers"])
         import_strings.append(f"{importer} -> {imported} ({line_numbers})")
 
     if extra_lasts:
         indent_string = (len(direct_import["importer"]) + 4) * " "
         for destination in extra_lasts:
             imported = destination["imported"]
-            line_numbers = ", ".join(f"l.{n}" for n in destination["line_numbers"])
+            line_numbers = format_line_numbers(destination["line_numbers"])
             import_strings.append(f"{indent_string}& {imported} ({line_numbers})")
 
     for position, import_string in enumerate(import_strings):

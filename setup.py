@@ -53,7 +53,7 @@ setup(
     python_requires=">=3.7",
     install_requires=[
         "click>=6",
-        "grimp>=2.0",
+        "grimp>=2.2",
         "tomli>=1.2.1; python_version < '3.11'",
         "typing-extensions>=3.10.0.0",
     ],

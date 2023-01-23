@@ -8,6 +8,8 @@ from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.imports import Module
 from importlinter.domain.ports.graph import ImportGraph
 
+from ._common import format_line_numbers
+
 
 class ForbiddenContract(Contract):
     """
@@ -124,7 +126,7 @@ class ForbiddenContract(Contract):
                 first_line = True
                 for direct_import in chain:
                     importer, imported = direct_import["importer"], direct_import["imported"]
-                    line_numbers = ", ".join(f"l.{n}" for n in direct_import["line_numbers"])
+                    line_numbers = format_line_numbers(direct_import["line_numbers"])
                     import_string = f"{importer} -> {imported} ({line_numbers})"
                     if first_line:
                         output.print_error(f"-   {import_string}", bold=False)

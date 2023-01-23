@@ -1,6 +1,7 @@
 import copy
 from typing import Iterator, List, Optional, Set, Tuple, Union, cast
 
+from grimp import DetailedImport
 from typing_extensions import TypedDict
 
 from importlinter.application import contract_utils, output
@@ -36,6 +37,9 @@ class _LayerChainData(TypedDict):
     higher_layer: str
     lower_layer: str
     chains: List[DetailedChain]
+
+
+_UNKNOWN_LINE_NUMBER = -1
 
 
 class LayersContract(Contract):
@@ -291,9 +295,13 @@ class LayersContract(Contract):
             lower_layer_package=lower_layer_package,
             graph=temp_graph,
         )
+
         collapsed_direct_chains: List[DetailedChain] = []
         for import_details_list in import_details_between_layers:
-            line_numbers = tuple(j["line_number"] for j in import_details_list)
+            line_numbers = tuple(
+                j["line_number"] if j["line_number"] != _UNKNOWN_LINE_NUMBER else None
+                for j in import_details_list
+            )
             collapsed_direct_chains.append(
                 {
                     "chain": [
@@ -311,13 +319,13 @@ class LayersContract(Contract):
         layer_chain_data: _LayerChainData = {
             "higher_layer": higher_layer_package.name,
             "lower_layer": lower_layer_package.name,
-            "chains": collapsed_direct_chains,  # type: ignore
+            "chains": collapsed_direct_chains,
         }
 
         indirect_chain_data = self._get_indirect_collapsed_chains(
             temp_graph, importer_package=lower_layer_package, imported_package=higher_layer_package
         )
-        layer_chain_data["chains"].extend(indirect_chain_data)  # type: ignore
+        layer_chain_data["chains"].extend(indirect_chain_data)
 
         return layer_chain_data
 
@@ -370,7 +378,9 @@ class LayersContract(Contract):
         graph.remove_module(layer_package.name)
 
     @classmethod
-    def _pop_direct_imports(cls, higher_layer_package, lower_layer_package, graph: ImportGraph):
+    def _pop_direct_imports(
+        cls, higher_layer_package, lower_layer_package, graph: ImportGraph
+    ) -> List[List[DetailedImport]]:
         import_details_list = []
         lower_layer_modules = {lower_layer_package.name} | graph.find_descendants(
             lower_layer_package.name
@@ -386,13 +396,13 @@ class LayersContract(Contract):
                     )
                     if not import_details:
                         # get_import_details may not return any imports (for example if an import
-                        # has been added without metadata. If nothing is returned, we still want
-                        # to add some details about the import to the list.
+                        # has been added without metadata. If nothing is returned, we still add
+                        # details, to keep the type checker happy.
                         import_details = [
                             {
                                 "importer": lower_layer_module,
                                 "imported": imported_module,
-                                "line_number": "?",
+                                "line_number": _UNKNOWN_LINE_NUMBER,
                                 "line_contents": "",
                             }
                         ]
