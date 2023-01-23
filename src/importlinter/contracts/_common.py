@@ -137,12 +137,15 @@ def _pop_shortest_chains(graph: ImportGraph, importer: str, imported: str):
             yield chain
 
 
-def format_line_numbers(line_numbers: Sequence[int]) -> str:
-    known_line_numbers = tuple(number for number in line_numbers if number is not None)
-    unknown_line_numbers = tuple(number for number in line_numbers if number is None)
+def format_line_numbers(line_numbers: Sequence[Optional[int]]) -> str:
+    """
+    Return a human-readable string of the supplied line numbers.
+
+    Unknown line numbers should be provided as a None value in the sequence. E.g.
+    (None,) will be returned as "l.?".
+    """
     return ", ".join(
-        "l.?" if line_number is None else f"l.{line_number}"
-        for line_number in (known_line_numbers + unknown_line_numbers)
+        "l.?" if line_number is None else f"l.{line_number}" for line_number in line_numbers
     )
 
 

@@ -1131,7 +1131,7 @@ def test_render_broken_contract():
                                 {
                                     "importer": "mypackage.utils.brown",
                                     "imported": "mypackage.high.white",
-                                    "line_numbers": (8, None, 16),
+                                    "line_numbers": (8, 16),
                                 },
                             ],
                         },
@@ -1231,7 +1231,7 @@ def test_render_broken_contract():
           mypackage.utils.yellow -> mypackage.utils.brown (l.?)
           mypackage.utils.brown -> mypackage.high.green (l.3)
                                    & mypackage.high.black (l.11)
-                                   & mypackage.high.white (l.8, l.16, l.?)
+                                   & mypackage.high.white (l.8, l.16)
 
         - mypackage.low.purple -> mypackage.utils.yellow (l.9)
           mypackage.utils.yellow -> mypackage.utils.brown (l.?)
