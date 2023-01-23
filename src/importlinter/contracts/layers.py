@@ -396,8 +396,8 @@ class LayersContract(Contract):
                     )
                     if not import_details:
                         # get_import_details may not return any imports (for example if an import
-                        # has been added without metadata. If nothing is returned, we still want
-                        # to add some details about the import to the list.
+                        # has been added without metadata. If nothing is returned, we still add
+                        # details, to keep the type checker happy.
                         import_details = [
                             {
                                 "importer": lower_layer_module,
