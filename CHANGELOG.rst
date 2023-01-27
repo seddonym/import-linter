@@ -1,8 +1,8 @@
 Changelog
 =========
 
-latest
-------
+1.7.0 (2023-01-27)
+------------------
 
 * Switch from optional dependency of ``toml`` to required dependency of ``tomli`` for Python versions < 3.11.
 * Use DetailedImport type hinting made available in Grimp 2.2.
