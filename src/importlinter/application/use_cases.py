@@ -1,6 +1,6 @@
 import importlib
 from copy import copy, deepcopy
-from typing import List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from ..application import rendering
 from ..domain.contract import Contract, InvalidContractOptions, registry
@@ -20,6 +20,7 @@ FAILURE = False
 
 def lint_imports(
     config_filename: Optional[str] = None,
+    limit_to_contracts: Tuple[str, ...] = (),
     is_debug_mode: bool = False,
     show_timings: bool = False,
     verbose: bool = False,
@@ -30,12 +31,13 @@ def lint_imports(
     This function attempts to handle and report all exceptions, too.
 
     Args:
-        config_filename: the filename to use to parse user options.
-        is_debug_mode:   whether debugging should be turned on. In debug mode, exceptions are
-                         not swallowed at the top level, so the stack trace can be seen.
-        show_timings:    whether to show the times taken to build the graph and to check
-                         each contract.
-        verbose:         if True, noisily output progress as it goes along.
+        config_filename:    the filename to use to parse user options.
+        limit_to_contracts: if supplied, only lint the contracts with the supplied ids.
+        is_debug_mode:      whether debugging should be turned on. In debug mode, exceptions are
+                            not swallowed at the top level, so the stack trace can be seen.
+        show_timings:       whether to show the times taken to build the graph and to check
+                            each contract.
+        verbose:            if True, noisily output progress as it goes along.
 
     Returns:
         True if the linting passed, False if it didn't.
@@ -45,7 +47,7 @@ def lint_imports(
     try:
         user_options = read_user_options(config_filename=config_filename)
         _register_contract_types(user_options)
-        report = create_report(user_options, show_timings, verbose)
+        report = create_report(user_options, limit_to_contracts, show_timings, verbose)
     except Exception as e:
         if is_debug_mode:
             raise e
@@ -86,7 +88,10 @@ def read_user_options(config_filename: Optional[str] = None) -> UserOptions:
 
 
 def create_report(
-    user_options: UserOptions, show_timings: bool = False, verbose: bool = False
+    user_options: UserOptions,
+    limit_to_contracts: Tuple[str, ...] = tuple(),
+    show_timings: bool = False,
+    verbose: bool = False,
 ) -> Report:
     """
     Analyse whether a Python package follows a set of contracts, returning a report on the results.
@@ -109,6 +114,7 @@ def create_report(
         graph=graph,
         graph_building_duration=graph_building_duration,
         user_options=user_options,
+        limit_to_contracts=limit_to_contracts,
         show_timings=show_timings,
         verbose=verbose,
     )
@@ -141,13 +147,17 @@ def _build_report(
     graph: ImportGraph,
     graph_building_duration: int,
     user_options: UserOptions,
+    limit_to_contracts: Tuple[str, ...],
     show_timings: bool,
     verbose: bool,
 ) -> Report:
     report = Report(
         graph=graph, show_timings=show_timings, graph_building_duration=graph_building_duration
     )
-    for contract_options in user_options.contracts_options:
+    contracts_options = _filter_contract_options(
+        user_options.contracts_options, limit_to_contracts
+    )
+    for contract_options in contracts_options:
         contract_class = registry.get_contract_class(contract_options["type"])
         try:
             contract = contract_class(
@@ -171,6 +181,33 @@ def _build_report(
 
     output.verbose_print(verbose, newline=True)
     return report
+
+
+def _filter_contract_options(
+    contracts_options: List[Dict[str, Any]], limit_to_contracts: Tuple[str, ...]
+) -> List[Dict[str, Any]]:
+    if limit_to_contracts:
+        # Validate the supplied contract ids.
+        registered_contract_ids = {option["id"] for option in contracts_options}
+        missing_contract_ids = set(limit_to_contracts) - registered_contract_ids
+        if missing_contract_ids:
+            if len(missing_contract_ids) == 1:
+                raise ValueError(
+                    f"Could not find contract '{missing_contract_ids.pop()}'.\n\n"
+                    "You asked to limit the check to that contract, but nothing exists "
+                    "with that id."
+                )
+            else:
+                raise ValueError(
+                    "Could not find the following contract ids: "
+                    f"{', '.join(sorted(missing_contract_ids))}.\n\n"
+                    "You asked to limit the check to those contracts, but there are no "
+                    "contracts with those ids."
+                )
+        else:
+            return [o for o in contracts_options if o["id"] in limit_to_contracts]
+    else:
+        return contracts_options
 
 
 def _register_contract_types(user_options: UserOptions) -> None:

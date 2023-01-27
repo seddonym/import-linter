@@ -1,5 +1,7 @@
+============
 TOML support
-------------
+============
+
 
 While all the examples are in INI format, Import Linter also supports TOML.
 
@@ -40,3 +42,9 @@ Following, an example with a layered configuration:
         "medium",
         "low",
     ]
+
+Contract ids
+------------
+
+You can optionally provide an ``id`` key for each contract. This allows
+you to make use of the ``--contract`` parameter when :ref:`running the linter<usage:Running the linter>`.

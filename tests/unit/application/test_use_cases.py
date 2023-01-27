@@ -1,3 +1,4 @@
+import re
 import string
 from typing import Any, Dict, List, Optional
 
@@ -116,6 +117,39 @@ class TestCheckContractsAndPrintReport:
             ------------
 
             This contract will always fail.
+            """
+        )
+
+    def test_limit_contracts(self):
+        self._configure(
+            contracts_options=[
+                {"type": "always_passes", "id": "blue", "name": "Contract blue"},
+                {"type": "always_passes", "id": "green", "name": "Contract green"},
+                {"type": "always_fails", "id": "yellow", "name": "Contract yellow"},
+                {"type": "always_passes", "id": "purple", "name": "Contract purple"},
+            ]
+        )
+
+        result = lint_imports(limit_to_contracts=("green", "purple"))
+
+        assert result == SUCCESS
+        settings.PRINTER.pop_and_assert(
+            """
+            =============
+            Import Linter
+            =============
+
+            ---------
+            Contracts
+            ---------
+
+            Analyzed 26 files, 10 dependencies.
+            -----------------------------------
+
+            Contract green KEPT
+            Contract purple KEPT
+
+            Contracts: 2 kept, 0 broken.
             """
         )
 
@@ -520,6 +554,52 @@ class TestGraphCopying:
         result = lint_imports(is_debug_mode=True)
 
         assert result == SUCCESS
+
+
+class TestCreateReport:
+    @pytest.mark.parametrize(
+        "limit_to_contracts, expected_message",
+        (
+            (
+                ("a-contract-that-exists", "a-contract-that-doesnt-exist"),
+                "Could not find contract 'a-contract-that-doesnt-exist'.\n\n"
+                "You asked to limit the check to that contract, but nothing exists with that id.",
+            ),
+            (
+                (
+                    "a-contract-that-exists",
+                    "a-contract-that-doesnt-exist",
+                    "another-contract-that-doesnt-exist",
+                ),
+                "Could not find the following contract ids: "
+                "a-contract-that-doesnt-exist, another-contract-that-doesnt-exist.\n\n"
+                "You asked to limit the check to those contracts, but there are no "
+                "contracts with those ids.",
+            ),
+        ),
+    )
+    def test_raises_exception_if_limited_to_nonexistent_contract(
+        self, limit_to_contracts, expected_message
+    ):
+        settings.configure(GRAPH_BUILDER=FakeGraphBuilder(), PRINTER=FakePrinter())
+
+        with pytest.raises(
+            ValueError,
+            match=re.escape(expected_message),
+        ):
+            create_report(
+                user_options=UserOptions(
+                    session_options={"root_packages": ["mypackage"]},
+                    contracts_options=[
+                        {
+                            "type": "always_passes",
+                            "id": "a-contract-that-exists",
+                            "name": "Contract one",
+                        },
+                    ],
+                ),
+                limit_to_contracts=limit_to_contracts,
+            )
 
 
 class TestReadUserOptions:

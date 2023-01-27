@@ -63,19 +63,19 @@ Additionally, you will want to include one or more contract configurations. Thes
 
 .. code-block:: ini
 
-    [importlinter:contract:1]
+    [importlinter:contract:one]
     name = Contract One
     type = some_contract_type
     (additional options)
 
-    [importlinter:contract:2]
+    [importlinter:contract:two]
     name = Contract Two
     type = another_contract_type
     (additional options)
 
-Notice each contract has its own INI section, which begins ``importlinter:contract:`` and ends in an
-arbitrary, unique code (in this example, the codes are ``1`` and ``2``). These codes are purely
-to adhere to the INI format, which does not allow duplicate section names.
+Notice each contract has its own INI section, which begins ``importlinter:contract:`` and ends in a
+unique id (in this example, the ids are ``one`` and ``two``). These codes can be used to
+to select individual contracts when running the linter (see below).
 
 Every contract will always have the following key/value pairs:
 
@@ -97,6 +97,12 @@ Running this will check that your project adheres to the contracts you've define
   The configuration file to use. This overrides the default file search strategy.
   By default it's assumed that the file is an ini-file unless the file extension is ``toml``.
   (Optional.)
+- ``--contract``:
+  Limit the check to the contract with the supplied id. In INI files, a contract's id is
+  the final part of the section header: for example, the id for a contract with a section
+  header of ``[importlinter:contract:foo]`` is ``foo``. In TOML files, ids are supplied
+  explicitly with an ``id`` key. This option may be provided multiple
+  times to check more than one contract. (Optional.)
 - ``--show_timings``:
   Display the times taken to build the graph and check each contract. (Optional.)
 - ``--verbose``:
@@ -113,6 +119,12 @@ Running this will check that your project adheres to the contracts you've define
 .. code-block:: text
 
     lint-imports --config path/to/alternative-config.ini
+
+**Checking only certain contracts:**
+
+.. code-block:: text
+
+    lint-imports --contract some-contract --contract another-contract
 
 **Showing timings:**
 
