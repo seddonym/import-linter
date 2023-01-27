@@ -109,7 +109,7 @@ You may now use the type name defined in the previous step to define a contract:
 
 .. code-block:: ini
 
-    [importlinter:contract:1]
+    [importlinter:contract:my-custom-contract]
     name = My custom contract
     type = forbidden_import
     importer = mypackage.foo

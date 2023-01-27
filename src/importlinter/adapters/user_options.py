@@ -62,7 +62,9 @@ class IniFileUserOptionReader(AbstractUserOptionReader):
         contract_options = []
         for section_name in config.sections():
             if section_name.startswith(f"{self.section_name}:"):
-                contract_options.append(self._clean_section_config(dict(config[section_name])))
+                contract_option = {"id": section_name.split(":")[-1]}
+                contract_option.update(self._clean_section_config(dict(config[section_name])))
+                contract_options.append(contract_option)
         return UserOptions(session_options=session_options, contracts_options=contract_options)
 
     @staticmethod

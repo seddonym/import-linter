@@ -54,10 +54,11 @@ from tests.adapters.filesystem import FakeFileSystem
                 contracts_options=[
                     {
                         "name": "Contract One",
+                        "id": "contract-one",
                         "key": "value",
                         "multiple_values": ["one", "two", "three", "foo.one -> foo.two"],
                     },
-                    {"name": "Contract Two", "baz": "3"},
+                    {"name": "Contract Two", "id": "contract-two", "baz": "3"},
                 ],
             ),
         ),
@@ -152,6 +153,7 @@ def test_respects_passed_filename(passed_filename, expected_foo_value):
             include_external_packages = true
 
             [[tool.importlinter.contracts]]
+            id = "contract-one"
             name = "Contract One"
             key = "value"
             multiple_values = [
@@ -170,6 +172,7 @@ def test_respects_passed_filename(passed_filename, expected_foo_value):
                 contracts_options=[
                     {
                         "name": "Contract One",
+                        "id": "contract-one",
                         "key": "value",
                         "multiple_values": ["one", "two", "three", "foo.one -> foo.two"],
                     },

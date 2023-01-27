@@ -21,7 +21,7 @@ External packages may also be forbidden.
     [importlinter]
     root_package = mypackage
 
-    [importlinter:contract:1]
+    [importlinter:contract:my-forbidden-contract]
     name = My forbidden contract (internal packages only)
     type = forbidden
     source_modules =
@@ -41,7 +41,7 @@ External packages may also be forbidden.
     root_package = mypackage
     include_external_packages = True
 
-    [importlinter:contract:1]
+    [importlinter:contract:my-forbidden-contract]
     name = My forbidden contract (internal and external packages)
     type = forbidden
     source_modules =
@@ -80,7 +80,7 @@ They do this by checking that there are no imports in any direction between the 
 
 .. code-block:: ini
 
-    [importlinter:contract:1]
+    [importlinter:contract:my-independence-contract]
     name = My independence contract
     type = independence
     modules =
@@ -127,7 +127,7 @@ exhaustive contracts are only supported for layers that define containers.
     [importlinter]
     root_package = mypackage
 
-    [importlinter:contract:1]
+    [importlinter:contract:my-layers-contract]
     name = My three-tier layers contract
     type = layers
     layers=
@@ -146,7 +146,7 @@ This contract will not allow imports from lower layers to higher layers. For exa
         medium
         low
 
-    [importlinter:contract:1]
+    [importlinter:contract:my-layers-contract]
     name = My three-tier layers contract (multiple root packages)
     type = layers
     layers=
@@ -161,7 +161,7 @@ In this case, ``high``, ``medium`` and ``low`` all need to be specified as ``roo
 
 .. code-block:: ini
 
-    [importlinter:contract:1]
+    [importlinter:contract:my-layers-contract]
     name = My multiple package layers contract
     type = layers
     layers=
@@ -184,7 +184,7 @@ This is an example of an 'exhaustive' contract.
 
 .. code-block:: ini
 
-    [importlinter:contract:1]
+    [importlinter:contract:my-layers-contract]
     name = My multiple package layers contract
     type = layers
     layers=

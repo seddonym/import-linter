@@ -16,6 +16,7 @@ from importlinter import api
                 contracts_options=[
                     {
                         "name": "Test independence contract",
+                        "id": "test-independence",
                         "type": "independence",
                         "modules": [
                             "testpackage.high.blue",
@@ -37,6 +38,7 @@ from importlinter import api
                 contracts_options=[
                     {
                         "name": "Multiple roots kept contract",
+                        "id": "multiple-roots",
                         "type": "forbidden",
                         "source_modules": "rootpackageblue.one.alpha",
                         "forbidden_modules": "rootpackagegreen.two",
