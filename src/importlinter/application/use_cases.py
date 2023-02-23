@@ -223,6 +223,7 @@ def _get_built_in_contract_types() -> List[Tuple[str, Type[Contract]]]:
             [
                 "forbidden: importlinter.contracts.forbidden.ForbiddenContract",
                 "layers: importlinter.contracts.layers.LayersContract",
+                "multi-layers: importlinter.contracts.multi_layers.MultiLayersContract",
                 "independence: importlinter.contracts.independence.IndependenceContract",
             ],
         )

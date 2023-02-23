@@ -13,6 +13,7 @@ testpackage_directory = assets_directory / "testpackage"
 multipleroots_directory = assets_directory / "multipleroots"
 unmatched_ignore_imports_directory = testpackage_directory / "unmatched_ignore_imports_alerting"
 namespace_packages_directory = assets_directory / "namespacepackages"
+multilayers_directory = assets_directory / "multilayers"
 
 # Add namespace packages to Python path
 sys.path.extend(
@@ -59,6 +60,9 @@ sys.path.extend(
         # Namespace packages
         (namespace_packages_directory, "keptcontract.ini", cli.EXIT_STATUS_SUCCESS),
         (namespace_packages_directory, "brokencontract.ini", cli.EXIT_STATUS_ERROR),
+        # Multi layers
+        (multilayers_directory, "keptcontract.ini", cli.EXIT_STATUS_SUCCESS),
+        (multilayers_directory, "brokencontract.ini", cli.EXIT_STATUS_ERROR),
     ),
 )
 def test_lint_imports(working_directory, config_filename, expected_result):
