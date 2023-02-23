@@ -61,7 +61,7 @@ Configuration options:
     - ``source_modules``:    A list of modules that should not import the forbidden modules.
     - ``forbidden_modules``: A list of modules that should not be imported by the source modules. These may include
       root level external packages (i.e. ``django``, but not ``django.db.models``). If external packages are included,
-      the top level configuration must have ``internal_external_packages = True``.
+      the top level configuration must have ``include_external_packages = True``.
     - ``ignore_imports``: See :ref:`Shared options`.
     - ``unmatched_ignore_imports_alerting``: See :ref:`Shared options`.
     - ``allow_indirect_imports``: If ``True``, allow indirect imports to forbidden modules without interpreting them
