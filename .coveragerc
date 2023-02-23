@@ -12,6 +12,7 @@ parallel = true
 
 [report]
 show_missing = true
+skip_covered = true
 precision = 2
 omit = *migrations*
 exclude_lines =
