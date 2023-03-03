@@ -11,6 +11,7 @@ Contents
    api
    contract_types
    custom_contract_types
+   caching
    toml
    contributing
    authors
