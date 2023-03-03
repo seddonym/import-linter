@@ -103,6 +103,10 @@ Running this will check that your project adheres to the contracts you've define
   header of ``[importlinter:contract:foo]`` is ``foo``. In TOML files, ids are supplied
   explicitly with an ``id`` key. This option may be provided multiple
   times to check more than one contract. (Optional.)
+- ``--cache-dir``:
+  The directory to use for caching. Defaults to ``.import_linter_cache``. See :doc:`caching`. (Optional.)
+- ``--no-cache``:
+  Disable caching. See :doc:`caching`. (Optional.)
 - ``--show_timings``:
   Display the times taken to build the graph and check each contract. (Optional.)
 - ``--verbose``:
@@ -125,6 +129,14 @@ Running this will check that your project adheres to the contracts you've define
 .. code-block:: text
 
     lint-imports --contract some-contract --contract another-contract
+
+**Using a different cache directory, or disabling caching:**
+
+.. code-block:: text
+
+    lint-imports --cache-dir path/to/cache
+
+    lint-imports --no-cache
 
 **Showing timings:**
 
