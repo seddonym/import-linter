@@ -1,6 +1,6 @@
 import importlib
 from copy import copy, deepcopy
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from ..application import rendering
 from ..domain.contract import Contract, InvalidContractOptions, registry
@@ -9,6 +9,7 @@ from . import output
 from .app_config import settings
 from .ports.reporting import Report
 from .rendering import render_exception, render_report
+from .sentinels import NotSupplied
 from .user_options import UserOptions
 
 # Public functions
@@ -21,6 +22,7 @@ FAILURE = False
 def lint_imports(
     config_filename: Optional[str] = None,
     limit_to_contracts: Tuple[str, ...] = (),
+    cache_dir: Union[str, None, Type[NotSupplied]] = NotSupplied,
     is_debug_mode: bool = False,
     show_timings: bool = False,
     verbose: bool = False,
@@ -33,6 +35,7 @@ def lint_imports(
     Args:
         config_filename:    the filename to use to parse user options.
         limit_to_contracts: if supplied, only lint the contracts with the supplied ids.
+        cache_dir:          the directory to use for caching. Pass None to disable caching.
         is_debug_mode:      whether debugging should be turned on. In debug mode, exceptions are
                             not swallowed at the top level, so the stack trace can be seen.
         show_timings:       whether to show the times taken to build the graph and to check
@@ -47,7 +50,7 @@ def lint_imports(
     try:
         user_options = read_user_options(config_filename=config_filename)
         _register_contract_types(user_options)
-        report = create_report(user_options, limit_to_contracts, show_timings, verbose)
+        report = create_report(user_options, limit_to_contracts, cache_dir, show_timings, verbose)
     except Exception as e:
         if is_debug_mode:
             raise e
@@ -90,6 +93,7 @@ def read_user_options(config_filename: Optional[str] = None) -> UserOptions:
 def create_report(
     user_options: UserOptions,
     limit_to_contracts: Tuple[str, ...] = tuple(),
+    cache_dir: Union[str, None, Type[NotSupplied]] = NotSupplied,
     show_timings: bool = False,
     verbose: bool = False,
 ) -> Report:
@@ -101,11 +105,13 @@ def create_report(
                             such as a module that could not be imported.
     """
     include_external_packages = _get_include_external_packages(user_options)
-    output.verbose_print(verbose, "Building import graph...")
+
     with settings.TIMER as timer:
         graph = _build_graph(
             root_package_names=user_options.session_options["root_packages"],
+            cache_dir=cache_dir,
             include_external_packages=include_external_packages,
+            verbose=verbose,
         )
     graph_building_duration = timer.duration_in_s
     output.verbose_print(verbose, f"Built graph in {graph_building_duration}s.")
@@ -136,10 +142,23 @@ def _normalize_user_options(user_options: UserOptions) -> UserOptions:
 
 
 def _build_graph(
-    root_package_names: List[str], include_external_packages: Optional[bool]
+    root_package_names: List[str],
+    include_external_packages: Optional[bool],
+    verbose: bool,
+    cache_dir: Union[str, None, Type[NotSupplied]] = NotSupplied,
 ) -> ImportGraph:
+    if cache_dir == NotSupplied:
+        cache_dir = settings.DEFAULT_CACHE_DIR
+
+    if cache_dir:
+        output.verbose_print(verbose, f"Building import graph (cache directory is {cache_dir})...")
+    else:
+        output.verbose_print(verbose, "Building import graph (with caching disabled)...")
+
     return settings.GRAPH_BUILDER.build(
-        root_package_names=root_package_names, include_external_packages=include_external_packages
+        root_package_names=root_package_names,
+        include_external_packages=include_external_packages,
+        cache_dir=cache_dir,
     )
 
 

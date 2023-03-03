@@ -1,0 +1,2 @@
+class NotSupplied:
+    pass

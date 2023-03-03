@@ -1,6 +1,7 @@
-from typing import List
+from typing import List, Optional
 
 from grimp.adaptors.graph import ImportGraph as GrimpImportGraph  # type: ignore
+
 from importlinter.application.ports.building import GraphBuilder
 from importlinter.domain.ports.graph import ImportGraph
 
@@ -27,10 +28,14 @@ class FakeGraphBuilder(GraphBuilder):
     """
 
     def build(
-        self, root_package_names: List[str], include_external_packages: bool = False
+        self,
+        root_package_names: List[str],
+        cache_dir: Optional[str],
+        include_external_packages: bool = False,
     ) -> ImportGraph:
         self.build_arguments = {
             "root_package_names": root_package_names,
+            "cache_dir": cache_dir,
             "include_external_packages": include_external_packages,
         }
         return getattr(self, "_graph", GrimpImportGraph())
