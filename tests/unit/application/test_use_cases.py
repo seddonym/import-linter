@@ -1,17 +1,21 @@
 import re
 import string
 from typing import Any, Dict, List, Optional
+from unittest.mock import sentinel
 
 import pytest
 from grimp.adaptors.graph import ImportGraph
 
 from importlinter.application.app_config import settings
+from importlinter.application.ports.building import GraphBuilder
 from importlinter.application.use_cases import FAILURE, SUCCESS, create_report, lint_imports
 from importlinter.application.user_options import UserOptions
 from tests.adapters.building import FakeGraphBuilder
 from tests.adapters.printing import FakePrinter
 from tests.adapters.timing import FakeTimer
 from tests.adapters.user_options import ExceptionRaisingUserOptionReader, FakeUserOptionReader
+
+SOME_CACHE_DIR = "/path/to/some/cache/dir"
 
 
 class TestCheckContractsAndPrintReport:
@@ -262,7 +266,18 @@ class TestCheckContractsAndPrintReport:
         )
 
     @pytest.mark.parametrize(
-        "verbose, expected_output",
+        "cache_dir, expected_graph_building_output",
+        (
+            ("/path/to/cache", "Building import graph (cache directory is /path/to/cache)..."),
+            (None, "Building import graph (with caching disabled)..."),
+            (
+                sentinel.not_supplied,
+                f"Building import graph (cache directory is {SOME_CACHE_DIR})...",
+            ),
+        ),
+    )
+    @pytest.mark.parametrize(
+        "verbose, expected_output_template",
         [
             (
                 True,
@@ -272,7 +287,7 @@ class TestCheckContractsAndPrintReport:
                 =============
 
                 Verbose mode.
-                Building import graph...
+                {{ graph building output }}
                 Built graph in 5s.
                 Checking Contract foo...
                 Hello from the noisy contract!
@@ -315,7 +330,9 @@ class TestCheckContractsAndPrintReport:
             ),
         ],
     )
-    def test_verbose_mode(self, verbose, expected_output):
+    def test_verbose_mode(
+        self, verbose, expected_output_template, cache_dir, expected_graph_building_output
+    ):
         timer = FakeTimer()
         timer.setup(tick_duration=5, increment=10)
         self._configure(
@@ -326,9 +343,35 @@ class TestCheckContractsAndPrintReport:
             timer=timer,
         )
 
-        lint_imports(verbose=verbose, is_debug_mode=True)
+        kwargs = dict(verbose=verbose, is_debug_mode=True)
+        if cache_dir is not sentinel.not_supplied:
+            kwargs["cache_dir"] = cache_dir
 
+        lint_imports(**kwargs)
+
+        expected_output = expected_output_template.replace(
+            "{{ graph building output }}", expected_graph_building_output
+        )
         settings.PRINTER.pop_and_assert(expected_output)
+
+    @pytest.mark.parametrize(
+        "passed_arg, expected_cache_dir",
+        (
+            (sentinel.not_supplied, SOME_CACHE_DIR),
+            ("/path/to/cache", "/path/to/cache"),
+            (None, None),
+        ),
+    )
+    def test_cache_dir_is_passed_correctly(self, passed_arg, expected_cache_dir):
+        builder = FakeGraphBuilder()
+        self._configure(contracts_options=[], graph_builder=builder)
+
+        if passed_arg is sentinel.not_supplied:
+            lint_imports()
+        else:
+            lint_imports(cache_dir=passed_arg)
+
+        assert builder.build_arguments["cache_dir"] == expected_cache_dir
 
     def test_forbidden_import(self):
         """
@@ -447,6 +490,7 @@ class TestCheckContractsAndPrintReport:
         session_options: Optional[Dict[str, Any]] = None,
         contract_types: Optional[List[str]] = None,
         graph: Optional[ImportGraph] = None,
+        graph_builder: Optional[GraphBuilder] = None,
         timer: Optional[FakeTimer] = None,
     ):
         session_options = session_options or {"root_package": "mypackage"}
@@ -465,9 +509,10 @@ class TestCheckContractsAndPrintReport:
         )
         settings.configure(
             USER_OPTION_READERS={"foo": reader},
-            GRAPH_BUILDER=FakeGraphBuilder(),
+            GRAPH_BUILDER=graph_builder or FakeGraphBuilder(),
             PRINTER=FakePrinter(),
             TIMER=timer or FakeTimer(),
+            DEFAULT_CACHE_DIR=SOME_CACHE_DIR,
         )
         if graph is None:
             graph = self._build_default_graph()

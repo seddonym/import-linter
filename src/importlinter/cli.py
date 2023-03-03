@@ -1,8 +1,10 @@
 import os
 import sys
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Type, Union
 
 import click
+
+from importlinter.application.sentinels import NotSupplied
 
 from . import configuration
 from .application import use_cases
@@ -21,6 +23,8 @@ EXIT_STATUS_ERROR = 1
     multiple=True,
     help="Limit the check to the supplied contract identifier. May be passed multiple times.",
 )
+@click.option("--cache-dir", default=None, help="The directory to use for caching.")
+@click.option("--no-cache", is_flag=True, help="Disable caching.")
 @click.option("--debug", is_flag=True, help="Run in debug mode.")
 @click.option(
     "--show-timings",
@@ -35,6 +39,8 @@ EXIT_STATUS_ERROR = 1
 def lint_imports_command(
     config: Optional[str],
     contract: Tuple[str, ...],
+    cache_dir: Optional[str],
+    no_cache: bool,
     debug: bool,
     show_timings: bool,
     verbose: bool,
@@ -45,6 +51,8 @@ def lint_imports_command(
     exit_code = lint_imports(
         config_filename=config,
         limit_to_contracts=contract,
+        cache_dir=cache_dir,
+        no_cache=no_cache,
         is_debug_mode=debug,
         show_timings=show_timings,
         verbose=verbose,
@@ -55,6 +63,8 @@ def lint_imports_command(
 def lint_imports(
     config_filename: Optional[str] = None,
     limit_to_contracts: Tuple[str, ...] = (),
+    cache_dir: Optional[str] = None,
+    no_cache: bool = False,
     is_debug_mode: bool = False,
     show_timings: bool = False,
     verbose: bool = False,
@@ -67,6 +77,8 @@ def lint_imports(
     Args:
         config_filename:    the filename to use to parse user options.
         limit_to_contracts: if supplied, only lint the contracts with the supplied ids.
+        cache_dir:          the directory to use for caching, defaults to '.import_linter_cache'.
+        no_cache:           if True, disable caching.
         is_debug_mode:      whether debugging should be turned on. In debug mode, exceptions are
                             not swallowed at the top level, so the stack trace can be seen.
         show_timings:       whether to show the times taken to build the graph and to check
@@ -79,9 +91,12 @@ def lint_imports(
     # Add current directory to the path, as this doesn't happen automatically.
     sys.path.insert(0, os.getcwd())
 
+    combined_cache_dir = _combine_caching_arguments(cache_dir, no_cache)
+
     passed = use_cases.lint_imports(
         config_filename=config_filename,
         limit_to_contracts=limit_to_contracts,
+        cache_dir=combined_cache_dir,
         is_debug_mode=is_debug_mode,
         show_timings=show_timings,
         verbose=verbose,
@@ -91,3 +106,13 @@ def lint_imports(
         return EXIT_STATUS_SUCCESS
     else:
         return EXIT_STATUS_ERROR
+
+
+def _combine_caching_arguments(
+    cache_dir: Optional[str], no_cache: bool
+) -> Union[str, None, Type[NotSupplied]]:
+    if no_cache:
+        return None
+    if cache_dir is None:
+        return NotSupplied
+    return cache_dir

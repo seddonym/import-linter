@@ -16,4 +16,5 @@ def configure():
         PRINTER=ClickPrinter(),
         FILE_SYSTEM=FileSystem(),
         TIMER=SystemClockTimer(),
+        DEFAULT_CACHE_DIR=".import_linter_cache",
     )
