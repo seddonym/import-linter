@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from grimp.adaptors.graph import ImportGraph as GrimpImportGraph  # type: ignore
+from grimp.adaptors.graph import ImportGraph as GrimpImportGraph
 
 from importlinter.application.ports.building import GraphBuilder
 from importlinter.domain.ports.graph import ImportGraph

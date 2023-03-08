@@ -38,7 +38,7 @@ def remove_ignored_imports(
 
     warnings = _handle_unresolved_import_expressions(
         unresolved_expressions,
-        unmatched_alerting,  # type: ignore
+        unmatched_alerting,
     )
 
     helpers.pop_imports(graph, imports)

@@ -65,7 +65,7 @@ class IndependenceContract(Contract):
 
         temp_graph = copy.deepcopy(graph)
         # First pass: direct imports.
-        for subpackage_1, subpackage_2 in permutations(modules, r=2):  # type: ignore
+        for subpackage_1, subpackage_2 in permutations(modules, r=2):
             output.verbose_print(
                 verbose,
                 "Searching for direct imports from " f"{subpackage_1} to {subpackage_2}...",
@@ -94,7 +94,7 @@ class IndependenceContract(Contract):
 
         # Second pass: indirect imports.
         self._squash_modules(graph=temp_graph, modules_to_squash=modules)
-        for subpackage_1, subpackage_2 in permutations(modules, r=2):  # type: ignore
+        for subpackage_1, subpackage_2 in permutations(modules, r=2):
             output.verbose_print(
                 verbose,
                 "Searching for indirect imports from " f"{subpackage_1} to {subpackage_2}...",
@@ -210,13 +210,13 @@ class IndependenceContract(Contract):
                     importer=importer_module, imported=imported_module
                 )
                 if import_details:
-                    line_numbers = tuple(cast(int, i["line_number"]) for i in import_details)
+                    line_numbers = tuple(i["line_number"] for i in import_details)
                     direct_imports.append(
                         {
                             "chain": [
                                 {
-                                    "importer": cast(str, import_details[0]["importer"]),
-                                    "imported": cast(str, import_details[0]["imported"]),
+                                    "importer": import_details[0]["importer"],
+                                    "imported": import_details[0]["imported"],
                                     "line_numbers": line_numbers,
                                 }
                             ],
@@ -250,7 +250,7 @@ class IndependenceContract(Contract):
                     (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
                 ]:
                     import_details = graph.get_import_details(importer=importer, imported=imported)
-                    line_numbers = tuple(cast(int, j["line_number"]) for j in import_details)
+                    line_numbers = tuple(j["line_number"] for j in import_details)
                     chain_data.append(
                         {
                             "importer": importer,

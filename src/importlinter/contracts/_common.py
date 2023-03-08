@@ -6,7 +6,7 @@ relying on it for a custom contract type, be aware things may change
 without warning.
 """
 
-from typing import List, Optional, Sequence, Tuple, Union, cast
+from typing import List, Optional, Sequence, Tuple, Union
 
 from typing_extensions import TypedDict
 
@@ -62,7 +62,7 @@ def find_segments(
             import_details = reference_graph.get_import_details(
                 importer=importer_in_chain, imported=imported_in_chain
             )
-            line_numbers = tuple(sorted(set(cast(int, j["line_number"]) for j in import_details)))
+            line_numbers = tuple(sorted(set(j["line_number"] for j in import_details)))
             segment.append(
                 {
                     "importer": importer_in_chain,
@@ -90,9 +90,7 @@ def segments_to_collapsed_chains(
             import_details_list = graph.get_import_details(
                 importer=module, imported=imported_module
             )
-            line_numbers = tuple(
-                sorted(set(cast(int, j["line_number"]) for j in import_details_list))
-            )
+            line_numbers = tuple(sorted(set(j["line_number"] for j in import_details_list)))
             head_imports.append(
                 {"importer": module, "imported": imported_module, "line_numbers": line_numbers}
             )
@@ -108,9 +106,7 @@ def segments_to_collapsed_chains(
             import_details_list = graph.get_import_details(
                 importer=importer_module, imported=module
             )
-            line_numbers = tuple(
-                sorted(set(cast(int, j["line_number"]) for j in import_details_list))
-            )
+            line_numbers = tuple(sorted(set(j["line_number"] for j in import_details_list)))
             tail_imports.append(
                 {"importer": importer_module, "imported": module, "line_numbers": line_numbers}
             )
