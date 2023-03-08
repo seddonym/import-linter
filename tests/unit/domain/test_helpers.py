@@ -1,5 +1,5 @@
 import re
-from typing import List
+from typing import List, Tuple, Optional
 
 import pytest
 from grimp import DetailedImport
@@ -38,7 +38,7 @@ class TestPopImports:
         ),
     ]
 
-    def test_succeeds(self):
+    def test_succeeds(self) -> None:
         graph = self._build_graph(imports=self.IMPORTS)
         imports_to_pop = self.IMPORTS[0:2]
         import_to_leave = self.IMPORTS[2]
@@ -57,7 +57,7 @@ class TestPopImports:
         )
         assert graph.count_imports() == 1
 
-    def test_raises_missing_import_if_module_not_found(self):
+    def test_raises_missing_import_if_module_not_found(self) -> None:
         graph = self._build_graph(imports=self.IMPORTS)
         non_existent_import = DirectImport(
             importer=Module("mypackage.nonexistent"),
@@ -74,7 +74,7 @@ class TestPopImports:
         ):
             pop_imports(graph, [non_existent_import])
 
-    def test_works_with_multiple_external_imports_from_same_module(self):
+    def test_works_with_multiple_external_imports_from_same_module(self) -> None:
         imports_to_pop: List[DetailedImport] = [
             dict(
                 importer="mypackage.green",
@@ -470,7 +470,7 @@ class TestPopImportExpressions:
         ),
     ]
 
-    def test_succeeds(self):
+    def test_succeeds(self) -> None:
         graph = self._build_graph(self.DIRECT_IMPORTS)
         expressions = [
             ImportExpression(importer="mypackage.green", imported="mypackage.*"),
@@ -516,7 +516,7 @@ class TestPopImportExpressions:
         )
 
 
-def test_add_imports():
+def test_add_imports() -> None:
     graph = ImportGraph()
     import_details: List[DetailedImport] = [
         {"importer": "a", "imported": "b", "line_number": 1, "line_contents": "lorem ipsum"},
@@ -527,7 +527,7 @@ def test_add_imports():
     assert graph.modules == {"a", "b", "c", "d"}
 
 
-def _direct_import_sort_key(direct_import: DirectImport):
+def _direct_import_sort_key(direct_import: DirectImport) -> Tuple[str, str, Optional[int]]:
     # Doesn't matter how we sort, just a way of sorting consistently for comparison.
     return (
         direct_import.importer.name,

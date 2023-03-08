@@ -1,6 +1,6 @@
 import itertools
 import re
-from typing import Iterable, List, Pattern, Set, Tuple, cast
+from typing import Iterable, List, Pattern, Set, Tuple
 
 from grimp import DetailedImport
 
@@ -62,10 +62,10 @@ def import_expression_to_imports(
             for individual_import_details in import_details:
                 imports.add(
                     DirectImport(
-                        importer=Module(cast(str, individual_import_details["importer"])),
-                        imported=Module(cast(str, individual_import_details["imported"])),
-                        line_number=cast(int, individual_import_details["line_number"]),
-                        line_contents=cast(str, individual_import_details["line_contents"]),
+                        importer=Module(individual_import_details["importer"]),
+                        imported=Module(individual_import_details["imported"]),
+                        line_number=individual_import_details["line_number"],
+                        line_contents=individual_import_details["line_contents"],
                     )
                 )
             matched = True

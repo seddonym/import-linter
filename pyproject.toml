@@ -12,3 +12,5 @@ line_length = 99
 exclude = [
     '^tests/assets/',
 ]
+warn_unused_ignores = true
+warn_redundant_casts = true

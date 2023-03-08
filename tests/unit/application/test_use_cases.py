@@ -502,7 +502,7 @@ class TestCheckContractsAndPrintReport:
                 "forbidden: tests.helpers.contracts.ForbiddenImportContract",
                 "noisy: tests.helpers.contracts.NoisyContract",
             ]
-        session_options["contract_types"] = contract_types  # type: ignore
+        session_options["contract_types"] = contract_types
 
         reader = FakeUserOptionReader(
             UserOptions(session_options=session_options, contracts_options=contracts_options)
