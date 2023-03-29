@@ -1,4 +1,5 @@
 import configparser
+import json
 from typing import Any, Dict, Optional, List
 import abc
 import sys
@@ -97,13 +98,29 @@ class TomlFileUserOptionReader(AbstractUserOptionReader):
 
         contracts = session_options.pop("contracts", [])
 
-        self._normalize_booleans(session_options)
+        _normalize_booleans(session_options)
         for contract in contracts:
-            self._normalize_booleans(contract)
+            _normalize_booleans(contract)
 
         return UserOptions(session_options=session_options, contracts_options=contracts)
 
-    def _normalize_booleans(self, data: dict) -> None:
-        for key, value in data.items():
-            if isinstance(value, bool):
-                data[key] = str(value)
+
+class JsonFileUserOptionReader(AbstractUserOptionReader):
+    potential_config_filenames = ["importlinter.json", ".importlinter.json"]
+
+    def _read_config_filename(self, config_filename: str) -> Optional[UserOptions]:
+        file_contents = settings.FILE_SYSTEM.read(config_filename)
+        data = json.loads(file_contents)
+        contracts = data.pop("contracts", [])
+
+        _normalize_booleans(data)
+        for contract in contracts:
+            _normalize_booleans(contract)
+
+        return UserOptions(session_options=data, contracts_options=contracts)
+
+
+def _normalize_booleans(data: dict) -> None:
+    for key, value in data.items():
+        if isinstance(value, bool):
+            data[key] = str(value)

@@ -1,6 +1,6 @@
 import pytest
 
-from importlinter.adapters.user_options import IniFileUserOptionReader, TomlFileUserOptionReader
+from importlinter.adapters.user_options import IniFileUserOptionReader, TomlFileUserOptionReader, JsonFileUserOptionReader
 from importlinter.application.app_config import settings
 from importlinter.application.user_options import UserOptions
 from tests.adapters.filesystem import FakeFileSystem
@@ -191,4 +191,70 @@ def test_toml_file_reader(contents, expected_options):
     )
 
     options = TomlFileUserOptionReader().read_options()
+    assert expected_options == options
+
+
+@pytest.mark.parametrize(
+    "contents, expected_options",
+    (
+        (
+            "{}",
+            UserOptions(session_options={}, contracts_options=[]),
+        ),
+        (
+            """
+            {
+                "foo": "hello",
+                "bar": 999
+            }
+            """,
+            UserOptions(session_options={"foo": "hello", "bar": 999}, contracts_options=[]),
+        ),
+        (
+            """
+            {
+                "foo": "hello",
+                "include_external_packages": true,
+                "contracts": [
+                    {
+                        "id": "contract-one",
+                        "name": "Contract One",
+                        "key": "value",
+                        "multiple_values": [
+                            "one",
+                            "two",
+                            "three",
+                            "foo.one -> foo.two"
+                        ]
+                    },
+                    {
+                        "name": "Contract Two",
+                        "baz": 3
+                    }
+                ]
+            }
+            """,
+            UserOptions(
+                session_options={"foo": "hello", "include_external_packages": "True"},
+                contracts_options=[
+                    {
+                        "name": "Contract One",
+                        "id": "contract-one",
+                        "key": "value",
+                        "multiple_values": ["one", "two", "three", "foo.one -> foo.two"]
+                    },
+                    {"name": "Contract Two", "baz": 3}
+                ],
+            ),
+        ),
+    ),
+)
+def test_json_file_reader(contents, expected_options):
+    settings.configure(
+        FILE_SYSTEM=FakeFileSystem(
+            content_map={"/path/to/folder/.importlinter.json": contents},
+            working_directory="/path/to/folder",
+        )
+    )
+    options = JsonFileUserOptionReader().read_options()
     assert expected_options == options

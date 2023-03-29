@@ -2,7 +2,7 @@ from .adapters.building import GraphBuilder
 from .adapters.filesystem import FileSystem
 from .adapters.printing import ClickPrinter
 from .adapters.timing import SystemClockTimer
-from .adapters.user_options import IniFileUserOptionReader, TomlFileUserOptionReader
+from .adapters.user_options import IniFileUserOptionReader, TomlFileUserOptionReader, JsonFileUserOptionReader
 from .application.app_config import settings
 
 
@@ -11,6 +11,7 @@ def configure():
         USER_OPTION_READERS={
             "ini": IniFileUserOptionReader(),
             "toml": TomlFileUserOptionReader(),
+            "json": JsonFileUserOptionReader(),
         },
         GRAPH_BUILDER=GraphBuilder(),
         PRINTER=ClickPrinter(),
