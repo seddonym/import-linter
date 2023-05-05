@@ -18,7 +18,8 @@ class TestCaching:
             cli.lint_imports(cache_dir=cache_dir, no_cache=True)
 
             meta_file = Path(cache_dir) / "testpackage.meta.json"
-            data_file = Path(cache_dir) / "dGVzdHBhY2thZ2U-.data.json"
+            # Blake2B 20-character hash of "testpackage".
+            data_file = Path(cache_dir) / "216a42e0de035f511ad815351348f07aa91057c2.data.json"
 
             assert not meta_file.exists()
             assert not data_file.exists()
@@ -30,7 +31,8 @@ class TestCaching:
             cli.lint_imports(cache_dir=cache_dir, is_debug_mode=True)
 
             meta_file = Path(cache_dir) / "testpackage.meta.json"
-            data_file = Path(cache_dir) / "dGVzdHBhY2thZ2U-.data.json"
+            # Blake2B 20-character hash of "testpackage".
+            data_file = Path(cache_dir) / "216a42e0de035f511ad815351348f07aa91057c2.data.json"
 
             assert meta_file.exists()
             assert data_file.exists()
