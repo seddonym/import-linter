@@ -8,6 +8,11 @@ from tests.adapters.printing import FakePrinter
 from tests.adapters.timing import FakeTimer
 
 
+@pytest.fixture(scope="module", autouse=True)
+def configure():
+    settings.configure(TIMER=FakeTimer())
+
+
 class TestForbiddenContract:
     def test_is_kept_when_no_forbidden_modules_imported(self):
         graph = self._build_graph()
