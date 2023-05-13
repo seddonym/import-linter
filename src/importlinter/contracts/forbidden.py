@@ -1,4 +1,5 @@
-from typing import Tuple, cast
+from __future__ import annotations
+from typing import List, Tuple, cast
 
 from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
@@ -47,7 +48,7 @@ class ForbiddenContract(Contract):
         )
 
         self._check_all_modules_exist_in_graph(graph)
-        self._check_external_forbidden_modules(graph)
+        self._check_external_forbidden_modules()
 
         # We only need to check for illegal imports for forbidden modules that are in the graph.
         forbidden_modules_in_graph = [
@@ -143,22 +144,31 @@ class ForbiddenContract(Contract):
             if module.name not in graph.modules:
                 raise ValueError(f"Module '{module.name}' does not exist.")
 
-    def _check_external_forbidden_modules(self, graph: ImportGraph) -> None:
-        if (
-            self._contains_external_forbidden_modules(graph)
-            and not self._graph_was_built_with_externals()
-        ):
-            raise ValueError(
-                "The top level configuration must have include_external_packages=True "
-                "when there are external forbidden modules."
-            )
+    def _check_external_forbidden_modules(self) -> None:
+        external_forbidden_modules = self._get_external_forbidden_modules()
+        if external_forbidden_modules:
+            if self._graph_was_built_with_externals():
+                for module in external_forbidden_modules:
+                    if module.root_package_name != module.name:
+                        raise ValueError(
+                            f"Invalid forbidden module {module}: "
+                            "subpackages of external packages are not valid."
+                        )
+            else:
+                raise ValueError(
+                    "The top level configuration must have include_external_packages=True "
+                    "when there are external forbidden modules."
+                )
 
-    def _contains_external_forbidden_modules(self, graph: ImportGraph) -> bool:
+    def _get_external_forbidden_modules(self) -> set[Module]:
         root_packages = [Module(name) for name in self.session_options["root_packages"]]
-        return not all(
-            any(forbidden_module.is_in_package(root_package) for root_package in root_packages)
-            for forbidden_module in self.forbidden_modules  # type: ignore
-        )
+        return {
+            forbidden_module
+            for forbidden_module in cast(List[Module], self.forbidden_modules)
+            if not any(
+                forbidden_module.is_in_package(root_package) for root_package in root_packages
+            )
+        }
 
     def _graph_was_built_with_externals(self) -> bool:
         return str(self.session_options.get("include_external_packages")).lower() == "true"

@@ -210,6 +210,42 @@ class TestForbiddenContract:
             "No matches for ignored import mypackage.*.nonexistent -> mypackage.three.",
         }
 
+    @pytest.mark.parametrize(
+        "module, expected_error",
+        (
+            (
+                "requests.something",
+                (
+                    "Invalid forbidden module requests.something: "
+                    "subpackages of external packages are not valid."
+                ),
+            ),
+            # N.B. google.protobuf is a namespace package, but unless it is specified
+            # as a root package, it will just appear in the graph as an external package
+            # named 'google', so won't be treated any differently to other packages.
+            (
+                "google.protobuf",
+                (
+                    "Invalid forbidden module google.protobuf: "
+                    "subpackages of external packages are not valid."
+                ),
+            ),
+        ),
+    )
+    def test_is_invalid_when_subpackages_of_external_packages_are_provided(
+        self, module: str, expected_error: str
+    ):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            forbidden_modules=("mypackage.blue", module), include_external_packages=True
+        )
+
+        with pytest.raises(
+            ValueError,
+            match=expected_error,
+        ):
+            contract.check(graph=graph, verbose=False)
+
     def _build_graph(self):
         graph = ImportGraph()
         for module in (
@@ -225,7 +261,7 @@ class TestForbiddenContract:
             "utils",
         ):
             graph.add_module(f"mypackage.{module}")
-        for external_module in ("sqlalchemy", "requests"):
+        for external_module in ("sqlalchemy", "requests", "google"):
             graph.add_module(external_module, is_squashed=True)
         graph.add_import(
             importer="mypackage.one.alpha",
