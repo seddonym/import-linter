@@ -1,8 +1,8 @@
 Changelog
 =========
 
-latest
-------
+1.9.0 (2023-05-13)
+------------------
 
 * Update to Grimp 2.4.
 * Forbidden contracts: when include_external_packages is true, error if an external subpackage is
