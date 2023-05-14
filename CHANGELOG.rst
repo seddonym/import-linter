@@ -60,6 +60,11 @@ Changelog
 * Add unmatched_ignore_imports_alerting option for each contract.
 * Add command line argument for showing timings.
 
+1.2.7 (2022-03-24)
+------------------
+
+* Add support for new line characters in contract definitions.
+
 1.2.6 (2021-09-24)
 ------------------
 
