@@ -115,6 +115,22 @@ class TestModuleField(BaseFieldTest):
             "*.*.* -> mypackage.*.foo.*",
             ImportExpression(importer="*.*.*", imported="mypackage.*.foo.*"),
         ),
+        (
+            "mypackage.foo.** -> mypackage.bar",
+            ImportExpression(importer="mypackage.foo.**", imported="mypackage.bar"),
+        ),
+        (
+            "mypackage.foo.**.baz -> mypackage.bar",
+            ImportExpression(importer="mypackage.foo.**.baz", imported="mypackage.bar"),
+        ),
+        (
+            "mypackage.foo -> mypackage.bar.**",
+            ImportExpression(importer="mypackage.foo", imported="mypackage.bar.**"),
+        ),
+        (
+            "** -> mypackage.**.foo.*",
+            ImportExpression(importer="**", imported="mypackage.**.foo.*"),
+        ),
         # Invalid expressions
         # -------------------
         (
@@ -134,7 +150,23 @@ class TestModuleField(BaseFieldTest):
             ValidationError("A wildcard can only replace a whole module."),
         ),
         (
-            "mypackage.**.bar -> mypackage.baz",
+            "mypackage.foo.bar** -> mypackage.bar",
+            ValidationError("A wildcard can only replace a whole module."),
+        ),
+        (
+            "mypackage.**.*.foo -> mypackage.bar",
+            ValidationError("A recursive wildcard cannot be followed by a wildcard."),
+        ),
+        (
+            "mypackage.**.**.foo -> mypackage.bar",
+            ValidationError("A recursive wildcard cannot be followed by a wildcard."),
+        ),
+        (
+            "mypackage.*.**.foo -> mypackage.bar",
+            ValidationError("A wildcard cannot be followed by a recursive wildcard."),
+        ),
+        (
+            "mypackage.foo.b**z -> mypackage.bar",
             ValidationError("A wildcard can only replace a whole module."),
         ),
     ),

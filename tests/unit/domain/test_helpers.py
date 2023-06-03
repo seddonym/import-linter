@@ -369,6 +369,34 @@ class TestResolveImportExpressions:
                 set(DIRECT_IMPORTS[3:5]),
             ),
             (
+                "Importer recursive wildcard",
+                [
+                    ImportExpression(importer="mypackage.**", imported="mypackage.blue"),
+                ],
+                {DIRECT_IMPORTS[1]},
+            ),
+            (
+                "Imported recursive wildcard",
+                [
+                    ImportExpression(importer="mypackage.green", imported="mypackage.**"),
+                ],
+                set(DIRECT_IMPORTS[0:2]),
+            ),
+            (
+                "Importer and imported recursive wildcards",
+                [
+                    ImportExpression(importer="mypackage.**", imported="mypackage.**"),
+                ],
+                set(DIRECT_IMPORTS[0:6]),
+            ),
+            (
+                "Inner recursive wildcard",
+                [
+                    ImportExpression(importer="mypackage.**.cats", imported="mypackage.**.dogs"),
+                ],
+                set(DIRECT_IMPORTS[3:5]),
+            ),
+            (
                 "Multiple expressions, non-overlapping",
                 [
                     ImportExpression(importer="mypackage.green", imported="mypackage.*"),
