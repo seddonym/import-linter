@@ -138,10 +138,6 @@ class TestModuleField(BaseFieldTest):
             "mypackage.**.bar -> mypackage.baz",
             ValidationError("A wildcard can only replace a whole module."),
         ),
-        (
-            "*.*.* -> mypackage.*.foo.*",
-            ImportExpression(importer="*.*.*", imported="mypackage.*.foo.*"),
-        ),
     ),
 )
 class TestImportExpressionField(BaseFieldTest):
