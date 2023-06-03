@@ -1,4 +1,5 @@
 import enum
+import re
 from typing import Any, Dict, List, Optional, Type, Union
 
 import pytest
@@ -33,11 +34,9 @@ class BaseFieldTest:
     def test_field(self, raw_data, expected_value):
         field = self.field_class(**self.field_kwargs)
 
-        if isinstance(expected_value, ValidationError):
-            try:
+        if isinstance(expected_value, Exception):
+            with pytest.raises(expected_value.__class__, match=re.escape(expected_value.message)):
                 field.parse(raw_data) == expected_value
-            except ValidationError as e:
-                assert e.message == expected_value.message
         else:
             assert field.parse(raw_data) == expected_value
 
