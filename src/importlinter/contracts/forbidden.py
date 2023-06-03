@@ -85,7 +85,7 @@ class ForbiddenContract(Contract):
                         )
                     if chains:
                         is_kept = False
-                        for chain in chains:
+                        for chain in sorted(chains):
                             chain_data = []
                             for importer, imported in [
                                 (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
