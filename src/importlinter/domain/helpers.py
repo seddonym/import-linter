@@ -208,6 +208,8 @@ def _to_pattern(expression: str) -> Pattern:
     for part in expression.split("."):
         if "*" == part:
             pattern_parts.append(part.replace("*", r"[^\.]+"))
+        elif "**" == part:
+            pattern_parts.append(part.replace("*", r"[^\.]+(?:\.[^\.]+)*?"))
         else:
             pattern_parts.append(part)
     return re.compile(r"^" + r"\.".join(pattern_parts) + r"$")

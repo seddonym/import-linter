@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.10.0 (Unreleased)
+-------------------
+
+* Recursive wildcard support for ignored imports.
+
 1.9.0 (2023-05-13)
 ------------------
 

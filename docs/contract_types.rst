@@ -236,7 +236,7 @@ Options used by multiple contracts
   contract be kept instead.
 
   Wildcards (in the form of ``*``) are supported. These can stand in for a module names, but they do not extend to
-  subpackages.
+  subpackages. A recursive wildcard (in the form of ``**``) is also supported.
 
   Examples:
 
@@ -244,6 +244,12 @@ Options used by multiple contracts
   - ``mypackage.*.baz``: matches ``mypackage.foo.baz`` but not ``mypackage.foo.bar.baz``.
   - ``mypackage.*.*``: matches ``mypackage.foo.bar`` and ``mypackage.foobar.baz``.
   - ``mypackage.foo*``: not a valid expression. (The wildcard must replace a whole module name.)
+  - ``mypackage.**``: matches ``mypackage.foo.bar`` and ``mypackage.foobar.baz``.
+  - ``mypackage.**.qux``: matches ``mypackage.foo.bar.qux`` and ``mypackage.foobar.baz.qux``.
+  - ``mypackage.foo**``: not a valid expression. (The wildcard must replace a whole module name.)
+  - ``mypackage.**.*.qux``: not a valid expression. (A recursive wildcard cannot be followed by a wildcard.)
+  - ``mypackage.**.**.qux``: not a valid expression. (A recursive wildcard cannot be followed by a wildcard.)
+  - ``mypackage.*.**.qux``: not a valid expression. (A wildcard cannot be followed by a recursive wildcard.)
 
 - ``unmatched_ignore_imports_alerting``: The alerting level for handling expressions supplied in ``ignore_imports``
   that do not match any imports in the graph. Choices are:

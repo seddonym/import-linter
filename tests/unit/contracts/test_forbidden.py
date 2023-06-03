@@ -49,7 +49,14 @@ class TestForbiddenContract:
                                 "imported": "mypackage.green.beta",
                                 "line_numbers": (3,),
                             }
-                        ]
+                        ],
+                        [
+                            {
+                                "importer": "mypackage.one.alpha.circle",
+                                "imported": "mypackage.green.beta.sphere",
+                                "line_numbers": (8,),
+                            },
+                        ],
                     ],
                 },
                 {
@@ -158,6 +165,48 @@ class TestForbiddenContract:
             "invalid_chains": [
                 {
                     "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.one",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.one.alpha.circle",
+                                "imported": "mypackage.green.beta.sphere",
+                                "line_numbers": (8,),
+                            },
+                        ]
+                    ],
+                },
+                {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.three",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.three",
+                                "imported": "mypackage.green",
+                                "line_numbers": (4,),
+                            },
+                        ]
+                    ],
+                },
+            ],
+        }
+
+    def test_ignore_imports_with_recursive_wildcards(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            forbidden_modules=("mypackage.green",),
+            ignore_imports=(
+                "mypackage.**.alpha -> mypackage.**.beta",
+                "mypackage.**.circle -> mypackage.**.sphere",
+            ),
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+        assert check.metadata == {
+            "invalid_chains": [
+                {
+                    "upstream_module": "mypackage.green",
                     "downstream_module": "mypackage.three",
                     "chains": [
                         [
@@ -251,11 +300,13 @@ class TestForbiddenContract:
         for module in (
             "one",
             "one.alpha",
+            "one.alpha.circle",
             "two",
             "three",
             "blue",
             "green",
             "green.beta",
+            "green.beta.sphere",
             "yellow",
             "purple",
             "utils",
@@ -267,6 +318,12 @@ class TestForbiddenContract:
             importer="mypackage.one.alpha",
             imported="mypackage.green.beta",
             line_number=3,
+            line_contents="foo",
+        )
+        graph.add_import(
+            importer="mypackage.one.alpha.circle",
+            imported="mypackage.green.beta.sphere",
+            line_number=8,
             line_contents="foo",
         )
         graph.add_import(
