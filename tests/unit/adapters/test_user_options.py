@@ -1,6 +1,10 @@
 import pytest
 
-from importlinter.adapters.user_options import IniFileUserOptionReader, TomlFileUserOptionReader, JsonFileUserOptionReader
+from importlinter.adapters.user_options import (
+    IniFileUserOptionReader,
+    TomlFileUserOptionReader,
+    JsonFileUserOptionReader,
+)
 from importlinter.application.app_config import settings
 from importlinter.application.user_options import UserOptions
 from tests.adapters.filesystem import FakeFileSystem
@@ -241,9 +245,9 @@ def test_toml_file_reader(contents, expected_options):
                         "name": "Contract One",
                         "id": "contract-one",
                         "key": "value",
-                        "multiple_values": ["one", "two", "three", "foo.one -> foo.two"]
+                        "multiple_values": ["one", "two", "three", "foo.one -> foo.two"],
                     },
-                    {"name": "Contract Two", "baz": 3}
+                    {"name": "Contract Two", "baz": 3},
                 ],
             ),
         ),
