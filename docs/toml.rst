@@ -26,7 +26,7 @@ The basic configuration layout looks like:
     [[tool.importlinter.contracts]]
     name = Contract Two
 
-Following, an example with a layered configuration:
+More concretely, here is an example with a layered configuration:
 
 .. code-block:: toml
 
@@ -47,53 +47,55 @@ Following, an example with a layered configuration:
     ]
 
 JSON
----
-The JSON configuration is similar as well. The basic configuration layout looks like:
+----
+
+The JSON configuration is similar as well. Using JSON can be useful when implementing a more complex custom contract.
+The basic configuration layout looks like:
 
 .. code-block:: json
 
-{
-  "tool": {
-    "importlinter": {
-      "root_package": "mypackage",
-      "contracts": [
-        {
-          "name": "Contract One"
-        },
-        {
-          "name": "Contract Two"
+    {
+      "tool": {
+        "importlinter": {
+          "root_package": "mypackage",
+          "contracts": [
+            {
+              "name": "Contract One"
+            },
+            {
+              "name": "Contract Two"
+            }
+          ]
         }
-      ]
+      }
     }
-  }
-}
 
-The equivalent layered example as the TOML example:
+A layered configuration would look like this:
 
 .. code-block:: json
 
-{
-  "tool": {
-    "importlinter": {
-      "root_packages": [
-        "high",
-        "medium",
-        "low"
-      ],
-      "contracts": [
-        {
-          "name": "My three-tier layers contract (multiple root packages)",
-          "type": "layers",
-          "layers": [
+    {
+      "tool": {
+        "importlinter": {
+          "root_packages": [
             "high",
             "medium",
             "low"
+          ],
+          "contracts": [
+            {
+              "name": "My three-tier layers contract (multiple root packages)",
+              "type": "layers",
+              "layers": [
+                "high",
+                "medium",
+                "low"
+              ]
+            }
           ]
         }
-      ]
+      }
     }
-  }
-}
 
 
 Contract ids
