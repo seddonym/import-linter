@@ -86,10 +86,6 @@ def read_user_options(config_filename: Optional[str] = None) -> UserOptions:
 
     for reader in readers:
         options = reader.read_options(config_filename=config_filename)
-        print(options.session_options)
-        print()
-        print(options.contracts_options)
-
         if options:
             normalized_options = _normalize_user_options(options)
             return normalized_options
