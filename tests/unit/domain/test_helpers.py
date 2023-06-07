@@ -1,5 +1,5 @@
 import re
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
 import pytest
 from grimp import DetailedImport
@@ -325,6 +325,12 @@ class TestResolveImportExpressions:
             line_number=2,
             line_contents="from someotherpackage import two",
         ),
+        DirectImport(
+            importer=Module("mypackage.green.cats.very.deep.module.cats"),
+            imported=Module("mypackage.orange.mice.another.verydeep.one.dogs"),
+            line_number=1,
+            line_contents="-",
+        ),
     ]
 
     @pytest.mark.parametrize(
@@ -387,14 +393,14 @@ class TestResolveImportExpressions:
                 [
                     ImportExpression(importer="mypackage.**", imported="mypackage.**"),
                 ],
-                set(DIRECT_IMPORTS[0:6]),
+                set(DIRECT_IMPORTS[0:6]) | {DIRECT_IMPORTS[8]},
             ),
             (
                 "Inner recursive wildcard",
                 [
                     ImportExpression(importer="mypackage.**.cats", imported="mypackage.**.dogs"),
                 ],
-                set(DIRECT_IMPORTS[3:5]),
+                set(DIRECT_IMPORTS[3:5]) | {DIRECT_IMPORTS[8]},
             ),
             (
                 "Multiple expressions, non-overlapping",
