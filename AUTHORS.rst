@@ -18,3 +18,4 @@ Contributors
 * Petter Friberg - https://github.com/flaeppe
 * James Owen - https://github.com/leamingrad
 * Matthew Gamble - https://github.com/mwgamble
+* Nick Pope - https://github.com/ngnpope

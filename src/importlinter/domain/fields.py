@@ -165,6 +165,7 @@ class ImportExpressionField(Field):
 
     In addition, it handles wildcards:
         "mypackage.*.importer -> mypackage.bar.*"
+        "mypackage.**.importer -> mypackage.bar.**"
     """
 
     def parse(self, raw_data: Union[str, List]) -> ImportExpression:
@@ -180,9 +181,18 @@ class ImportExpressionField(Field):
         return ImportExpression(importer=importer, imported=imported)
 
     def _validate_wildcard(self, expression: str) -> None:
+        last_wildcard = None
         for part in expression.split("."):
-            if len(part) > 1 and "*" in part:
+            if "**" == last_wildcard and ("*" == part or "**" == part):
+                raise ValidationError("A recursive wildcard cannot be followed by a wildcard.")
+            if "*" == last_wildcard and "**" == part:
+                raise ValidationError("A wildcard cannot be followed by a recursive wildcard.")
+            if "*" == part or "**" == part:
+                last_wildcard = part
+                continue
+            if "*" in part:
                 raise ValidationError("A wildcard can only replace a whole module.")
+            last_wildcard = None
 
 
 class EnumField(Field):

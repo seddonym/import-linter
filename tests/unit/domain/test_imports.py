@@ -141,6 +141,10 @@ class TestImportExpression:
             ("mypackage.foo", "mypackage.*", True),
             ("mypackage.*", "mypackage.*", True),
             ("mypackage.*.foo", "mypackage.*.bar", True),
+            ("mypackage.**", "mypackage.bar", True),
+            ("mypackage.foo", "mypackage.**", True),
+            ("mypackage.**", "mypackage.**", True),
+            ("mypackage.**.foo", "mypackage.**.bar", True),
         ],
     )
     def test_has_wildcard_expression(self, importer, imported, has_wildcard_expression):

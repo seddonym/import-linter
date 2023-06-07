@@ -422,8 +422,11 @@ class TestIndependenceContract:
         (["mypackage.indirect -> mypackage.b"], True),
         # Wildcards
         (["mypackage.a -> *.irrelevant"], False),
+        (["mypackage.a -> **.irrelevant"], False),
         (["*.a -> *.indirect"], True),
+        (["**.a -> **.indirect"], True),
         (["mypackage.* -> mypackage.b"], True),
+        (["mypackage.** -> mypackage.b"], True),
     ),
 )
 def test_ignore_imports(ignore_imports, is_kept):

@@ -8,6 +8,11 @@ from tests.adapters.printing import FakePrinter
 from tests.adapters.timing import FakeTimer
 
 
+@pytest.fixture(scope="module", autouse=True)
+def configure():
+    settings.configure(TIMER=FakeTimer())
+
+
 class TestForbiddenContract:
     def test_is_kept_when_no_forbidden_modules_imported(self):
         graph = self._build_graph()
@@ -44,7 +49,14 @@ class TestForbiddenContract:
                                 "imported": "mypackage.green.beta",
                                 "line_numbers": (3,),
                             }
-                        ]
+                        ],
+                        [
+                            {
+                                "importer": "mypackage.one.alpha.circle",
+                                "imported": "mypackage.green.beta.sphere",
+                                "line_numbers": (8,),
+                            },
+                        ],
                     ],
                 },
                 {
@@ -153,6 +165,48 @@ class TestForbiddenContract:
             "invalid_chains": [
                 {
                     "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.one",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.one.alpha.circle",
+                                "imported": "mypackage.green.beta.sphere",
+                                "line_numbers": (8,),
+                            },
+                        ]
+                    ],
+                },
+                {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.three",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.three",
+                                "imported": "mypackage.green",
+                                "line_numbers": (4,),
+                            },
+                        ]
+                    ],
+                },
+            ],
+        }
+
+    def test_ignore_imports_with_recursive_wildcards(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            forbidden_modules=("mypackage.green",),
+            ignore_imports=(
+                "mypackage.**.alpha -> mypackage.**.beta",
+                "mypackage.**.circle -> mypackage.**.sphere",
+            ),
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+        assert check.metadata == {
+            "invalid_chains": [
+                {
+                    "upstream_module": "mypackage.green",
                     "downstream_module": "mypackage.three",
                     "chains": [
                         [
@@ -205,27 +259,71 @@ class TestForbiddenContract:
             "No matches for ignored import mypackage.*.nonexistent -> mypackage.three.",
         }
 
+    @pytest.mark.parametrize(
+        "module, expected_error",
+        (
+            (
+                "requests.something",
+                (
+                    "Invalid forbidden module requests.something: "
+                    "subpackages of external packages are not valid."
+                ),
+            ),
+            # N.B. google.protobuf is a namespace package, but unless it is specified
+            # as a root package, it will just appear in the graph as an external package
+            # named 'google', so won't be treated any differently to other packages.
+            (
+                "google.protobuf",
+                (
+                    "Invalid forbidden module google.protobuf: "
+                    "subpackages of external packages are not valid."
+                ),
+            ),
+        ),
+    )
+    def test_is_invalid_when_subpackages_of_external_packages_are_provided(
+        self, module: str, expected_error: str
+    ):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            forbidden_modules=("mypackage.blue", module), include_external_packages=True
+        )
+
+        with pytest.raises(
+            ValueError,
+            match=expected_error,
+        ):
+            contract.check(graph=graph, verbose=False)
+
     def _build_graph(self):
         graph = ImportGraph()
         for module in (
             "one",
             "one.alpha",
+            "one.alpha.circle",
             "two",
             "three",
             "blue",
             "green",
             "green.beta",
+            "green.beta.sphere",
             "yellow",
             "purple",
             "utils",
         ):
             graph.add_module(f"mypackage.{module}")
-        for external_module in ("sqlalchemy", "requests"):
+        for external_module in ("sqlalchemy", "requests", "google"):
             graph.add_module(external_module, is_squashed=True)
         graph.add_import(
             importer="mypackage.one.alpha",
             imported="mypackage.green.beta",
             line_number=3,
+            line_contents="foo",
+        )
+        graph.add_import(
+            importer="mypackage.one.alpha.circle",
+            imported="mypackage.green.beta.sphere",
+            line_number=8,
             line_contents="foo",
         )
         graph.add_import(

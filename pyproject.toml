@@ -1,3 +1,61 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "import-linter"
+version = "1.9.0"
+license = {text = "BSD 2-Clause License"}
+description = "Enforces rules for the imports within and between Python packages."
+authors = [
+    {name = "David Seddon", email = "david@seddonym.me"},
+]
+requires-python = ">=3.7"
+dependencies = [
+    "click>=6",
+    "grimp>=2.4",
+    "tomli>=1.2.1; python_version < '3.11'",
+    "typing-extensions>=3.10.0.0",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: Unix",
+    "Operating System :: POSIX",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Utilities",
+]
+dynamic = ["readme"]
+
+[project.urls]
+Documentation = "https://import-linter.readthedocs.io/"
+Source-code = "https://github.com/seddonym/import-linter/"
+
+[project.scripts]
+lint-imports = "importlinter.cli:lint_imports_command"
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.dynamic]
+readme = {file = "README.rst"}
+
+[tool.setuptools.package-data]
+importlinter = ["py.typed"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
+
 [tool.black]
 line-length = 99
 

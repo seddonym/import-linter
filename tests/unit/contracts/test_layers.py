@@ -776,13 +776,21 @@ class TestIgnoreImports:
             "mypackage.low.black -> mypackage.medium.orange",
             # Wildcards.
             "*.low.black -> mypackage.medium.orange",
+            "**.low.black -> mypackage.medium.orange",
             "mypackage.*.black -> mypackage.medium.orange",
+            "mypackage.**.black -> mypackage.medium.orange",
             "mypackage.low.* -> mypackage.medium.orange",
+            "mypackage.low.** -> mypackage.medium.orange",
             "mypackage.low.black -> *.medium.orange",
+            "mypackage.low.black -> **.medium.orange",
             "mypackage.low.black -> mypackage.*.orange",
+            "mypackage.low.black -> mypackage.**.orange",
             "mypackage.low.black -> mypackage.medium.*",
+            "mypackage.low.black -> mypackage.medium.**",
             "mypackage.*.black -> mypackage.*.orange",
+            "mypackage.**.black -> mypackage.**.orange",
             "mypackage.*.* -> mypackage.*.*",
+            "mypackage.** -> mypackage.**",
         ],
     )
     def test_one_ignored_from_each_chain_means_contract_is_kept(self, expression):

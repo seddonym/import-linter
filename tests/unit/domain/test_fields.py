@@ -1,4 +1,5 @@
 import enum
+import re
 from typing import Any, Dict, List, Optional, Type, Union
 
 import pytest
@@ -33,11 +34,9 @@ class BaseFieldTest:
     def test_field(self, raw_data, expected_value):
         field = self.field_class(**self.field_kwargs)
 
-        if isinstance(expected_value, ValidationError):
-            try:
+        if isinstance(expected_value, Exception):
+            with pytest.raises(expected_value.__class__, match=re.escape(expected_value.message)):
                 field.parse(raw_data) == expected_value
-            except ValidationError as e:
-                assert e.message == expected_value.message
         else:
             assert field.parse(raw_data) == expected_value
 
@@ -116,6 +115,22 @@ class TestModuleField(BaseFieldTest):
             "*.*.* -> mypackage.*.foo.*",
             ImportExpression(importer="*.*.*", imported="mypackage.*.foo.*"),
         ),
+        (
+            "mypackage.foo.** -> mypackage.bar",
+            ImportExpression(importer="mypackage.foo.**", imported="mypackage.bar"),
+        ),
+        (
+            "mypackage.foo.**.baz -> mypackage.bar",
+            ImportExpression(importer="mypackage.foo.**.baz", imported="mypackage.bar"),
+        ),
+        (
+            "mypackage.foo -> mypackage.bar.**",
+            ImportExpression(importer="mypackage.foo", imported="mypackage.bar.**"),
+        ),
+        (
+            "** -> mypackage.**.foo.*",
+            ImportExpression(importer="**", imported="mypackage.**.foo.*"),
+        ),
         # Invalid expressions
         # -------------------
         (
@@ -135,12 +150,24 @@ class TestModuleField(BaseFieldTest):
             ValidationError("A wildcard can only replace a whole module."),
         ),
         (
-            "mypackage.**.bar -> mypackage.baz",
+            "mypackage.foo.bar** -> mypackage.bar",
             ValidationError("A wildcard can only replace a whole module."),
         ),
         (
-            "*.*.* -> mypackage.*.foo.*",
-            ImportExpression(importer="*.*.*", imported="mypackage.*.foo.*"),
+            "mypackage.**.*.foo -> mypackage.bar",
+            ValidationError("A recursive wildcard cannot be followed by a wildcard."),
+        ),
+        (
+            "mypackage.**.**.foo -> mypackage.bar",
+            ValidationError("A recursive wildcard cannot be followed by a wildcard."),
+        ),
+        (
+            "mypackage.*.**.foo -> mypackage.bar",
+            ValidationError("A wildcard cannot be followed by a recursive wildcard."),
+        ),
+        (
+            "mypackage.foo.b**z -> mypackage.bar",
+            ValidationError("A wildcard can only replace a whole module."),
         ),
     ),
 )
