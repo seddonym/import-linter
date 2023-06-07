@@ -17,8 +17,8 @@ When `reporting a bug <https://github.com/seddonym/import-linter/issues>`_ pleas
 Documentation improvements
 ==========================
 
-Nameless could always use more documentation, whether as part of the
-official Nameless docs, in docstrings, or even on the web in blog posts,
+Import-linter could always use more documentation, whether as part of the
+official docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
 Feature requests and feedback

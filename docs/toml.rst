@@ -1,9 +1,12 @@
 ============
-TOML support
+TOML and JSON support
 ============
 
 
-While all the examples are in INI format, Import Linter also supports TOML.
+While all the examples are in INI format, Import Linter also supports TOML and JSON.
+
+TOML
+----
 
 The TOML configuration is very similar to the others with a few differences:
 
@@ -42,6 +45,56 @@ Following, an example with a layered configuration:
         "medium",
         "low",
     ]
+
+JSON
+---
+The JSON configuration is similar as well. The basic configuration layout looks like:
+
+.. code-block:: json
+
+{
+  "tool": {
+    "importlinter": {
+      "root_package": "mypackage",
+      "contracts": [
+        {
+          "name": "Contract One"
+        },
+        {
+          "name": "Contract Two"
+        }
+      ]
+    }
+  }
+}
+
+The equivalent layered example as the TOML example:
+
+.. code-block:: json
+
+{
+  "tool": {
+    "importlinter": {
+      "root_packages": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "contracts": [
+        {
+          "name": "My three-tier layers contract (multiple root packages)",
+          "type": "layers",
+          "layers": [
+            "high",
+            "medium",
+            "low"
+          ]
+        }
+      ]
+    }
+  }
+}
+
 
 Contract ids
 ------------
