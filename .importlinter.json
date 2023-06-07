@@ -1,0 +1,22 @@
+{
+    "root_package": "importlinter",
+    "contracts": [
+        {
+            "name": "Layered architecture",
+            "type": "layers",
+            "containers": [
+                "importlinter"
+            ],
+            "layers": [
+                "cli",
+                "api",
+                "contracts",
+                "configuration",
+                "adapters",
+                "application",
+                "domain"
+            ],
+            "exhaustive": true
+        }
+    ]
+}
