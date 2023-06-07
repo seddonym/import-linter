@@ -19,3 +19,4 @@ Contributors
 * James Owen - https://github.com/leamingrad
 * Matthew Gamble - https://github.com/mwgamble
 * Nick Pope - https://github.com/ngnpope
+* Sydney Pemberton - https://github.com/sydneypemberton1986

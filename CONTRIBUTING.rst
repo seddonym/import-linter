@@ -88,3 +88,7 @@ To run a subset of tests::
 To run all the test environments in *parallel* (you need to ``pip install detox``)::
 
     detox
+
+To test the output of your documentation changes:
+
+    tox -e docs && open dist/docs/index.html

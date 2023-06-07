@@ -106,9 +106,15 @@ class TomlFileUserOptionReader(AbstractUserOptionReader):
 
 
 class JsonFileUserOptionReader(AbstractUserOptionReader):
+    """
+    Reader that looks for and parses the contents of JSON files.
+    """
+
+    section_name = "importlinter"
     potential_config_filenames = ["importlinter.json", ".importlinter.json"]
 
     def _read_config_filename(self, config_filename: str) -> Optional[UserOptions]:
+
         file_contents = settings.FILE_SYSTEM.read(config_filename)
         data = json.loads(file_contents)
         contracts = data.pop("contracts", [])
@@ -117,7 +123,8 @@ class JsonFileUserOptionReader(AbstractUserOptionReader):
         for contract in contracts:
             _normalize_booleans(contract)
 
-        return UserOptions(session_options=data, contracts_options=contracts)
+        options = UserOptions(session_options=data, contracts_options=contracts)
+        return options
 
 
 def _normalize_booleans(data: dict) -> None:

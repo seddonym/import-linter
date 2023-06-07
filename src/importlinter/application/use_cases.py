@@ -77,13 +77,19 @@ def read_user_options(config_filename: Optional[str] = None) -> UserOptions:
     """
     readers = settings.USER_OPTION_READERS.values()
     if config_filename:
-        if config_filename.endswith(".toml"):
+        if config_filename.endswith(".json"):
+            readers = [settings.USER_OPTION_READERS["json"]]
+        elif config_filename.endswith(".toml"):
             readers = [settings.USER_OPTION_READERS["toml"]]
         else:
             readers = [settings.USER_OPTION_READERS["ini"]]
 
     for reader in readers:
         options = reader.read_options(config_filename=config_filename)
+        print(options.session_options)
+        print()
+        print(options.contracts_options)
+
         if options:
             normalized_options = _normalize_user_options(options)
             return normalized_options

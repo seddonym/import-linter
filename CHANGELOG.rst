@@ -5,6 +5,7 @@ Changelog
 -------------------
 
 * Recursive wildcard support for ignored imports.
+* Support for JSON configuration files.
 
 1.9.0 (2023-05-13)
 ------------------

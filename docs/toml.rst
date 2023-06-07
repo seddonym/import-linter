@@ -8,7 +8,7 @@ While all the examples are in INI format, Import Linter also supports TOML and J
 TOML
 ----
 
-The TOML configuration is very similar to the others with a few differences:
+The TOML configuration is very similar to the INI configuration with a few differences:
 
     - the sections must start with ``tool.``
     - contracts are defined by ``[[tool.importlinter.contracts]]``
@@ -49,25 +49,21 @@ More concretely, here is an example with a layered configuration:
 JSON
 ----
 
-The JSON configuration is similar as well. Using JSON can be useful when implementing a more complex custom contract.
+Using JSON can be useful when implementing a more complex custom contract.
 The basic configuration layout looks like:
 
 .. code-block:: json
 
     {
-      "tool": {
-        "importlinter": {
-          "root_package": "mypackage",
-          "contracts": [
-            {
-              "name": "Contract One"
-            },
-            {
-              "name": "Contract Two"
-            }
-          ]
+      "root_package": "mypackage",
+      "contracts": [
+        {
+          "name": "Contract One"
+        },
+        {
+          "name": "Contract Two"
         }
-      }
+      ]
     }
 
 A layered configuration would look like this:
@@ -75,26 +71,22 @@ A layered configuration would look like this:
 .. code-block:: json
 
     {
-      "tool": {
-        "importlinter": {
-          "root_packages": [
+      "root_packages": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "contracts": [
+        {
+          "name": "My three-tier layers contract (multiple root packages)",
+          "type": "layers",
+          "layers": [
             "high",
             "medium",
             "low"
-          ],
-          "contracts": [
-            {
-              "name": "My three-tier layers contract (multiple root packages)",
-              "type": "layers",
-              "layers": [
-                "high",
-                "medium",
-                "low"
-              ]
-            }
           ]
         }
-      }
+      ]
     }
 
 
