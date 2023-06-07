@@ -235,21 +235,17 @@ Options used by multiple contracts
   These imports will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the
   contract be kept instead.
 
-  Wildcards (in the form of ``*``) are supported. These can stand in for a module names, but they do not extend to
-  subpackages. A recursive wildcard (in the form of ``**``) is also supported.
+  Wildcards are supported. ``*`` stands in for a module name, without including subpackages. ``**`` includes
+  subpackages too.
 
   Examples:
 
   - ``mypackage.*``:  matches ``mypackage.foo`` but not ``mypackage.foo.bar``.
   - ``mypackage.*.baz``: matches ``mypackage.foo.baz`` but not ``mypackage.foo.bar.baz``.
   - ``mypackage.*.*``: matches ``mypackage.foo.bar`` and ``mypackage.foobar.baz``.
+  - ``mypackage.**``: matches ``mypackage.foo.bar`` and ``mypackage.foo.bar.baz``.
+  - ``mypackage.**.qux``: matches ``mypackage.foo.bar.qux`` and ``mypackage.foo.bar.baz.qux``.
   - ``mypackage.foo*``: not a valid expression. (The wildcard must replace a whole module name.)
-  - ``mypackage.**``: matches ``mypackage.foo.bar`` and ``mypackage.foobar.baz``.
-  - ``mypackage.**.qux``: matches ``mypackage.foo.bar.qux`` and ``mypackage.foobar.baz.qux``.
-  - ``mypackage.foo**``: not a valid expression. (The wildcard must replace a whole module name.)
-  - ``mypackage.**.*.qux``: not a valid expression. (A recursive wildcard cannot be followed by a wildcard.)
-  - ``mypackage.**.**.qux``: not a valid expression. (A recursive wildcard cannot be followed by a wildcard.)
-  - ``mypackage.*.**.qux``: not a valid expression. (A wildcard cannot be followed by a recursive wildcard.)
 
 - ``unmatched_ignore_imports_alerting``: The alerting level for handling expressions supplied in ``ignore_imports``
   that do not match any imports in the graph. Choices are:
