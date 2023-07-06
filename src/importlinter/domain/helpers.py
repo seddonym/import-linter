@@ -5,7 +5,7 @@ from typing import Iterable, List, Pattern, Set, Tuple
 from grimp import DetailedImport
 
 from importlinter.domain.imports import DirectImport, ImportExpression, Module
-from importlinter.domain.ports.graph import ImportGraph
+from grimp import ImportGraph
 
 
 class MissingImport(Exception):

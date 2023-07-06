@@ -12,7 +12,7 @@ from typing_extensions import TypedDict
 
 from importlinter.application import output
 from importlinter.domain.imports import Module
-from importlinter.domain.ports.graph import ImportGraph
+from grimp import ImportGraph
 
 
 class Link(TypedDict):

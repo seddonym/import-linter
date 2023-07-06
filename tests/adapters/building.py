@@ -1,9 +1,8 @@
 from typing import List, Optional
 
-from grimp.adaptors.graph import ImportGraph as GrimpImportGraph
+from grimp.adaptors.graph import ImportGraph
 
 from importlinter.application.ports.building import GraphBuilder
-from importlinter.domain.ports.graph import ImportGraph
 
 
 class FakeGraphBuilder(GraphBuilder):
@@ -38,7 +37,7 @@ class FakeGraphBuilder(GraphBuilder):
             "cache_dir": cache_dir,
             "include_external_packages": include_external_packages,
         }
-        return getattr(self, "_graph", GrimpImportGraph())
+        return getattr(self, "_graph", ImportGraph())
 
     def inject_graph(self, graph: ImportGraph) -> None:
         self._graph = graph

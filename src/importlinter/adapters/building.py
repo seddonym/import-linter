@@ -1,9 +1,9 @@
 from typing import List, Optional
 
 import grimp
+from grimp import ImportGraph
 
 from importlinter.application.ports import building as ports
-from importlinter.domain.ports.graph import ImportGraph
 
 
 class GraphBuilder(ports.GraphBuilder):

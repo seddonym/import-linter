@@ -1,8 +1,9 @@
 import abc
 from typing import Any, Dict, List, Optional, Type
 
+from grimp import ImportGraph
+
 from . import fields
-from .ports.graph import ImportGraph
 
 
 class Contract(abc.ABC):

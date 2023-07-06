@@ -10,7 +10,7 @@ from importlinter.configuration import settings
 from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck, InvalidContractOptions
 from importlinter.domain.imports import Module
-from importlinter.domain.ports.graph import ImportGraph
+from grimp import ImportGraph
 
 from ._common import DetailedChain, find_segments, render_chain_data, segments_to_collapsed_chains
 
