@@ -1,7 +1,4 @@
-from typing import List, Optional, Set, Tuple
-
-# N.B. typing_extensions can be changed to typing once drop support for Python 3.7.
-from typing_extensions import Protocol
+from typing import List, Optional, Protocol, Set, Tuple
 
 from grimp import DetailedImport
 
