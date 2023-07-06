@@ -1,10 +1,11 @@
 Changelog
 =========
 
-1.10.0 (Unreleased)
--------------------
+latest
+------
 
 * Recursive wildcard support for ignored imports.
+* Drop support for Python 3.7.
 
 1.9.0 (2023-05-13)
 ------------------
