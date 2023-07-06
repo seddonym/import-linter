@@ -5,7 +5,6 @@ from importlinter.application.app_config import settings
 from importlinter.contracts.layers import LayersContract
 from importlinter.domain.contract import ContractCheck, InvalidContractOptions
 from importlinter.domain.helpers import MissingImport
-from importlinter.domain.imports import Module
 from tests.adapters.printing import FakePrinter
 from tests.adapters.timing import FakeTimer
 
@@ -265,25 +264,15 @@ class TestLayerContractPopulatesMetadata:
         contract_check = contract.check(graph=graph, verbose=False)
         assert contract_check.kept is False
 
-        assert contract_check.metadata == {
+        sorted_metadata = {
+            "invalid_chains": sorted(
+                contract_check.metadata["invalid_chains"],
+                key=lambda c: (c["lower_layer"], c["higher_layer"]),
+            ),
+            "undeclared_modules": contract_check.metadata["undeclared_modules"],
+        }
+        assert sorted_metadata == {
             "invalid_chains": [
-                {
-                    "lower_layer": "mypackage.medium",
-                    "higher_layer": "mypackage.high",
-                    "chains": [
-                        {
-                            "chain": [
-                                {
-                                    "importer": "mypackage.medium.orange.beta",
-                                    "imported": "mypackage.high.blue",
-                                    "line_numbers": (2,),
-                                }
-                            ],
-                            "extra_firsts": [],
-                            "extra_lasts": [],
-                        }
-                    ],
-                },
                 {
                     "lower_layer": "mypackage.low",
                     "higher_layer": "mypackage.high",
@@ -327,6 +316,23 @@ class TestLayerContractPopulatesMetadata:
                                     "imported": "mypackage.medium.red",
                                     "line_numbers": (3,),
                                 },
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        }
+                    ],
+                },
+                {
+                    "lower_layer": "mypackage.medium",
+                    "higher_layer": "mypackage.high",
+                    "chains": [
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.medium.orange.beta",
+                                    "imported": "mypackage.high.blue",
+                                    "line_numbers": (2,),
+                                }
                             ],
                             "extra_firsts": [],
                             "extra_lasts": [],
@@ -1416,133 +1422,6 @@ class TestLayerContractNoContainer:
         )
 
 
-class TestGetIndirectCollapsedChains:
-    def test_no_chains(self):
-        graph = self._build_legal_graph()
-
-        assert [] == LayersContract._get_indirect_collapsed_chains(
-            graph, importer_package=Module("medium"), imported_package=Module("high")
-        )
-
-    def test_direct_imports_raises_value_error(self):
-        graph = self._build_legal_graph()
-
-        self._make_detailed_chain_and_add_to_graph(graph, "medium.orange", "high.yellow")
-
-        with pytest.raises(
-            ValueError, match="Direct chain found - these should have been removed."
-        ):
-            LayersContract._get_indirect_collapsed_chains(
-                graph, importer_package=Module("medium"), imported_package=Module("high")
-            )
-
-    def test_chain_length_2_is_included(self):
-        graph = self._build_legal_graph()
-
-        chain = self._make_detailed_chain_and_add_to_graph(
-            graph, "medium.orange", "utils.brown", "high.yellow"
-        )
-
-        assert [
-            {"chain": chain, "extra_firsts": [], "extra_lasts": []}
-        ] == LayersContract._get_indirect_collapsed_chains(
-            graph, importer_package=Module("medium"), imported_package=Module("high")
-        )
-
-    def test_chain_length_3_is_included(self):
-        graph = self._build_legal_graph()
-
-        chain = self._make_detailed_chain_and_add_to_graph(
-            graph, "medium.orange", "utils.brown", "utils.grey", "high.yellow"
-        )
-
-        assert [
-            {"chain": chain, "extra_firsts": [], "extra_lasts": []}
-        ] == LayersContract._get_indirect_collapsed_chains(
-            graph, importer_package=Module("medium"), imported_package=Module("high")
-        )
-
-    def test_multiple_chains_of_length_2_same_segment(self):
-        graph = self._build_legal_graph()
-
-        chain1 = self._make_detailed_chain_and_add_to_graph(
-            graph, "medium.blue", "utils.brown", "high.green.foo"
-        )
-        chain2 = self._make_detailed_chain_and_add_to_graph(
-            graph, "medium.orange.foo", "utils.brown", "high.yellow"
-        )
-
-        assert [
-            {"chain": chain1, "extra_firsts": [chain2[0]], "extra_lasts": [chain2[-1]]}
-        ] == LayersContract._get_indirect_collapsed_chains(
-            graph, importer_package=Module("medium"), imported_package=Module("high")
-        )
-
-    def test_multiple_chains_of_length_3_same_segment(self):
-        graph = self._build_legal_graph()
-
-        chain1 = self._make_detailed_chain_and_add_to_graph(
-            graph, "medium.blue", "utils.brown", "utils.grey", "high"
-        )
-        chain2 = self._make_detailed_chain_and_add_to_graph(
-            graph, "medium.orange.foo", "utils.brown", "utils.grey", "high.yellow"
-        )
-
-        assert [
-            {"chain": chain1, "extra_firsts": [chain2[0]], "extra_lasts": [chain2[-1]]}
-        ] == LayersContract._get_indirect_collapsed_chains(
-            graph, importer_package=Module("medium"), imported_package=Module("high")
-        )
-
-    def _build_legal_graph(self):
-        graph = ImportGraph()
-
-        for module in (
-            "high",
-            "high.green",
-            "high.blue",
-            "high.yellow",
-            "high.yellow.alpha",
-            "medium",
-            "medium.orange",
-            "medium.orange.beta",
-            "medium.red",
-            "low",
-            "low.black",
-            "low.white",
-            "low.white.gamma",
-        ):
-            graph.add_module(module)
-
-        # Add some 'legal' imports.
-        graph.add_import(importer="high.green", imported="medium.orange")
-        graph.add_import(importer="high.green", imported="low.white.gamma")
-        graph.add_import(importer="medium.orange", imported="low.white")
-        graph.add_import(importer="high.blue", imported="utils")
-        graph.add_import(importer="utils", imported="medium.red")
-
-        return graph
-
-    def _make_detailed_chain_and_add_to_graph(self, graph, *items):
-        detailed_chain = []
-        for index in range(len(items) - 1):
-            line_numbers = (3, index + 100)  # Some identifiable line numbers.
-            direct_import = {
-                "importer": items[index],
-                "imported": items[index + 1],
-                "line_numbers": line_numbers,
-            }
-            for line_number in line_numbers:
-                graph.add_import(
-                    importer=direct_import["importer"],
-                    imported=direct_import["imported"],
-                    line_number=line_number,
-                    line_contents="Foo",
-                )
-            detailed_chain.append(direct_import)
-        return detailed_chain
-
-
 class TestLayersContractForNamespacePackages:
     @pytest.mark.parametrize(
         "containers, is_kept",
@@ -1610,183 +1489,6 @@ class TestLayersContractForNamespacePackages:
         contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept == is_kept
-
-
-class TestPopDirectImports:
-    def test_direct_import_between_descendants(self):
-        graph = self._build_graph()
-        direct_import = self._add_direct_import(graph, importer="low.green", imported="high.blue")
-
-        # Add some other imports that we don't want to be affected.
-        other_imports = self._add_other_imports(graph, importer="low.green", imported="high.blue")
-
-        result = LayersContract._pop_direct_imports(
-            higher_layer_package=Module("high"), lower_layer_package=Module("low"), graph=graph
-        )
-
-        assert [[direct_import]] == result
-        self._assert_import_was_popped(graph, direct_import)
-        self._assert_imports_were_not_popped(graph, other_imports)
-
-    def test_direct_import_between_roots(self):
-        graph = self._build_graph()
-        direct_import = self._add_direct_import(graph, importer="low", imported="high")
-
-        # Add some other imports that we don't want to be affected.
-        other_imports = self._add_other_imports(graph, importer="low", imported="high")
-
-        result = LayersContract._pop_direct_imports(
-            higher_layer_package=Module("high"), lower_layer_package=Module("low"), graph=graph
-        )
-
-        assert [[direct_import]] == result
-        self._assert_import_was_popped(graph, direct_import)
-        self._assert_imports_were_not_popped(graph, other_imports)
-
-    def test_direct_import_root_to_descendant(self):
-        graph = self._build_graph()
-        direct_import = self._add_direct_import(graph, importer="low", imported="high.blue")
-
-        # Add some other imports that we don't want to be affected.
-        other_imports = self._add_other_imports(graph, importer="low", imported="high.blue")
-
-        result = LayersContract._pop_direct_imports(
-            higher_layer_package=Module("high"), lower_layer_package=Module("low"), graph=graph
-        )
-
-        assert [[direct_import]] == result
-        self._assert_import_was_popped(graph, direct_import)
-        self._assert_imports_were_not_popped(graph, other_imports)
-
-    def test_direct_import_descendant_to_root(self):
-        graph = self._build_graph()
-        direct_import = self._add_direct_import(graph, importer="low.green", imported="high")
-
-        # Add some other imports that we don't want to be affected.
-        other_imports = self._add_other_imports(graph, importer="low.green", imported="high")
-
-        result = LayersContract._pop_direct_imports(
-            higher_layer_package=Module("high"), lower_layer_package=Module("low"), graph=graph
-        )
-
-        assert [[direct_import]] == result
-        self._assert_import_was_popped(graph, direct_import)
-        self._assert_imports_were_not_popped(graph, other_imports)
-
-    def _build_graph(self):
-        graph = ImportGraph()
-        graph.add_module("high")
-        graph.add_module("low")
-        return graph
-
-    def _add_direct_import(self, graph, importer, imported):
-        direct_import = dict(
-            importer=importer, imported=imported, line_number=99, line_contents="blah"
-        )
-        graph.add_import(**direct_import)
-        return direct_import
-
-    def _add_other_imports(self, graph, importer, imported):
-        other_imports = (
-            dict(importer=importer, imported="foo", line_number=2, line_contents="blah"),
-            dict(importer="bar", imported=imported, line_number=3, line_contents="blah"),
-        )
-        for other_import in other_imports:
-            graph.add_import(**other_import)
-        return other_imports
-
-    def _assert_import_was_popped(self, graph, direct_import):
-        assert not graph.direct_import_exists(
-            importer=direct_import["importer"], imported=direct_import["imported"]
-        )
-
-    def _assert_imports_were_not_popped(self, graph, other_imports):
-        for other_import in other_imports:
-            assert graph.direct_import_exists(
-                importer=other_import["importer"], imported=other_import["imported"]
-            )
-
-
-class TestVerbosePrint:
-    def test_multiple_containers(self):
-        timer = FakeTimer()
-        timer.setup(tick_duration=10, increment=0)
-        settings.configure(PRINTER=FakePrinter(), TIMER=timer)
-
-        graph = ImportGraph()
-        for module in (
-            "mypackage",
-            "mypackage.one",
-            "mypackage.one.high",
-            "mypackage.one.high.green",
-            "mypackage.one.high.blue",
-            "mypackage.one.high.yellow",
-            "mypackage.one.high.yellow.alpha",
-            "mypackage.one.medium",
-            "mypackage.one.medium.orange",
-            "mypackage.one.medium.orange.beta",
-            "mypackage.one.medium.red",
-            "mypackage.one.low",
-            "mypackage.one.low.black",
-            "mypackage.one.low.white",
-            "mypackage.one.low.white.gamma",
-            "mypackage.two",
-            "mypackage.two.high",
-            "mypackage.two.high.red",
-            "mypackage.two.high.red.alpha",
-            "mypackage.two.medium",
-            "mypackage.two.medium.green",
-            "mypackage.two.medium.green.beta",
-            "mypackage.two.low",
-            "mypackage.two.low.blue",
-            "mypackage.two.low.blue.gamma",
-        ):
-            graph.add_module(module)
-            # Add some legal imports.
-            graph.add_import(
-                importer="mypackage.one.high.green", imported="mypackage.one.medium.orange"
-            )
-            graph.add_import(
-                importer="mypackage.two.high.red.alpha", imported="mypackage.two.low.blue.gamma"
-            )
-            # Add some illegal imports.
-            graph.add_import(
-                importer="mypackage.one.low.blue.gamma", imported="mypackage.one.medium.orange"
-            )
-            graph.add_import(
-                importer="mypackage.two.medium.green.beta", imported="mypackage.two.high.red"
-            )
-            graph.add_import(
-                importer="mypackage.two.medium.green", imported="mypackage.one.low.white"
-            )
-            graph.add_import(importer="mypackage.one.low.white", imported="mypackage.two.high.red")
-        contract = LayersContract(
-            name="Layer contract",
-            session_options={"root_packages": ["mypackage"]},
-            contract_options={
-                "containers": ["mypackage.one", "mypackage.two"],
-                "layers": ["high", "medium", "low"],
-            },
-        )
-
-        contract.check(graph=graph, verbose=True)
-
-        settings.PRINTER.pop_and_assert(
-            """
-            Searching for import chains from mypackage.one.medium to mypackage.one.high...
-            Found 0 illegal chains in 10s.
-            Searching for import chains from mypackage.one.low to mypackage.one.high...
-            Found 0 illegal chains in 10s.
-            Searching for import chains from mypackage.one.low to mypackage.one.medium...
-            Found 1 illegal chain in 10s.
-            Searching for import chains from mypackage.two.medium to mypackage.two.high...
-            Found 2 illegal chains in 10s.
-            Searching for import chains from mypackage.two.low to mypackage.two.high...
-            Found 0 illegal chains in 10s.
-            Searching for import chains from mypackage.two.low to mypackage.two.medium...
-            Found 0 illegal chains in 10s.
-            """
-        )
 
 
 class TestExhaustiveContracts:

@@ -1,5 +1,6 @@
 import os
 import sys
+from logging import config as logging_config
 from typing import Optional, Tuple, Type, Union
 
 import click
@@ -91,6 +92,8 @@ def lint_imports(
     # Add current directory to the path, as this doesn't happen automatically.
     sys.path.insert(0, os.getcwd())
 
+    _configure_logging(verbose)
+
     combined_cache_dir = _combine_caching_arguments(cache_dir, no_cache)
 
     passed = use_cases.lint_imports(
@@ -116,3 +119,26 @@ def _combine_caching_arguments(
     if cache_dir is None:
         return NotSupplied
     return cache_dir
+
+
+def _configure_logging(verbose: bool) -> None:
+    logger_names = ("importlinter", "grimp")
+    logging_config.dictConfig(
+        {
+            "version": 1,
+            "handlers": {
+                "console": {
+                    "class": "logging.StreamHandler",
+                    "level": "INFO" if verbose else "WARNING",
+                    "stream": "ext://sys.stdout",
+                },
+            },
+            "loggers": {
+                logger_name: {
+                    "level": "INFO",
+                    "handlers": ["console"],
+                }
+                for logger_name in logger_names
+            },
+        }
+    )

@@ -87,3 +87,15 @@ def test_lint_imports_debug_mode(is_debug_mode):
 def test_show_timings_smoke_test():
     os.chdir(testpackage_directory)
     assert cli.EXIT_STATUS_SUCCESS == cli.lint_imports(show_timings=True)
+
+
+@pytest.mark.parametrize("verbose", (True, False))
+def test_logging_configuration_respects_verbose_flag(verbose, capsys):
+    os.chdir(testpackage_directory)
+
+    cli.lint_imports(verbose=verbose)
+
+    captured = capsys.readouterr()
+
+    # N.B. "Wrote data cache file" is logged by Grimp.
+    assert ("Wrote data cache file" in captured.out) == verbose
