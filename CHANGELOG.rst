@@ -7,6 +7,7 @@ latest
 * Recursive wildcard support for ignored imports.
 * Drop support for Python 3.7.
 * Use grimp.ImportGraph instead of importlinter.domain.ports.graph.ImportGraph.
+* Use grimp's find_illegal_dependencies_for_layers method in layers contracts.
 
 1.9.0 (2023-05-13)
 ------------------
