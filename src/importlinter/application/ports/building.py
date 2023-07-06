@@ -1,7 +1,7 @@
 import abc
 from typing import List, Optional
 
-from importlinter.domain.ports.graph import ImportGraph
+from grimp import ImportGraph
 
 
 class GraphBuilder(abc.ABC):

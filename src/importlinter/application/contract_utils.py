@@ -4,7 +4,7 @@ from typing import List, Optional, Sequence, Set
 from importlinter.domain import helpers
 from importlinter.domain.helpers import MissingImport
 from importlinter.domain.imports import ImportExpression
-from importlinter.domain.ports.graph import ImportGraph
+from grimp import ImportGraph
 
 
 class AlertLevel(enum.Enum):

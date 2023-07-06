@@ -2,9 +2,10 @@ import importlib
 from copy import copy, deepcopy
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
+from grimp import ImportGraph
+
 from ..application import rendering
 from ..domain.contract import Contract, InvalidContractOptions, registry
-from ..domain.ports.graph import ImportGraph
 from . import output
 from .app_config import settings
 from .ports.reporting import Report
