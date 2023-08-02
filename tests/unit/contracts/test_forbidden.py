@@ -596,3 +596,20 @@ class TestVerbosePrint:
             Found 0 illegal chains in 10s.
             """
         )
+
+    @pytest.mark.parametrize("should_import, contract_is_kept", [(True, False), (False, True)])
+    def test_conditional_import(self, should_import, contract_is_kept):
+        """
+        Test imports of the form:
+        if (cond):
+            import imported
+        """
+        graph = ImportGraph()
+        graph.add_conditional_import(
+            line_number=12, line_contents="requests", should_import=should_import
+        )
+        contract = self._build_contract(forbidden_modules=("requests"))
+
+        contract_check = contract.check(graph=graph)
+
+        assert contract_check.kept == contract_is_kept
