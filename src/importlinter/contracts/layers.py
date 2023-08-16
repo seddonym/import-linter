@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import itertools
 from typing import List, cast
 
 import grimp
@@ -12,7 +11,7 @@ from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck, InvalidContractOptions
 from importlinter.domain.imports import Module
 
-from ._common import Chain, DetailedChain, Link, render_chain_data
+from ._common import DetailedChain, build_detailed_chain_from_route, render_chain_data
 
 
 class Layer:
@@ -219,72 +218,9 @@ class LayersContract(Contract):
     ) -> list[_LayerChainData]:
         return [
             {
-                "higher_layer": dependency.downstream,
-                "lower_layer": dependency.upstream,
-                "chains": [
-                    self._build_detailed_chain_from_route(c, graph) for c in dependency.routes
-                ],
+                "higher_layer": dependency.imported,
+                "lower_layer": dependency.importer,
+                "chains": [build_detailed_chain_from_route(c, graph) for c in dependency.routes],
             }
             for dependency in dependencies
         ]
-
-    def _build_detailed_chain_from_route(
-        self, route: grimp.Route, graph: grimp.ImportGraph
-    ) -> DetailedChain:
-        ordered_heads = sorted(route.heads)
-        extra_firsts: list[Link] = [
-            {
-                "importer": head,
-                "imported": route.middle[0],
-                "line_numbers": self._get_line_numbers(
-                    importer=head, imported=route.middle[0], graph=graph
-                ),
-            }
-            for head in ordered_heads[1:]
-        ]
-        ordered_tails = sorted(route.tails)
-        extra_lasts: list[Link] = [
-            {
-                "imported": tail,
-                "importer": route.middle[-1],
-                "line_numbers": self._get_line_numbers(
-                    imported=tail, importer=route.middle[-1], graph=graph
-                ),
-            }
-            for tail in ordered_tails[1:]
-        ]
-        chain_as_strings = [ordered_heads[0], *route.middle, ordered_tails[0]]
-        chain_as_links: Chain = [
-            {
-                "importer": importer,
-                "imported": imported,
-                "line_numbers": self._get_line_numbers(
-                    importer=importer, imported=imported, graph=graph
-                ),
-            }
-            for importer, imported in _pairwise(chain_as_strings)
-        ]
-        return {
-            "chain": chain_as_links,
-            "extra_firsts": extra_firsts,
-            "extra_lasts": extra_lasts,
-        }
-
-    def _get_line_numbers(
-        self, importer: str, imported: str, graph: grimp.ImportGraph
-    ) -> tuple[int | None, ...]:
-        details = graph.get_import_details(importer=importer, imported=imported)
-        line_numbers = tuple(i["line_number"] for i in details) if details else (None,)
-        return line_numbers
-
-
-def _pairwise(iterable):
-    """
-    Return successive overlapping pairs taken from the input iterable.
-    pairwise('ABCDEFG') --> AB BC CD DE EF FG
-
-    TODO: Replace with itertools.pairwise once on Python 3.10.
-    """
-    a, b = itertools.tee(iterable)
-    next(b, None)
-    return zip(a, b)

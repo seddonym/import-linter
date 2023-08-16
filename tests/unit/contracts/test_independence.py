@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import pytest
 from grimp.adaptors.graph import ImportGraph
 
 from importlinter.application.app_config import settings
-from importlinter.contracts.independence import IndependenceContract
+from importlinter.contracts.independence import IndependenceContract, _SubpackageChainData
 from importlinter.domain.contract import ContractCheck
 from tests.adapters.printing import FakePrinter
 from tests.adapters.timing import FakeTimer
@@ -165,23 +167,6 @@ class TestIndependenceContract:
         expected_metadata = {
             "invalid_chains": [
                 {
-                    "upstream_module": "mypackage.green",
-                    "downstream_module": "mypackage.blue",
-                    "chains": [
-                        {
-                            "chain": [
-                                {
-                                    "importer": "mypackage.blue",
-                                    "imported": "mypackage.green",
-                                    "line_numbers": (10,),
-                                }
-                            ],
-                            "extra_firsts": [],
-                            "extra_lasts": [],
-                        },
-                    ],
-                },
-                {
                     "upstream_module": "mypackage.blue",
                     "downstream_module": "mypackage.yellow",
                     "chains": [
@@ -198,9 +183,28 @@ class TestIndependenceContract:
                         },
                     ],
                 },
+                {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.blue",
+                    "chains": [
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.blue",
+                                    "imported": "mypackage.green",
+                                    "line_numbers": (10,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        },
+                    ],
+                },
             ]
         }
-        assert expected_metadata == contract_check.metadata
+        assert expected_metadata == {
+            "invalid_chains": _sort_invalid_chains(contract_check.metadata["invalid_chains"])
+        }
 
     def test_when_child_imports_child(self):
         graph = self._build_default_graph()
@@ -344,23 +348,6 @@ class TestIndependenceContract:
         expected_metadata = {
             "invalid_chains": [
                 {
-                    "upstream_module": "mypackage.green",
-                    "downstream_module": "mypackage.yellow",
-                    "chains": [
-                        {
-                            "chain": [
-                                {
-                                    "importer": "mypackage.yellow.foo",
-                                    "imported": "mypackage.green.bar",
-                                    "line_numbers": (15,),
-                                }
-                            ],
-                            "extra_firsts": [],
-                            "extra_lasts": [],
-                        }
-                    ],
-                },
-                {
                     "upstream_module": "mypackage.blue",
                     "downstream_module": "mypackage.green",
                     "chains": [
@@ -409,9 +396,28 @@ class TestIndependenceContract:
                         }
                     ],
                 },
+                {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.yellow",
+                    "chains": [
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.yellow.foo",
+                                    "imported": "mypackage.green.bar",
+                                    "line_numbers": (15,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        }
+                    ],
+                },
             ]
         }
-        assert expected_metadata == contract_check.metadata
+        assert expected_metadata == {
+            "invalid_chains": _sort_invalid_chains(contract_check.metadata["invalid_chains"])
+        }
 
 
 @pytest.mark.parametrize(
@@ -726,81 +732,5 @@ def test_namespace_packages(independent_modules, is_kept):
     assert contract_check.kept == is_kept
 
 
-class TestVerbosePrint:
-    def test_verbose(self):
-        timer = FakeTimer()
-        timer.setup(tick_duration=10, increment=0)
-        settings.configure(PRINTER=FakePrinter(), TIMER=timer)
-
-        graph = ImportGraph()
-        for module in (
-            "mypackage",
-            "mypackage.blue",
-            "mypackage.blue.alpha",
-            "mypackage.blue.beta",
-            "mypackage.blue.beta.foo",
-            "mypackage.green",
-            "mypackage.yellow",
-            "mypackage.yellow.gamma",
-            "mypackage.yellow.delta",
-            "mypackage.other",
-        ):
-            graph.add_module(module)
-
-            # Add some illegal imports.
-            graph.add_import(
-                importer="mypackage.blue.alpha",
-                imported="mypackage.yellow.gamma",
-                line_number=5,
-                line_contents="-",
-            )
-            graph.add_import(
-                importer="mypackage.blue.alpha",
-                imported="mypackage.other",
-                line_number=10,
-                line_contents="-",
-            )
-            graph.add_import(
-                importer="mypackage.other",
-                imported="mypackage.green",
-                line_number=11,
-                line_contents="-",
-            )
-        contract = IndependenceContract(
-            name="Independence contract",
-            session_options={"root_packages": ["mypackage"]},
-            contract_options={
-                "modules": ("mypackage.blue", "mypackage.green", "mypackage.yellow")
-            },
-        )
-
-        contract.check(graph=graph, verbose=True)
-
-        settings.PRINTER.pop_and_assert(
-            """
-            Searching for direct imports from mypackage.blue to mypackage.green...
-            Found 0 illegal chains in 10s.
-            Searching for direct imports from mypackage.blue to mypackage.yellow...
-            Found 1 illegal chain in 10s.
-            Searching for direct imports from mypackage.green to mypackage.blue...
-            Found 0 illegal chains in 10s.
-            Searching for direct imports from mypackage.green to mypackage.yellow...
-            Found 0 illegal chains in 10s.
-            Searching for direct imports from mypackage.yellow to mypackage.blue...
-            Found 0 illegal chains in 10s.
-            Searching for direct imports from mypackage.yellow to mypackage.green...
-            Found 0 illegal chains in 10s.
-            Searching for indirect imports from mypackage.blue to mypackage.green...
-            Found 1 illegal chain in 10s.
-            Searching for indirect imports from mypackage.blue to mypackage.yellow...
-            Found 0 illegal chains in 10s.
-            Searching for indirect imports from mypackage.green to mypackage.blue...
-            Found 0 illegal chains in 10s.
-            Searching for indirect imports from mypackage.green to mypackage.yellow...
-            Found 0 illegal chains in 10s.
-            Searching for indirect imports from mypackage.yellow to mypackage.blue...
-            Found 0 illegal chains in 10s.
-            Searching for indirect imports from mypackage.yellow to mypackage.green...
-            Found 0 illegal chains in 10s.
-            """
-        )
+def _sort_invalid_chains(invalid_chains: list[_SubpackageChainData]) -> list[_SubpackageChainData]:
+    return sorted(invalid_chains, key=lambda i: (i["upstream_module"], i["downstream_module"]))

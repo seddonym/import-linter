@@ -1,6 +1,12 @@
 Changelog
 =========
 
+latest
+------
+
+* Update to Grimp 3.0.
+* Use Grimp's find_illegal_dependencies_for_layers method in independence contracts.
+
 1.10.0 (2023-07-06)
 -------------------
 
