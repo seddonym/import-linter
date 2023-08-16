@@ -5,14 +5,17 @@ Code in here should not be relied upon as a public API; if you're
 relying on it for a custom contract type, be aware things may change
 without warning.
 """
+from __future__ import annotations
 
+import itertools
 from typing import List, Optional, Sequence, Tuple, Union
 
+import grimp
+from grimp import ImportGraph
 from typing_extensions import TypedDict
 
 from importlinter.application import output
 from importlinter.domain.imports import Module
-from grimp import ImportGraph
 
 
 class Link(TypedDict):
@@ -178,3 +181,60 @@ def _render_direct_import(
             output.print_error(f"- {import_string}", bold=False)
         else:
             output.print_error(f"  {import_string}", bold=False)
+
+
+def build_detailed_chain_from_route(route: grimp.Route, graph: grimp.ImportGraph) -> DetailedChain:
+    ordered_heads = sorted(route.heads)
+    extra_firsts: list[Link] = [
+        {
+            "importer": head,
+            "imported": route.middle[0],
+            "line_numbers": get_line_numbers(importer=head, imported=route.middle[0], graph=graph),
+        }
+        for head in ordered_heads[1:]
+    ]
+    ordered_tails = sorted(route.tails)
+    extra_lasts: list[Link] = [
+        {
+            "imported": tail,
+            "importer": route.middle[-1],
+            "line_numbers": get_line_numbers(
+                imported=tail, importer=route.middle[-1], graph=graph
+            ),
+        }
+        for tail in ordered_tails[1:]
+    ]
+    chain_as_strings = [ordered_heads[0], *route.middle, ordered_tails[0]]
+    chain_as_links: Chain = [
+        {
+            "importer": importer,
+            "imported": imported,
+            "line_numbers": get_line_numbers(importer=importer, imported=imported, graph=graph),
+        }
+        for importer, imported in pairwise(chain_as_strings)
+    ]
+    return {
+        "chain": chain_as_links,
+        "extra_firsts": extra_firsts,
+        "extra_lasts": extra_lasts,
+    }
+
+
+def get_line_numbers(
+    importer: str, imported: str, graph: grimp.ImportGraph
+) -> tuple[int | None, ...]:
+    details = graph.get_import_details(importer=importer, imported=imported)
+    line_numbers = tuple(i["line_number"] for i in details) if details else (None,)
+    return line_numbers
+
+
+def pairwise(iterable):
+    """
+    Return successive overlapping pairs taken from the input iterable.
+    pairwise('ABCDEFG') --> AB BC CD DE EF FG
+
+    TODO: Replace with itertools.pairwise once on Python 3.10.
+    """
+    a, b = itertools.tee(iterable)
+    next(b, None)
+    return zip(a, b)
