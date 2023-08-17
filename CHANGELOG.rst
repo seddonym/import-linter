@@ -6,6 +6,7 @@ Changelog
 
 * Update to Grimp 3.0b3.
 * Use Grimp's find_illegal_dependencies_for_layers method in independence contracts.
+* Add ability to define independent siblings in layers contracts.
 
 1.10.0 (2023-07-06)
 -------------------
