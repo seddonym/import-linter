@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import List, cast
+from dataclasses import dataclass
+from typing import List, Sequence, cast
 
 import grimp
 from typing_extensions import TypedDict
@@ -14,28 +15,34 @@ from importlinter.domain.imports import Module
 from ._common import DetailedChain, build_detailed_chain_from_route, render_chain_data
 
 
+@dataclass(frozen=True)
 class Layer:
-    def __init__(self, name: str, is_optional: bool = False) -> None:
-        self.name = name
-        self.is_optional = is_optional
+    name: str
+    is_optional: bool = False
 
 
 class LayerField(fields.Field):
-    def parse(self, raw_data: str | list) -> Layer:
+    def parse(self, raw_data: str | list) -> Layer | set[Layer]:
+        layers = set()
         raw_string = fields.StringField().parse(raw_data)
-        if raw_string.startswith("(") and raw_string.endswith(")"):
-            layer_name = raw_string[1:-1]
-            is_optional = True
-        else:
-            layer_name = raw_string
-            is_optional = False
-        return Layer(name=layer_name, is_optional=is_optional)
+        raw_items = [item.strip() for item in raw_string.split("|")]
+        for raw_item in raw_items:
+            if raw_item.startswith("(") and raw_item.endswith(")"):
+                layer_name = raw_item[1:-1]
+                is_optional = True
+            else:
+                layer_name = raw_item
+                is_optional = False
+            layers.add(Layer(name=layer_name, is_optional=is_optional))
+        if len(layers) == 1:
+            return layers.pop()
+        return layers
 
 
 class _LayerChainData(TypedDict):
-    higher_layer: str
-    lower_layer: str
-    chains: list[DetailedChain]
+    importer: str
+    imported: str
+    routes: list[DetailedChain]
 
 
 _UNKNOWN_LINE_NUMBER = -1
@@ -56,6 +63,7 @@ class LayersContract(Contract):
 
         - layers:             An ordered list of layers. Each layer is the name of a module relative
                               to its parent package. The order is from higher to lower level layers.
+                              TODO docs.
         - containers:         A list of the parent Modules of the layers. (Optional.)
         - ignore_imports:     A set of ImportExpressions. These imports will be ignored: if the
                               import would cause a contract to be broken, adding it to the set will
@@ -95,6 +103,7 @@ class LayersContract(Contract):
             ignore_imports=self.ignore_imports,  # type: ignore
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
+        self.flattened_layers = self._flatten_layers(self.layers)  # type: ignore
 
         if self.containers:
             self._validate_containers(graph)
@@ -104,7 +113,7 @@ class LayersContract(Contract):
         undeclared_modules = self._get_undeclared_modules(graph)
 
         dependencies = graph.find_illegal_dependencies_for_layers(
-            layers=tuple(layer.name for layer in self.layers),  # type: ignore
+            layers=self._stringify_layers(self.layers),  # type: ignore
             containers=self.containers,  # type: ignore
         )
         invalid_chains = self._build_invalid_chains(dependencies, graph)
@@ -113,18 +122,33 @@ class LayersContract(Contract):
             kept=not (dependencies or undeclared_modules),
             warnings=warnings,
             metadata={
-                "invalid_chains": invalid_chains,
+                "invalid_dependencies": invalid_chains,
                 "undeclared_modules": undeclared_modules,
             },
         )
 
+    def _flatten_layers(self, layers: Sequence[Layer | set[Layer]]) -> set[Layer]:
+        flattened = set()
+        for layer in layers:
+            if isinstance(layer, set):
+                flattened |= layer
+            else:
+                flattened.add(layer)
+        return flattened
+
+    def _stringify_layers(self, layers: Sequence[Layer | set[Layer]]) -> Sequence[str | set[str]]:
+        return tuple(
+            {sublayer.name for sublayer in layer} if isinstance(layer, set) else layer.name
+            for layer in layers
+        )
+
     def render_broken_contract(self, check: ContractCheck) -> None:
-        for chains_data in cast(List[_LayerChainData], check.metadata["invalid_chains"]):
-            higher_layer, lower_layer = (chains_data["higher_layer"], chains_data["lower_layer"])
+        for chains_data in cast(List[_LayerChainData], check.metadata["invalid_dependencies"]):
+            higher_layer, lower_layer = (chains_data["imported"], chains_data["importer"])
             output.print(f"{lower_layer} is not allowed to import {higher_layer}:")
             output.new_line()
 
-            for chain_data in chains_data["chains"]:
+            for chain_data in chains_data["routes"]:
                 render_chain_data(chain_data)
                 output.new_line()
 
@@ -169,7 +193,7 @@ class LayersContract(Contract):
     def _check_all_layers_exist_for_container(
         self, container: str, graph: grimp.ImportGraph
     ) -> None:
-        for layer in self.layers:  # type: ignore
+        for layer in self.flattened_layers:
             if layer.is_optional:
                 continue
             layer_module_name = ".".join([container, layer.name])
@@ -186,7 +210,7 @@ class LayersContract(Contract):
         undeclared_modules = set()
 
         exhaustive_ignores: set[str] = self.exhaustive_ignores or set()  # type: ignore
-        layers: set[str] = {layer.name for layer in self.layers}  # type: ignore
+        layers: set[str] = {layer.name for layer in self.flattened_layers}
         declared_modules = layers | exhaustive_ignores
 
         for container in self.containers:  # type: ignore[attr-defined]
@@ -218,9 +242,9 @@ class LayersContract(Contract):
     ) -> list[_LayerChainData]:
         return [
             {
-                "higher_layer": dependency.imported,
-                "lower_layer": dependency.importer,
-                "chains": [build_detailed_chain_from_route(c, graph) for c in dependency.routes],
+                "imported": dependency.imported,
+                "importer": dependency.importer,
+                "routes": [build_detailed_chain_from_route(c, graph) for c in dependency.routes],
             }
             for dependency in dependencies
         ]
