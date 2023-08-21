@@ -222,13 +222,14 @@ class LayersContract(Contract):
         return undeclared_modules
 
     def _check_all_containerless_layers_exist(self, graph: grimp.ImportGraph) -> None:
-        for layer in self.layers:  # type: ignore
-            if layer.is_optional:
-                continue
-            if layer.name not in graph.modules:
-                raise ValueError(
-                    f"Missing layer '{layer.name}': module {layer.name} does not exist."
-                )
+        for layers in self.layers:  # type: ignore
+            for layer in ({layers} if isinstance(layers, Layer) else layers):
+                if layer.is_optional:
+                    continue
+                if layer.name not in graph.modules:
+                    raise ValueError(
+                        f"Missing layer '{layer.name}': module {layer.name} does not exist."
+                    )
 
     def _module_from_layer(self, layer: Layer, container: str | None = None) -> Module:
         if container:

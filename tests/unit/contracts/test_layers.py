@@ -152,6 +152,36 @@ class TestLayerContractSiblingLayers:
             "undeclared_modules": set(),
         }
 
+    def test_is_valid_with_minimal_config(self):
+        contract = LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options={
+                "layers": [
+                    "mypackage.high",
+                    "mypackage.medium_a | mypackage.medium_b | mypackage.medium_c",
+                    "mypackage.low"
+                ]
+            },
+        )
+        graph = ImportGraph()
+        for module in (
+            "mypackage",
+            "mypackage.high",
+            "mypackage.medium_a",
+            "mypackage.medium_b",
+            "mypackage.medium_c",
+            "mypackage.low",
+        ):
+            graph.add_module(module)
+        # Add some 'legal' imports.
+        graph.add_import(importer="mypackage.high.green", imported="mypackage.medium.orange")
+        graph.add_import(importer="mypackage.utils", imported="mypackage.medium.red")
+
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        assert contract_check.kept is True
+
 
 class TestLayerMultipleContainers:
     def test_no_illegal_imports_means_contract_is_kept(self):
