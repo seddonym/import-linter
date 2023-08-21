@@ -223,7 +223,7 @@ class LayersContract(Contract):
 
     def _check_all_containerless_layers_exist(self, graph: grimp.ImportGraph) -> None:
         for layers in self.layers:  # type: ignore
-            for layer in ({layers} if isinstance(layers, Layer) else layers):
+            for layer in {layers} if isinstance(layers, Layer) else layers:
                 if layer.is_optional:
                     continue
                 if layer.name not in graph.modules:

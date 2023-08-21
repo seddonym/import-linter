@@ -160,7 +160,7 @@ class TestLayerContractSiblingLayers:
                 "layers": [
                     "mypackage.high",
                     "mypackage.medium_a | mypackage.medium_b | mypackage.medium_c",
-                    "mypackage.low"
+                    "mypackage.low",
                 ]
             },
         )
