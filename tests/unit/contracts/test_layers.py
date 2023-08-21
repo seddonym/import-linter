@@ -95,15 +95,9 @@ class TestLayerContractSingleContainers:
 
 
 class TestLayerContractSiblingLayers:
-    def test_illegal_imports(self):
-        contract = LayersContract(
-            name="Layer contract",
-            session_options={"root_packages": ["mypackage"]},
-            contract_options={
-                "containers": ["mypackage"],
-                "layers": ["high", "medium_a | medium_b | medium_c", "low"],
-            },
-        )
+    @pytest.mark.parametrize("specify_container", (True, False))
+    def test_illegal_imports(self, specify_container: bool):
+        contract = self._create_contract(specify_container=specify_container)
         graph = ImportGraph()
         for module in (
             "mypackage",
@@ -152,35 +146,23 @@ class TestLayerContractSiblingLayers:
             "undeclared_modules": set(),
         }
 
-    def test_is_valid_with_minimal_config(self):
-        contract = LayersContract(
+    def _create_contract(self, specify_container: bool):
+        package = "mypackage"
+        layer_prefix = "" if specify_container else f"{package}."
+        contract_options = {
+            "layers": [
+                f"{layer_prefix}high",
+                f"{layer_prefix}medium_a | {layer_prefix}medium_b | {layer_prefix}medium_c",
+                f"{layer_prefix}low",
+            ]
+        }
+        if specify_container:
+            contract_options["containers"] = [package]
+        return LayersContract(
             name="Layer contract",
             session_options={"root_packages": ["mypackage"]},
-            contract_options={
-                "layers": [
-                    "mypackage.high",
-                    "mypackage.medium_a | mypackage.medium_b | mypackage.medium_c",
-                    "mypackage.low",
-                ]
-            },
+            contract_options=contract_options,
         )
-        graph = ImportGraph()
-        for module in (
-            "mypackage",
-            "mypackage.high",
-            "mypackage.medium_a",
-            "mypackage.medium_b",
-            "mypackage.medium_c",
-            "mypackage.low",
-        ):
-            graph.add_module(module)
-        # Add some 'legal' imports.
-        graph.add_import(importer="mypackage.high.green", imported="mypackage.medium.orange")
-        graph.add_import(importer="mypackage.utils", imported="mypackage.medium.red")
-
-        contract_check = contract.check(graph=graph, verbose=False)
-
-        assert contract_check.kept is True
 
 
 class TestLayerMultipleContainers:

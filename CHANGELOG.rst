@@ -1,6 +1,11 @@
 Changelog
 =========
 
+latest
+------
+
+* Fix bug that was preventing sibling layers being used in a containerless contract.
+
 1.11.0 (2023-08-18)
 -------------------
 
