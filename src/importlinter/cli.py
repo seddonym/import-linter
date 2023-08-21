@@ -122,7 +122,7 @@ def _combine_caching_arguments(
 
 
 def _configure_logging(verbose: bool) -> None:
-    logger_names = ("importlinter", "grimp")
+    logger_names = ("importlinter", "grimp", "_rustgrimp")
     logging_config.dictConfig(
         {
             "version": 1,

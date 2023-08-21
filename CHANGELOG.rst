@@ -1,10 +1,27 @@
 Changelog
 =========
 
-1.10.1 (TBD)
+Latest
 -------------------
 
 * Officially support Python 3.12.
+
+1.11.1 (2023-08-21)
+-------------------
+
+* Fix bug that was preventing sibling layers being used in a containerless contract.
+
+1.11.0 (2023-08-18)
+-------------------
+
+* Update to Grimp 3.0.
+
+1.11b1 (2023-08-17)
+-------------------
+
+* Update to Grimp 3.0b3.
+* Use Grimp's find_illegal_dependencies_for_layers method in independence contracts.
+* Add ability to define independent siblings in layers contracts.
 
 1.10.0 (2023-07-06)
 -------------------

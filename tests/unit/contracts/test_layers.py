@@ -2,7 +2,7 @@ import pytest
 from grimp.adaptors.graph import ImportGraph
 
 from importlinter.application.app_config import settings
-from importlinter.contracts.layers import LayersContract
+from importlinter.contracts.layers import Layer, LayerField, LayersContract
 from importlinter.domain.contract import ContractCheck, InvalidContractOptions
 from importlinter.domain.helpers import MissingImport
 from tests.adapters.printing import FakePrinter
@@ -12,6 +12,22 @@ from tests.adapters.timing import FakeTimer
 @pytest.fixture(scope="module", autouse=True)
 def configure():
     settings.configure(TIMER=FakeTimer())
+
+
+@pytest.mark.parametrize(
+    "data, parsed_data",
+    (
+        ("one", Layer(name="one", is_optional=False)),
+        ("(one)", Layer(name="one", is_optional=True)),
+        ("one | two |    three", {Layer(name="one"), Layer(name="two"), Layer(name="three")}),
+        (
+            "one | (two) | three",
+            {Layer(name="one"), Layer(name="two", is_optional=True), Layer(name="three")},
+        ),
+    ),
+)
+def test_layer_field(data, parsed_data):
+    assert LayerField().parse(data) == parsed_data
 
 
 class TestLayerContractSingleContainers:
@@ -75,6 +91,77 @@ class TestLayerContractSingleContainers:
             name="Layer contract",
             session_options={"root_packages": ["mypackage"]},
             contract_options={"containers": ["mypackage"], "layers": ["high", "medium", "low"]},
+        )
+
+
+class TestLayerContractSiblingLayers:
+    @pytest.mark.parametrize("specify_container", (True, False))
+    def test_illegal_imports(self, specify_container: bool):
+        contract = self._create_contract(specify_container=specify_container)
+        graph = ImportGraph()
+        for module in (
+            "mypackage",
+            "mypackage.high",
+            "mypackage.medium_a",
+            "mypackage.medium_b",
+            "mypackage.medium_c",
+            "mypackage.low",
+        ):
+            graph.add_module(module)
+        # Add some 'legal' imports.
+        graph.add_import(importer="mypackage.high.green", imported="mypackage.medium.orange")
+        graph.add_import(importer="mypackage.utils", imported="mypackage.medium.red")
+        # Add an illegal import.
+        graph.add_import(
+            importer="mypackage.medium_a.blue",
+            imported="mypackage.medium_b.red",
+            line_number=3,
+            line_contents="-",
+        )
+
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        assert contract_check.kept is False
+        sorted_metadata = _get_sorted_metadata(contract_check)
+        assert sorted_metadata == {
+            "invalid_dependencies": [
+                {
+                    "importer": "mypackage.medium_a",
+                    "imported": "mypackage.medium_b",
+                    "routes": [
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.medium_a.blue",
+                                    "imported": "mypackage.medium_b.red",
+                                    "line_numbers": (3,),
+                                },
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        }
+                    ],
+                },
+            ],
+            "undeclared_modules": set(),
+        }
+
+    def _create_contract(self, specify_container: bool):
+        package = "mypackage"
+        layer_prefix = "" if specify_container else f"{package}."
+        contract_options = {
+            "layers": [
+                f"{layer_prefix}high",
+                f"{layer_prefix}medium_a | {layer_prefix}medium_b | {layer_prefix}medium_c",
+                f"{layer_prefix}low",
+            ]
+        }
+        if specify_container:
+            contract_options["containers"] = [package]
+        return LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options=contract_options,
         )
 
 
@@ -264,19 +351,13 @@ class TestLayerContractPopulatesMetadata:
         contract_check = contract.check(graph=graph, verbose=False)
         assert contract_check.kept is False
 
-        sorted_metadata = {
-            "invalid_chains": sorted(
-                contract_check.metadata["invalid_chains"],
-                key=lambda c: (c["lower_layer"], c["higher_layer"]),
-            ),
-            "undeclared_modules": contract_check.metadata["undeclared_modules"],
-        }
+        sorted_metadata = _get_sorted_metadata(contract_check)
         assert sorted_metadata == {
-            "invalid_chains": [
+            "invalid_dependencies": [
                 {
-                    "lower_layer": "mypackage.low",
-                    "higher_layer": "mypackage.high",
-                    "chains": [
+                    "importer": "mypackage.low",
+                    "imported": "mypackage.high",
+                    "routes": [
                         {
                             "chain": [
                                 {
@@ -301,9 +382,9 @@ class TestLayerContractPopulatesMetadata:
                     ],
                 },
                 {
-                    "higher_layer": "mypackage.medium",
-                    "lower_layer": "mypackage.low",
-                    "chains": [
+                    "imported": "mypackage.medium",
+                    "importer": "mypackage.low",
+                    "routes": [
                         {
                             "chain": [
                                 {
@@ -323,9 +404,9 @@ class TestLayerContractPopulatesMetadata:
                     ],
                 },
                 {
-                    "lower_layer": "mypackage.medium",
-                    "higher_layer": "mypackage.high",
-                    "chains": [
+                    "importer": "mypackage.medium",
+                    "imported": "mypackage.high",
+                    "routes": [
                         {
                             "chain": [
                                 {
@@ -365,11 +446,11 @@ class TestLayerContractPopulatesMetadata:
         contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.metadata == {
-            "invalid_chains": [
+            "invalid_dependencies": [
                 {
-                    "lower_layer": "mypackage.low",
-                    "higher_layer": "mypackage.high",
-                    "chains": [
+                    "importer": "mypackage.low",
+                    "imported": "mypackage.high",
+                    "routes": [
                         {
                             "chain": [
                                 {
@@ -431,11 +512,11 @@ class TestLayerContractPopulatesMetadata:
         contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.metadata == {
-            "invalid_chains": [
+            "invalid_dependencies": [
                 {
-                    "lower_layer": "mypackage.low",
-                    "higher_layer": "mypackage.high",
-                    "chains": [
+                    "importer": "mypackage.low",
+                    "imported": "mypackage.high",
+                    "routes": [
                         {
                             "chain": [
                                 {
@@ -491,11 +572,11 @@ class TestLayerContractPopulatesMetadata:
         contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.metadata == {
-            "invalid_chains": [
+            "invalid_dependencies": [
                 {
-                    "lower_layer": "mypackage.low",
-                    "higher_layer": "mypackage.high",
-                    "chains": [
+                    "importer": "mypackage.low",
+                    "imported": "mypackage.high",
+                    "routes": [
                         {
                             "chain": [
                                 {
@@ -557,11 +638,11 @@ class TestLayerContractPopulatesMetadata:
         contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.metadata == {
-            "invalid_chains": [
+            "invalid_dependencies": [
                 {
-                    "lower_layer": "mypackage.low",
-                    "higher_layer": "mypackage.high",
-                    "chains": [
+                    "importer": "mypackage.low",
+                    "imported": "mypackage.high",
+                    "routes": [
                         {
                             "chain": [
                                 {
@@ -630,11 +711,11 @@ class TestLayerContractPopulatesMetadata:
         contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.metadata == {
-            "invalid_chains": [
+            "invalid_dependencies": [
                 {
-                    "lower_layer": "mypackage.low",
-                    "higher_layer": "mypackage.high",
-                    "chains": [
+                    "importer": "mypackage.low",
+                    "imported": "mypackage.high",
+                    "routes": [
                         {
                             "chain": [
                                 {
@@ -724,11 +805,11 @@ class TestLayerContractPopulatesMetadata:
         assert contract_check.kept is False
 
         assert contract_check.metadata == {
-            "invalid_chains": [
+            "invalid_dependencies": [
                 {
-                    "lower_layer": "mypackage.low",
-                    "higher_layer": "mypackage.high",
-                    "chains": [
+                    "importer": "mypackage.low",
+                    "imported": "mypackage.high",
+                    "routes": [
                         {
                             "chain": [
                                 {
@@ -821,11 +902,11 @@ class TestIgnoreImports:
         contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept is False
-        assert contract_check.metadata["invalid_chains"] == [
+        assert contract_check.metadata["invalid_dependencies"] == [
             {
-                "lower_layer": "mypackage.low",
-                "higher_layer": "mypackage.medium",
-                "chains": [
+                "importer": "mypackage.low",
+                "imported": "mypackage.medium",
+                "routes": [
                     {
                         "chain": [
                             dict(
@@ -853,11 +934,11 @@ class TestIgnoreImports:
         contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept is False
-        assert contract_check.metadata["invalid_chains"] == [
+        assert contract_check.metadata["invalid_dependencies"] == [
             {
-                "higher_layer": "mypackage.medium",
-                "lower_layer": "mypackage.low",
-                "chains": [
+                "imported": "mypackage.medium",
+                "importer": "mypackage.low",
+                "routes": [
                     {
                         "chain": [
                             dict(
@@ -1074,11 +1155,11 @@ def test_render_broken_contract():
     check = ContractCheck(
         kept=False,
         metadata={
-            "invalid_chains": [
+            "invalid_dependencies": [
                 {
-                    "lower_layer": "mypackage.low",
-                    "higher_layer": "mypackage.high",
-                    "chains": [
+                    "importer": "mypackage.low",
+                    "imported": "mypackage.high",
+                    "routes": [
                         {
                             "chain": [
                                 {
@@ -1168,9 +1249,9 @@ def test_render_broken_contract():
                     ],
                 },
                 {
-                    "lower_layer": "mypackage.low",
-                    "higher_layer": "mypackage.medium",
-                    "chains": [
+                    "importer": "mypackage.low",
+                    "imported": "mypackage.medium",
+                    "routes": [
                         {
                             "chain": [
                                 {
@@ -1185,9 +1266,9 @@ def test_render_broken_contract():
                     ],
                 },
                 {
-                    "lower_layer": "mypackage.medium",
-                    "higher_layer": "mypackage.high",
-                    "chains": [
+                    "importer": "mypackage.medium",
+                    "imported": "mypackage.high",
+                    "routes": [
                         {
                             "chain": [
                                 {
@@ -1519,7 +1600,7 @@ class TestExhaustiveContracts:
 
         assert contract_check.kept is False
         assert contract_check.metadata == {
-            "invalid_chains": [],
+            "invalid_dependencies": [],
             "undeclared_modules": {"foo.blue"},
         }
 
@@ -1552,7 +1633,7 @@ class TestExhaustiveContracts:
 
         assert contract_check.kept is False
         assert contract_check.metadata == {
-            "invalid_chains": [],
+            "invalid_dependencies": [],
             "undeclared_modules": {"foo.blue", "foo.green"},
         }
 
@@ -1573,7 +1654,7 @@ class TestExhaustiveContracts:
 
         assert contract_check.kept is False
         assert contract_check.metadata == {
-            "invalid_chains": [],
+            "invalid_dependencies": [],
             "undeclared_modules": {"foo.green"},
         }
 
@@ -1633,7 +1714,7 @@ class TestExhaustiveContracts:
 
         assert contract_check.kept is False
         assert contract_check.metadata == {
-            "invalid_chains": [],
+            "invalid_dependencies": [],
             "undeclared_modules": {"bar.blue", "bar.yellow", "foo.blue", "foo.brown"},
         }
 
@@ -1649,3 +1730,13 @@ class TestExhaustiveContracts:
                 graph.add_module(module)
 
         return graph
+
+
+def _get_sorted_metadata(contract_check: ContractCheck) -> dict:
+    return {
+        "invalid_dependencies": sorted(
+            contract_check.metadata["invalid_dependencies"],
+            key=lambda c: (c["importer"], c["imported"]),
+        ),
+        "undeclared_modules": contract_check.metadata["undeclared_modules"],
+    }
