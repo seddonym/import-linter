@@ -106,12 +106,12 @@ Layers
 Layers contracts enforce a 'layered architecture', where higher layers may depend on lower layers, but not the other
 way around.
 
-They do this by checking, for an ordered list of modules, that none higher up the list imports anything from a module
-lower down the list, even indirectly.
+They do this by checking, for an ordered list of modules, that none lower down the list imports anything from a module
+higher up the list, even indirectly.
 
 Additionally, multiple layers can listed on the same line, separated by pipe characters (``|``). These layers will be
 treated as being at the same level in relation to the other layers, but independent with respect to each other. In other
-words, layers on the same line are not allowed to import from each other, nor from any layers above.
+words, layers on the same line are not allowed to import from each other, nor from any layers below.
 
 Layers are required by default: if a layer is listed in the contract, the contract will be broken if the layer
 doesn't exist. You can make a layer optional by wrapping it in parentheses.
