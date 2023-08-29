@@ -20,7 +20,7 @@ EXIT_STATUS_ERROR = 1
 @click.option("--config", default=None, help="The config file to use.")
 @click.option(
     "--contract",
-    default=(),
+    default=[],
     multiple=True,
     help="Limit the check to the supplied contract identifier. May be passed multiple times.",
 )
