@@ -1,6 +1,15 @@
 import abc
 from enum import Enum
-from typing import Generic, Iterable, List, Set, Type, TypeVar, Union, cast
+from typing import (
+    Generic,
+    Iterable,
+    List,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from importlinter.domain.imports import ImportExpression, Module
 
@@ -11,6 +20,10 @@ class NotSupplied:
     """Sentinel to use in place of None for a default argument value."""
 
     pass
+
+
+class DummyValue:
+    """A dummy value which should be ignored by the parser."""
 
 
 class ValidationError(Exception):
@@ -168,9 +181,15 @@ class ImportExpressionField(Field):
         "mypackage.**.importer -> mypackage.bar.**"
     """
 
-    def parse(self, raw_data: Union[str, List]) -> ImportExpression:
+    def parse(self, raw_data: Union[str, List]) -> Union[ImportExpression, DummyValue]:
+        if isinstance(raw_data, str) and not raw_data.strip():
+            return DummyValue()
+
         string = StringField().parse(raw_data)
-        importer, _, imported = string.partition(" -> ")
+        importer, _, imported = string.partition("->")
+        # Remove any whitespace around the module string
+        importer = importer.strip()
+        imported = imported.strip()
 
         if not (importer and imported):
             raise ValidationError('Must be in the form "package.importer -> package.imported".')

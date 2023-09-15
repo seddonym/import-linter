@@ -6,6 +6,8 @@ Latest
 
 * Officially support Python 3.12.
 * Fix: Error when using `click` version 6.0 and 7.0 (#191).
+* Enhance: Allow extra whitespace around the module names in the `ignore_imports` config
+* Enhance: Allow blank lines in the `ignore_imports` config
 
 1.11.1 (2023-08-21)
 -------------------
