@@ -14,7 +14,6 @@ from importlinter.domain.fields import (
     SetField,
     StringField,
     ValidationError,
-    DummyValue,
 )
 from importlinter.domain.imports import ImportExpression, Module
 
@@ -180,18 +179,12 @@ class TestImportExpressionField(BaseFieldTest):
     field_class = ImportExpressionField
 
 
-class TestImportExpressionFieldEmptyLine:
-    field = ImportExpressionField()
-    # An empty string which usually works as a separator line in the config file,
-    # it should be treated as a "dummy" value that ignored by the parser.
-    assert isinstance(field.parse(""), DummyValue)
-
-
 @pytest.mark.parametrize(
     "raw_data, expected_value",
     (
         (["mypackage.foo", "mypackage.bar"], [Module("mypackage.foo"), Module("mypackage.bar")]),
         (["mypackage.foo", "mypackage.foo"], [Module("mypackage.foo"), Module("mypackage.foo")]),
+        (["mypackage.foo", "    "], [Module("mypackage.foo")]),
         ("singlevalue", [Module("singlevalue")]),
     ),
 )
@@ -205,6 +198,7 @@ class TestListField(BaseFieldTest):
     (
         (["mypackage.foo", "mypackage.bar"], {Module("mypackage.foo"), Module("mypackage.bar")}),
         (["mypackage.foo", "mypackage.foo"], {Module("mypackage.foo")}),
+        (["mypackage.foo", "    "], {Module("mypackage.foo")}),
         ("singlevalue", {Module("singlevalue")}),
     ),
 )

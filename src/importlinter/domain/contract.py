@@ -6,11 +6,6 @@ from grimp import ImportGraph
 from . import fields
 
 
-def _is_dummy(v: Any):
-    """Check if an object is dummy."""
-    return isinstance(v, fields.DummyValue)
-
-
 class Contract(abc.ABC):
     def __init__(
         self, name: str, session_options: Dict[str, Any], contract_options: Dict[str, Any]
@@ -48,11 +43,7 @@ class Contract(abc.ABC):
             except fields.ValidationError as e:
                 errors[field_name] = str(e)
                 continue
-
-            # Remove and ignore all "dummy" values
-            no_dummy_data = self._remove_dummy(clean_data)
-            if not _is_dummy(no_dummy_data):
-                setattr(self, field_name, no_dummy_data)
+            setattr(self, field_name, clean_data)
 
         if errors:
             raise InvalidContractOptions(errors)
@@ -78,15 +69,6 @@ class Contract(abc.ABC):
     @classmethod
     def _get_field(cls, field_name: str) -> fields.Field:
         return getattr(cls, field_name)
-
-    @staticmethod
-    def _remove_dummy(value: Any) -> Any:
-        """Try to remove all dummy items."""
-        if isinstance(value, set):
-            return {obj for obj in value if not _is_dummy(obj)}
-        elif isinstance(value, list):
-            return [obj for obj in value if not _is_dummy(obj)]
-        return value
 
     @abc.abstractmethod
     def check(self, graph: ImportGraph, verbose: bool) -> "ContractCheck":
