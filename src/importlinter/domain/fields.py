@@ -112,6 +112,9 @@ class BaseMultipleValueField(Field):
             raw_data = [raw_data]  # Single values should just be treated as a single item list.
         clean_list = []
         for raw_line in raw_data:
+            # Ignore blank lines
+            if not raw_line.strip():
+                continue
             clean_list.append(self.subfield.parse(raw_line))
         return clean_list
 
@@ -170,7 +173,10 @@ class ImportExpressionField(Field):
 
     def parse(self, raw_data: Union[str, List]) -> ImportExpression:
         string = StringField().parse(raw_data)
-        importer, _, imported = string.partition(" -> ")
+        importer, _, imported = string.partition("->")
+        # Remove any whitespace around the module string
+        importer = importer.strip()
+        imported = imported.strip()
 
         if not (importer and imported):
             raise ValidationError('Must be in the form "package.importer -> package.imported".')

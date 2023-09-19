@@ -94,6 +94,10 @@ class TestModuleField(BaseFieldTest):
             ImportExpression(importer="mypackage.foo", imported="mypackage.bar"),
         ),
         (
+            "my_package.foo   ->   my_package.bar",  # Extra whitespaces are supported.
+            ImportExpression(importer="my_package.foo", imported="my_package.bar"),
+        ),
+        (
             "my_package.foo -> my_package.foo_bar",  # Underscores are supported.
             ImportExpression(importer="my_package.foo", imported="my_package.foo_bar"),
         ),
@@ -180,6 +184,7 @@ class TestImportExpressionField(BaseFieldTest):
     (
         (["mypackage.foo", "mypackage.bar"], [Module("mypackage.foo"), Module("mypackage.bar")]),
         (["mypackage.foo", "mypackage.foo"], [Module("mypackage.foo"), Module("mypackage.foo")]),
+        (["mypackage.foo", "    "], [Module("mypackage.foo")]),
         ("singlevalue", [Module("singlevalue")]),
     ),
 )
@@ -193,6 +198,7 @@ class TestListField(BaseFieldTest):
     (
         (["mypackage.foo", "mypackage.bar"], {Module("mypackage.foo"), Module("mypackage.bar")}),
         (["mypackage.foo", "mypackage.foo"], {Module("mypackage.foo")}),
+        (["mypackage.foo", "    "], {Module("mypackage.foo")}),
         ("singlevalue", {Module("singlevalue")}),
     ),
 )

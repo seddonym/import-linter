@@ -6,6 +6,8 @@ Latest
 
 * Officially support Python 3.12.
 * Fix: Error when using `click` version 6.0 and 7.0 (#191).
+* Allow extra whitespace around the module names in import expressions.
+* Ignore blank lines in multiple value fields.
 
 1.11.1 (2023-08-21)
 -------------------
