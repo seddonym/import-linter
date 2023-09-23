@@ -2,12 +2,16 @@ Changelog
 =========
 
 Latest
--------------------
+------
 
 * Officially support Python 3.12.
-* Fix: Error when using `click` version 6.0 and 7.0 (#191).
+* Fix error when using `click` version 6.0 and 7.0 (#191).
 * Allow extra whitespace around the module names in import expressions.
 * Ignore blank lines in multiple value fields.
+* Fix bug with allow_indirect_imports in forbidden contracts.
+  Prior to this fix, forbidden contracts with allow_indirect_imports
+  only checked imports between the source/forbidden modules specified,
+  not the descendants of those modules.
 
 1.11.1 (2023-08-21)
 -------------------

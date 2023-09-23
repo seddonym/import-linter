@@ -222,19 +222,79 @@ class TestForbiddenContract:
         }
 
     @pytest.mark.parametrize(
-        "allow_indirect_imports, contract_is_kept",
-        ((None, False), ("false", False), ("True", True), ("true", True), ("anything", False)),
+        "importer",
+        ("mypackage.one", "mypackage.one.alpha"),
     )
-    def test_allow_indirect_imports(self, allow_indirect_imports, contract_is_kept):
+    @pytest.mark.parametrize(
+        "imported",
+        ("mypackage.mauve", "mypackage.mauve.beta"),
+    )
+    @pytest.mark.parametrize(
+        "allow_indirect_imports",
+        (False, True),
+    )
+    def test_allow_indirect_imports(self, importer, imported, allow_indirect_imports):
         graph = self._build_graph()
         contract = self._build_contract(
-            forbidden_modules=("mypackage.purple"),
+            forbidden_modules=("mypackage.mauve",),
             allow_indirect_imports=allow_indirect_imports,
+        )
+        graph.add_module("mypackage.mauve")
+        # Add a direct import.
+        graph.add_import(
+            importer=importer,
+            imported=imported,
+            line_number=10,
+            line_contents="-",
+        )
+        # Add an indirect import.
+        graph.add_import(
+            importer="mypackage.one.delta",
+            imported="mypackage.something",
+            line_number=20,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer="mypackage.something",
+            imported="mypackage.mauve.gamma",
+            line_number=30,
+            line_contents="-",
         )
 
         contract_check = contract.check(graph=graph, verbose=False)
 
-        assert contract_check.kept == contract_is_kept
+        direct_chain = [
+            {
+                "importer": importer,
+                "imported": imported,
+                "line_numbers": (10,),
+            },
+        ]
+        indirect_chain = [
+            {
+                "importer": "mypackage.one.delta",
+                "imported": "mypackage.something",
+                "line_numbers": (20,),
+            },
+            {
+                "importer": "mypackage.something",
+                "imported": "mypackage.mauve.gamma",
+                "line_numbers": (30,),
+            },
+        ]
+        if allow_indirect_imports:
+            expected_chains = [direct_chain]
+        else:
+            expected_chains = [direct_chain, indirect_chain]
+        assert contract_check.metadata == {
+            "invalid_chains": [
+                {
+                    "upstream_module": "mypackage.mauve",
+                    "downstream_module": "mypackage.one",
+                    "chains": expected_chains,
+                },
+            ],
+        }
 
     def test_ignore_imports_adds_warnings(self):
         graph = self._build_graph()
@@ -360,15 +420,20 @@ class TestForbiddenContract:
         if include_external_packages:
             session_options["include_external_packages"] = "True"
 
+        contract_options = {
+            "source_modules": ("mypackage.one", "mypackage.two", "mypackage.three"),
+            "forbidden_modules": forbidden_modules,
+            "ignore_imports": ignore_imports or [],
+        }
+        if allow_indirect_imports is not None:
+            contract_options["allow_indirect_imports"] = (
+                "true" if allow_indirect_imports else "false"
+            )
+
         return ForbiddenContract(
             name="Forbid contract",
             session_options=session_options,
-            contract_options={
-                "source_modules": ("mypackage.one", "mypackage.two", "mypackage.three"),
-                "forbidden_modules": forbidden_modules,
-                "ignore_imports": ignore_imports or [],
-                "allow_indirect_imports": allow_indirect_imports,
-            },
+            contract_options=contract_options,
         )
 
 
@@ -562,7 +627,7 @@ class TestVerbosePrint:
                     "mypackage.purple",
                 ),
                 "ignore_imports": [],
-                "allow_indirect_imports": False,
+                "allow_indirect_imports": "false",
             },
         )
 
