@@ -1,5 +1,8 @@
 from __future__ import annotations
-from typing import List, Tuple, cast
+
+from typing import List, cast
+
+from grimp import ImportGraph
 
 from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
@@ -7,7 +10,6 @@ from importlinter.configuration import settings
 from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.imports import Module
-from grimp import ImportGraph
 
 from ._common import format_line_numbers
 
@@ -34,7 +36,7 @@ class ForbiddenContract(Contract):
     source_modules = fields.ListField(subfield=fields.ModuleField())
     forbidden_modules = fields.ListField(subfield=fields.ModuleField())
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
-    allow_indirect_imports = fields.StringField(required=False)
+    allow_indirect_imports = fields.BooleanField(required=False, default=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
 
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
@@ -70,15 +72,7 @@ class ForbiddenContract(Contract):
                     }
 
                     if str(self.allow_indirect_imports).lower() == "true":
-                        chains = {
-                            cast(
-                                Tuple[str, ...],
-                                (str(import_det["importer"]), str(import_det["imported"])),
-                            )
-                            for import_det in graph.get_import_details(
-                                importer=source_module.name, imported=forbidden_module.name
-                            )
-                        }
+                        chains = self._get_direct_chains(source_module, forbidden_module, graph)
                     else:
                         chains = graph.find_shortest_chains(
                             importer=source_module.name, imported=forbidden_module.name
@@ -172,3 +166,28 @@ class ForbiddenContract(Contract):
 
     def _graph_was_built_with_externals(self) -> bool:
         return str(self.session_options.get("include_external_packages")).lower() == "true"
+
+    def _get_direct_chains(
+        self, source_package: Module, forbidden_package: Module, graph: ImportGraph
+    ) -> set[tuple[str, ...]]:
+        chains: set[tuple[str, ...]] = set()
+        source_modules = self._get_all_modules_in_package(source_package, graph)
+        forbidden_modules = self._get_all_modules_in_package(forbidden_package, graph)
+        for source_module in source_modules:
+            imported_module_names = graph.find_modules_directly_imported_by(source_module.name)
+            for imported_module_name in imported_module_names:
+                imported_module = Module(imported_module_name)
+                if imported_module in forbidden_modules:
+                    chains.add((source_module.name, imported_module.name))
+        return chains
+
+    def _get_all_modules_in_package(self, module: Module, graph: ImportGraph) -> set[Module]:
+        """
+        Return all the modules in the supplied module, including itself.
+
+        If the module is squashed, it will be treated as a single module.
+        """
+        importer_modules = {module}
+        if not graph.is_module_squashed(module.name):
+            importer_modules |= {Module(m) for m in graph.find_descendants(module.name)}
+        return importer_modules
