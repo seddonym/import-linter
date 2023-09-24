@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Latest
-------
+1.12.0 (2023-09-24)
+-------------------
 
 * Officially support Python 3.12.
 * Fix error when using `click` version 6.0 and 7.0 (#191).
