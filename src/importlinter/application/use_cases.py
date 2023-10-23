@@ -106,12 +106,14 @@ def create_report(
                             such as a module that could not be imported.
     """
     include_external_packages = _get_include_external_packages(user_options)
+    exclude_type_checking_imports = _get_exclude_type_checking_imports(user_options)
 
     with settings.TIMER as timer:
         graph = _build_graph(
             root_package_names=user_options.session_options["root_packages"],
             cache_dir=cache_dir,
             include_external_packages=include_external_packages,
+            exclude_type_checking_imports=exclude_type_checking_imports,
             verbose=verbose,
         )
     graph_building_duration = timer.duration_in_s
@@ -145,6 +147,7 @@ def _normalize_user_options(user_options: UserOptions) -> UserOptions:
 def _build_graph(
     root_package_names: List[str],
     include_external_packages: Optional[bool],
+    exclude_type_checking_imports: bool,
     verbose: bool,
     cache_dir: Union[str, None, Type[NotSupplied]] = NotSupplied,
 ) -> ImportGraph:
@@ -159,6 +162,7 @@ def _build_graph(
     return settings.GRAPH_BUILDER.build(
         root_package_names=root_package_names,
         include_external_packages=include_external_packages,
+        exclude_type_checking_imports=exclude_type_checking_imports,
         cache_dir=cache_dir,
     )
 
@@ -296,6 +300,20 @@ def _get_include_external_packages(user_options: UserOptions) -> Optional[bool]:
         return None
     # Cast the string to a boolean.
     return include_external_packages_str in ("True", "true")
+
+
+def _get_exclude_type_checking_imports(user_options: UserOptions) -> bool:
+    """
+    Get a boolean (or None) for the include_external_packages option in user_options.
+    """
+    try:
+        exclude_type_checking_imports_str = user_options.session_options[
+            "exclude_type_checking_imports"
+        ]
+    except KeyError:
+        return False
+    # Cast the string to a boolean.
+    return exclude_type_checking_imports_str in ("True", "true")
 
 
 def _get_show_timings(user_options: UserOptions) -> bool:

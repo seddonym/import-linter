@@ -59,6 +59,9 @@ sys.path.extend(
         # Namespace packages
         (namespace_packages_directory, "keptcontract.ini", cli.EXIT_STATUS_SUCCESS),
         (namespace_packages_directory, "brokencontract.ini", cli.EXIT_STATUS_ERROR),
+        # Type checking imports
+        (testpackage_directory, ".typecheckkeptcontract.toml", cli.EXIT_STATUS_SUCCESS),
+        (testpackage_directory, ".typecheckbrokencontract.toml", cli.EXIT_STATUS_ERROR),
     ),
 )
 def test_lint_imports(working_directory, config_filename, expected_result):

@@ -24,6 +24,7 @@ Your file must contain an ``importlinter`` section providing top-level (i.e. non
     root_package = mypackage
     # Optional:
     include_external_packages = True
+    exclude_type_checking_imports = True
 
 Or, with multiple root packages:
 
@@ -35,6 +36,7 @@ Or, with multiple root packages:
         packagetwo
     # Optional:
     include_external_packages = True
+    exclude_type_checking_imports = True
 
 **Options:**
 
@@ -52,6 +54,10 @@ Or, with multiple root packages:
   Whether to include external packages when building the import graph. Unlike root packages, external packages are
   *not* statically analyzed, so no imports from external packages will be checked. However, imports *of* external
   packages will be available for checking. Not every contract type uses this.
+  For more information, see `the Grimp build_graph documentation`_. (Optional.)
+- ``exclude_type_checking_imports``:
+  Whether to exclude imports made in type checking guards. If this is set to `True`, any import made under an
+  ` if TYPE_CHECKING:` statement will not be added to the graph.
   For more information, see `the Grimp build_graph documentation`_. (Optional.)
 
 .. _the Grimp build_graph documentation: https://grimp.readthedocs.io/en/latest/usage.html#grimp.build_graph

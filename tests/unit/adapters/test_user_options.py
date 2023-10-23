@@ -151,6 +151,7 @@ def test_respects_passed_filename(passed_filename, expected_foo_value):
             [tool.importlinter]
             foo = "hello"
             include_external_packages = true
+            exclude_type_checking_imports = true
 
             [[tool.importlinter.contracts]]
             id = "contract-one"
@@ -168,7 +169,11 @@ def test_respects_passed_filename(passed_filename, expected_foo_value):
             baz = 3
             """,
             UserOptions(
-                session_options={"foo": "hello", "include_external_packages": "True"},
+                session_options={
+                    "foo": "hello",
+                    "include_external_packages": "True",
+                    "exclude_type_checking_imports": "True",
+                },
                 contracts_options=[
                     {
                         "name": "Contract One",
