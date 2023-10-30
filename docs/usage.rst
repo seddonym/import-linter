@@ -56,8 +56,8 @@ Or, with multiple root packages:
   packages will be available for checking. Not every contract type uses this.
   For more information, see `the Grimp build_graph documentation`_. (Optional.)
 - ``exclude_type_checking_imports``:
-  Whether to exclude imports made in type checking guards. If this is set to `True`, any import made under an
-  ` if TYPE_CHECKING:` statement will not be added to the graph.
+  Whether to exclude imports made in type checking guards. If this is ``True``, any import made under an
+  ``if TYPE_CHECKING:`` statement will not be added to the graph.
   For more information, see `the Grimp build_graph documentation`_. (Optional.)
 
 .. _the Grimp build_graph documentation: https://grimp.readthedocs.io/en/latest/usage.html#grimp.build_graph
