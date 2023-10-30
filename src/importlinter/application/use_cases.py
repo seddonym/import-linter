@@ -304,7 +304,7 @@ def _get_include_external_packages(user_options: UserOptions) -> Optional[bool]:
 
 def _get_exclude_type_checking_imports(user_options: UserOptions) -> bool:
     """
-    Get a boolean (or None) for the exclude_type_checking_imports option in user_options.
+    Get a boolean for the exclude_type_checking_imports option in user_options.
     """
     try:
         exclude_type_checking_imports_str = user_options.session_options[
