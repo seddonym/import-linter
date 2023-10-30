@@ -11,5 +11,6 @@ class GraphBuilder(abc.ABC):
         root_package_names: List[str],
         cache_dir: Optional[str],
         include_external_packages: bool = False,
+        exclude_type_checking_imports: bool = False,
     ) -> ImportGraph:
         raise NotImplementedError

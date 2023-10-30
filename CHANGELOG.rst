@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.12.1 (TBD)
+-------------------
+
+* Update to Grimp 3.1.
+* Add ability to exclude imports made in type checking guards via ``exclude_type_checking_imports`` setting.
+
 1.12.0 (2023-09-24)
 -------------------
 
