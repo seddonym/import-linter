@@ -1,9 +1,0 @@
-[tool.importlinter]
-root_package = "testpackage"
-exclude_type_checking_imports = true
-
-[[tool.importlinter.contracts]]
-name = "Type checking kept contract"
-type = "forbidden"
-source_modules = ["testpackage.high.blue.one"]
-forbidden_modules = ["testpackage.high.blue.two"]
