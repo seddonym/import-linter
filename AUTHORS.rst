@@ -21,3 +21,4 @@ Contributors
 * Nick Pope - https://github.com/ngnpope
 * piglei - https://github.com/piglei
 * Anton Gruebel - https://github.com/gruebel
+* Peter Byfield - https://github.com/Peter554
