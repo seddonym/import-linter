@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+* Add support for non-independent sibling modules in layer contracts.
+* In `importlinter.contracts.layers`, `Layer` and `LayerField` 
+  have changed their API slightly. This could impact custom
+  contract types depending on these classes. 
+
 1.12.1 (2023-10-30)
 -------------------
 
