@@ -2,7 +2,7 @@ import pytest
 from grimp.adaptors.graph import ImportGraph
 
 from importlinter.application.app_config import settings
-from importlinter.contracts.layers import Layer, LayerField, LayersContract
+from importlinter.contracts.layers import Layer, LayerField, LayersContract, ModuleTail
 from importlinter.domain.contract import ContractCheck, InvalidContractOptions
 from importlinter.domain.helpers import MissingImport
 from tests.adapters.printing import FakePrinter
@@ -17,12 +17,21 @@ def configure():
 @pytest.mark.parametrize(
     "data, parsed_data",
     (
-        ("one", Layer(name="one", is_optional=False)),
-        ("(one)", Layer(name="one", is_optional=True)),
-        ("one | two |    three", {Layer(name="one"), Layer(name="two"), Layer(name="three")}),
+        ("one", Layer({ModuleTail(name="one", is_optional=False)})),
+        ("(one)", Layer({ModuleTail(name="one", is_optional=True)})),
+        (
+            "one | two |    three",
+            Layer({ModuleTail(name="one"), ModuleTail(name="two"), ModuleTail(name="three")}),
+        ),
         (
             "one | (two) | three",
-            {Layer(name="one"), Layer(name="two", is_optional=True), Layer(name="three")},
+            Layer(
+                {
+                    ModuleTail(name="one"),
+                    ModuleTail(name="two", is_optional=True),
+                    ModuleTail(name="three"),
+                }
+            ),
         ),
     ),
 )
