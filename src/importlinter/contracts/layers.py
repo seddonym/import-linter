@@ -30,6 +30,7 @@ class ModuleTail:
 @dataclass(frozen=True)
 class Layer:
     module_tails: set[ModuleTail]
+    is_independent: bool = True
 
 
 class LayerField(fields.Field):
@@ -45,7 +46,7 @@ class LayerField(fields.Field):
                 module_tail = raw_item
                 is_optional = False
             module_tails.add(ModuleTail(name=module_tail, is_optional=is_optional))
-        return Layer(module_tails)
+        return Layer(module_tails, is_independent=True)
 
 
 class _LayerChainData(TypedDict):
