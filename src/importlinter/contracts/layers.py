@@ -288,6 +288,9 @@ class LayersContract(Contract):
     @staticmethod
     def _grimpify_layers(layers: list[Layer]) -> list[grimp.Layer]:
         return [
-            grimp.Layer(*{module_tail.name for module_tail in layer.module_tails})
+            grimp.Layer(
+                *{module_tail.name for module_tail in layer.module_tails},
+                independent=layer.is_independent,
+            )
             for layer in layers
         ]
