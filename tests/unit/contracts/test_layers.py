@@ -132,9 +132,17 @@ class TestLayerContractSingleContainers:
 
 
 class TestLayerContractSiblingLayers:
+    @pytest.mark.parametrize("layer_independent", (True, False))
     @pytest.mark.parametrize("specify_container", (True, False))
-    def test_illegal_imports(self, specify_container: bool):
-        contract = self._create_contract(specify_container=specify_container)
+    def test_imports_between_sibling_modules(
+        self,
+        specify_container: bool,
+        layer_independent: bool,
+    ):
+        contract = self._create_contract(
+            specify_container=specify_container,
+            layer_independent=layer_independent,
+        )
         graph = ImportGraph()
         for module in (
             "mypackage",
@@ -145,10 +153,10 @@ class TestLayerContractSiblingLayers:
             "mypackage.low",
         ):
             graph.add_module(module)
-        # Add some 'legal' imports.
+        # Add some legal imports.
         graph.add_import(importer="mypackage.high.green", imported="mypackage.medium.orange")
         graph.add_import(importer="mypackage.utils", imported="mypackage.medium.red")
-        # Add an illegal import.
+        # Add an import between sibling modules within the medium layer.
         graph.add_import(
             importer="mypackage.medium_a.blue",
             imported="mypackage.medium_b.red",
@@ -158,38 +166,43 @@ class TestLayerContractSiblingLayers:
 
         contract_check = contract.check(graph=graph, verbose=False)
 
-        assert contract_check.kept is False
-        sorted_metadata = _get_sorted_metadata(contract_check)
-        assert sorted_metadata == {
-            "invalid_dependencies": [
-                {
-                    "importer": "mypackage.medium_a",
-                    "imported": "mypackage.medium_b",
-                    "routes": [
-                        {
-                            "chain": [
-                                {
-                                    "importer": "mypackage.medium_a.blue",
-                                    "imported": "mypackage.medium_b.red",
-                                    "line_numbers": (3,),
-                                },
-                            ],
-                            "extra_firsts": [],
-                            "extra_lasts": [],
-                        }
-                    ],
-                },
-            ],
-            "undeclared_modules": set(),
-        }
+        if layer_independent:
+            assert contract_check.kept is False
+            sorted_metadata = _get_sorted_metadata(contract_check)
+            assert sorted_metadata == {
+                "invalid_dependencies": [
+                    {
+                        "importer": "mypackage.medium_a",
+                        "imported": "mypackage.medium_b",
+                        "routes": [
+                            {
+                                "chain": [
+                                    {
+                                        "importer": "mypackage.medium_a.blue",
+                                        "imported": "mypackage.medium_b.red",
+                                        "line_numbers": (3,),
+                                    },
+                                ],
+                                "extra_firsts": [],
+                                "extra_lasts": [],
+                            }
+                        ],
+                    },
+                ],
+                "undeclared_modules": set(),
+            }
+        else:
+            assert contract_check.kept is True
 
-    def _create_contract(self, specify_container: bool):
+    def _create_contract(self, specify_container: bool, layer_independent: bool):
         package = "mypackage"
         layer_prefix = "" if specify_container else f"{package}."
+        layer_delimiter = "|" if layer_independent else ":"
         contract_options = {
             "layers": [
                 f"{layer_prefix}high",
-                f"{layer_prefix}medium_a | {layer_prefix}medium_b | {layer_prefix}medium_c",
+                f"{layer_prefix}medium_a {layer_delimiter} {layer_prefix}medium_b "
+                f"{layer_delimiter} {layer_prefix}medium_c",
                 f"{layer_prefix}low",
             ]
         }
