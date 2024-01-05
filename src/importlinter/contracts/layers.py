@@ -16,27 +16,36 @@ from ._common import DetailedChain, build_detailed_chain_from_route, render_chai
 
 
 @dataclass(frozen=True)
-class Layer:
+class ModuleTail:
+    """
+    The "tail" of a module name.
+    If no `containers` are specified then this is the full module name.
+    However, if `containers` are specified then the full module name is made
+    by combining the container name with this tail name. 
+    """
     name: str
     is_optional: bool = False
 
 
+@dataclass(frozen=True)
+class Layer:
+    module_tails: set[ModuleTail]
+
+
 class LayerField(fields.Field):
-    def parse(self, raw_data: str | list) -> Layer | set[Layer]:
-        layers = set()
+    def parse(self, raw_data: str | list) -> Layer:
+        module_tails = set()
         raw_string = fields.StringField().parse(raw_data)
         raw_items = [item.strip() for item in raw_string.split("|")]
         for raw_item in raw_items:
             if raw_item.startswith("(") and raw_item.endswith(")"):
-                layer_name = raw_item[1:-1]
+                module_tail = raw_item[1:-1]
                 is_optional = True
             else:
-                layer_name = raw_item
+                module_tail = raw_item
                 is_optional = False
-            layers.add(Layer(name=layer_name, is_optional=is_optional))
-        if len(layers) == 1:
-            return layers.pop()
-        return layers
+            module_tails.add(ModuleTail(name=module_tail, is_optional=is_optional))
+        return Layer(module_tails)
 
 
 class _LayerChainData(TypedDict):
@@ -103,7 +112,7 @@ class LayersContract(Contract):
             ignore_imports=self.ignore_imports,  # type: ignore
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
-        self.flattened_layers = self._flatten_layers(self.layers)  # type: ignore
+        self.all_module_tails = self._get_all_module_tails_from_layers(self.layers)  # type: ignore
 
         if self.containers:
             self._validate_containers(graph)
@@ -113,7 +122,7 @@ class LayersContract(Contract):
         undeclared_modules = self._get_undeclared_modules(graph)
 
         dependencies = graph.find_illegal_dependencies_for_layers(
-            layers=self._stringify_layers(self.layers),  # type: ignore
+            layers=self._grimpify_layers(self.layers),  # type: ignore
             containers=self.containers,  # type: ignore
         )
         invalid_chains = self._build_invalid_chains(dependencies, graph)
@@ -127,20 +136,11 @@ class LayersContract(Contract):
             },
         )
 
-    def _flatten_layers(self, layers: Sequence[Layer | set[Layer]]) -> set[Layer]:
+    def _get_all_module_tails_from_layers(self, layers: Sequence[Layer]) -> set[ModuleTail]:
         flattened = set()
         for layer in layers:
-            if isinstance(layer, set):
-                flattened |= layer
-            else:
-                flattened.add(layer)
+            flattened.update(layer.module_tails)
         return flattened
-
-    def _stringify_layers(self, layers: Sequence[Layer | set[Layer]]) -> Sequence[str | set[str]]:
-        return tuple(
-            {sublayer.name for sublayer in layer} if isinstance(layer, set) else layer.name
-            for layer in layers
-        )
 
     def render_broken_contract(self, check: ContractCheck) -> None:
         for chains_data in cast(List[_LayerChainData], check.metadata["invalid_dependencies"]):
@@ -193,14 +193,14 @@ class LayersContract(Contract):
     def _check_all_layers_exist_for_container(
         self, container: str, graph: grimp.ImportGraph
     ) -> None:
-        for layer in self.flattened_layers:
-            if layer.is_optional:
+        for module_tail in self.all_module_tails:
+            if module_tail.is_optional:
                 continue
-            layer_module_name = ".".join([container, layer.name])
-            if layer_module_name not in graph.modules:
+            module_name = ".".join([container, module_tail.name])
+            if module_name not in graph.modules:
                 raise ValueError(
                     f"Missing layer in container '{container}': "
-                    f"module {layer_module_name} does not exist."
+                    f"module {module_name} does not exist."
                 )
 
     def _get_undeclared_modules(self, graph: grimp.ImportGraph) -> set[str]:
@@ -210,32 +210,35 @@ class LayersContract(Contract):
         undeclared_modules = set()
 
         exhaustive_ignores: set[str] = self.exhaustive_ignores or set()  # type: ignore
-        layers: set[str] = {layer.name for layer in self.flattened_layers}
-        declared_modules = layers | exhaustive_ignores
+        module_tail_names: set[str] = {module_tail.name for module_tail in self.all_module_tails}
+        declared_module_tails = module_tail_names | exhaustive_ignores
 
         for container in self.containers:  # type: ignore[attr-defined]
             for module in graph.find_children(container):
-                undotted_module = module.rpartition(".")[-1]
-                if undotted_module not in declared_modules:
-                    undeclared_modules.add(f"{container}.{undotted_module}")
+                module_tail = module.rpartition(".")[-1]
+                if module_tail not in declared_module_tails:
+                    undeclared_modules.add(f"{container}.{module_tail}")
 
         return undeclared_modules
 
     def _check_all_containerless_layers_exist(self, graph: grimp.ImportGraph) -> None:
-        for layers in self.layers:  # type: ignore
-            for layer in {layers} if isinstance(layers, Layer) else layers:
-                if layer.is_optional:
+        for layer in self.layers:  # type: ignore
+            for module_tail in layer.module_tails:
+                if module_tail.is_optional:
                     continue
-                if layer.name not in graph.modules:
+                if module_tail.name not in graph.modules:
                     raise ValueError(
-                        f"Missing layer '{layer.name}': module {layer.name} does not exist."
+                        f"Missing layer '{module_tail.name}': "
+                        f"module {module_tail.name} does not exist."
                     )
 
-    def _module_from_layer(self, layer: Layer, container: str | None = None) -> Module:
+    def _module_from_module_tail(
+        self, module_tail: ModuleTail, container: str | None = None
+    ) -> Module:
         if container:
-            name = ".".join([container, layer.name])
+            name = ".".join([container, module_tail.name])
         else:
-            name = layer.name
+            name = module_tail.name
         return Module(name)
 
     def _build_invalid_chains(
@@ -248,4 +251,11 @@ class LayersContract(Contract):
                 "routes": [build_detailed_chain_from_route(c, graph) for c in dependency.routes],
             }
             for dependency in dependencies
+        ]
+
+    @staticmethod
+    def _grimpify_layers(layers: list[Layer]) -> list[grimp.Layer]:
+        return [
+            grimp.Layer(*{module_tail.name for module_tail in layer.module_tails})
+            for layer in layers
         ]
