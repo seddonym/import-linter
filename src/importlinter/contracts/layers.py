@@ -15,14 +15,19 @@ from importlinter.domain.imports import Module
 from ._common import DetailedChain, build_detailed_chain_from_route, render_chain_data
 
 
+_INDEPENDENT_LAYER_DELIMITER = "|"
+_NON_INDEPENDENT_LAYER_DELIMITER = ":"
+
+
 @dataclass(frozen=True)
 class ModuleTail:
     """
     The "tail" of a module name.
     If no `containers` are specified then this is the full module name.
     However, if `containers` are specified then the full module name is made
-    by combining the container name with this tail name. 
+    by combining the container name with this tail name.
     """
+
     name: str
     is_optional: bool = False
 
@@ -35,18 +40,44 @@ class Layer:
 
 class LayerField(fields.Field):
     def parse(self, raw_data: str | list) -> Layer:
-        module_tails = set()
         raw_string = fields.StringField().parse(raw_data)
-        raw_items = [item.strip() for item in raw_string.split("|")]
-        for raw_item in raw_items:
-            if raw_item.startswith("(") and raw_item.endswith(")"):
-                module_tail = raw_item[1:-1]
+        raw_module_tails = self._parse_raw_module_tails(raw_string)
+        module_tails = set()
+        for raw_module_tail in raw_module_tails:
+            if raw_module_tail.startswith("(") and raw_module_tail.endswith(")"):
+                module_tail = raw_module_tail[1:-1]
                 is_optional = True
             else:
-                module_tail = raw_item
+                module_tail = raw_module_tail
                 is_optional = False
             module_tails.add(ModuleTail(name=module_tail, is_optional=is_optional))
-        return Layer(module_tails, is_independent=True)
+        is_independent = self._parse_is_independent(raw_string)
+        return Layer(module_tails, is_independent=is_independent)
+
+    @staticmethod
+    def _parse_raw_module_tails(raw_string: str) -> list[str]:
+        if _INDEPENDENT_LAYER_DELIMITER in raw_string:
+            return [item.strip() for item in raw_string.split(_INDEPENDENT_LAYER_DELIMITER)]
+        elif _NON_INDEPENDENT_LAYER_DELIMITER in raw_string:
+            return [item.strip() for item in raw_string.split(_NON_INDEPENDENT_LAYER_DELIMITER)]
+        else:
+            return [raw_string.strip()]
+
+    @staticmethod
+    def _parse_is_independent(raw_string: str) -> bool:
+        if (
+            _INDEPENDENT_LAYER_DELIMITER in raw_string
+            and _NON_INDEPENDENT_LAYER_DELIMITER in raw_string
+        ):
+            raise fields.ValidationError(
+                "Layer cannot have a mixture of independent and non-independent elements."
+            )
+        elif _INDEPENDENT_LAYER_DELIMITER in raw_string:
+            return True
+        elif _NON_INDEPENDENT_LAYER_DELIMITER in raw_string:
+            return False
+        else:
+            return True
 
 
 class _LayerChainData(TypedDict):

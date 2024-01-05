@@ -5,6 +5,7 @@ from importlinter.application.app_config import settings
 from importlinter.contracts.layers import Layer, LayerField, LayersContract, ModuleTail
 from importlinter.domain.contract import ContractCheck, InvalidContractOptions
 from importlinter.domain.helpers import MissingImport
+from importlinter.domain import fields
 from tests.adapters.printing import FakePrinter
 from tests.adapters.timing import FakeTimer
 
@@ -33,10 +34,37 @@ def configure():
                 }
             ),
         ),
+        (
+            "one : two :    three",
+            Layer(
+                {ModuleTail(name="one"), ModuleTail(name="two"), ModuleTail(name="three")},
+                is_independent=False,
+            ),
+        ),
+        (
+            "one : (two) : three",
+            Layer(
+                {
+                    ModuleTail(name="one"),
+                    ModuleTail(name="two", is_optional=True),
+                    ModuleTail(name="three"),
+                },
+                is_independent=False,
+            ),
+        ),
     ),
 )
 def test_layer_field(data, parsed_data):
     assert LayerField().parse(data) == parsed_data
+
+
+def test_layer_field_raises_error_if_both_independent_and_non_independent():
+    with pytest.raises(fields.ValidationError) as exc_info:
+        LayerField().parse("one | two : three")
+    assert (
+        exc_info.value.message
+        == "Layer cannot have a mixture of independent and non-independent elements."
+    )
 
 
 class TestLayerContractSingleContainers:
