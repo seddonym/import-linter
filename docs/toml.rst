@@ -15,13 +15,13 @@ The basic configuration layout looks like:
 .. code-block:: toml
 
     [tool.importlinter]
-    root_package = mypackage
+    root_package = "mypackage"
 
     [[tool.importlinter.contracts]]
-    name = Contract One
+    name = "Contract One"
 
     [[tool.importlinter.contracts]]
-    name = Contract Two
+    name = "Contract Two"
 
 Following, an example with a layered configuration:
 
