@@ -111,21 +111,20 @@ way around.
     - ``layers``:
       An ordered list with the name of each layer module. If ``containers`` are specified too, then these names must be
       *relative to the container*. The order is from higher to lower level layers. Layers wrapped in parentheses
-      (e.g. ``(foo)``) will be ignored if they are not present in the file system. It's also possible to include
-      multiple layer modules on the same line, separated by either exclusively pipes (``|``) or exclusively colons
-      (``:``). Pipe-separated lines will check that the modules on the same line are independent of each other;
-      colon-separated lines, on the other hand, *will* allow dependencies between them.
+      (e.g. ``(foo)``) will be ignored if they are not present in the file system; otherwise, the contract will fail.
+      It's also possible to include multiple layer modules on the same line, separated by either exclusively pipes
+      (``|``) or exclusively colons (``:``) - see :ref:`Multi-item layers`.
     - ``containers``:
       List of the parent modules of the layers, as *absolute names* that you could import, such as
-      ``mypackage.foo``. (Optional.)
+      ``mypackage.foo``. See :ref:`Containers`. (Optional.)
     - ``ignore_imports``: See :ref:`Shared options`.
     - ``unmatched_ignore_imports_alerting``: See :ref:`Shared options`.
     - ``exhaustive``. If true, check that the contract declares every possible layer in its list of layers to check.
-      (Optional, default False.)
+      See :ref:`Exhaustive contracts`. (Optional, default False.)
     - ``exhaustive_ignores``. A list of layers to ignore in exhaustiveness checks. (Optional.)
 
-Overview
-^^^^^^^^
+Basic usage
+^^^^^^^^^^^
 
 'Layers' is a software architecture pattern in which a list of modules/packages have a dependency direction
 from high to low.
@@ -157,7 +156,8 @@ Here's how the architecture shown above could be checked using a ``layers`` cont
         mypackage.low
 
 If a layer is listed in the contract, the contract will be broken if the layer doesn't exist. You can make a layer
-optional by wrapping it in parentheses, but this is only likely to be useful if you are using containers (see below).
+optional by wrapping it in parentheses, but this is only likely to be useful if you are using
+:ref:`containers<Containers>`.
 
 Layering across root packages
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -184,6 +184,8 @@ consisting of three packages ``high``, ``medium`` and ``low``, in a directory th
 
 In this contract, each top level package is treated as a layer. (Note, though, that they all need to be specified
 as ``root_packages`` in the ``[importlinter]`` configuration, too.)
+
+.. _Containers:
 
 Containers
 ^^^^^^^^^^
@@ -229,13 +231,14 @@ as they are in different containers:
 Notice that ``medium`` is wrapped in parentheses, making it an optional layer. This means that if it is missing from any of
 the containers, Import Linter won't complain.
 
+.. _Exhaustive contracts:
+
 Exhaustive contracts
 ^^^^^^^^^^^^^^^^^^^^
 
 If you want to make sure that *every* module in each container is defined as a layer, you can mark the contract as
 'exhaustive'. This means that if a module is added to the code base in the same package as your layers, the contract
-will fail. Any such modules that shouldn't cause a failure can be added to an ``exhaustive_ignores`` list. At present,
-exhaustive contracts are only supported for layers that define containers.
+will fail. Any such modules that shouldn't cause a failure can be added to an ``exhaustive_ignores`` list.
 
 .. code-block:: ini
 
@@ -257,8 +260,12 @@ exhaustive contracts are only supported for layers that define containers.
 If, say, a module existed called ``mypackage.foo.extra``, the contract will fail as it is not listed as a layer. However
 ``mypackage.foo.utils`` would be allowed as it is listed in ``exhaustive_ignores``.
 
-Layers containing multiple siblings
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Exhaustive contracts are only supported for layers that define containers.
+
+.. _Multi-item layers:
+
+Multi-item layers
+^^^^^^^^^^^^^^^^^
 
 Import Linter supports the presence of multiple sibling modules or packages within the same layer. In the diagram below,
 the modules ``blue``, ``green`` and ``yellow`` are 'independent' in the same layer. This means that, in addition to not
