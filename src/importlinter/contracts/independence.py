@@ -8,7 +8,7 @@ from typing_extensions import TypedDict
 
 from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
-from importlinter.domain import fields
+from importlinter.domain import fields, helpers
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.imports import Module
 
@@ -51,6 +51,15 @@ class IndependenceContract(Contract):
             ignore_imports=self.ignore_imports,  # type: ignore
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
+
+        # resolve wildcards
+        modules = set()
+        for module in self.modules:  # type: ignore
+            if not module.has_wildcard_expression():
+                modules.add(module)
+            else:
+                modules = modules.union(helpers._resolve_wildcards(module.name, graph))
+        self.modules = list(modules)  # type: ignore
 
         self._check_all_modules_exist_in_graph(graph)
 

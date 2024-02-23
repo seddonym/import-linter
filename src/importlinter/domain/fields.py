@@ -7,6 +7,21 @@ from importlinter.domain.imports import ImportExpression, Module
 FieldValue = TypeVar("FieldValue")
 
 
+def _validate_wildcard(expression: str) -> None:
+    last_wildcard = None
+    for part in expression.split("."):
+        if "**" == last_wildcard and ("*" == part or "**" == part):
+            raise ValidationError("A recursive wildcard cannot be followed by a wildcard.")
+        if "*" == last_wildcard and "**" == part:
+            raise ValidationError("A wildcard cannot be followed by a recursive wildcard.")
+        if "*" == part or "**" == part:
+            last_wildcard = part
+            continue
+        if "*" in part:
+            raise ValidationError("A wildcard can only replace a whole module.")
+        last_wildcard = None
+
+
 class NotSupplied:
     """Sentinel to use in place of None for a default argument value."""
 
@@ -156,7 +171,9 @@ class ModuleField(Field):
     """
 
     def parse(self, raw_data: Union[str, List]) -> Module:
-        return Module(StringField().parse(raw_data))
+        module = Module(StringField().parse(raw_data))
+        _validate_wildcard(module.name)
+        return module
 
 
 class ImportExpressionField(Field):
@@ -181,24 +198,10 @@ class ImportExpressionField(Field):
         if not (importer and imported):
             raise ValidationError('Must be in the form "package.importer -> package.imported".')
 
-        self._validate_wildcard(importer)
-        self._validate_wildcard(imported)
+        _validate_wildcard(importer)
+        _validate_wildcard(imported)
 
         return ImportExpression(importer=importer, imported=imported)
-
-    def _validate_wildcard(self, expression: str) -> None:
-        last_wildcard = None
-        for part in expression.split("."):
-            if "**" == last_wildcard and ("*" == part or "**" == part):
-                raise ValidationError("A recursive wildcard cannot be followed by a wildcard.")
-            if "*" == last_wildcard and "**" == part:
-                raise ValidationError("A wildcard cannot be followed by a recursive wildcard.")
-            if "*" == part or "**" == part:
-                last_wildcard = part
-                continue
-            if "*" in part:
-                raise ValidationError("A wildcard can only replace a whole module.")
-            last_wildcard = None
 
 
 class EnumField(Field):
