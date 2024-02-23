@@ -318,6 +318,27 @@ Note: you are not allowed to mix different kinds of separators on the same line.
         mypackage.blue | mypackage.green : mypackage.yellow  # Invalid as it mixes separators.
         mypackage.low
 
+Modular modules
+---------------
+
+*Type name:* ``modular``
+
+Modular contracts check that there are no cycles between the child packages of the package.
+
+**Example:**
+
+.. code-block:: ini
+
+    [importlinter:contract:my-modular-contract]
+    name = My modular contract
+    type = modular
+    modules =
+        mypackage.foo
+
+**Configuration options**
+
+    - ``modules``: A list of modules/subpackages that should be modular.
+
 
 Custom contract types
 ---------------------
