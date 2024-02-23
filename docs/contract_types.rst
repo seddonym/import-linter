@@ -318,6 +318,33 @@ Note: you are not allowed to mix different kinds of separators on the same line.
         mypackage.blue | mypackage.green : mypackage.yellow  # Invalid as it mixes separators.
         mypackage.low
 
+Standalone modules
+------------------
+
+*Type name:* ``standalone``
+
+Standalone contracts check that a set of modules are standalone, that is not importing
+or imported by any other modules in the graph.
+
+**Example:**
+
+.. code-block:: ini
+
+    [importlinter:contract:my-standalone-contract]
+    name = My standalone contract
+    type = standalone
+    modules =
+        mypackage.bar
+        mypackage.baz
+    ignore_imports =
+        mypackage.bar.green -> mypackage.utils
+        mypackage.foo.purple -> mypackage.baz.blue
+
+**Configuration options**
+
+    - ``modules``: A list of modules/subpackages that should be independent of each other.
+    - ``ignore_imports``: See :ref:`Shared options`.
+
 
 Custom contract types
 ---------------------
