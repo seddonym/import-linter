@@ -15,3 +15,5 @@ layers=
     application
     domain
 exhaustive = true
+exhaustive_ignores =
+    __main__
