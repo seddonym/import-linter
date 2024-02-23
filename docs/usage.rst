@@ -161,7 +161,7 @@ Running this will check that your project adheres to the contracts you've define
 Running using pre-commit
 ------------------------
 
-Alternatively, you can run ``import-linter`` using a `pre-commit`_ hook:
+``import-linter`` can run as a `pre-commit`_ hook by adding this section to your `.pre-commit-config.yaml` file:
 
 .. code-block:: yaml
 
