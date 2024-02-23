@@ -4,7 +4,7 @@ from typing import Any
 class Settings:
     """
     Configuration of the application itself. This allows us to inject different dependencies
-    dependending on the run context, e.g. in a test run.
+    depending on the run context, e.g. in a test run.
     """
 
     def __init__(self):
