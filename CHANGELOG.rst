@@ -4,6 +4,8 @@ Changelog
 latest
 ------
 - Fixed incorrect handling of unicode characters in TOML files on Windows.
+- Changed pre-commit hook to use the system virtualenv and to run whenever
+  any file changes, not just a Python file.
 
 2.3 (2025-03-11)
 ----------------

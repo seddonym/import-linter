@@ -2,6 +2,5 @@
     name: import-linter
     description: Import Linter allows you to define and enforce rules for the internal and external imports within your Python project.
     entry: lint-imports
-    language: python
-    types: [python]
+    language: system
     pass_filenames: false
