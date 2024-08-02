@@ -29,6 +29,9 @@ class ForbiddenContract(Contract):
         - unmatched_ignore_imports_alerting: Decides how to report when the expression in the
                              `ignore_imports` set is not found in the graph. Valid values are
                              "none", "warn", "error". Default value is "error".
+        - as_packages:       Whether to treat the source and forbidden modules as packages. If False,
+                             each of the modules passed in will be treated as a module rather than a
+                             package. Default behaviour is True (treat modules as packages).
     """
 
     type_name = "forbidden"
