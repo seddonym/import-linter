@@ -78,7 +78,9 @@ class ForbiddenContract(Contract):
                         )
                     else:
                         chains = graph.find_shortest_chains(
-                            importer=source_module.name, imported=forbidden_module.name
+                            importer=source_module.name,
+                            imported=forbidden_module.name,
+                            as_packages=self.as_packages,
                         )
                     if chains:
                         is_kept = False
@@ -184,8 +186,16 @@ class ForbiddenContract(Contract):
         as_packages: bool,
     ) -> set[tuple[str, ...]]:
         chains: set[tuple[str, ...]] = set()
-        source_modules = self._get_all_modules_in_package(source_package, graph)
-        forbidden_modules = self._get_all_modules_in_package(forbidden_package, graph)
+        source_modules = (
+            self._get_all_modules_in_package(source_package, graph)
+            if as_packages
+            else {source_package}
+        )
+        forbidden_modules = (
+            self._get_all_modules_in_package(forbidden_package, graph)
+            if as_packages
+            else {forbidden_package}
+        )
         for source_module in source_modules:
             imported_module_names = graph.find_modules_directly_imported_by(source_module.name)
             for imported_module_name in imported_module_names:
