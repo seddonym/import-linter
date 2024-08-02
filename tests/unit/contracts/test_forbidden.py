@@ -16,9 +16,22 @@ def configure():
 
 
 class TestForbiddenContract:
-    def test_is_kept_when_no_forbidden_modules_imported(self):
+    @pytest.mark.parametrize(
+        "as_packages",
+        (
+            ("False"),
+            ("True"),
+        ),
+    )
+    def test_is_kept_when_no_forbidden_modules_imported(
+        self,
+        as_packages: bool,
+    ):
         graph = self._build_graph()
-        contract = self._build_contract(forbidden_modules=("mypackage.blue", "mypackage.yellow"))
+        contract = self._build_contract(
+            forbidden_modules=("mypackage.blue", "mypackage.yellow"),
+            as_packages=as_packages,
+        )
 
         contract_check = contract.check(graph=graph, verbose=False)
 
@@ -156,11 +169,22 @@ class TestForbiddenContract:
 
         assert expected_metadata == contract_check.metadata
 
+    @pytest.mark.parametrize(
+        "as_packages",
+        (
+            ("False"),
+            ("True"),
+        ),
+    )
     def test_is_invalid_when_forbidden_externals_but_graph_does_not_include_externals(
         self,
+        as_packages: bool,
     ):
         graph = self._build_graph()
-        contract = self._build_contract(forbidden_modules=("sqlalchemy", "requests"))
+        contract = self._build_contract(
+            forbidden_modules=("sqlalchemy", "requests"),
+            as_packages=as_packages,
+        )
 
         with pytest.raises(
             ValueError,
@@ -171,7 +195,14 @@ class TestForbiddenContract:
         ):
             contract.check(graph=graph, verbose=False)
 
-    def test_ignore_imports_tolerates_duplicates(self):
+    @pytest.mark.parametrize(
+        "as_packages",
+        (
+            ("False"),
+            ("True"),
+        ),
+    )
+    def test_ignore_imports_tolerates_duplicates(self, as_packages: bool):
         graph = self._build_graph()
         contract = self._build_contract(
             forbidden_modules=("mypackage.blue", "mypackage.yellow"),
@@ -181,6 +212,7 @@ class TestForbiddenContract:
                 "mypackage.three -> mypackage.green",
             ),
             include_external_packages=False,
+            as_packages=as_packages,
         )
 
         check = contract.check(graph=graph, verbose=False)
@@ -359,7 +391,14 @@ class TestForbiddenContract:
             ],
         }
 
-    def test_ignore_imports_adds_warnings(self):
+    @pytest.mark.parametrize(
+        "as_packages",
+        (
+            ("False"),
+            ("True"),
+        ),
+    )
+    def test_ignore_imports_adds_warnings(self, as_packages: bool):
         graph = self._build_graph()
         contract = ForbiddenContract(
             name="Forbid contract",
@@ -372,6 +411,7 @@ class TestForbiddenContract:
                     "mypackage.*.nonexistent -> mypackage.three",
                 ],
                 "unmatched_ignore_imports_alerting": "warn",
+                "as_packages": as_packages,
             },
         )
 
@@ -382,6 +422,13 @@ class TestForbiddenContract:
             "No matches for ignored import mypackage.*.nonexistent -> mypackage.three.",
         }
 
+    @pytest.mark.parametrize(
+        "as_packages",
+        (
+            ("False"),
+            ("True"),
+        ),
+    )
     @pytest.mark.parametrize(
         "module, expected_error",
         (
@@ -405,11 +452,16 @@ class TestForbiddenContract:
         ),
     )
     def test_is_invalid_when_subpackages_of_external_packages_are_provided(
-        self, module: str, expected_error: str
+        self,
+        module: str,
+        expected_error: str,
+        as_packages: bool,
     ):
         graph = self._build_graph()
         contract = self._build_contract(
-            forbidden_modules=("mypackage.blue", module), include_external_packages=True
+            forbidden_modules=("mypackage.blue", module),
+            include_external_packages=True,
+            as_packages=as_packages,
         )
 
         with pytest.raises(
