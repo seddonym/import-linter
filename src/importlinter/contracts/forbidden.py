@@ -39,6 +39,7 @@ class ForbiddenContract(Contract):
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     allow_indirect_imports = fields.BooleanField(required=False, default=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
+    as_packages = fields.BooleanField(required=False, default=True)
 
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
         is_kept = True
@@ -87,7 +88,7 @@ class ForbiddenContract(Contract):
                     }
 
                     if str(self.allow_indirect_imports).lower() == "true":
-                        chains = self._get_direct_chains(source_module, forbidden_module, graph)
+                        chains = self._get_direct_chains(source_module, forbidden_module, graph, self.as_packages)
                     else:
                         chains = graph.find_shortest_chains(
                             importer=source_module.name, imported=forbidden_module.name
@@ -192,7 +193,11 @@ class ForbiddenContract(Contract):
         return str(self.session_options.get("include_external_packages")).lower() == "true"
 
     def _get_direct_chains(
-        self, source_package: Module, forbidden_package: Module, graph: ImportGraph
+        self,
+        source_package: Module,
+        forbidden_package: Module,
+        graph: ImportGraph,
+        as_packages: bool,
     ) -> set[tuple[str, ...]]:
         chains: set[tuple[str, ...]] = set()
         source_modules = self._get_all_modules_in_package(source_package, graph)
