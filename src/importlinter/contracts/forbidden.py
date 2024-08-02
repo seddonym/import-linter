@@ -30,6 +30,10 @@ class ForbiddenContract(Contract):
         - unmatched_ignore_imports_alerting: Decides how to report when the expression in the
                              `ignore_imports` set is not found in the graph. Valid values are
                              "none", "warn", "error". Default value is "error".
+        - as_packages:       Whether to treat the source and forbidden modules as packages. If
+                             False, each of the modules passed in will be treated as a module
+                             rather than a package. Default behaviour is True (treat modules as
+                             packages).
     """
 
     type_name = "forbidden"
@@ -88,10 +92,14 @@ class ForbiddenContract(Contract):
                     }
 
                     if str(self.allow_indirect_imports).lower() == "true":
-                        chains = self._get_direct_chains(source_module, forbidden_module, graph, self.as_packages)
+                        chains = self._get_direct_chains(
+                            source_module, forbidden_module, graph, self.as_packages  # type:ignore
+                        )
                     else:
                         chains = graph.find_shortest_chains(
-                            importer=source_module.name, imported=forbidden_module.name
+                            importer=source_module.name,
+                            imported=forbidden_module.name,
+                            as_packages=self.as_packages,  # type:ignore
                         )
                     if chains:
                         is_kept = False
@@ -200,8 +208,16 @@ class ForbiddenContract(Contract):
         as_packages: bool,
     ) -> set[tuple[str, ...]]:
         chains: set[tuple[str, ...]] = set()
-        source_modules = self._get_all_modules_in_package(source_package, graph)
-        forbidden_modules = self._get_all_modules_in_package(forbidden_package, graph)
+        source_modules = (
+            self._get_all_modules_in_package(source_package, graph)
+            if as_packages
+            else {source_package}
+        )
+        forbidden_modules = (
+            self._get_all_modules_in_package(forbidden_package, graph)
+            if as_packages
+            else {forbidden_package}
+        )
         for source_module in source_modules:
             imported_module_names = graph.find_modules_directly_imported_by(source_module.name)
             for imported_module_name in imported_module_names:
