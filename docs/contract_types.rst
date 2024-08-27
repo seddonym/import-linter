@@ -352,3 +352,5 @@ Options used by multiple contracts
     - ``error``: Error if there are any unmatched expressions (default).
     - ``warn``: Print a warning for each unmatched expression.
     - ``none``: Do not alert.
+
+Note that wildcards are ONLY implemented for ``ignore_imports`` and won't work in contracts.
