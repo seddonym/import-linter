@@ -2,6 +2,9 @@
 Contract types
 ==============
 
+
+.. _forbidden modules:
+
 Forbidden modules
 -----------------
 
@@ -337,6 +340,9 @@ Options used by multiple contracts
   Wildcards are supported. ``*`` stands in for a module name, without including subpackages. ``**`` includes
   subpackages too.
 
+  Note that this wildcard format is only supported for the ``ignore_imports`` fields. It can't currently be used for
+  other fields, such as in the ``source_modules`` field of a :ref:`forbidden modules` contract.
+
   Examples:
 
   - ``mypackage.*``:  matches ``mypackage.foo`` but not ``mypackage.foo.bar``.
@@ -352,5 +358,3 @@ Options used by multiple contracts
     - ``error``: Error if there are any unmatched expressions (default).
     - ``warn``: Print a warning for each unmatched expression.
     - ``none``: Do not alert.
-
-Note that wildcards are ONLY implemented for ``ignore_imports`` and won't work in contracts.
