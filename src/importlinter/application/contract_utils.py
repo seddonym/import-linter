@@ -1,9 +1,9 @@
 import enum
-from typing import List, Optional, Sequence, Set
+from typing import List, Optional, Sequence, Set, Iterable
 
 from importlinter.domain import helpers
 from importlinter.domain.helpers import MissingImport
-from importlinter.domain.imports import ImportExpression
+from importlinter.domain.imports import ImportExpression, ModuleExpression, Module
 from grimp import ImportGraph
 
 
@@ -46,6 +46,13 @@ def remove_ignored_imports(
     return warnings
 
 
+def resolve_module_expressions(
+    graph: ImportGraph, expressions: Iterable[ModuleExpression]
+) -> Iterable[Module]:
+    for expression in expressions:
+        yield from _resolve_module_expression(graph, expression)
+
+
 # Private functions
 # -----------------
 
@@ -75,3 +82,9 @@ def _handle_unresolved_import_expressions(
 
 def _build_missing_import_message(expression: ImportExpression) -> str:
     return f"No matches for ignored import {expression}."
+
+
+def _resolve_module_expression(
+    graph: ImportGraph, expression: ModuleExpression
+) -> Iterable[Module]:
+    pass

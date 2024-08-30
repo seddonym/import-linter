@@ -4,7 +4,7 @@ from typing import Iterable, List, Pattern, Set, Tuple
 
 from grimp import DetailedImport
 
-from importlinter.domain.imports import DirectImport, ImportExpression, Module
+from importlinter.domain.imports import DirectImport, ImportExpression, Module, ModuleExpression
 from grimp import ImportGraph
 
 
@@ -55,7 +55,9 @@ def import_expression_to_imports(
     imports: Set[DirectImport] = set()
     matched = False
 
-    for (importer, imported) in _expression_to_modules(expression, graph):
+    importers = _expression_to_modules(expression.importer, graph)
+    importeds = _expression_to_modules(expression.imported, graph)
+    for (importer, imported) in itertools.product(importers, importeds):
         import_details = graph.get_import_details(importer=importer.name, imported=imported.name)
 
         if import_details:
@@ -215,23 +217,15 @@ def _to_pattern(expression: str) -> Pattern:
     return re.compile(r"^" + r"\.".join(pattern_parts) + r"$")
 
 
-def _expression_to_modules(
-    expression: ImportExpression, graph: ImportGraph
-) -> Iterable[Tuple[Module, Module]]:
+def _expression_to_modules(expression: ModuleExpression, graph: ImportGraph) -> Iterable[Module]:
     if not expression.has_wildcard_expression():
-        return [(Module(expression.importer), Module(expression.imported))]
+        return [Module(expression.expression)]
 
-    importer = []
-    imported = []
+    pattern = _to_pattern(expression.expression)
 
-    importer_pattern = _to_pattern(expression.importer)
-    imported_expression = _to_pattern(expression.imported)
-
+    modules = set()
     for module in graph.modules:
+        if pattern.match(module):
+            modules.add(Module(module))
 
-        if importer_pattern.match(module):
-            importer.append(Module(module))
-        if imported_expression.match(module):
-            imported.append(Module(module))
-
-    return itertools.product(set(importer), set(imported))
+    return modules

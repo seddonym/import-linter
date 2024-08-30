@@ -3,7 +3,7 @@ from grimp.adaptors.graph import ImportGraph
 
 from importlinter.application.contract_utils import AlertLevel, remove_ignored_imports
 from importlinter.domain.helpers import MissingImport
-from importlinter.domain.imports import DirectImport, ImportExpression, Module
+from importlinter.domain.imports import DirectImport, ImportExpression, Module, ModuleExpression
 
 
 class TestRemoveIgnoredImports:
@@ -41,8 +41,14 @@ class TestRemoveIgnoredImports:
         warnings = remove_ignored_imports(
             graph=graph,
             ignore_imports=[
-                ImportExpression(importer="mypackage.green", imported="mypackage.blue"),
-                ImportExpression(importer="mypackage.green", imported="mypackage.purple"),
+                ImportExpression(
+                    importer=ModuleExpression("mypackage.green"),
+                    imported=ModuleExpression("mypackage.blue"),
+                ),
+                ImportExpression(
+                    importer=ModuleExpression("mypackage.green"),
+                    imported=ModuleExpression("mypackage.purple"),
+                ),
             ],
             unmatched_alerting=alert_level,
         )
@@ -72,10 +78,22 @@ class TestRemoveIgnoredImports:
     def test_unresolved_import_expressions(self, alert_level, expected_result):
         graph = self._build_graph(self.DIRECT_IMPORTS)
         ignore_imports = [
-            ImportExpression(importer="mypackage.green", imported="mypackage.blue"),
-            ImportExpression(importer="mypackage.*", imported="mypackage.nonexistent"),
-            ImportExpression(importer="mypackage.green", imported="mypackage.purple"),
-            ImportExpression(importer="mypackage.nonexistent", imported="mypackage.blue"),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.green"),
+                imported=ModuleExpression("mypackage.blue"),
+            ),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.*"),
+                imported=ModuleExpression("mypackage.nonexistent"),
+            ),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.green"),
+                imported=ModuleExpression("mypackage.purple"),
+            ),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.nonexistent"),
+                imported=ModuleExpression("mypackage.blue"),
+            ),
         ]
 
         if isinstance(expected_result, Exception):

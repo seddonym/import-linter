@@ -2,7 +2,7 @@ from contextlib import contextmanager
 
 import pytest
 
-from importlinter.domain.imports import DirectImport, ImportExpression, Module
+from importlinter.domain.imports import DirectImport, ImportExpression, Module, ModuleExpression
 
 
 @contextmanager
@@ -98,34 +98,62 @@ class TestDirectImport:
 
 class TestImportExpression:
     def test_object_representation(self):
-        test_object = ImportExpression(importer="mypackage.foo", imported="mypackage.bar")
+        test_object = ImportExpression(
+            importer=ModuleExpression("mypackage.foo"), imported=ModuleExpression("mypackage.bar")
+        )
         assert repr(test_object) == "<ImportExpression: mypackage.foo -> mypackage.bar>"
 
     def test_string_object_representation(self):
-        expression = ImportExpression(importer="mypackage.foo", imported="mypackage.bar")
+        expression = ImportExpression(
+            importer=ModuleExpression("mypackage.foo"), imported=ModuleExpression("mypackage.bar")
+        )
         assert str(expression) == "mypackage.foo -> mypackage.bar"
 
     @pytest.mark.parametrize(
         "first, second, expected",
         [
             (
-                ImportExpression(importer="mypackage.foo", imported="mypackage.bar"),
-                ImportExpression(importer="mypackage.foo", imported="mypackage.bar"),
+                ImportExpression(
+                    importer=ModuleExpression("mypackage.foo"),
+                    imported=ModuleExpression("mypackage.bar"),
+                ),
+                ImportExpression(
+                    importer=ModuleExpression("mypackage.foo"),
+                    imported=ModuleExpression("mypackage.bar"),
+                ),
                 True,
             ),
             (
-                ImportExpression(importer="mypackage.foo", imported="mypackage.bar"),
-                ImportExpression(importer="mypackage.bar", imported="mypackage.foo"),
+                ImportExpression(
+                    importer=ModuleExpression("mypackage.foo"),
+                    imported=ModuleExpression("mypackage.bar"),
+                ),
+                ImportExpression(
+                    importer=ModuleExpression("mypackage.bar"),
+                    imported=ModuleExpression("mypackage.foo"),
+                ),
                 False,
             ),
             (
-                ImportExpression(importer="mypackage.foo", imported="mypackage.bar"),
-                ImportExpression(importer="mypackage.foo", imported="mypackage.foobar"),
+                ImportExpression(
+                    importer=ModuleExpression("mypackage.foo"),
+                    imported=ModuleExpression("mypackage.bar"),
+                ),
+                ImportExpression(
+                    importer=ModuleExpression("mypackage.foo"),
+                    imported=ModuleExpression("mypackage.foobar"),
+                ),
                 False,
             ),
             (
-                ImportExpression(importer="mypackage.foo", imported="mypackage.bar"),
-                ImportExpression(importer="mypackage.foobar", imported="mypackage.bar"),
+                ImportExpression(
+                    importer=ModuleExpression("mypackage.foo"),
+                    imported=ModuleExpression("mypackage.bar"),
+                ),
+                ImportExpression(
+                    importer=ModuleExpression("mypackage.foobar"),
+                    imported=ModuleExpression("mypackage.bar"),
+                ),
                 False,
             ),
         ],
@@ -148,5 +176,7 @@ class TestImportExpression:
         ],
     )
     def test_has_wildcard_expression(self, importer, imported, has_wildcard_expression):
-        expression = ImportExpression(importer=importer, imported=imported)
+        expression = ImportExpression(
+            importer=ModuleExpression(importer), imported=ModuleExpression(imported)
+        )
         assert expression.has_wildcard_expression() == has_wildcard_expression

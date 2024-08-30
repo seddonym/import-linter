@@ -83,6 +83,14 @@ class DirectImport(ValueObject):
         return hash((str(self), self.line_contents))
 
 
+class ModuleExpression(ValueObject):
+    def __init__(self, expression: str) -> None:
+        self.expression = expression
+
+    def has_wildcard_expression(self) -> bool:
+        return "*" in self.expression
+
+
 class ImportExpression(ValueObject):
     """
     A user-submitted expression describing an import or set of imports.
@@ -95,12 +103,12 @@ class ImportExpression(ValueObject):
     It does not, however, include more distant descendants such as mypackage.foo.bar.
     """
 
-    def __init__(self, importer: str, imported: str) -> None:
+    def __init__(self, importer: ModuleExpression, imported: ModuleExpression) -> None:
         self.importer = importer
         self.imported = imported
 
     def has_wildcard_expression(self) -> bool:
-        return "*" in self.imported or "*" in self.importer
+        return self.imported.has_wildcard_expression() or self.importer.has_wildcard_expression()
 
     def __str__(self) -> str:
-        return "{} -> {}".format(self.importer, self.imported)
+        return "{} -> {}".format(self.importer.expression, self.imported.expression)
