@@ -35,7 +35,7 @@ class ForbiddenContract(Contract):
     type_name = "forbidden"
 
     source_modules = fields.ListField(subfield=fields.ModuleExpressionField())
-    forbidden_modules = fields.ListField(subfield=fields.ModuleField())
+    forbidden_modules = fields.ListField(subfield=fields.ModuleExpressionField())
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     allow_indirect_imports = fields.BooleanField(required=False, default=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
@@ -51,13 +51,14 @@ class ForbiddenContract(Contract):
         )
 
         source_modules = list(resolve_module_expressions(self.source_modules, graph))
+        forbidden_modules = list(resolve_module_expressions(self.forbidden_modules, graph))
 
         self._check_all_modules_exist_in_graph(source_modules, graph)
-        self._check_external_forbidden_modules()
+        self._check_external_forbidden_modules(forbidden_modules)
 
         # We only need to check for illegal imports for forbidden modules that are in the graph.
         forbidden_modules_in_graph = [
-            m for m in self.forbidden_modules if m.name in graph.modules  # type: ignore
+            m for m in forbidden_modules if m.name in graph.modules  # type: ignore
         ]
 
         for source_module in source_modules:  # type: ignore
@@ -143,8 +144,8 @@ class ForbiddenContract(Contract):
             if module.name not in graph.modules:
                 raise ValueError(f"Module '{module.name}' does not exist.")
 
-    def _check_external_forbidden_modules(self) -> None:
-        external_forbidden_modules = self._get_external_forbidden_modules()
+    def _check_external_forbidden_modules(self, forbidden_modules) -> None:
+        external_forbidden_modules = self._get_external_forbidden_modules(forbidden_modules)
         if external_forbidden_modules:
             if self._graph_was_built_with_externals():
                 for module in external_forbidden_modules:
@@ -159,11 +160,11 @@ class ForbiddenContract(Contract):
                     "when there are external forbidden modules."
                 )
 
-    def _get_external_forbidden_modules(self) -> set[Module]:
+    def _get_external_forbidden_modules(self, forbidden_modules) -> set[Module]:
         root_packages = [Module(name) for name in self.session_options["root_packages"]]
         return {
             forbidden_module
-            for forbidden_module in cast(List[Module], self.forbidden_modules)
+            for forbidden_module in cast(List[Module], forbidden_modules)
             if not any(
                 forbidden_module.is_in_package(root_package) for root_package in root_packages
             )

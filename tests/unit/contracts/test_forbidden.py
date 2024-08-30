@@ -187,6 +187,40 @@ class TestForbiddenContract:
             ],
         }
 
+    def test_wildcards_in_forbidden_modules_are_resolved(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            forbidden_modules=("mypackage.green.*"),
+            source_modules=("mypackage.one",),
+            include_external_packages=False,
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+        assert check.metadata == {
+            "invalid_chains": [
+                {
+                    "upstream_module": "mypackage.green.beta",
+                    "downstream_module": "mypackage.one",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.one.alpha",
+                                "imported": "mypackage.green.beta",
+                                "line_numbers": (3,),
+                            },
+                        ],
+                        [
+                            {
+                                "importer": "mypackage.one.alpha.circle",
+                                "imported": "mypackage.green.beta.sphere",
+                                "line_numbers": (8,),
+                            },
+                        ],
+                    ],
+                },
+            ],
+        }
+
     def test_ignore_imports_with_wildcards(self):
         graph = self._build_graph()
         contract = self._build_contract(
