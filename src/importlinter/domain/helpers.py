@@ -55,8 +55,8 @@ def import_expression_to_imports(
     imports: Set[DirectImport] = set()
     matched = False
 
-    importers = _expression_to_modules(expression.importer, graph)
-    importeds = _expression_to_modules(expression.imported, graph)
+    importers = resolve_module_expression(expression.importer, graph)
+    importeds = resolve_module_expression(expression.imported, graph)
     for (importer, imported) in itertools.product(importers, importeds):
         import_details = graph.get_import_details(importer=importer.name, imported=imported.name)
 
@@ -119,6 +119,29 @@ def resolve_import_expressions(
             unresolved_expressions.add(expression)
 
     return (resolved_imports, unresolved_expressions)
+
+
+def resolve_module_expressions(
+    expressions: Iterable[ModuleExpression], graph: ImportGraph
+) -> Iterable[Module]:
+    for expression in expressions:
+        yield from resolve_module_expression(expression, graph)
+
+
+def resolve_module_expression(
+    expression: ModuleExpression, graph: ImportGraph
+) -> Iterable[Module]:
+    if not expression.has_wildcard_expression():
+        return [Module(expression.expression)]
+
+    pattern = _to_pattern(expression.expression)
+
+    modules = set()
+    for module in graph.modules:
+        if pattern.match(module):
+            modules.add(Module(module))
+
+    return modules
 
 
 def pop_import_expressions(
@@ -215,17 +238,3 @@ def _to_pattern(expression: str) -> Pattern:
         else:
             pattern_parts.append(part)
     return re.compile(r"^" + r"\.".join(pattern_parts) + r"$")
-
-
-def _expression_to_modules(expression: ModuleExpression, graph: ImportGraph) -> Iterable[Module]:
-    if not expression.has_wildcard_expression():
-        return [Module(expression.expression)]
-
-    pattern = _to_pattern(expression.expression)
-
-    modules = set()
-    for module in graph.modules:
-        if pattern.match(module):
-            modules.add(Module(module))
-
-    return modules

@@ -153,6 +153,40 @@ class TestForbiddenContract:
         check = contract.check(graph=graph, verbose=False)
         assert check.kept
 
+    def test_wildcards_in_source_modules_are_resolved(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            forbidden_modules=("mypackage.green"),
+            source_modules=("mypackage.one.*",),
+            include_external_packages=False,
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+        assert check.metadata == {
+            "invalid_chains": [
+                {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.one.alpha",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.one.alpha",
+                                "imported": "mypackage.green.beta",
+                                "line_numbers": (3,),
+                            },
+                        ],
+                        [
+                            {
+                                "importer": "mypackage.one.alpha.circle",
+                                "imported": "mypackage.green.beta.sphere",
+                                "line_numbers": (8,),
+                            },
+                        ],
+                    ],
+                },
+            ],
+        }
+
     def test_ignore_imports_with_wildcards(self):
         graph = self._build_graph()
         contract = self._build_contract(
@@ -415,13 +449,15 @@ class TestForbiddenContract:
         ignore_imports=None,
         include_external_packages=False,
         allow_indirect_imports=None,
+        source_modules=None,
     ):
         session_options = {"root_packages": ["mypackage"]}
         if include_external_packages:
             session_options["include_external_packages"] = "True"
 
         contract_options = {
-            "source_modules": ("mypackage.one", "mypackage.two", "mypackage.three"),
+            "source_modules": source_modules
+            or ("mypackage.one", "mypackage.two", "mypackage.three"),
             "forbidden_modules": forbidden_modules,
             "ignore_imports": ignore_imports or [],
         }

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, cast
+from typing import Iterable, List, cast
 
 from grimp import ImportGraph
 
@@ -9,6 +9,7 @@ from importlinter.application.contract_utils import AlertLevel
 from importlinter.configuration import settings
 from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
+from importlinter.domain.helpers import resolve_module_expressions
 from importlinter.domain.imports import Module
 
 from ._common import format_line_numbers
@@ -33,7 +34,7 @@ class ForbiddenContract(Contract):
 
     type_name = "forbidden"
 
-    source_modules = fields.ListField(subfield=fields.ModuleField())
+    source_modules = fields.ListField(subfield=fields.ModuleExpressionField())
     forbidden_modules = fields.ListField(subfield=fields.ModuleField())
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     allow_indirect_imports = fields.BooleanField(required=False, default=False)
@@ -49,7 +50,9 @@ class ForbiddenContract(Contract):
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
 
-        self._check_all_modules_exist_in_graph(graph)
+        source_modules = list(resolve_module_expressions(self.source_modules, graph))
+
+        self._check_all_modules_exist_in_graph(source_modules, graph)
         self._check_external_forbidden_modules()
 
         # We only need to check for illegal imports for forbidden modules that are in the graph.
@@ -57,7 +60,7 @@ class ForbiddenContract(Contract):
             m for m in self.forbidden_modules if m.name in graph.modules  # type: ignore
         ]
 
-        for source_module in self.source_modules:  # type: ignore
+        for source_module in source_modules:  # type: ignore
             for forbidden_module in forbidden_modules_in_graph:
                 output.verbose_print(
                     verbose,
@@ -133,8 +136,10 @@ class ForbiddenContract(Contract):
 
             output.new_line()
 
-    def _check_all_modules_exist_in_graph(self, graph: ImportGraph) -> None:
-        for module in self.source_modules:  # type: ignore
+    def _check_all_modules_exist_in_graph(
+        self, modules: Iterable[Module], graph: ImportGraph
+    ) -> None:
+        for module in modules:  # type: ignore
             if module.name not in graph.modules:
                 raise ValueError(f"Module '{module.name}' does not exist.")
 

@@ -235,7 +235,8 @@ class TestImportExpressionsToImports:
                         imported=ModuleExpression("mypackage.*"),
                     ),
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.green.cats"), imported=ModuleExpression("mypackage.orange.*")
+                        importer=ModuleExpression("mypackage.green.cats"),
+                        imported=ModuleExpression("mypackage.orange.*"),
                     ),
                 ],
                 DIRECT_IMPORTS[0:2] + DIRECT_IMPORTS[4:6],
