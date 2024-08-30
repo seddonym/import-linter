@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import itertools
 import re
-from typing import Iterable, List, Pattern, Set, Tuple
+from typing import Iterable, Pattern
 
 from grimp import DetailedImport
 
@@ -12,7 +14,7 @@ class MissingImport(Exception):
     pass
 
 
-def pop_imports(graph: ImportGraph, imports: Iterable[DirectImport]) -> List[DetailedImport]:
+def pop_imports(graph: ImportGraph, imports: Iterable[DirectImport]) -> list[DetailedImport]:
     """
     Removes the supplied direct imports from the graph.
 
@@ -22,7 +24,7 @@ def pop_imports(graph: ImportGraph, imports: Iterable[DirectImport]) -> List[Det
     Raises:
         MissingImport if an import is not present in the graph.
     """
-    removed_imports: List[DetailedImport] = []
+    removed_imports: list[DetailedImport] = []
 
     imports_to_remove = _dedupe_imports(imports)
 
@@ -44,7 +46,7 @@ def pop_imports(graph: ImportGraph, imports: Iterable[DirectImport]) -> List[Det
 
 def import_expression_to_imports(
     graph: ImportGraph, expression: ImportExpression
-) -> List[DirectImport]:
+) -> list[DirectImport]:
     """
     Returns a list of imports in a graph, given some import expression.
 
@@ -52,10 +54,10 @@ def import_expression_to_imports(
         MissingImport if an import is not present in the graph. For a wildcarded import expression,
         this is raised if there is not at least one match.
     """
-    imports: Set[DirectImport] = set()
+    imports: set[DirectImport] = set()
     matched = False
 
-    for (importer, imported) in _expression_to_modules(expression, graph):
+    for importer, imported in _expression_to_modules(expression, graph):
         import_details = graph.get_import_details(importer=importer.name, imported=imported.name)
 
         if import_details:
@@ -80,7 +82,7 @@ def import_expression_to_imports(
 
 def import_expressions_to_imports(
     graph: ImportGraph, expressions: Iterable[ImportExpression]
-) -> List[DirectImport]:
+) -> list[DirectImport]:
     """
     Returns a list of imports in a graph, given some import expressions.
 
@@ -99,7 +101,7 @@ def import_expressions_to_imports(
 
 def resolve_import_expressions(
     graph: ImportGraph, expressions: Iterable[ImportExpression]
-) -> Tuple[Set[DirectImport], Set[ImportExpression]]:
+) -> tuple[set[DirectImport], set[ImportExpression]]:
     """
     Find any imports in the graph that match the supplied import expressions.
 
@@ -116,12 +118,12 @@ def resolve_import_expressions(
         except MissingImport:
             unresolved_expressions.add(expression)
 
-    return (resolved_imports, unresolved_expressions)
+    return resolved_imports, unresolved_expressions
 
 
 def pop_import_expressions(
     graph: ImportGraph, expressions: Iterable[ImportExpression]
-) -> List[DetailedImport]:
+) -> list[DetailedImport]:
     """
     Removes any imports matching the supplied import expressions from the graph.
 
@@ -135,7 +137,7 @@ def pop_import_expressions(
     return pop_imports(graph, imports)
 
 
-def add_imports(graph: ImportGraph, import_details: List[DetailedImport]) -> None:
+def add_imports(graph: ImportGraph, import_details: list[DetailedImport]) -> None:
     """
     Adds the supplied import details to the graph.
 
@@ -187,7 +189,7 @@ def _dedupe_imports(imports: Iterable[DirectImport]) -> Iterable[DirectImport]:
     This is to make it easy for the calling function to remove the set of imports from a graph
     without attempting to remove certain imports twice.
     """
-    deduped_imports: List[DirectImport] = []
+    deduped_imports: list[DirectImport] = []
 
     # Why don't we use a set here? Because we want to preserve the order (mainly for testability).
     imports_without_metadata = [
@@ -215,23 +217,18 @@ def _to_pattern(expression: str) -> Pattern:
     return re.compile(r"^" + r"\.".join(pattern_parts) + r"$")
 
 
+def _resolve_wildcards(value: str, graph: ImportGraph) -> set[Module]:
+    pattern = _to_pattern(value)
+    return {Module(module) for module in graph.modules if pattern.match(module)}
+
+
 def _expression_to_modules(
     expression: ImportExpression, graph: ImportGraph
-) -> Iterable[Tuple[Module, Module]]:
+) -> Iterable[tuple[Module, Module]]:
     if not expression.has_wildcard_expression():
         return [(Module(expression.importer), Module(expression.imported))]
 
-    importer = []
-    imported = []
-
-    importer_pattern = _to_pattern(expression.importer)
-    imported_expression = _to_pattern(expression.imported)
-
-    for module in graph.modules:
-
-        if importer_pattern.match(module):
-            importer.append(Module(module))
-        if imported_expression.match(module):
-            imported.append(Module(module))
-
-    return itertools.product(set(importer), set(imported))
+    return itertools.product(
+        _resolve_wildcards(expression.importer, graph),
+        _resolve_wildcards(expression.imported, graph),
+    )
