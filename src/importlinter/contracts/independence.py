@@ -10,6 +10,7 @@ from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
 from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
+from importlinter.domain.helpers import resolve_module_expressions
 from importlinter.domain.imports import Module
 
 from ._common import DetailedChain, Link, build_detailed_chain_from_route, render_chain_data
@@ -41,7 +42,7 @@ class IndependenceContract(Contract):
 
     type_name = "independence"
 
-    modules = fields.ListField(subfield=fields.ModuleField())
+    modules = fields.ListField(subfield=fields.ModuleExpressionField())
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
 
@@ -52,11 +53,12 @@ class IndependenceContract(Contract):
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
 
-        self._check_all_modules_exist_in_graph(graph)
+        modules = list(resolve_module_expressions(self.modules, graph))
+        self._check_all_modules_exist_in_graph(graph, modules)
 
         dependencies = graph.find_illegal_dependencies_for_layers(
             # A single layer consisting of siblings.
-            layers=({module.name for module in self.modules},),  # type: ignore
+            layers=({module.name for module in modules},),  # type: ignore
         )
         invalid_chains = self._build_invalid_chains(dependencies, graph)
 
@@ -81,8 +83,8 @@ class IndependenceContract(Contract):
 
             output.new_line()
 
-    def _check_all_modules_exist_in_graph(self, graph: ImportGraph) -> None:
-        for module in self.modules:  # type: ignore
+    def _check_all_modules_exist_in_graph(self, graph: ImportGraph, modules) -> None:
+        for module in modules:  # type: ignore
             if module.name not in graph.modules:
                 raise ValueError(f"Module '{module.name}' does not exist.")
 

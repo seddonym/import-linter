@@ -43,6 +43,16 @@ class TestIndependenceContract:
         )
         return contract.check(graph=graph, verbose=False)
 
+    def _check_wildcard_contract(self, graph):
+        contract = IndependenceContract(
+            name="Independence contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options={
+                "modules": ("mypackage.*",)
+            },
+        )
+        return contract.check(graph=graph, verbose=False)
+
     def test_when_modules_are_independent(self):
         graph = self._build_default_graph()
         graph.add_import(
@@ -59,7 +69,12 @@ class TestIndependenceContract:
         )
 
         contract_check = self._check_default_contract(graph)
+        assert contract_check.kept
 
+    def test_when_wildcard_modules_are_independent(self):
+        graph = self._build_default_graph()
+
+        contract_check = self._check_wildcard_contract(graph)
         assert contract_check.kept
 
     def test_when_root_imports_root_directly(self):
