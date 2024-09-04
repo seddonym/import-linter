@@ -44,5 +44,3 @@ class FakePrinter(Printer):
         self._buffer = ""
 
         assert set(buffer_lines) == set(expected_lines)
-
-
