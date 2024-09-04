@@ -9,7 +9,7 @@ from importlinter.application.contract_utils import AlertLevel
 from importlinter.configuration import settings
 from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
-from importlinter.domain.helpers import resolve_module_expressions
+from importlinter.domain.helpers import module_expressions_to_modules
 from importlinter.domain.imports import Module
 
 from ._common import format_line_numbers
@@ -50,8 +50,8 @@ class ForbiddenContract(Contract):
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
 
-        source_modules = list(resolve_module_expressions(self.source_modules, graph))
-        forbidden_modules = list(resolve_module_expressions(self.forbidden_modules, graph))
+        source_modules = list(module_expressions_to_modules(self.source_modules, graph))
+        forbidden_modules = list(module_expressions_to_modules(self.forbidden_modules, graph))
 
         self._check_all_modules_exist_in_graph(source_modules, graph)
         self._check_external_forbidden_modules(forbidden_modules)
@@ -116,7 +116,9 @@ class ForbiddenContract(Contract):
             return (chain_data["upstream_module"], chain_data["downstream_module"])
 
         return ContractCheck(
-            kept=is_kept, warnings=warnings, metadata={"invalid_chains": sorted(invalid_chains, key=chain_sort_key)}
+            kept=is_kept,
+            warnings=warnings,
+            metadata={"invalid_chains": sorted(invalid_chains, key=chain_sort_key)},
         )
 
     def render_broken_contract(self, check: "ContractCheck") -> None:

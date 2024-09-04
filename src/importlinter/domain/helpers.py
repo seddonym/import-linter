@@ -55,9 +55,9 @@ def import_expression_to_imports(
     imports: Set[DirectImport] = set()
     matched = False
 
-    importers = resolve_module_expression(expression.importer, graph)
-    importeds = resolve_module_expression(expression.imported, graph)
-    for (importer, imported) in itertools.product(importers, importeds):
+    importers = module_expression_to_modules(expression.importer, graph)
+    importeds = module_expression_to_modules(expression.imported, graph)
+    for importer, imported in itertools.product(importers, importeds):
         import_details = graph.get_import_details(importer=importer.name, imported=imported.name)
 
         if import_details:
@@ -78,6 +78,29 @@ def import_expression_to_imports(
         )
 
     return list(imports)
+
+
+def module_expressions_to_modules(
+    expressions: Iterable[ModuleExpression], graph: ImportGraph
+) -> set[Module]:
+    modules = set()
+    for expression in expressions:
+        modules |= module_expression_to_modules(expression, graph)
+    return modules
+
+
+def module_expression_to_modules(expression: ModuleExpression, graph: ImportGraph) -> set[Module]:
+    if not expression.has_wildcard_expression():
+        return set([Module(expression.expression)])
+
+    pattern = _to_pattern(expression.expression)
+
+    modules = set()
+    for module in graph.modules:
+        if pattern.match(module):
+            modules.add(Module(module))
+
+    return modules
 
 
 def import_expressions_to_imports(
@@ -119,31 +142,6 @@ def resolve_import_expressions(
             unresolved_expressions.add(expression)
 
     return (resolved_imports, unresolved_expressions)
-
-
-def resolve_module_expressions(
-    expressions: Iterable[ModuleExpression], graph: ImportGraph
-) -> set[Module]:
-    modules = set()
-    for expression in expressions:
-        modules |= resolve_module_expression(expression, graph)
-    return modules
-
-
-def resolve_module_expression(
-    expression: ModuleExpression, graph: ImportGraph
-) -> set[Module]:
-    if not expression.has_wildcard_expression():
-        return set([Module(expression.expression)])
-
-    pattern = _to_pattern(expression.expression)
-
-    modules = set()
-    for module in graph.modules:
-        if pattern.match(module):
-            modules.add(Module(module))
-
-    return modules
 
 
 def pop_import_expressions(

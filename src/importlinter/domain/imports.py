@@ -84,6 +84,19 @@ class DirectImport(ValueObject):
 
 
 class ModuleExpression(ValueObject):
+    """
+    A user-submitted expression describing a module or a set of modules.
+
+    Sets of modules are notated using * or ** wildcards.
+    Examples:
+        "mypackage.foo.bar": a single module
+        "mypackage.foo.*": all direct submodules in the foo subpackage
+        "mypackage.*.bar": all bar-submodules of any mypackage submodule
+        "mypackage.**": all modules in the mypackage package
+
+    Note that * and ** cannot be mixed in the same expression.
+    """
+
     def __init__(self, expression: str) -> None:
         self.expression = expression
 
@@ -95,12 +108,8 @@ class ImportExpression(ValueObject):
     """
     A user-submitted expression describing an import or set of imports.
 
-    Sets of imports are notated using * wildcards.
-    These wildcards can stand in for a module name or part of a name, but they do
-    not extend to subpackages.
-
-    For example, "mypackage.*" refers to every child subpackage of mypackage.
-    It does not, however, include more distant descendants such as mypackage.foo.bar.
+    The importer and imported expressions are both ModuleExpressions
+    (see ModuleExpression for details).
     """
 
     def __init__(self, importer: ModuleExpression, imported: ModuleExpression) -> None:

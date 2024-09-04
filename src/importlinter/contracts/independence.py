@@ -10,7 +10,7 @@ from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
 from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
-from importlinter.domain.helpers import resolve_module_expressions
+from importlinter.domain.helpers import module_expressions_to_modules
 from importlinter.domain.imports import Module
 
 from ._common import DetailedChain, Link, build_detailed_chain_from_route, render_chain_data
@@ -53,7 +53,7 @@ class IndependenceContract(Contract):
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
 
-        modules = list(resolve_module_expressions(self.modules, graph))
+        modules = list(module_expressions_to_modules(self.modules, graph))
         self._check_all_modules_exist_in_graph(graph, modules)
 
         dependencies = graph.find_illegal_dependencies_for_layers(
