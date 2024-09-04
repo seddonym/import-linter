@@ -123,16 +123,18 @@ def resolve_import_expressions(
 
 def resolve_module_expressions(
     expressions: Iterable[ModuleExpression], graph: ImportGraph
-) -> Iterable[Module]:
+) -> set[Module]:
+    modules = set()
     for expression in expressions:
-        yield from resolve_module_expression(expression, graph)
+        modules |= resolve_module_expression(expression, graph)
+    return modules
 
 
 def resolve_module_expression(
     expression: ModuleExpression, graph: ImportGraph
-) -> Iterable[Module]:
+) -> set[Module]:
     if not expression.has_wildcard_expression():
-        return [Module(expression.expression)]
+        return set([Module(expression.expression)])
 
     pattern = _to_pattern(expression.expression)
 

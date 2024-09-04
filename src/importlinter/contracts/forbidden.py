@@ -110,8 +110,13 @@ class ForbiddenContract(Contract):
                         f"in {timer.duration_in_s}s.",
                     )
 
+        # Sorting by upstream and downstream module ensures that the output is deterministic
+        # and that the same upstream and downstream modules are always adjacent in the output.
+        def chain_sort_key(chain_data):
+            return (chain_data["upstream_module"], chain_data["downstream_module"])
+
         return ContractCheck(
-            kept=is_kept, warnings=warnings, metadata={"invalid_chains": invalid_chains}
+            kept=is_kept, warnings=warnings, metadata={"invalid_chains": sorted(invalid_chains, key=chain_sort_key)}
         )
 
     def render_broken_contract(self, check: "ContractCheck") -> None:

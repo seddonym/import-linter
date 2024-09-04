@@ -60,6 +60,19 @@ class TestForbiddenContract:
                     ],
                 },
                 {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.three",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.three",
+                                "imported": "mypackage.green",
+                                "line_numbers": (4,),
+                            }
+                        ]
+                    ],
+                },
+                {
                     "upstream_module": "mypackage.purple",
                     "downstream_module": "mypackage.two",
                     "chains": [
@@ -74,19 +87,6 @@ class TestForbiddenContract:
                                 "imported": "mypackage.purple",
                                 "line_numbers": (1,),
                             },
-                        ]
-                    ],
-                },
-                {
-                    "upstream_module": "mypackage.green",
-                    "downstream_module": "mypackage.three",
-                    "chains": [
-                        [
-                            {
-                                "importer": "mypackage.three",
-                                "imported": "mypackage.green",
-                                "line_numbers": (4,),
-                            }
                         ]
                     ],
                 },
@@ -703,31 +703,31 @@ class TestVerbosePrint:
 
         contract.check(graph=graph, verbose=True)
 
-        settings.PRINTER.pop_and_assert(
+        settings.PRINTER.pop_and_assert_lines(
             """
             Searching for import chains from mypackage.one to mypackage.blue...
             Found 0 illegal chains in 10s.
             Searching for import chains from mypackage.one to mypackage.green...
             Found 1 illegal chain in 10s.
-            Searching for import chains from mypackage.one to mypackage.yellow...
-            Found 0 illegal chains in 10s.
             Searching for import chains from mypackage.one to mypackage.purple...
+            Found 0 illegal chains in 10s.
+            Searching for import chains from mypackage.one to mypackage.yellow...
             Found 0 illegal chains in 10s.
             Searching for import chains from mypackage.two to mypackage.blue...
             Found 0 illegal chains in 10s.
             Searching for import chains from mypackage.two to mypackage.green...
             Found 0 illegal chains in 10s.
-            Searching for import chains from mypackage.two to mypackage.yellow...
-            Found 0 illegal chains in 10s.
             Searching for import chains from mypackage.two to mypackage.purple...
             Found 1 illegal chain in 10s.
+            Searching for import chains from mypackage.two to mypackage.yellow...
+            Found 0 illegal chains in 10s.
             Searching for import chains from mypackage.three to mypackage.blue...
             Found 0 illegal chains in 10s.
             Searching for import chains from mypackage.three to mypackage.green...
             Found 1 illegal chain in 10s.
-            Searching for import chains from mypackage.three to mypackage.yellow...
-            Found 0 illegal chains in 10s.
             Searching for import chains from mypackage.three to mypackage.purple...
+            Found 0 illegal chains in 10s.
+            Searching for import chains from mypackage.three to mypackage.yellow...
             Found 0 illegal chains in 10s.
             """
         )
