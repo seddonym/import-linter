@@ -22,3 +22,4 @@ Contributors
 * piglei - https://github.com/piglei
 * Anton Gruebel - https://github.com/gruebel
 * Peter Byfield - https://github.com/Peter554
+* Fabian Binz - https://github.com/fbinz

@@ -2,7 +2,6 @@
 Contract types
 ==============
 
-
 .. _forbidden modules:
 
 Forbidden modules
@@ -58,8 +57,6 @@ External packages may also be forbidden.
         mypackage.one.green -> sqlalchemy
 
 **Configuration options**
-
-Configuration options:
 
     - ``source_modules``:    A list of modules that should not import the forbidden modules.
     - ``forbidden_modules``: A list of modules that should not be imported by the source modules. These may include
@@ -335,14 +332,24 @@ Options used by multiple contracts
 
 - ``ignore_imports``: Optional list of imports, each in the form ``mypackage.foo.importer -> mypackage.bar.imported``.
   These imports will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the
-  contract be kept instead.
+  contract be kept instead. Supports wildcards (see below).
 
-  Wildcards are supported. ``*`` stands in for a module name, without including subpackages. ``**`` includes
-  subpackages too.
+- ``unmatched_ignore_imports_alerting``: The alerting level for handling expressions supplied in ``ignore_imports``
+  that do not match any imports in the graph. Choices are:
 
-  Note that this wildcard format is only supported for the ``ignore_imports`` fields. It can't currently be used for
-  other fields, such as in the ``source_modules`` field of a :ref:`forbidden modules` contract.
+    - ``error``: Error if there are any unmatched expressions (default).
+    - ``warn``: Print a warning for each unmatched expression.
+    - ``none``: Do not alert.
 
+Wildcards
+---------
+
+  Wildcards are supported in most places where a module name is required to epxress a set of modules.
+  ``*`` stands in for a module name, without including subpackages. ``**`` includes subpackages too.
+  
+  Note that at the moment, layer contracts don't support wildcards. 
+  If you have a use case for this, please file an issue.
+  
   Examples:
 
   - ``mypackage.*``:  matches ``mypackage.foo`` but not ``mypackage.foo.bar``.
@@ -352,9 +359,3 @@ Options used by multiple contracts
   - ``mypackage.**.qux``: matches ``mypackage.foo.bar.qux`` and ``mypackage.foo.bar.baz.qux``.
   - ``mypackage.foo*``: not a valid expression. (The wildcard must replace a whole module name.)
 
-- ``unmatched_ignore_imports_alerting``: The alerting level for handling expressions supplied in ``ignore_imports``
-  that do not match any imports in the graph. Choices are:
-
-    - ``error``: Error if there are any unmatched expressions (default).
-    - ``warn``: Print a warning for each unmatched expression.
-    - ``none``: Do not alert.
