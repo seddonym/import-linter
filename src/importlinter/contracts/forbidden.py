@@ -50,8 +50,8 @@ class ForbiddenContract(Contract):
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
 
-        source_modules = list(module_expressions_to_modules(self.source_modules, graph))
-        forbidden_modules = list(module_expressions_to_modules(self.forbidden_modules, graph))
+        source_modules = list(module_expressions_to_modules(graph, self.source_modules))
+        forbidden_modules = list(module_expressions_to_modules(graph, self.forbidden_modules))
 
         self._check_all_modules_exist_in_graph(source_modules, graph)
         self._check_external_forbidden_modules(forbidden_modules)

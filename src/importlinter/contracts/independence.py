@@ -53,7 +53,7 @@ class IndependenceContract(Contract):
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
 
-        modules = list(module_expressions_to_modules(self.modules, graph))
+        modules = list(module_expressions_to_modules(graph, self.modules))
         self._check_all_modules_exist_in_graph(graph, modules)
 
         dependencies = graph.find_illegal_dependencies_for_layers(
