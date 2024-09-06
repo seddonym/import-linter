@@ -332,7 +332,7 @@ Options used by multiple contracts
 
 - ``ignore_imports``: Optional list of imports, each in the form ``mypackage.foo.importer -> mypackage.bar.imported``.
   These imports will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the
-  contract be kept instead. Supports wildcards (see below).
+  contract be kept instead. Supports :ref:`wildcards`.
 
 - ``unmatched_ignore_imports_alerting``: The alerting level for handling expressions supplied in ``ignore_imports``
   that do not match any imports in the graph. Choices are:
@@ -341,13 +341,15 @@ Options used by multiple contracts
     - ``warn``: Print a warning for each unmatched expression.
     - ``none``: Do not alert.
 
+.. _wildcards:
+
 Wildcards
 ---------
 
-  Wildcards are supported in most places where a module name is required to epxress a set of modules.
+  Wildcards are supported in most places where a module name is required to express a set of modules.
   ``*`` stands in for a module name, without including subpackages. ``**`` includes subpackages too.
   
-  Note that at the moment, layer contracts don't support wildcards. 
+  Note that at the moment, layer contracts only support wildcards in `illegal_imports`.
   If you have a use case for this, please file an issue.
   
   Examples:
