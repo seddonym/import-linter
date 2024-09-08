@@ -88,14 +88,14 @@ def import_expression_to_imports(
 
 def module_expressions_to_modules(
     graph: ImportGraph, expressions: Iterable[ModuleExpression]
-) -> set[Module]:
+) -> Set[Module]:
     modules = set()
     for expression in expressions:
         modules |= module_expression_to_modules(graph, expression)
     return modules
 
 
-def module_expression_to_modules(graph: ImportGraph, expression: ModuleExpression) -> set[Module]:
+def module_expression_to_modules(graph: ImportGraph, expression: ModuleExpression) -> Set[Module]:
     if not expression.has_wildcard_expression():
         return {Module(expression.expression)}
 
