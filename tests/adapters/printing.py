@@ -32,15 +32,3 @@ class FakePrinter(Printer):
         self._buffer = ""
 
         assert popped_string == modified_expected_string
-
-    def pop_and_assert_lines(self, expected_string):
-        """
-        Like pop_and_assert, but compares the lines of the buffer to the lines of the expected string, ignoring order.
-        """
-
-        expected_lines = textwrap.dedent(expected_string.strip("\n")).splitlines()
-        buffer_lines = self._buffer.splitlines()
-
-        self._buffer = ""
-
-        assert set(buffer_lines) == set(expected_lines)

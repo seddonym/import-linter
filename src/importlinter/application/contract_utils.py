@@ -1,9 +1,10 @@
 import enum
-from typing import List, Optional, Sequence, Set, Iterable
+from typing import List, Optional, Sequence, Set
+
 
 from importlinter.domain import helpers
 from importlinter.domain.helpers import MissingImport
-from importlinter.domain.imports import ImportExpression, ModuleExpression, Module
+from importlinter.domain.imports import ImportExpression
 from grimp import ImportGraph
 
 
