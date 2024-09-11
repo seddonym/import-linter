@@ -13,7 +13,12 @@ from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.helpers import module_expressions_to_modules
 from importlinter.domain.imports import Module
 
-from ._common import DetailedChain, Link, build_detailed_chain_from_route, render_chain_data
+from ._common import (
+    DetailedChain,
+    Link,
+    build_detailed_chain_from_route,
+    render_chain_data,
+)
 
 
 class _SubpackageChainData(TypedDict):
@@ -53,12 +58,12 @@ class IndependenceContract(Contract):
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
 
-        modules = list(module_expressions_to_modules(graph, self.modules))
+        modules = list(module_expressions_to_modules(graph, self.modules))  # type: ignore
         self._check_all_modules_exist_in_graph(graph, modules)
 
         dependencies = graph.find_illegal_dependencies_for_layers(
             # A single layer consisting of siblings.
-            layers=({module.name for module in modules},),  # type: ignore
+            layers=({module.name for module in modules},),
         )
         invalid_chains = self._build_invalid_chains(dependencies, graph)
 
@@ -84,7 +89,7 @@ class IndependenceContract(Contract):
             output.new_line()
 
     def _check_all_modules_exist_in_graph(self, graph: ImportGraph, modules) -> None:
-        for module in modules:  # type: ignore
+        for module in modules:
             if module.name not in graph.modules:
                 raise ValueError(f"Module '{module.name}' does not exist.")
 

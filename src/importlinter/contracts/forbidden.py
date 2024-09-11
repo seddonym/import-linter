@@ -50,21 +50,29 @@ class ForbiddenContract(Contract):
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
 
-        source_modules = list(module_expressions_to_modules(graph, self.source_modules))
-        forbidden_modules = list(module_expressions_to_modules(graph, self.forbidden_modules))
+        source_modules = list(
+            module_expressions_to_modules(
+                graph,
+                self.source_modules,  # type: ignore
+            )
+        )
+        forbidden_modules = list(
+            module_expressions_to_modules(
+                graph,
+                self.forbidden_modules,  # type: ignore
+            )
+        )
 
         self._check_all_modules_exist_in_graph(source_modules, graph)
         self._check_external_forbidden_modules(forbidden_modules)
 
         # We only need to check for illegal imports for forbidden modules that are in the graph.
-        forbidden_modules_in_graph = [
-            m for m in forbidden_modules if m.name in graph.modules  # type: ignore
-        ]
+        forbidden_modules_in_graph = [m for m in forbidden_modules if m.name in graph.modules]
 
         def sort_key(module):
             return module.name
 
-        for source_module in sorted(source_modules, key=sort_key):  # type: ignore
+        for source_module in sorted(source_modules, key=sort_key):
             for forbidden_module in sorted(forbidden_modules_in_graph, key=sort_key):
                 output.verbose_print(
                     verbose,
@@ -102,7 +110,7 @@ class ForbiddenContract(Contract):
                                         "line_numbers": line_numbers,
                                     }
                                 )
-                            subpackage_chain_data["chains"].append(chain_data)
+                            subpackage_chain_data["chains"].append(chain_data)  # type: ignore
                 if subpackage_chain_data["chains"]:
                     invalid_chains.append(subpackage_chain_data)
                 if verbose:
@@ -150,7 +158,7 @@ class ForbiddenContract(Contract):
     def _check_all_modules_exist_in_graph(
         self, modules: Iterable[Module], graph: ImportGraph
     ) -> None:
-        for module in modules:  # type: ignore
+        for module in modules:
             if module.name not in graph.modules:
                 raise ValueError(f"Module '{module.name}' does not exist.")
 

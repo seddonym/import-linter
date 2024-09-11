@@ -1,6 +1,7 @@
 """
 Module for public-facing Python functions.
 """
+
 from __future__ import annotations
 
 from importlinter.application import use_cases

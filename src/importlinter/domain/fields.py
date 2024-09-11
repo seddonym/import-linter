@@ -34,7 +34,6 @@ class Field(Generic[FieldValue], abc.ABC):
         required: Union[bool, Type[NotSupplied]] = NotSupplied,
         default: Union[FieldValue, Type[NotSupplied]] = NotSupplied,
     ) -> None:
-
         if default is NotSupplied:
             if required is NotSupplied:
                 self.required = True
@@ -170,7 +169,10 @@ class ModuleExpressionField(Field):
         "mypackage.**"
     """
 
-    def parse(self, expression: str) -> ModuleExpression:
+    def parse(self, expression: Union[str, List[str]]) -> ModuleExpression:
+        if isinstance(expression, list):
+            raise ValidationError("Expected a single value, got multiple values.")
+
         last_wildcard = None
         for part in expression.split("."):
             if "**" == last_wildcard and ("*" == part or "**" == part):
