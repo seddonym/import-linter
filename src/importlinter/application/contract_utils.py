@@ -1,6 +1,7 @@
 import enum
 from typing import List, Optional, Sequence, Set
 
+
 from importlinter.domain import helpers
 from importlinter.domain.helpers import MissingImport
 from importlinter.domain.imports import ImportExpression

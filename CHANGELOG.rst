@@ -1,6 +1,12 @@
 Changelog
 =========
 
+latest
+------
+
+* Add support for wildcards in forbidden and independence contracts.
+
+
 2.0 (2024-1-9)
 --------------
 

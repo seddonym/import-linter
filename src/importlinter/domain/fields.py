@@ -2,7 +2,7 @@ import abc
 from enum import Enum
 from typing import Generic, Iterable, List, Set, Type, TypeVar, Union, cast
 
-from importlinter.domain.imports import ImportExpression, Module
+from importlinter.domain.imports import ImportExpression, Module, ModuleExpression
 
 FieldValue = TypeVar("FieldValue")
 
@@ -34,7 +34,6 @@ class Field(Generic[FieldValue], abc.ABC):
         required: Union[bool, Type[NotSupplied]] = NotSupplied,
         default: Union[FieldValue, Type[NotSupplied]] = NotSupplied,
     ) -> None:
-
         if default is NotSupplied:
             if required is NotSupplied:
                 self.required = True
@@ -159,6 +158,37 @@ class ModuleField(Field):
         return Module(StringField().parse(raw_data))
 
 
+class ModuleExpressionField(Field):
+    """
+    A field for ModuleExpressions.
+
+    Accepts strings in the form:
+        "mypackage.foo.importer"
+        "mypackage.foo.*"
+        "mypackage.*.importer"
+        "mypackage.**"
+    """
+
+    def parse(self, expression: Union[str, List[str]]) -> ModuleExpression:
+        if isinstance(expression, list):
+            raise ValidationError("Expected a single value, got multiple values.")
+
+        last_wildcard = None
+        for part in expression.split("."):
+            if "**" == last_wildcard and ("*" == part or "**" == part):
+                raise ValidationError("A recursive wildcard cannot be followed by a wildcard.")
+            if "*" == last_wildcard and "**" == part:
+                raise ValidationError("A wildcard cannot be followed by a recursive wildcard.")
+            if "*" == part or "**" == part:
+                last_wildcard = part
+                continue
+            if "*" in part:
+                raise ValidationError("A wildcard can only replace a whole module.")
+            last_wildcard = None
+
+        return ModuleExpression(expression)
+
+
 class ImportExpressionField(Field):
     """
     A field for ImportExpressions.
@@ -181,24 +211,10 @@ class ImportExpressionField(Field):
         if not (importer and imported):
             raise ValidationError('Must be in the form "package.importer -> package.imported".')
 
-        self._validate_wildcard(importer)
-        self._validate_wildcard(imported)
-
-        return ImportExpression(importer=importer, imported=imported)
-
-    def _validate_wildcard(self, expression: str) -> None:
-        last_wildcard = None
-        for part in expression.split("."):
-            if "**" == last_wildcard and ("*" == part or "**" == part):
-                raise ValidationError("A recursive wildcard cannot be followed by a wildcard.")
-            if "*" == last_wildcard and "**" == part:
-                raise ValidationError("A wildcard cannot be followed by a recursive wildcard.")
-            if "*" == part or "**" == part:
-                last_wildcard = part
-                continue
-            if "*" in part:
-                raise ValidationError("A wildcard can only replace a whole module.")
-            last_wildcard = None
+        return ImportExpression(
+            importer=ModuleExpressionField().parse(importer),
+            imported=ModuleExpressionField().parse(imported),
+        )
 
 
 class EnumField(Field):

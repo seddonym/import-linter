@@ -2,10 +2,14 @@ import itertools
 import re
 from typing import Iterable, List, Pattern, Set, Tuple
 
-from grimp import DetailedImport
+from grimp import DetailedImport, ImportGraph
 
-from importlinter.domain.imports import DirectImport, ImportExpression, Module
-from grimp import ImportGraph
+from importlinter.domain.imports import (
+    DirectImport,
+    ImportExpression,
+    Module,
+    ModuleExpression,
+)
 
 
 class MissingImport(Exception):
@@ -28,13 +32,15 @@ def pop_imports(graph: ImportGraph, imports: Iterable[DirectImport]) -> List[Det
 
     for import_to_remove in imports_to_remove:
         import_details = graph.get_import_details(
-            importer=import_to_remove.importer.name, imported=import_to_remove.imported.name
+            importer=import_to_remove.importer.name,
+            imported=import_to_remove.imported.name,
         )
         if not import_details:
             raise MissingImport(f"Ignored import {import_to_remove} not present in the graph.")
 
         graph.remove_import(
-            importer=import_to_remove.importer.name, imported=import_to_remove.imported.name
+            importer=import_to_remove.importer.name,
+            imported=import_to_remove.imported.name,
         )
 
         removed_imports.extend(import_details)
@@ -55,7 +61,9 @@ def import_expression_to_imports(
     imports: Set[DirectImport] = set()
     matched = False
 
-    for (importer, imported) in _expression_to_modules(expression, graph):
+    importers = module_expression_to_modules(graph, expression.importer)
+    importeds = module_expression_to_modules(graph, expression.imported)
+    for importer, imported in itertools.product(importers, importeds):
         import_details = graph.get_import_details(importer=importer.name, imported=imported.name)
 
         if import_details:
@@ -76,6 +84,29 @@ def import_expression_to_imports(
         )
 
     return list(imports)
+
+
+def module_expressions_to_modules(
+    graph: ImportGraph, expressions: Iterable[ModuleExpression]
+) -> Set[Module]:
+    modules = set()
+    for expression in expressions:
+        modules |= module_expression_to_modules(graph, expression)
+    return modules
+
+
+def module_expression_to_modules(graph: ImportGraph, expression: ModuleExpression) -> Set[Module]:
+    if not expression.has_wildcard_expression():
+        return {Module(expression.expression)}
+
+    pattern = _to_pattern(expression.expression)
+
+    modules = set()
+    for module in graph.modules:
+        if pattern.match(module):
+            modules.add(Module(module))
+
+    return modules
 
 
 def import_expressions_to_imports(
@@ -213,25 +244,3 @@ def _to_pattern(expression: str) -> Pattern:
         else:
             pattern_parts.append(part)
     return re.compile(r"^" + r"\.".join(pattern_parts) + r"$")
-
-
-def _expression_to_modules(
-    expression: ImportExpression, graph: ImportGraph
-) -> Iterable[Tuple[Module, Module]]:
-    if not expression.has_wildcard_expression():
-        return [(Module(expression.importer), Module(expression.imported))]
-
-    importer = []
-    imported = []
-
-    importer_pattern = _to_pattern(expression.importer)
-    imported_expression = _to_pattern(expression.imported)
-
-    for module in graph.modules:
-
-        if importer_pattern.match(module):
-            importer.append(Module(module))
-        if imported_expression.match(module):
-            imported.append(Module(module))
-
-    return itertools.product(set(importer), set(imported))

@@ -13,7 +13,7 @@ from importlinter.domain.helpers import (
     pop_imports,
     resolve_import_expressions,
 )
-from importlinter.domain.imports import DirectImport, ImportExpression, Module
+from importlinter.domain.imports import DirectImport, ImportExpression, Module, ModuleExpression
 
 
 class TestPopImports:
@@ -181,8 +181,8 @@ class TestImportExpressionsToImports:
                 "No wildcards",
                 [
                     ImportExpression(
-                        importer=DIRECT_IMPORTS[0].importer.name,
-                        imported=DIRECT_IMPORTS[0].imported.name,
+                        importer=ModuleExpression(DIRECT_IMPORTS[0].importer.name),
+                        imported=ModuleExpression(DIRECT_IMPORTS[0].imported.name),
                     ),
                 ],
                 [DIRECT_IMPORTS[0]],
@@ -190,37 +190,53 @@ class TestImportExpressionsToImports:
             (
                 "Importer wildcard",
                 [
-                    ImportExpression(importer="mypackage.*", imported="mypackage.blue"),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.*"),
+                        imported=ModuleExpression("mypackage.blue"),
+                    ),
                 ],
                 [DIRECT_IMPORTS[1]],
             ),
             (
                 "Imported wildcard",
                 [
-                    ImportExpression(importer="mypackage.green", imported="mypackage.*"),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.green"),
+                        imported=ModuleExpression("mypackage.*"),
+                    ),
                 ],
                 DIRECT_IMPORTS[0:2],
             ),
             (
                 "Importer and imported wildcards",
                 [
-                    ImportExpression(importer="mypackage.*", imported="mypackage.*"),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.*"),
+                        imported=ModuleExpression("mypackage.*"),
+                    ),
                 ],
                 DIRECT_IMPORTS[0:3],
             ),
             (
                 "Inner wildcard",
                 [
-                    ImportExpression(importer="mypackage.*.cats", imported="mypackage.*.dogs"),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.*.cats"),
+                        imported=ModuleExpression("mypackage.*.dogs"),
+                    ),
                 ],
                 DIRECT_IMPORTS[3:5],
             ),
             (
                 "Multiple expressions, non-overlapping",
                 [
-                    ImportExpression(importer="mypackage.green", imported="mypackage.*"),
                     ImportExpression(
-                        importer="mypackage.green.cats", imported="mypackage.orange.*"
+                        importer=ModuleExpression("mypackage.green"),
+                        imported=ModuleExpression("mypackage.*"),
+                    ),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.green.cats"),
+                        imported=ModuleExpression("mypackage.orange.*"),
                     ),
                 ],
                 DIRECT_IMPORTS[0:2] + DIRECT_IMPORTS[4:6],
@@ -228,15 +244,24 @@ class TestImportExpressionsToImports:
             (
                 "Multiple expressions, overlapping",
                 [
-                    ImportExpression(importer="mypackage.*", imported="mypackage.blue"),
-                    ImportExpression(importer="mypackage.green", imported="mypackage.blue"),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.*"),
+                        imported=ModuleExpression("mypackage.blue"),
+                    ),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.green"),
+                        imported=ModuleExpression("mypackage.blue"),
+                    ),
                 ],
                 [DIRECT_IMPORTS[1]],
             ),
             (
                 "Multiple imports of external package with same importer",
                 [
-                    ImportExpression(importer="mypackage.brown", imported="someotherpackage"),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.brown"),
+                        imported=ModuleExpression("someotherpackage"),
+                    ),
                 ],
                 DIRECT_IMPORTS[6:8],
             ),
@@ -257,7 +282,9 @@ class TestImportExpressionsToImports:
             importer="mypackage.b", imported="other.foo", line_number=1, line_contents="-"
         )
 
-        expression = ImportExpression(importer="mypackage.a.*", imported="other.foo")
+        expression = ImportExpression(
+            importer=ModuleExpression("mypackage.a.*"), imported=ModuleExpression("other.foo")
+        )
         with pytest.raises(MissingImport):
             import_expressions_to_imports(graph, [expression])
 
@@ -340,8 +367,8 @@ class TestResolveImportExpressions:
                 "No wildcards",
                 [
                     ImportExpression(
-                        importer=DIRECT_IMPORTS[0].importer.name,
-                        imported=DIRECT_IMPORTS[0].imported.name,
+                        importer=ModuleExpression(DIRECT_IMPORTS[0].importer.name),
+                        imported=ModuleExpression(DIRECT_IMPORTS[0].imported.name),
                     ),
                 ],
                 {DIRECT_IMPORTS[0]},
@@ -349,65 +376,93 @@ class TestResolveImportExpressions:
             (
                 "Importer wildcard",
                 [
-                    ImportExpression(importer="mypackage.*", imported="mypackage.blue"),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.*"),
+                        imported=ModuleExpression("mypackage.blue"),
+                    ),
                 ],
                 {DIRECT_IMPORTS[1]},
             ),
             (
                 "Imported wildcard",
                 [
-                    ImportExpression(importer="mypackage.green", imported="mypackage.*"),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.green"),
+                        imported=ModuleExpression("mypackage.*"),
+                    ),
                 ],
                 set(DIRECT_IMPORTS[0:2]),
             ),
             (
                 "Importer and imported wildcards",
                 [
-                    ImportExpression(importer="mypackage.*", imported="mypackage.*"),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.*"),
+                        imported=ModuleExpression("mypackage.*"),
+                    ),
                 ],
                 set(DIRECT_IMPORTS[0:3]),
             ),
             (
                 "Inner wildcard",
                 [
-                    ImportExpression(importer="mypackage.*.cats", imported="mypackage.*.dogs"),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.*.cats"),
+                        imported=ModuleExpression("mypackage.*.dogs"),
+                    ),
                 ],
                 set(DIRECT_IMPORTS[3:5]),
             ),
             (
                 "Importer recursive wildcard",
                 [
-                    ImportExpression(importer="mypackage.**", imported="mypackage.blue"),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.**"),
+                        imported=ModuleExpression("mypackage.blue"),
+                    ),
                 ],
                 {DIRECT_IMPORTS[1]},
             ),
             (
                 "Imported recursive wildcard",
                 [
-                    ImportExpression(importer="mypackage.green", imported="mypackage.**"),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.green"),
+                        imported=ModuleExpression("mypackage.**"),
+                    ),
                 ],
                 set(DIRECT_IMPORTS[0:2]),
             ),
             (
                 "Importer and imported recursive wildcards",
                 [
-                    ImportExpression(importer="mypackage.**", imported="mypackage.**"),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.**"),
+                        imported=ModuleExpression("mypackage.**"),
+                    ),
                 ],
                 set(DIRECT_IMPORTS[0:6]) | {DIRECT_IMPORTS[8]},
             ),
             (
                 "Inner recursive wildcard",
                 [
-                    ImportExpression(importer="mypackage.**.cats", imported="mypackage.**.dogs"),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.**.cats"),
+                        imported=ModuleExpression("mypackage.**.dogs"),
+                    ),
                 ],
                 set(DIRECT_IMPORTS[3:5]) | {DIRECT_IMPORTS[8]},
             ),
             (
                 "Multiple expressions, non-overlapping",
                 [
-                    ImportExpression(importer="mypackage.green", imported="mypackage.*"),
                     ImportExpression(
-                        importer="mypackage.green.cats", imported="mypackage.orange.*"
+                        importer=ModuleExpression("mypackage.green"),
+                        imported=ModuleExpression("mypackage.*"),
+                    ),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.green.cats"),
+                        imported=ModuleExpression("mypackage.orange.*"),
                     ),
                 ],
                 set(DIRECT_IMPORTS[0:2] + DIRECT_IMPORTS[4:6]),
@@ -415,15 +470,24 @@ class TestResolveImportExpressions:
             (
                 "Multiple expressions, overlapping",
                 [
-                    ImportExpression(importer="mypackage.*", imported="mypackage.blue"),
-                    ImportExpression(importer="mypackage.green", imported="mypackage.blue"),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.*"),
+                        imported=ModuleExpression("mypackage.blue"),
+                    ),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.green"),
+                        imported=ModuleExpression("mypackage.blue"),
+                    ),
                 ],
                 {DIRECT_IMPORTS[1]},
             ),
             (
                 "Multiple imports of external package with same importer",
                 [
-                    ImportExpression(importer="mypackage.brown", imported="someotherpackage"),
+                    ImportExpression(
+                        importer=ModuleExpression("mypackage.brown"),
+                        imported=ModuleExpression("someotherpackage"),
+                    ),
                 ],
                 set(DIRECT_IMPORTS[6:8]),
             ),
@@ -449,13 +513,20 @@ class TestResolveImportExpressions:
         graph.add_import(
             importer="mypackage.b", imported="other.foo", line_number=1, line_contents="-"
         )
-        expression = ImportExpression(importer="mypackage.a.*", imported="other.foo")
+        expression = ImportExpression(
+            importer=ModuleExpression("mypackage.a.*"), imported=ModuleExpression("other.foo")
+        )
 
         imports, unresolved_expressions = resolve_import_expressions(graph, [expression])
 
         assert (imports, unresolved_expressions) == (
             set(),
-            {ImportExpression(imported="other.foo", importer="mypackage.a.*")},
+            {
+                ImportExpression(
+                    imported=ModuleExpression("other.foo"),
+                    importer=ModuleExpression("mypackage.a.*"),
+                )
+            },
         )
 
     def _build_graph(self, direct_imports):
@@ -507,10 +578,19 @@ class TestPopImportExpressions:
     def test_succeeds(self) -> None:
         graph = self._build_graph(self.DIRECT_IMPORTS)
         expressions = [
-            ImportExpression(importer="mypackage.green", imported="mypackage.*"),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.green"),
+                imported=ModuleExpression("mypackage.*"),
+            ),
             # Expressions can overlap.
-            ImportExpression(importer="mypackage.green", imported="mypackage.blue"),
-            ImportExpression(importer="mypackage.blue.cats", imported="mypackage.purple.dogs"),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.green"),
+                imported=ModuleExpression("mypackage.blue"),
+            ),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.blue.cats"),
+                imported=ModuleExpression("mypackage.purple.dogs"),
+            ),
         ]
 
         popped_imports: List[DetailedImport] = pop_import_expressions(graph, expressions)

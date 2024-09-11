@@ -5,6 +5,7 @@ Code in here should not be relied upon as a public API; if you're
 relying on it for a custom contract type, be aware things may change
 without warning.
 """
+
 from __future__ import annotations
 
 import itertools

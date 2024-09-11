@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, cast
+from typing import Iterable, List, cast
 
 from grimp import ImportGraph
 
@@ -9,6 +9,7 @@ from importlinter.application.contract_utils import AlertLevel
 from importlinter.configuration import settings
 from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
+from importlinter.domain.helpers import module_expressions_to_modules
 from importlinter.domain.imports import Module
 
 from ._common import format_line_numbers
@@ -33,8 +34,8 @@ class ForbiddenContract(Contract):
 
     type_name = "forbidden"
 
-    source_modules = fields.ListField(subfield=fields.ModuleField())
-    forbidden_modules = fields.ListField(subfield=fields.ModuleField())
+    source_modules = fields.ListField(subfield=fields.ModuleExpressionField())
+    forbidden_modules = fields.ListField(subfield=fields.ModuleExpressionField())
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     allow_indirect_imports = fields.BooleanField(required=False, default=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
@@ -49,16 +50,30 @@ class ForbiddenContract(Contract):
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
 
-        self._check_all_modules_exist_in_graph(graph)
-        self._check_external_forbidden_modules()
+        source_modules = list(
+            module_expressions_to_modules(
+                graph,
+                self.source_modules,  # type: ignore
+            )
+        )
+        forbidden_modules = list(
+            module_expressions_to_modules(
+                graph,
+                self.forbidden_modules,  # type: ignore
+            )
+        )
+
+        self._check_all_modules_exist_in_graph(source_modules, graph)
+        self._check_external_forbidden_modules(forbidden_modules)
 
         # We only need to check for illegal imports for forbidden modules that are in the graph.
-        forbidden_modules_in_graph = [
-            m for m in self.forbidden_modules if m.name in graph.modules  # type: ignore
-        ]
+        forbidden_modules_in_graph = [m for m in forbidden_modules if m.name in graph.modules]
 
-        for source_module in self.source_modules:  # type: ignore
-            for forbidden_module in forbidden_modules_in_graph:
+        def sort_key(module):
+            return module.name
+
+        for source_module in sorted(source_modules, key=sort_key):
+            for forbidden_module in sorted(forbidden_modules_in_graph, key=sort_key):
                 output.verbose_print(
                     verbose,
                     "Searching for import chains from "
@@ -95,7 +110,7 @@ class ForbiddenContract(Contract):
                                         "line_numbers": line_numbers,
                                     }
                                 )
-                            subpackage_chain_data["chains"].append(chain_data)
+                            subpackage_chain_data["chains"].append(chain_data)  # type: ignore
                 if subpackage_chain_data["chains"]:
                     invalid_chains.append(subpackage_chain_data)
                 if verbose:
@@ -106,8 +121,15 @@ class ForbiddenContract(Contract):
                         f"in {timer.duration_in_s}s.",
                     )
 
+        # Sorting by upstream and downstream module ensures that the output is deterministic
+        # and that the same upstream and downstream modules are always adjacent in the output.
+        def chain_sort_key(chain_data):
+            return (chain_data["upstream_module"], chain_data["downstream_module"])
+
         return ContractCheck(
-            kept=is_kept, warnings=warnings, metadata={"invalid_chains": invalid_chains}
+            kept=is_kept,
+            warnings=warnings,
+            metadata={"invalid_chains": sorted(invalid_chains, key=chain_sort_key)},
         )
 
     def render_broken_contract(self, check: "ContractCheck") -> None:
@@ -133,13 +155,15 @@ class ForbiddenContract(Contract):
 
             output.new_line()
 
-    def _check_all_modules_exist_in_graph(self, graph: ImportGraph) -> None:
-        for module in self.source_modules:  # type: ignore
+    def _check_all_modules_exist_in_graph(
+        self, modules: Iterable[Module], graph: ImportGraph
+    ) -> None:
+        for module in modules:
             if module.name not in graph.modules:
                 raise ValueError(f"Module '{module.name}' does not exist.")
 
-    def _check_external_forbidden_modules(self) -> None:
-        external_forbidden_modules = self._get_external_forbidden_modules()
+    def _check_external_forbidden_modules(self, forbidden_modules) -> None:
+        external_forbidden_modules = self._get_external_forbidden_modules(forbidden_modules)
         if external_forbidden_modules:
             if self._graph_was_built_with_externals():
                 for module in external_forbidden_modules:
@@ -154,11 +178,11 @@ class ForbiddenContract(Contract):
                     "when there are external forbidden modules."
                 )
 
-    def _get_external_forbidden_modules(self) -> set[Module]:
+    def _get_external_forbidden_modules(self, forbidden_modules) -> set[Module]:
         root_packages = [Module(name) for name in self.session_options["root_packages"]]
         return {
             forbidden_module
-            for forbidden_module in cast(List[Module], self.forbidden_modules)
+            for forbidden_module in cast(List[Module], forbidden_modules)
             if not any(
                 forbidden_module.is_in_package(root_package) for root_package in root_packages
             )

@@ -15,7 +15,7 @@ from importlinter.domain.fields import (
     StringField,
     ValidationError,
 )
-from importlinter.domain.imports import ImportExpression, Module
+from importlinter.domain.imports import ImportExpression, Module, ModuleExpression
 
 
 def test_field_cannot_be_instantiated_with_default_and_required():
@@ -91,49 +91,80 @@ class TestModuleField(BaseFieldTest):
     (
         (
             "mypackage.foo -> mypackage.bar",
-            ImportExpression(importer="mypackage.foo", imported="mypackage.bar"),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.foo"),
+                imported=ModuleExpression("mypackage.bar"),
+            ),
         ),
         (
             "my_package.foo   ->   my_package.bar",  # Extra whitespaces are supported.
-            ImportExpression(importer="my_package.foo", imported="my_package.bar"),
+            ImportExpression(
+                importer=ModuleExpression("my_package.foo"),
+                imported=ModuleExpression("my_package.bar"),
+            ),
         ),
         (
             "my_package.foo -> my_package.foo_bar",  # Underscores are supported.
-            ImportExpression(importer="my_package.foo", imported="my_package.foo_bar"),
+            ImportExpression(
+                importer=ModuleExpression("my_package.foo"),
+                imported=ModuleExpression("my_package.foo_bar"),
+            ),
         ),
         # Wildcards
         # ---------
         (
             "mypackage.foo.* -> mypackage.bar",
-            ImportExpression(importer="mypackage.foo.*", imported="mypackage.bar"),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.foo.*"),
+                imported=ModuleExpression("mypackage.bar"),
+            ),
         ),
         (
             "mypackage.foo.*.baz -> mypackage.bar",
-            ImportExpression(importer="mypackage.foo.*.baz", imported="mypackage.bar"),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.foo.*.baz"),
+                imported=ModuleExpression("mypackage.bar"),
+            ),
         ),
         (
             "mypackage.foo -> mypackage.bar.*",
-            ImportExpression(importer="mypackage.foo", imported="mypackage.bar.*"),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.foo"),
+                imported=ModuleExpression("mypackage.bar.*"),
+            ),
         ),
         (
             "*.*.* -> mypackage.*.foo.*",
-            ImportExpression(importer="*.*.*", imported="mypackage.*.foo.*"),
+            ImportExpression(
+                importer=ModuleExpression("*.*.*"), imported=ModuleExpression("mypackage.*.foo.*")
+            ),
         ),
         (
             "mypackage.foo.** -> mypackage.bar",
-            ImportExpression(importer="mypackage.foo.**", imported="mypackage.bar"),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.foo.**"),
+                imported=ModuleExpression("mypackage.bar"),
+            ),
         ),
         (
             "mypackage.foo.**.baz -> mypackage.bar",
-            ImportExpression(importer="mypackage.foo.**.baz", imported="mypackage.bar"),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.foo.**.baz"),
+                imported=ModuleExpression("mypackage.bar"),
+            ),
         ),
         (
             "mypackage.foo -> mypackage.bar.**",
-            ImportExpression(importer="mypackage.foo", imported="mypackage.bar.**"),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.foo"),
+                imported=ModuleExpression("mypackage.bar.**"),
+            ),
         ),
         (
             "** -> mypackage.**.foo.*",
-            ImportExpression(importer="**", imported="mypackage.**.foo.*"),
+            ImportExpression(
+                importer=ModuleExpression("**"), imported=ModuleExpression("mypackage.**.foo.*")
+            ),
         ),
         # Invalid expressions
         # -------------------
