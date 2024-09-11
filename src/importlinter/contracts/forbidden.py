@@ -61,8 +61,11 @@ class ForbiddenContract(Contract):
             m for m in forbidden_modules if m.name in graph.modules  # type: ignore
         ]
 
-        for source_module in source_modules:  # type: ignore
-            for forbidden_module in forbidden_modules_in_graph:
+        def sort_key(module):
+            return module.name
+
+        for source_module in sorted(source_modules, key=sort_key):  # type: ignore
+            for forbidden_module in sorted(forbidden_modules_in_graph, key=sort_key):
                 output.verbose_print(
                     verbose,
                     "Searching for import chains from "
