@@ -1,8 +1,8 @@
 Changelog
 =========
 
-latest
-------
+2.1 (2024-10-8)
+---------------
 
 * Add support for wildcards in forbidden and independence contracts.
 * Formally support Python 3.13.
