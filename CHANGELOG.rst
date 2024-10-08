@@ -5,6 +5,7 @@ latest
 ------
 
 * Add support for wildcards in forbidden and independence contracts.
+* Formally support Python 3.13.
 * Drop support for Python 3.8.
 
 2.0 (2024-1-9)
