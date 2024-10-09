@@ -1,13 +1,14 @@
 import os
 import sys
 from logging import config as logging_config
-from typing import NoReturn, Optional, Tuple, Type, Union
+from typing import Optional, Tuple, Type, Union
 
 import click
 
-from importlinter import configuration
-from importlinter.application import use_cases
 from importlinter.application.sentinels import NotSupplied
+
+from . import configuration
+from .application import use_cases
 
 configuration.configure()
 
@@ -36,7 +37,6 @@ EXIT_STATUS_ERROR = 1
     is_flag=True,
     help="Noisily output progress as we go along.",
 )
-@click.argument("files", nargs=-1, type=click.Path(exists=True))
 def lint_imports_command(
     config: Optional[str],
     contract: Tuple[str, ...],
@@ -45,8 +45,7 @@ def lint_imports_command(
     debug: bool,
     show_timings: bool,
     verbose: bool,
-    files: Tuple[str, ...],
-) -> NoReturn:
+) -> int:
     """
     Check that a project adheres to a set of contracts.
     """
@@ -58,7 +57,6 @@ def lint_imports_command(
         is_debug_mode=debug,
         show_timings=show_timings,
         verbose=verbose,
-        files=files,
     )
     sys.exit(exit_code)
 
@@ -71,7 +69,6 @@ def lint_imports(
     is_debug_mode: bool = False,
     show_timings: bool = False,
     verbose: bool = False,
-    files: Tuple[str, ...] = (),
 ) -> int:
     """
     Check that a project adheres to a set of contracts.
@@ -88,7 +85,6 @@ def lint_imports(
         show_timings:       whether to show the times taken to build the graph and to check
                             each contract.
         verbose:            if True, noisily output progress as it goes along.
-        files:              the files to lint. If not provided, the entire project is linted.
 
     Returns:
         EXIT_STATUS_SUCCESS or EXIT_STATUS_ERROR.
@@ -146,7 +142,3 @@ def _configure_logging(verbose: bool) -> None:
             },
         }
     )
-
-
-if __name__ == "__main__":
-    lint_imports_command()
