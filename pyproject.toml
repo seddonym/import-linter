@@ -58,17 +58,29 @@ namespaces = false
 
 [tool.black]
 line-length = 99
+extend-exclude = '''
+/(
+    docs
+    |venv
+    |\.tox
+)/
+'''
 
 [tool.isort]
+profile = "black"
 multi_line_output = 3
 include_trailing_comma = "True"
 force_grid_wrap = 0
 use_parentheses = "True"
 line_length = 99
+skip = ["docs", "venv", ".tox"]
 
 [tool.mypy]
 exclude = [
     '^tests/assets/',
+    '^docs/*',
+    '^venv/*',
+    '^\.tox/',
 ]
 warn_unused_ignores = true
 warn_redundant_casts = true
