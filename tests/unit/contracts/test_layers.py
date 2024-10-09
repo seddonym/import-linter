@@ -3,9 +3,9 @@ from grimp.adaptors.graph import ImportGraph
 
 from importlinter.application.app_config import settings
 from importlinter.contracts.layers import Layer, LayerField, LayersContract, ModuleTail
+from importlinter.domain import fields
 from importlinter.domain.contract import ContractCheck, InvalidContractOptions
 from importlinter.domain.helpers import MissingImport
-from importlinter.domain import fields
 from tests.adapters.printing import FakePrinter
 from tests.adapters.timing import FakeTimer
 

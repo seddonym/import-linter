@@ -14,7 +14,6 @@ from importlinter.domain.imports import Module
 
 from ._common import DetailedChain, build_detailed_chain_from_route, render_chain_data
 
-
 _INDEPENDENT_LAYER_DELIMITER = "|"
 _NON_INDEPENDENT_LAYER_DELIMITER = ":"
 

@@ -1,7 +1,8 @@
 from typing import Dict, Iterator, List, Tuple
 
-from importlinter.domain.contract import Contract, ContractCheck, InvalidContractOptions
 from grimp import ImportGraph
+
+from importlinter.domain.contract import Contract, ContractCheck, InvalidContractOptions
 
 
 class Reporter:
