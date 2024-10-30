@@ -58,10 +58,10 @@ External packages may also be forbidden.
 
 **Configuration options**
 
-    - ``source_modules``:    A list of modules that should not import the forbidden modules.
+    - ``source_modules``:    A list of modules that should not import the forbidden modules. Supports :ref:`wildcards`.
     - ``forbidden_modules``: A list of modules that should not be imported by the source modules. These may include
       root level external packages (i.e. ``django``, but not ``django.db.models``). If external packages are included,
-      the top level configuration must have ``include_external_packages = True``.
+      the top level configuration must have ``include_external_packages = True``. Supports :ref:`wildcards`.
     - ``ignore_imports``: See :ref:`Shared options`.
     - ``unmatched_ignore_imports_alerting``: See :ref:`Shared options`.
     - ``allow_indirect_imports``: If ``True``, allow indirect imports to forbidden modules without interpreting them
@@ -93,7 +93,7 @@ They do this by checking that there are no imports in any direction between the 
 
 **Configuration options**
 
-    - ``modules``: A list of modules/subpackages that should be independent of each other.
+    - ``modules``: A list of modules/subpackages that should be independent of each other. Supports :ref:`wildcards`.
     - ``ignore_imports``: See :ref:`Shared options`.
     - ``unmatched_ignore_imports_alerting``: See :ref:`Shared options`.
 
@@ -113,10 +113,10 @@ way around.
       *relative to the container*. The order is from higher to lower level layers. Layers wrapped in parentheses
       (e.g. ``(foo)``) will be ignored if they are not present in the file system; otherwise, the contract will fail.
       It's also possible to include multiple layer modules on the same line, separated by either exclusively pipes
-      (``|``) or exclusively colons (``:``) - see :ref:`Multi-item layers`.
+      (``|``) or exclusively colons (``:``) - see :ref:`Multi-item layers`. Does not support :ref:`wildcards`.
     - ``containers``:
       List of the parent modules of the layers, as *absolute names* that you could import, such as
-      ``mypackage.foo``. See :ref:`Containers`. (Optional.)
+      ``mypackage.foo``. See :ref:`Containers`. Does not support :ref:`wildcards`. (Optional.)
     - ``ignore_imports``: See :ref:`Shared options`.
     - ``unmatched_ignore_imports_alerting``: See :ref:`Shared options`.
     - ``exhaustive``. If true, check that the contract declares every possible layer in its list of layers to check.
@@ -346,12 +346,10 @@ Options used by multiple contracts
 Wildcards
 ---------
 
-  Wildcards are supported in most places where a module name is required to express a set of modules.
+  Many contract fields refer to sets of modules - some (but not all) of these support wildcards.
+
   ``*`` stands in for a module name, without including subpackages. ``**`` includes subpackages too.
-  
-  Note that at the moment, layer contracts only support wildcards in `illegal_imports`.
-  If you have a use case for this, please file an issue.
-  
+
   Examples:
 
   - ``mypackage.*``:  matches ``mypackage.foo`` but not ``mypackage.foo.bar``.
@@ -360,4 +358,3 @@ Wildcards
   - ``mypackage.**``: matches ``mypackage.foo.bar`` and ``mypackage.foo.bar.baz``.
   - ``mypackage.**.qux``: matches ``mypackage.foo.bar.qux`` and ``mypackage.foo.bar.baz.qux``.
   - ``mypackage.foo*``: not a valid expression. (The wildcard must replace a whole module name.)
-
