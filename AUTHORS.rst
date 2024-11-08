@@ -24,3 +24,4 @@ Contributors
 * Peter Byfield - https://github.com/Peter554
 * Fabian Binz - https://github.com/fbinz
 * Neil Williams - https://github.com/spladug
+* Nicholas Bunn - https://github.com/NicholasBunn
