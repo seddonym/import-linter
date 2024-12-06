@@ -1,6 +1,11 @@
 Changelog
 =========
 
+latest
+------
+
+* Add as_packages field to forbidden contracts.
+
 2.1 (2024-10-8)
 ---------------
 
