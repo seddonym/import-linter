@@ -116,7 +116,7 @@ way around.
       (``|``) or exclusively colons (``:``) - see :ref:`Multi-item layers`. Does not support :ref:`wildcards`.
     - ``containers``:
       List of the parent modules of the layers, as *absolute names* that you could import, such as
-      ``mypackage.foo``. See :ref:`Containers`. Does not support :ref:`wildcards`. (Optional.)
+      ``mypackage.foo``. See :ref:`Containers`. Supports :ref:`wildcards`. (Optional.)
     - ``ignore_imports``: See :ref:`Shared options`.
     - ``unmatched_ignore_imports_alerting``: See :ref:`Shared options`.
     - ``exhaustive``. If true, check that the contract declares every possible layer in its list of layers to check.

@@ -10,6 +10,7 @@ from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
 from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck, InvalidContractOptions
+from importlinter.domain.helpers import module_expressions_to_modules
 from importlinter.domain.imports import Module
 
 from ._common import DetailedChain, build_detailed_chain_from_route, render_chain_data
@@ -122,7 +123,7 @@ class LayersContract(Contract):
     type_name = "layers"
 
     layers = fields.ListField(subfield=LayerField())
-    containers = fields.ListField(subfield=fields.StringField(), required=False)
+    containers = fields.ListField(subfield=fields.ModuleExpressionField(), required=False)
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
     exhaustive = fields.BooleanField(default=False)
@@ -146,16 +147,21 @@ class LayersContract(Contract):
         )
         self.all_module_tails = self._get_all_module_tails_from_layers(self.layers)  # type: ignore
 
+        containers = set()
         if self.containers:
-            self._validate_containers(graph)
+            modules = module_expressions_to_modules(graph, self.containers)  # type: ignore
+            containers = {m.name for m in modules}
+
+        if self.containers:
+            self._validate_containers(graph, containers)
         else:
             self._check_all_containerless_layers_exist(graph)
 
-        undeclared_modules = self._get_undeclared_modules(graph)
+        undeclared_modules = self._get_undeclared_modules(graph, containers)
 
         dependencies = graph.find_illegal_dependencies_for_layers(
             layers=self._grimpify_layers(self.layers),  # type: ignore
-            containers=self.containers,  # type: ignore
+            containers=containers,
         )
         invalid_chains = self._build_invalid_chains(dependencies, graph)
 
@@ -198,11 +204,11 @@ class LayersContract(Contract):
             )
             output.new_line()
 
-    def _validate_containers(self, graph: grimp.ImportGraph) -> None:
+    def _validate_containers(self, graph: grimp.ImportGraph, containers: set[str]) -> None:
         root_package_names = self.session_options["root_packages"]
         root_packages = tuple(Module(name) for name in root_package_names)
 
-        for container in self.containers:  # type: ignore
+        for container in containers:
             if not any(
                 Module(container).is_in_package(root_package) for root_package in root_packages
             ):
@@ -235,7 +241,7 @@ class LayersContract(Contract):
                     f"module {module_name} does not exist."
                 )
 
-    def _get_undeclared_modules(self, graph: grimp.ImportGraph) -> set[str]:
+    def _get_undeclared_modules(self, graph: grimp.ImportGraph, containers: set[str]) -> set[str]:
         if not self.exhaustive:
             return set()
 
@@ -245,7 +251,7 @@ class LayersContract(Contract):
         module_tail_names: set[str] = {module_tail.name for module_tail in self.all_module_tails}
         declared_module_tails = module_tail_names | exhaustive_ignores
 
-        for container in self.containers:  # type: ignore[attr-defined]
+        for container in containers:
             for module in graph.find_children(container):
                 module_tail = module.rpartition(".")[-1]
                 if module_tail not in declared_module_tails:

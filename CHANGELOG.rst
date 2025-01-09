@@ -1,6 +1,11 @@
 Changelog
 =========
 
+latest
+------
+
+* Add support for wildcards in layers contract containers.
+
 2.1 (2024-10-8)
 ---------------
 

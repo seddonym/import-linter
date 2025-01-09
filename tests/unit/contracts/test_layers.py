@@ -349,6 +349,111 @@ class TestLayerMultipleContainers:
         )
 
 
+class TestLayerContractWildcardContainers:
+    def _build_graph(self):
+        graph = ImportGraph()
+        for module in (
+            "mypackage",
+            "mypackage.components.one",
+            "mypackage.components.one.high",
+            "mypackage.components.one.high.green",
+            "mypackage.components.one.high.blue",
+            "mypackage.components.one.high.yellow",
+            "mypackage.components.one.high.yellow.alpha",
+            "mypackage.components.one.medium",
+            "mypackage.components.one.medium.orange",
+            "mypackage.components.one.medium.orange.beta",
+            "mypackage.components.one.medium.red",
+            "mypackage.components.one.low",
+            "mypackage.components.one.low.black",
+            "mypackage.components.one.low.white",
+            "mypackage.components.one.low.white.gamma",
+            "mypackage.components.two",
+            "mypackage.components.two.high",
+            "mypackage.components.two.high.red",
+            "mypackage.components.two.high.red.alpha",
+            "mypackage.components.two.medium",
+            "mypackage.components.two.medium.green",
+            "mypackage.components.two.medium.green.beta",
+            "mypackage.components.two.low",
+            "mypackage.components.two.low.blue",
+            "mypackage.components.two.low.blue.gamma",
+            "mypackage.components.three",
+            "mypackage.components.three.high",
+            "mypackage.components.three.high.white",
+            "mypackage.components.three.medium",
+            "mypackage.components.three.medium.purple",
+            "mypackage.components.three.low",
+            "mypackage.components.three.low.cyan",
+            "mypackage.noncontainer",
+            "mypackage.noncontainer.blue",
+        ):
+            graph.add_module(module)
+
+        # Add some 'legal' imports, each within their separate containers.
+        graph.add_import(
+            importer="mypackage.one.high.green", imported="mypackage.one.medium.orange"
+        )
+        graph.add_import(
+            importer="mypackage.one.high.green", imported="mypackage.one.low.white.gamma"
+        )
+        graph.add_import(
+            importer="mypackage.one.medium.orange", imported="mypackage.one.low.white"
+        )
+
+        graph.add_import(
+            importer="mypackage.two.high.red.alpha", imported="mypackage.two.medium.green.beta"
+        )
+        graph.add_import(
+            importer="mypackage.two.high.red.alpha", imported="mypackage.two.low.blue.gamma"
+        )
+        graph.add_import(
+            importer="mypackage.two.medium.green.beta", imported="mypackage.two.low.blue.gamma"
+        )
+
+        graph.add_import(
+            importer="mypackage.three.high.white", imported="mypackage.three.medium.purple"
+        )
+        graph.add_import(
+            importer="mypackage.three.high.white", imported="mypackage.three.low.cyan"
+        )
+        graph.add_import(
+            importer="mypackage.three.medium.purple", imported="mypackage.three.low.cyan"
+        )
+
+        return graph
+
+    def _build_contract(self):
+        return LayersContract(
+            name="Layer contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options={
+                "containers": ["mypackage.components.*"],
+                "layers": ["high", "medium", "low"],
+            },
+        )
+
+    def test_containers_can_use_wildcards(self):
+        contract = self._build_contract()
+        graph = self._build_graph()
+
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        assert contract_check.kept is True
+
+    def test_illegal_grandchild_imports_means_contract_is_broken(self):
+        contract = self._build_contract()
+        graph = self._build_graph()
+        graph.add_import(
+            importer="mypackage.components.two.medium.green.beta",
+            imported="mypackage.components.two.high.red.alpha",
+        )
+
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        assert contract_check.kept is False
+
+
 class TestLayerContractPopulatesMetadata:
     def test_layer_contract_populates_metadata(self):
         graph = self._build_graph_without_imports()
