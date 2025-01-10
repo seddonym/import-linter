@@ -1,7 +1,8 @@
+from grimp import ImportGraph
+
 from importlinter.application import output
 from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
-from grimp import ImportGraph
 
 
 class AlwaysPassesContract(Contract):
