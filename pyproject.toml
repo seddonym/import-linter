@@ -16,6 +16,7 @@ dependencies = [
     "grimp>=3.2",
     "tomli>=1.2.1; python_version < '3.11'",
     "typing-extensions>=3.10.0.0",
+    "networkx>=3",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
