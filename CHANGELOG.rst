@@ -1,8 +1,8 @@
 Changelog
 =========
 
-latest
-------
+2.2 (2025-02-07)
+----------------
 
 * Add support for wildcards in layers contract containers.
 * Improve performance of `helpers.pop_imports`.
