@@ -19,10 +19,10 @@ from importlinter.domain.imports import DirectImport, ImportExpression, Module, 
 class TestPopImports:
     IMPORTS: List[DetailedImport] = [
         dict(
-            importer="mypackage.green",
-            imported="mypackage.yellow",
-            line_number=1,
-            line_contents="blah",
+            importer="mypackage.blue",
+            imported="mypackage.green",
+            line_number=10,
+            line_contents="blahblahblah",
         ),
         dict(
             importer="mypackage.green",
@@ -31,10 +31,10 @@ class TestPopImports:
             line_contents="blahblah",
         ),
         dict(
-            importer="mypackage.blue",
-            imported="mypackage.green",
-            line_number=10,
-            line_contents="blahblahblah",
+            importer="mypackage.green",
+            imported="mypackage.yellow",
+            line_number=1,
+            line_contents="blah",
         ),
     ]
 
