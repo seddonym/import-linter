@@ -5,6 +5,7 @@ latest
 ------
 
 * Add support for wildcards in layers contract containers.
+* Improve performance of `helpers.pop_imports`.
 
 2.1 (2024-10-8)
 ---------------

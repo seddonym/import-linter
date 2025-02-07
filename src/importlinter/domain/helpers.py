@@ -218,17 +218,12 @@ def _dedupe_imports(imports: Iterable[DirectImport]) -> Iterable[DirectImport]:
     This is to make it easy for the calling function to remove the set of imports from a graph
     without attempting to remove certain imports twice.
     """
-    deduped_imports: List[DirectImport] = []
-
-    # Why don't we use a set here? Because we want to preserve the order (mainly for testability).
-    imports_without_metadata = [
+    imports_without_metadata = {
         DirectImport(imported=i.imported, importer=i.importer) for i in imports
-    ]
-    for import_without_metadata in imports_without_metadata:
-        if import_without_metadata not in deduped_imports:
-            deduped_imports.append(import_without_metadata)
-
-    return deduped_imports
+    }
+    # Why don't we return a set here? Because we want to preserve the order to make it
+    # more deterministic.
+    return sorted(imports_without_metadata, key=lambda di: (di.importer.name, di.imported.name))
 
 
 def _to_pattern(expression: str) -> Pattern:
