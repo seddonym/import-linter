@@ -13,12 +13,7 @@ from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.helpers import module_expressions_to_modules
 from importlinter.domain.imports import Module
 
-from ._common import (
-    DetailedChain,
-    Link,
-    build_detailed_chain_from_route,
-    render_chain_data,
-)
+from ._common import DetailedChain, Link, build_detailed_chain_from_route, render_chain_data
 
 
 class _SubpackageChainData(TypedDict):

@@ -52,20 +52,41 @@ To set up `import-linter` for local development:
 
     git clone git@github.com:your_name_here/import-linter.git
 
+3. Setup venv::
+
+    virtualenv venv
+
+    # On macOS/Linux:
+    source venv/bin/activate
+    # On Windows:
+    .\venv\Scripts\activate
+
+    pip install -e .
+    pip install -r requirements-dev.txt
+
 3. Create a branch for local development::
 
     git checkout -b name-of-your-bugfix-or-feature
 
    Now you can make your changes locally.
 
-4. When you're done making changes, run all the checks with `tox <https://tox.wiki/en/latest/installation.html>`_ one command::
+4. Run tests/checks::
+
+    pytest
+    black src tests
+    flake8 src tests
+    mypy src tests
+    isort src tests
+    lint-imports
+
+5. When you're done making changes, run all the checks with `tox <https://tox.wiki/en/latest/installation.html>`_ one command::
 
     tox
 
-5. Commit your changes and push your branch to GitHub::
+6. Commit your changes and push your branch to GitHub::
 
     git add .
     git commit -m "Your detailed description of your changes."
     git push origin name-of-your-bugfix-or-feature
 
-6. Submit a pull request through the GitHub website.
+7. Submit a pull request through the GitHub website.
