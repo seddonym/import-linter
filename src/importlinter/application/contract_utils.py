@@ -3,6 +3,7 @@ from typing import List, Optional, Sequence, Set
 
 
 from importlinter.domain import helpers
+from importlinter.domain.imports import DirectImport, Module
 from importlinter.domain.helpers import MissingImport
 from importlinter.domain.imports import ImportExpression
 from grimp import ImportGraph
@@ -33,16 +34,32 @@ def remove_ignored_imports(
     Returns:
         A list of any warnings to be surfaced to the user.
     """
-    imports, unresolved_expressions = helpers.resolve_import_expressions(
-        graph=graph, expressions=ignore_imports if ignore_imports else []
-    )
+    imports_to_remove = set()
+    unresolved_expressions = set()
+    for ignore_import in ignore_imports or []:
+        matched_imports = graph.find_matching_direct_imports(
+            importer_expression=ignore_import.importer.expression,
+            imported_expression=ignore_import.imported.expression,
+        )
+        if not matched_imports:
+            unresolved_expressions.add(ignore_import)
+        else:
+            imports_to_remove.update(
+                {
+                    DirectImport(
+                        importer=Module(matched_import["importer"]),
+                        imported=Module(matched_import["imported"]),
+                    )
+                    for matched_import in matched_imports
+                }
+            )
 
     warnings = _handle_unresolved_import_expressions(
         unresolved_expressions,
         unmatched_alerting,
     )
 
-    helpers.pop_imports(graph, imports)
+    helpers.pop_imports(graph, imports_to_remove)
 
     return warnings
 
