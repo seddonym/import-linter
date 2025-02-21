@@ -1,3 +1,5 @@
+from typing import Tuple, List, Dict
+
 import pytest
 from grimp.adaptors.graph import ImportGraph
 
@@ -14,91 +16,163 @@ def configure():
 
 
 class TestForbiddenContract:
-    def test_is_kept_when_no_forbidden_modules_imported(self):
+    @pytest.mark.parametrize("as_packages", ("False", "True"))
+    def test_is_kept_when_no_forbidden_modules_imported(
+        self,
+        as_packages: bool,
+    ):
         graph = self._build_graph()
-        contract = self._build_contract(forbidden_modules=("mypackage.blue", "mypackage.yellow"))
+        contract = self._build_contract(
+            forbidden_modules=("mypackage.blue", "mypackage.yellow"),
+            as_packages=as_packages,
+        )
 
         contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept
 
-    def test_is_broken_when_forbidden_modules_imported(self):
+    @pytest.mark.parametrize(
+        "as_packages, forbidden_modules, expected_invalid_chains",
+        [
+            (
+                True,
+                (
+                    "mypackage.blue",
+                    "mypackage.green",
+                    "mypackage.yellow",
+                    "mypackage.purple",
+                ),
+                [
+                    {
+                        "upstream_module": "mypackage.green",
+                        "downstream_module": "mypackage.one",
+                        "chains": [
+                            [
+                                {
+                                    "importer": "mypackage.one.alpha",
+                                    "imported": "mypackage.green.beta",
+                                    "line_numbers": (3,),
+                                }
+                            ],
+                            [
+                                {
+                                    "importer": "mypackage.one.alpha.circle",
+                                    "imported": "mypackage.green.beta.sphere",
+                                    "line_numbers": (8,),
+                                },
+                            ],
+                        ],
+                    },
+                    {
+                        "upstream_module": "mypackage.green",
+                        "downstream_module": "mypackage.three",
+                        "chains": [
+                            [
+                                {
+                                    "importer": "mypackage.three",
+                                    "imported": "mypackage.green",
+                                    "line_numbers": (4,),
+                                }
+                            ]
+                        ],
+                    },
+                    {
+                        "upstream_module": "mypackage.purple",
+                        "downstream_module": "mypackage.two",
+                        "chains": [
+                            [
+                                {
+                                    "importer": "mypackage.two",
+                                    "imported": "mypackage.utils",
+                                    "line_numbers": (9,),
+                                },
+                                {
+                                    "importer": "mypackage.utils",
+                                    "imported": "mypackage.purple",
+                                    "line_numbers": (1,),
+                                },
+                            ]
+                        ],
+                    },
+                ],
+            ),
+            (
+                False,
+                (
+                    "mypackage.blue",
+                    "mypackage.green",
+                    "mypackage.yellow",
+                    "mypackage.purple",
+                ),
+                [
+                    {
+                        "upstream_module": "mypackage.green",
+                        "downstream_module": "mypackage.three",
+                        "chains": [
+                            [
+                                {
+                                    "importer": "mypackage.three",
+                                    "imported": "mypackage.green",
+                                    "line_numbers": (4,),
+                                }
+                            ]
+                        ],
+                    },
+                    {
+                        "upstream_module": "mypackage.purple",
+                        "downstream_module": "mypackage.two",
+                        "chains": [
+                            [
+                                {
+                                    "importer": "mypackage.two",
+                                    "imported": "mypackage.utils",
+                                    "line_numbers": (9,),
+                                },
+                                {
+                                    "importer": "mypackage.utils",
+                                    "imported": "mypackage.purple",
+                                    "line_numbers": (1,),
+                                },
+                            ]
+                        ],
+                    },
+                ],
+            ),
+        ],
+    )
+    def test_is_broken_when_forbidden_modules_imported(
+        self,
+        as_packages: str,
+        forbidden_modules: Tuple[str],
+        expected_invalid_chains: List[Dict],
+    ):
         graph = self._build_graph()
         contract = self._build_contract(
-            forbidden_modules=(
-                "mypackage.blue",
-                "mypackage.green",
-                "mypackage.yellow",
-                "mypackage.purple",
-            )
+            forbidden_modules=forbidden_modules,
+            as_packages=as_packages,
         )
 
         contract_check = contract.check(graph=graph, verbose=False)
 
         assert not contract_check.kept
 
-        expected_metadata = {
-            "invalid_chains": [
-                {
-                    "upstream_module": "mypackage.green",
-                    "downstream_module": "mypackage.one",
-                    "chains": [
-                        [
-                            {
-                                "importer": "mypackage.one.alpha",
-                                "imported": "mypackage.green.beta",
-                                "line_numbers": (3,),
-                            }
-                        ],
-                        [
-                            {
-                                "importer": "mypackage.one.alpha.circle",
-                                "imported": "mypackage.green.beta.sphere",
-                                "line_numbers": (8,),
-                            },
-                        ],
-                    ],
-                },
-                {
-                    "upstream_module": "mypackage.green",
-                    "downstream_module": "mypackage.three",
-                    "chains": [
-                        [
-                            {
-                                "importer": "mypackage.three",
-                                "imported": "mypackage.green",
-                                "line_numbers": (4,),
-                            }
-                        ]
-                    ],
-                },
-                {
-                    "upstream_module": "mypackage.purple",
-                    "downstream_module": "mypackage.two",
-                    "chains": [
-                        [
-                            {
-                                "importer": "mypackage.two",
-                                "imported": "mypackage.utils",
-                                "line_numbers": (9,),
-                            },
-                            {
-                                "importer": "mypackage.utils",
-                                "imported": "mypackage.purple",
-                                "line_numbers": (1,),
-                            },
-                        ]
-                    ],
-                },
-            ]
-        }
+        expected_metadata = {"invalid_chains": expected_invalid_chains}
 
         assert expected_metadata == contract_check.metadata
 
-    def test_is_broken_when_forbidden_external_modules_imported(self):
+    @pytest.mark.parametrize(
+        "as_packages",
+        (False, True),
+    )
+    def test_is_broken_when_forbidden_external_modules_imported(
+        self,
+        as_packages: str,
+    ):
         graph = self._build_graph()
         contract = self._build_contract(
-            forbidden_modules=("sqlalchemy", "requests"), include_external_packages=True
+            forbidden_modules=("sqlalchemy", "requests"),
+            include_external_packages=True,
+            as_packages=as_packages,
         )
 
         contract_check = contract.check(graph=graph, verbose=False)
@@ -125,9 +199,22 @@ class TestForbiddenContract:
 
         assert expected_metadata == contract_check.metadata
 
-    def test_is_invalid_when_forbidden_externals_but_graph_does_not_include_externals(self):
+    @pytest.mark.parametrize(
+        "as_packages",
+        (
+            ("False"),
+            ("True"),
+        ),
+    )
+    def test_is_invalid_when_forbidden_externals_but_graph_does_not_include_externals(
+        self,
+        as_packages: bool,
+    ):
         graph = self._build_graph()
-        contract = self._build_contract(forbidden_modules=("sqlalchemy", "requests"))
+        contract = self._build_contract(
+            forbidden_modules=("sqlalchemy", "requests"),
+            as_packages=as_packages,
+        )
 
         with pytest.raises(
             ValueError,
@@ -138,7 +225,14 @@ class TestForbiddenContract:
         ):
             contract.check(graph=graph, verbose=False)
 
-    def test_ignore_imports_tolerates_duplicates(self):
+    @pytest.mark.parametrize(
+        "as_packages",
+        (
+            ("False"),
+            ("True"),
+        ),
+    )
+    def test_ignore_imports_tolerates_duplicates(self, as_packages: bool):
         graph = self._build_graph()
         contract = self._build_contract(
             forbidden_modules=("mypackage.blue", "mypackage.yellow"),
@@ -148,6 +242,7 @@ class TestForbiddenContract:
                 "mypackage.three -> mypackage.green",
             ),
             include_external_packages=False,
+            as_packages=as_packages,
         )
 
         check = contract.check(graph=graph, verbose=False)
@@ -315,46 +410,85 @@ class TestForbiddenContract:
             ],
         }
 
-    def test_ignore_imports_with_wildcards(self):
+    @pytest.mark.parametrize(
+        "as_packages, forbidden_modules, expected_invalid_chains",
+        [
+            (
+                True,
+                ("mypackage.green",),
+                [
+                    {
+                        "upstream_module": "mypackage.green",
+                        "downstream_module": "mypackage.one",
+                        "chains": [
+                            [
+                                {
+                                    "importer": "mypackage.one.alpha.circle",
+                                    "imported": "mypackage.green.beta.sphere",
+                                    "line_numbers": (8,),
+                                },
+                            ]
+                        ],
+                    },
+                    {
+                        "upstream_module": "mypackage.green",
+                        "downstream_module": "mypackage.three",
+                        "chains": [
+                            [
+                                {
+                                    "importer": "mypackage.three",
+                                    "imported": "mypackage.green",
+                                    "line_numbers": (4,),
+                                },
+                            ]
+                        ],
+                    },
+                ],
+            ),
+            (
+                False,
+                ("mypackage.green",),
+                [
+                    {
+                        "upstream_module": "mypackage.green",
+                        "downstream_module": "mypackage.three",
+                        "chains": [
+                            [
+                                {
+                                    "importer": "mypackage.three",
+                                    "imported": "mypackage.green",
+                                    "line_numbers": (4,),
+                                },
+                            ]
+                        ],
+                    },
+                ],
+            ),
+        ],
+    )
+    def test_ignore_imports_with_wildcards(
+        self,
+        as_packages: str,
+        forbidden_modules: Tuple[str],
+        expected_invalid_chains: List[Dict],
+    ):
         graph = self._build_graph()
         contract = self._build_contract(
-            forbidden_modules=("mypackage.green",),
+            forbidden_modules=forbidden_modules,
             ignore_imports=("mypackage.*.alpha -> mypackage.*.beta",),
+            as_packages=as_packages,
         )
 
         check = contract.check(graph=graph, verbose=False)
         assert check.metadata == {
-            "invalid_chains": [
-                {
-                    "upstream_module": "mypackage.green",
-                    "downstream_module": "mypackage.one",
-                    "chains": [
-                        [
-                            {
-                                "importer": "mypackage.one.alpha.circle",
-                                "imported": "mypackage.green.beta.sphere",
-                                "line_numbers": (8,),
-                            },
-                        ]
-                    ],
-                },
-                {
-                    "upstream_module": "mypackage.green",
-                    "downstream_module": "mypackage.three",
-                    "chains": [
-                        [
-                            {
-                                "importer": "mypackage.three",
-                                "imported": "mypackage.green",
-                                "line_numbers": (4,),
-                            },
-                        ]
-                    ],
-                },
-            ],
+            "invalid_chains": expected_invalid_chains,
         }
 
-    def test_ignore_imports_with_recursive_wildcards(self):
+    @pytest.mark.parametrize("as_packages", (False, True))
+    def test_ignore_imports_with_recursive_wildcards(
+        self,
+        as_packages: str,
+    ):
         graph = self._build_graph()
         contract = self._build_contract(
             forbidden_modules=("mypackage.green",),
@@ -362,6 +496,7 @@ class TestForbiddenContract:
                 "mypackage.**.alpha -> mypackage.**.beta",
                 "mypackage.**.circle -> mypackage.**.sphere",
             ),
+            as_packages=as_packages,
         )
 
         check = contract.check(graph=graph, verbose=False)
@@ -380,7 +515,7 @@ class TestForbiddenContract:
                         ]
                     ],
                 },
-            ],
+            ]
         }
 
     @pytest.mark.parametrize(
@@ -458,7 +593,14 @@ class TestForbiddenContract:
             ],
         }
 
-    def test_ignore_imports_adds_warnings(self):
+    @pytest.mark.parametrize(
+        "as_packages",
+        (
+            ("False"),
+            ("True"),
+        ),
+    )
+    def test_ignore_imports_adds_warnings(self, as_packages: bool):
         graph = self._build_graph()
         contract = ForbiddenContract(
             name="Forbid contract",
@@ -471,6 +613,7 @@ class TestForbiddenContract:
                     "mypackage.*.nonexistent -> mypackage.three",
                 ],
                 "unmatched_ignore_imports_alerting": "warn",
+                "as_packages": as_packages,
             },
         )
 
@@ -481,6 +624,13 @@ class TestForbiddenContract:
             "No matches for ignored import mypackage.*.nonexistent -> mypackage.three.",
         }
 
+    @pytest.mark.parametrize(
+        "as_packages",
+        (
+            ("False"),
+            ("True"),
+        ),
+    )
     @pytest.mark.parametrize(
         "module, expected_error",
         (
@@ -504,11 +654,16 @@ class TestForbiddenContract:
         ),
     )
     def test_is_invalid_when_subpackages_of_external_packages_are_provided(
-        self, module: str, expected_error: str
+        self,
+        module: str,
+        expected_error: str,
+        as_packages: bool,
     ):
         graph = self._build_graph()
         contract = self._build_contract(
-            forbidden_modules=("mypackage.blue", module), include_external_packages=True
+            forbidden_modules=("mypackage.blue", module),
+            include_external_packages=True,
+            as_packages=as_packages,
         )
 
         with pytest.raises(
@@ -567,7 +722,10 @@ class TestForbiddenContract:
             line_contents="foo",
         )
         graph.add_import(
-            importer="mypackage.three", imported="sqlalchemy", line_number=1, line_contents="foo"
+            importer="mypackage.three",
+            imported="sqlalchemy",
+            line_number=1,
+            line_contents="foo",
         )
         return graph
 
@@ -578,6 +736,7 @@ class TestForbiddenContract:
         include_external_packages=False,
         allow_indirect_imports=None,
         source_modules=None,
+        as_packages=True,
     ):
         session_options = {"root_packages": ["mypackage"]}
         if include_external_packages:
@@ -589,10 +748,12 @@ class TestForbiddenContract:
             "forbidden_modules": forbidden_modules,
             "ignore_imports": ignore_imports or [],
         }
+
         if allow_indirect_imports is not None:
             contract_options["allow_indirect_imports"] = (
                 "true" if allow_indirect_imports else "false"
             )
+        contract_options["as_packages"] = "true" if as_packages else "false"
 
         return ForbiddenContract(
             name="Forbid contract",
@@ -777,7 +938,10 @@ class TestVerbosePrint:
             line_contents="foo",
         )
         graph.add_import(
-            importer="mypackage.three", imported="sqlalchemy", line_number=1, line_contents="foo"
+            importer="mypackage.three",
+            imported="sqlalchemy",
+            line_number=1,
+            line_contents="foo",
         )
         contract = ForbiddenContract(
             name="Forbid contract",
