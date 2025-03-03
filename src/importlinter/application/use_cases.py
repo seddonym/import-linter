@@ -5,7 +5,12 @@ from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from grimp import ImportGraph
 
 from ..application import rendering
-from ..domain.contract import Contract, InvalidContractOptions, registry
+from ..domain.contract import (
+    Contract,
+    InvalidContractOptions,
+    NoSuchContractType,
+    registry,
+)
 from . import output
 from .app_config import settings
 from .ports.reporting import Report
@@ -212,7 +217,10 @@ def _get_contract_class(contract_options: Dict[str, Any]) -> Type[Contract]:
         raise InvalidContractOptions(
             {"type": "Unable to find the 'type' key in the contract options."}
         )
-    return registry.get_contract_class(contract_options["type"])
+    try:
+        return registry.get_contract_class(contract_options["type"])
+    except NoSuchContractType as e:
+        raise InvalidContractOptions({"type": f"Uknown contract type '{e}'."})
 
 
 def _filter_contract_options(
