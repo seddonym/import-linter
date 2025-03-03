@@ -187,15 +187,16 @@ def _build_report(
         user_options.contracts_options, limit_to_contracts
     )
     for contract_options in contracts_options:
+        contract_name = contract_options.get("name", contract_options['id'])
         try:
             contract_class = _get_contract_class(contract_options)
             contract = contract_class(
-                name=contract_options["name"],
+                name=contract_name,
                 session_options=user_options.session_options,
                 contract_options=contract_options,
             )
         except InvalidContractOptions as e:
-            report.add_invalid_contract_options(contract_options["name"], e)
+            report.add_invalid_contract_options(contract_name, e)
             return report
 
         output.verbose_print(verbose, f"Checking {contract.name}...")
