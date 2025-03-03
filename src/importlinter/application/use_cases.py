@@ -182,8 +182,8 @@ def _build_report(
         user_options.contracts_options, limit_to_contracts
     )
     for contract_options in contracts_options:
-        contract_class = registry.get_contract_class(contract_options["type"])
         try:
+            contract_class = _get_contract_class(contract_options)
             contract = contract_class(
                 name=contract_options["name"],
                 session_options=user_options.session_options,
@@ -205,6 +205,14 @@ def _build_report(
 
     output.verbose_print(verbose, newline=True)
     return report
+
+
+def _get_contract_class(contract_options: Dict[str, Any]) -> Type[Contract]:
+    if "type" not in contract_options:
+        raise InvalidContractOptions(
+            {"type": "Unable to find the 'type' key in the contract options."}
+        )
+    return registry.get_contract_class(contract_options["type"])
 
 
 def _filter_contract_options(
