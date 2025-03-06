@@ -98,8 +98,7 @@ class TomlFileUserOptionReader(AbstractUserOptionReader):
         contracts = session_options.pop("contracts", [])
 
         self._normalize_booleans(session_options)
-        for index, contract in enumerate(contracts):
-            contract.setdefault("id", str(index))
+        for contract in contracts:
             self._normalize_booleans(contract)
 
         return UserOptions(session_options=session_options, contracts_options=contracts)
