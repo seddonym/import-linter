@@ -220,8 +220,8 @@ def _get_contract_class(contract_options: Dict[str, Any]) -> Type[Contract]:
         )
     try:
         return registry.get_contract_class(contract_options["type"])
-    except NoSuchContractType as e:
-        raise InvalidContractOptions({"type": f"Uknown contract type '{e}'."})
+    except NoSuchContractType:
+        raise InvalidContractOptions({"type": f"Unknown contract type '{contract_options['type']}'."})
 
 
 def _filter_contract_options(
