@@ -1,6 +1,5 @@
 import itertools
-import re
-from typing import Iterable, List, Pattern, Set, Tuple
+from typing import Iterable, List, Set, Tuple
 
 from grimp import DetailedImport, ImportGraph
 
@@ -99,14 +98,8 @@ def module_expression_to_modules(graph: ImportGraph, expression: ModuleExpressio
     if not expression.has_wildcard_expression():
         return {Module(expression.expression)}
 
-    pattern = _to_pattern(expression.expression)
-
-    modules = set()
-    for module in graph.modules:
-        if pattern.match(module):
-            modules.add(Module(module))
-
-    return modules
+    matching_modules = graph.find_matching_modules(expression.expression)
+    return {Module(module) for module in matching_modules}
 
 
 def import_expressions_to_imports(
@@ -224,18 +217,3 @@ def _dedupe_imports(imports: Iterable[DirectImport]) -> Iterable[DirectImport]:
     # Why don't we return a set here? Because we want to preserve the order to make it
     # more deterministic.
     return sorted(imports_without_metadata, key=lambda di: (di.importer.name, di.imported.name))
-
-
-def _to_pattern(expression: str) -> Pattern:
-    """
-    Function which translates an import expression into a regex pattern.
-    """
-    pattern_parts = []
-    for part in expression.split("."):
-        if "*" == part:
-            pattern_parts.append(part.replace("*", r"[^\.]+"))
-        elif "**" == part:
-            pattern_parts.append(part.replace("*", r"[^\.]+(?:\.[^\.]+)*?"))
-        else:
-            pattern_parts.append(part)
-    return re.compile(r"^" + r"\.".join(pattern_parts) + r"$")
