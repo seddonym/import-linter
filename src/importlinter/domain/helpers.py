@@ -57,17 +57,23 @@ def import_expression_to_imports(
         MissingImport if an import is not present in the graph. For a wildcarded import expression,
         this is raised if there is not at least one match.
     """
-    imports: Set[DirectImport] = set()
-    matched = False
+    matching_imports = graph.find_matching_direct_imports(import_expression=str(expression))
 
-    importers = module_expression_to_modules(graph, expression.importer)
-    importeds = module_expression_to_modules(graph, expression.imported)
-    for importer, imported in itertools.product(importers, importeds):
-        import_details = graph.get_import_details(importer=importer.name, imported=imported.name)
+    if not matching_imports:
+        raise MissingImport(
+            f"Ignored import expression {expression} didn't match anything in the graph."
+        )
+
+    detailed_imports: Set[DirectImport] = set()
+    for matching_import in matching_imports:
+        import_details = graph.get_import_details(
+            importer=matching_import["importer"],
+            imported=matching_import["imported"],
+        )
 
         if import_details:
             for individual_import_details in import_details:
-                imports.add(
+                detailed_imports.add(
                     DirectImport(
                         importer=Module(individual_import_details["importer"]),
                         imported=Module(individual_import_details["imported"]),
@@ -75,14 +81,8 @@ def import_expression_to_imports(
                         line_contents=individual_import_details["line_contents"],
                     )
                 )
-            matched = True
 
-    if not matched:
-        raise MissingImport(
-            f"Ignored import expression {expression} didn't match anything in the graph."
-        )
-
-    return list(imports)
+    return list(detailed_imports)
 
 
 def module_expressions_to_modules(
