@@ -1,6 +1,5 @@
 import itertools
-import re
-from typing import Iterable, List, Pattern, Set, Tuple
+from typing import Iterable, List, Set, Tuple
 
 from grimp import DetailedImport, ImportGraph
 
@@ -58,17 +57,23 @@ def import_expression_to_imports(
         MissingImport if an import is not present in the graph. For a wildcarded import expression,
         this is raised if there is not at least one match.
     """
-    imports: Set[DirectImport] = set()
-    matched = False
+    matching_imports = graph.find_matching_direct_imports(import_expression=str(expression))
 
-    importers = module_expression_to_modules(graph, expression.importer)
-    importeds = module_expression_to_modules(graph, expression.imported)
-    for importer, imported in itertools.product(importers, importeds):
-        import_details = graph.get_import_details(importer=importer.name, imported=imported.name)
+    if not matching_imports:
+        raise MissingImport(
+            f"Ignored import expression {expression} didn't match anything in the graph."
+        )
+
+    detailed_imports: Set[DirectImport] = set()
+    for matching_import in matching_imports:
+        import_details = graph.get_import_details(
+            importer=matching_import["importer"],
+            imported=matching_import["imported"],
+        )
 
         if import_details:
             for individual_import_details in import_details:
-                imports.add(
+                detailed_imports.add(
                     DirectImport(
                         importer=Module(individual_import_details["importer"]),
                         imported=Module(individual_import_details["imported"]),
@@ -76,14 +81,8 @@ def import_expression_to_imports(
                         line_contents=individual_import_details["line_contents"],
                     )
                 )
-            matched = True
 
-    if not matched:
-        raise MissingImport(
-            f"Ignored import expression {expression} didn't match anything in the graph."
-        )
-
-    return list(imports)
+    return list(detailed_imports)
 
 
 def module_expressions_to_modules(
@@ -99,14 +98,8 @@ def module_expression_to_modules(graph: ImportGraph, expression: ModuleExpressio
     if not expression.has_wildcard_expression():
         return {Module(expression.expression)}
 
-    pattern = _to_pattern(expression.expression)
-
-    modules = set()
-    for module in graph.modules:
-        if pattern.match(module):
-            modules.add(Module(module))
-
-    return modules
+    matching_modules = graph.find_matching_modules(expression.expression)
+    return {Module(module) for module in matching_modules}
 
 
 def import_expressions_to_imports(
@@ -224,18 +217,3 @@ def _dedupe_imports(imports: Iterable[DirectImport]) -> Iterable[DirectImport]:
     # Why don't we return a set here? Because we want to preserve the order to make it
     # more deterministic.
     return sorted(imports_without_metadata, key=lambda di: (di.importer.name, di.imported.name))
-
-
-def _to_pattern(expression: str) -> Pattern:
-    """
-    Function which translates an import expression into a regex pattern.
-    """
-    pattern_parts = []
-    for part in expression.split("."):
-        if "*" == part:
-            pattern_parts.append(part.replace("*", r"[^\.]+"))
-        elif "**" == part:
-            pattern_parts.append(part.replace("*", r"[^\.]+(?:\.[^\.]+)*?"))
-        else:
-            pattern_parts.append(part)
-    return re.compile(r"^" + r"\.".join(pattern_parts) + r"$")
