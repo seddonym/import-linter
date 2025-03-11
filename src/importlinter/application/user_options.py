@@ -19,6 +19,12 @@ class UserOptions:
     ) -> None:
         self.session_options = session_options
         self.contracts_options = contracts_options
+        self._fill_missing_contract_ids(contracts_options)
+
+    def _fill_missing_contract_ids(self, contracts_options: List[Dict[str, Any]]) -> None:
+        for index, contract in enumerate(contracts_options):
+            if "id" not in contract:
+                contract["id"] = str(index)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, UserOptions):
