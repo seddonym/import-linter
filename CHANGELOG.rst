@@ -5,6 +5,7 @@ latest
 ------
 
 * Add as_packages field to forbidden contracts.
+* Improve performance of parsing module / import expressions.
 
 2.2 (2025-02-07)
 ----------------
