@@ -93,7 +93,7 @@ class FakeFileSystem(ports.FileSystem):
         dedented = lambda line: line[first_line_indent:]
         return list(map(dedented, lines))
 
-    def read(self, file_name: str) -> str:
+    def read(self, file_name: str, encoding: Optional[str] = None) -> str:
         if not self.exists(file_name):
             raise FileNotFoundError  # pragma: nocover
         try:
