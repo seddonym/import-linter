@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from importlinter.application.ports import filesystem as ports
 
@@ -11,8 +12,8 @@ class FileSystem(ports.FileSystem):
     def join(self, *components: str) -> str:
         return os.path.join(*components)
 
-    def read(self, file_name: str) -> str:
-        with open(file_name) as file:
+    def read(self, file_name: str, encoding: Optional[str] = None) -> str:
+        with open(file_name, encoding=encoding) as file:
             return file.read()
 
     def exists(self, file_name: str) -> bool:
