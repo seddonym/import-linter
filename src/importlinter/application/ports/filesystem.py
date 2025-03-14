@@ -1,4 +1,5 @@
 import abc
+from typing import Optional
 
 
 class FileSystem(abc.ABC):
@@ -11,7 +12,7 @@ class FileSystem(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def read(self, file_name: str) -> str:
+    def read(self, file_name: str, encoding: Optional[str] = None) -> str:
         """
         Given a file name, return the contents of the file.
         """
