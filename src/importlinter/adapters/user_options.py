@@ -87,7 +87,7 @@ class TomlFileUserOptionReader(AbstractUserOptionReader):
     potential_config_filenames = ["pyproject.toml"]
 
     def _read_config_filename(self, config_filename: str) -> Optional[UserOptions]:
-        file_contents = settings.FILE_SYSTEM.read(config_filename)
+        file_contents = settings.FILE_SYSTEM.read(config_filename, encoding="utf-8")
         data = tomllib.loads(file_contents)
 
         tool_data = data.get("tool", {})

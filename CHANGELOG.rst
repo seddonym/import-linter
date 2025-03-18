@@ -1,6 +1,10 @@
 Changelog
 =========
 
+latest
+------
+- Fixed incorrect handling of unicode characters in TOML files on Windows.
+
 2.3 (2025-03-11)
 ----------------
 
