@@ -25,3 +25,4 @@ Contributors
 * Fabian Binz - https://github.com/fbinz
 * Neil Williams - https://github.com/spladug
 * Nicholas Bunn - https://github.com/NicholasBunn
+* Felix Uhl - https://github.com/iFreilicht
