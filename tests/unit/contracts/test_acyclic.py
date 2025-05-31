@@ -1,14 +1,16 @@
 from unittest.mock import MagicMock, patch
 from grimp.adaptors.graph import ImportGraph
-from importlinter.contracts.tree import TreeContract
+from importlinter.contracts.acyclic import AcyclicContract
 from importlinter.domain.contract import ContractCheck
 
 
-def _build_contract() -> TreeContract:
-    return TreeContract(name="test", session_options=dict(), contract_options=dict())
+def _build_contract(consider_package_dependencies: bool = True) -> AcyclicContract:
+    return AcyclicContract(name="test", session_options={}, contract_options={
+        "consider_package_dependencies": str(consider_package_dependencies)
+    })
 
 
-class TestTreeContractCheck:
+class TestAcyclicContractCheck:
     """
     Naming convention for modules:
 
@@ -16,7 +18,7 @@ class TestTreeContractCheck:
 
     """
 
-    def test_tree_indeed(self) -> None:
+    def test_dag_indeed(self) -> None:
         # Given
         graph = ImportGraph()
 
@@ -43,7 +45,7 @@ class TestTreeContractCheck:
         # Then
         assert contract_check.kept
 
-    def test_not_a_tree(self) -> None:
+    def test_not_dag_structure(self) -> None:
         # Given
         graph = ImportGraph()
 
@@ -59,12 +61,24 @@ class TestTreeContractCheck:
         assert not contract_check.kept
 
     def test_do_not_consider_package_dependencies(self) -> None:
-        pass  # TODO
+        # Given
+        graph = ImportGraph()
+
+        for module in ("1_a", "1_a.2_a", "1_a.2_b", "1_b", "1_b.2_a", "1_b.2_b"):
+            graph.add_module(module)
+
+        graph.add_import(importer="1_a.2_a", imported="1_b.2_b")
+        graph.add_import(importer="1_b.2_a", imported="1_a.2_b")
+        contract = _build_contract(consider_package_dependencies=False)
+        # When
+        contract_check = contract.check(graph=graph, verbose=False)
+        # Then
+        assert contract_check.kept
 
 
-class TestTreeContractRenderBrokenContract:
-    @patch("importlinter.contracts.tree.output.print_error")
-    @patch("importlinter.contracts.tree.output.new_line")
+class TestAcyclicContractRenderBrokenContract:
+    @patch("importlinter.contracts.acyclic.output.print_error")
+    @patch("importlinter.contracts.acyclic.output.new_line")
     def test_no_cycles(self, new_line_mock: MagicMock, print_error_mock: MagicMock) -> None:
         # Given
         contract = _build_contract()
@@ -75,16 +89,20 @@ class TestTreeContractRenderBrokenContract:
         print_error_mock.assert_not_called()
         new_line_mock.assert_not_called()
 
-    @patch("importlinter.contracts.tree.output.print_error")
-    @patch("importlinter.contracts.tree.output.new_line")
+    @patch("importlinter.contracts.acyclic.output.print_error")
+    @patch("importlinter.contracts.acyclic.output.new_line")
     def test_cycle_exists(self, new_line_mock: MagicMock, print_error_mock: MagicMock) -> None:
         # Given
         contract = _build_contract()
         contract_check = ContractCheck(
-            kept=True, metadata={contract._CYCLES_METADATA_KEY: [["1_b", "1_a"]]}
+            kept=True, metadata={}
+        )
+        AcyclicContract._set_cycles_in_metadata( # type: ignore , just mocking
+            check=contract_check,
+            cycles=[("1_b", "1_a")]
         )
         # When
         contract.render_broken_contract(check=contract_check)
         # Then
-        print_error_mock.assert_called_once_with(text="Cycle found: ['1_b', '1_a']")
+        print_error_mock.assert_called_once_with(text="Cycle found: ('1_b', '1_a')")
         new_line_mock.assert_called_once_with()

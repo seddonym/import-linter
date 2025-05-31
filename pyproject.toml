@@ -13,10 +13,9 @@ authors = [
 requires-python = ">=3.9"
 dependencies = [
     "click>=6",
-    "grimp>=3.2",
+    "grimp@git+https://github.com/Peter554/grimp.git@find-shortest-cycle",
     "tomli>=1.2.1; python_version < '3.11'",
     "typing-extensions>=3.10.0.0",
-    "networkx>=3",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
