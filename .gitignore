@@ -21,6 +21,7 @@ lib
 lib64
 venv*/
 pyvenv*/
+uv.lock
 
 # Installer logs
 pip-log.txt
