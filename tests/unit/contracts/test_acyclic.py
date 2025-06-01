@@ -1,6 +1,6 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 from grimp.adaptors.graph import ImportGraph
-from importlinter.contracts.acyclic import AcyclicContract
+from importlinter.contracts.acyclic import AcyclicContract, Cycle, CyclesFamily, CyclesFamilyKey
 from importlinter.domain.contract import ContractCheck
 
 
@@ -78,8 +78,7 @@ class TestAcyclicContractCheck:
 
 class TestAcyclicContractRenderBrokenContract:
     @patch("importlinter.contracts.acyclic.output.print_error")
-    @patch("importlinter.contracts.acyclic.output.new_line")
-    def test_no_cycles(self, new_line_mock: MagicMock, print_error_mock: MagicMock) -> None:
+    def test_no_cycles(self, print_error_mock: MagicMock) -> None:
         # Given
         contract = _build_contract()
         contract_check = ContractCheck(kept=True)
@@ -87,22 +86,32 @@ class TestAcyclicContractRenderBrokenContract:
         contract.render_broken_contract(check=contract_check)
         # Then
         print_error_mock.assert_not_called()
-        new_line_mock.assert_not_called()
 
     @patch("importlinter.contracts.acyclic.output.print_error")
-    @patch("importlinter.contracts.acyclic.output.new_line")
-    def test_cycle_exists(self, new_line_mock: MagicMock, print_error_mock: MagicMock) -> None:
+    def test_cycle_exists(self, print_error_mock: MagicMock) -> None:
         # Given
         contract = _build_contract()
         contract_check = ContractCheck(
             kept=True, metadata={}
         )
+        cycle_families = [
+            CyclesFamily(
+                key=CyclesFamilyKey(parent="1_a", sibilings=("1_a", "1_b")),
+                cycles=[Cycle(members=("1_a.2_a", "1_b.2_b", "1_a.2_b", "1_c.2_a"))]
+            )
+        ]
         AcyclicContract._set_cycles_in_metadata( # type: ignore , just mocking
             check=contract_check,
-            cycles=[("1_b", "1_a")]
+            cycle_families=cycle_families
         )
         # When
         contract.render_broken_contract(check=contract_check)
         # Then
-        print_error_mock.assert_called_once_with(text="Cycle found: ('1_b', '1_a')")
-        new_line_mock.assert_called_once_with()
+        print_error_mock.assert_has_calls([
+            call(text='Acyclic contract broken. Number of cycle families found: 1\n'),
+            call(text=">>>> Cycle family for parent module '1_a'\n"),
+            call(text='\nSibilings:\n(\n  1_a\n  1_b\n)\n'),
+            call(text='\nNumber of cycles: 1\n'),
+            call(text='Cycle 1:\n\n(\n -> 1_a.2_a\n -> 1_b.2_b\n -> 1_a.2_b\n -> 1_c.2_a\n)\n'),
+            call(text="<<<< Cycle family for parent module '1_a'\n")
+        ])
