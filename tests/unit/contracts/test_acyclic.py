@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, call, patch
 from grimp.adaptors.graph import ImportGraph
-from importlinter.contracts.acyclic import AcyclicContract, Cycle, CyclesFamily, CyclesFamilyKey
+from importlinter.contracts.acyclic import AcyclicContract, Cycle, CyclesFamily, CyclesFamilyKey, _longest_common_package
 from importlinter.domain.contract import ContractCheck
 
 
@@ -130,3 +130,20 @@ class TestAcyclicContractRenderBrokenContract:
             call(text="<<<< Cycles family for parent module '1_a'\n"),
             call(text='Acyclic contract broken. Number of cycle families found: 1\n')
         ])
+
+
+class TestLongestCommonPackage:
+
+    def test_some_packages_and_root_in_cycle(self) -> None:
+        # Given
+        modules = (
+            "django.core.paginator",
+            "django.utils.translation",
+            "django.utils.autoreload",
+            "django",
+            "django.core.paginator"
+        )
+        # When
+        longest_common_package = _longest_common_package(modules=modules)
+        # Then
+        assert "django" == longest_common_package

@@ -6,29 +6,30 @@ from importlinter.application import output
 from importlinter.domain import fields
 
 
+class AcyclicContractError(Exception):
+    pass
+
+
 def _longest_common_package(modules: tuple[str, ...]) -> str:
-    sorted_module_parents = [
-        potential_parent
-        for potential_parent in
-        [
-            ".".join(module.split(".")[:-1])
-            for module in sorted(modules, key=lambda x: len(x))
-        ]
-        if potential_parent != ""  # exclude empty strings
-    ]
-    first_module = sorted_module_parents[0]
-    first_module_length = len(first_module)
-    length = first_module_length
+    parents: list[str] = []
 
-    for i in range(1, len(sorted_module_parents)):
-        length = min(first_module_length, len(sorted_module_parents[i]))
-        while length > 0 and first_module[0:length] != sorted_module_parents[i][0:length]:
-            length = length - 1
+    for module in sorted(modules, key=lambda x: len(x)):
+        module_parent = ".".join(module.split(".")[:-1])
+        parents.append(module_parent if module_parent != "" else module)
 
-            if length == 0:
-                return ""
+    longest_common_package = parents[0]
+    longest_common_package_length = len(longest_common_package)
+    current_length = longest_common_package_length
 
-    return first_module[0:length]
+    for parent in parents[1:]:
+        current_length = min(longest_common_package_length, len(parent))
+        while current_length > 0 and longest_common_package[0:current_length] != parent[0:current_length]:
+            current_length = current_length - 1
+
+            if current_length == 0:
+                raise AcyclicContractError(f"No common package for the provided modules: {modules}")
+
+    return longest_common_package[0:current_length]
 
 
 @dataclass(frozen=True)
@@ -206,7 +207,7 @@ class AcyclicContract(Contract):
         summary_msg = f"Acyclic contract broken. Number of cycle families found: {len(cycle_families)}"
 
         if self._max_cycles_families is not None:
-            summary_msg += f"(limit = {self._max_cycles_families})"
+            summary_msg += f" (limit = {self._max_cycles_families})"
 
         output.print_error(text=summary_msg + "\n")
 
