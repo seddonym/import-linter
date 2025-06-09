@@ -140,10 +140,10 @@ class AcyclicContract(Contract):
                 importer_module_family = [importer_module] + self._get_module_ancestors(module=importer_module)
                 imported_modules = graph.find_modules_directly_imported_by(module=importer_module)
 
-                for imported_module in imported_modules:
+                for imported_module in sorted(imported_modules):
                     imported_module_family = [imported_module] + self._get_module_ancestors(module=imported_module)
 
-                    for imported_module_family_member in imported_module_family:
+                    for imported_module_family_member in sorted(imported_module_family):
                         for importer_module_family_member in importer_module_family:
                             # do not include upwards package dependencies
                             if importer_module_family_member.startswith(imported_module_family_member):
