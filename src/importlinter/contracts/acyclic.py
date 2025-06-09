@@ -8,8 +8,13 @@ from importlinter.domain import fields
 
 def _longest_common_package(modules: tuple[str, ...]) -> str:
     sorted_module_parents = [
-        ".".join(module.split(".")[:-1])
-        for module in sorted(modules, key=lambda x: len(x))
+        potential_parent
+        for potential_parent in
+        [
+            ".".join(module.split(".")[:-1])
+            for module in sorted(modules, key=lambda x: len(x))
+        ]
+        if potential_parent != ""  # exclude empty strings
     ]
     first_module = sorted_module_parents[0]
     first_module_length = len(first_module)
@@ -76,26 +81,59 @@ class CyclesFamily:
 
 class AcyclicContract(Contract):
     """
-    A contract that checks whether the dependency graph of modules forms a directed acyclic graph (DAG) structure.
+    A contract that checks whether the dependency graph of modules (or packages) 
+    stick to an acyclic dependencies principle (ADP).
 
-    This contract verifies that the directed graph of module imports does not contain any cycles.
-    A cycle in the graph implies that there is a circular dependency between modules, which
-    violates the tree structure requirement.
+    The acyclic dependencies principle (ADP) is a software design principle defined by 
+    Robert C. Martin that states that "the dependency graph of packages or components should have no cycles".
+    This implies that the dependencies form a directed acyclic graph (DAG).
+
+    The found cycles are grouped into cycle families. Cycle family aggregates all cycles that have the same 
+    parent package and the cycle is formed between a particular set of sibilings.
+    The example of a cycles family inside django library:
+
+    >>>> Cycles family for parent module 'django'
+
+    Sibilings:
+    (
+      django.forms
+      django.template
+      django.utils
+    )
+
+
+    Number of cycles: 1
+
+    Cycle 1:
+
+    (
+      -> django.utils.dates
+      -> django.utils.translation
+      -> django.template
+      -> django.forms
+      -> django.utils.dates
+    )
+
+    <<<< Cycles family for parent module 'django'
 
     Configuration options:
         - consider_package_dependencies:  Whether to consider cyclic dependencies between packages.
             "True" or "true" will be treated as True. (Optional.)
+        - max_cycles_families: stop searching for cycles after the provided number of cycles families
+            have been found.
     """
 
     type_name = "acyclic"
 
     consider_package_dependencies = fields.BooleanField(required=False, default=True)
+    max_cycle_families = fields.StringField(required=False, default="0")
 
     _CYCLE_FAMILIES_METADATA_KEY = "cycle_families"
 
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
         family_key_to_cycles: dict[CyclesFamilyKey, list[Cycle]] = {}
-        # If we consider package dependencies, we need to expand the graph
+        # If we consider package dependencies, we need to expand the graph with the artificialy created imports 
+        # from importer module ancestors to imported module ancestors. It allows to mimic package dependencies.
         if self._consider_package_dependencies:
             graph = copy.deepcopy(graph)
 
@@ -108,6 +146,7 @@ class AcyclicContract(Contract):
 
                     for imported_module_family_member in imported_module_family:
                         for importer_module_family_member in importer_module_family:
+                            # do not include upwards package dependencies
                             if importer_module_family_member.startswith(imported_module_family_member):
                                 continue
 
@@ -128,10 +167,16 @@ class AcyclicContract(Contract):
 
                 cycle = Cycle(members=cycle_members)
 
+                if cycle.family_key.parent == "":
+                    continue
+
                 if cycle.family_key not in family_key_to_cycles:
                     family_key_to_cycles[cycle.family_key] = []
 
                 family_key_to_cycles[cycle.family_key].append(cycle)
+
+                if self._max_cycles_families is not None and len(family_key_to_cycles) == self._max_cycles_families:
+                    break
 
         cycles_families = [
             CyclesFamily(key=key, cycles=cycles)
@@ -147,23 +192,33 @@ class AcyclicContract(Contract):
         if not cycle_families:
             return
 
-        output.print_error(text=f"Acyclic contract broken. Number of cycle families found: {len(cycle_families)}\n")
-
         for cycle_family in cycle_families:
             output.print_error(
-                text=f">>>> Cycle family for parent module '{cycle_family.key.parent}'\n"
+                text=f">>>> Cycles family for parent module '{cycle_family.key.parent}'"
             )
-            output.print_error(text=f"\nSibilings:\n{cycle_family.key.get_siblings_format()}\n")
+            output.print_error(text=f"\nSibilings:\n{cycle_family.key.get_siblings_format()}")
             output.print_error(text=f"\nNumber of cycles: {len(cycle_family.cycles)}\n")
 
             for index, cycle in enumerate(cycle_family.cycles, start=1):
                 output.print_error(text=f"Cycle {index}:\n\n{cycle.get_members_format()}\n")
 
-            output.print_error(text=f"<<<< Cycle family for parent module '{cycle_family.key.parent}'\n")
+            output.print_error(text=f"<<<< Cycles family for parent module '{cycle_family.key.parent}'\n")
+        
+        summary_msg = f"Acyclic contract broken. Number of cycle families found: {len(cycle_families)}"
+
+        if self._max_cycles_families is not None:
+            summary_msg += f"(limit = {self._max_cycles_families})"
+
+        output.print_error(text=summary_msg + "\n")
 
     @property
     def _consider_package_dependencies(self) -> bool:
         return str(self.consider_package_dependencies).lower() == "true"
+
+    @property
+    def _max_cycles_families(self) -> int | None:
+        value_int = int(str(self.max_cycle_families))
+        return None if value_int < 1 else value_int
 
     @staticmethod
     def _get_module_ancestors(module: str) -> list[str]:

@@ -108,10 +108,10 @@ class TestAcyclicContractRenderBrokenContract:
         contract.render_broken_contract(check=contract_check)
         # Then
         print_error_mock.assert_has_calls([
-            call(text='Acyclic contract broken. Number of cycle families found: 1\n'),
-            call(text=">>>> Cycle family for parent module '1_a'\n"),
-            call(text='\nSibilings:\n(\n  1_a\n  1_b\n)\n'),
+            call(text=">>>> Cycles family for parent module '1_a'"),
+            call(text='\nSibilings:\n(\n  1_a\n  1_b\n)'),
             call(text='\nNumber of cycles: 1\n'),
             call(text='Cycle 1:\n\n(\n -> 1_a.2_a\n -> 1_b.2_b\n -> 1_a.2_b\n -> 1_c.2_a\n)\n'),
-            call(text="<<<< Cycle family for parent module '1_a'\n")
+            call(text="<<<< Cycles family for parent module '1_a'\n"),
+            call(text='Acyclic contract broken. Number of cycle families found: 1\n')
         ])
