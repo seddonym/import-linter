@@ -40,8 +40,23 @@ following methods:
 
 **Contract fields**
 
-A contract will usually need some further configuration. This can be done using *fields*. For an example,
-see ``importlinter.contracts.layers``.
+The following field types are available:
+
+- ``StringField`` accepts a string value.
+- ``BooleanField`` accepts a boolean value.
+- ``EnumField`` accepts a value from a predefined set of string options.
+- ``ModuleField`` accepts a string value and validates that it refers to a valid Python module.
+- ``ModuleExpressionField`` acts in a similar way as ``ModuleField``, but allows wildcard expressions.
+- ``ImportExpressionField`` accepts a string value representing a specific import, module description can include wildcards. (example: ``mypackage.foo.** -> mypackage.bar``)
+- ``ListField`` accepts multiple values of the field type specified in the subfield parameter. Duplicate values are allowed, and the values are returned in the order they appear in the configuration.
+- ``SetField`` accepts multiple values of the field type specified in the subfield parameter. Duplicate values are not allowed, and they are not ordered.
+
+Fields definition can be found in ``importlinter.domain.fields``.
+
+Fields are to be added in the class definition, the base Contract constructor will parse the value from the config and inject it 
+into the instance with the same name. *(this will make type checker complain about field usage)*
+
+Example of multiple values fields usage can be found in ``importlinter.contracts.forbidden``
 
 **Example custom contract**
 
