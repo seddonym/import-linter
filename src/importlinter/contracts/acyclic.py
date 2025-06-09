@@ -101,7 +101,6 @@ class AcyclicContract(Contract):
       django.utils
     )
 
-
     Number of cycles: 1
 
     Cycle 1:
@@ -131,7 +130,6 @@ class AcyclicContract(Contract):
     _CYCLE_FAMILIES_METADATA_KEY = "cycle_families"
 
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
-        family_key_to_cycles: dict[CyclesFamilyKey, list[Cycle]] = {}
         # If we consider package dependencies, we need to expand the graph with the artificialy created imports 
         # from importer module ancestors to imported module ancestors. It allows to mimic package dependencies.
         if self._consider_package_dependencies:
@@ -155,28 +153,29 @@ class AcyclicContract(Contract):
                                 imported=imported_module_family_member
                             )
 
+        family_key_to_cycles: dict[CyclesFamilyKey, list[Cycle]] = {}
+
         for importer_module in graph.modules:
             cycle_members = graph.find_shortest_cycle(
                 module=importer_module,
                 as_package=True
             )
 
-            if cycle_members:
-                if verbose:
-                    output.print_error(text=f"Cycle found in module '{importer_module}': {cycle_members}")
+            if cycle_members is None:
+                continue
 
-                cycle = Cycle(members=cycle_members)
+            if verbose:
+                output.print_error(text=f"Cycle found in module '{importer_module}': {cycle_members}")
 
-                if cycle.family_key.parent == "":
-                    continue
+            cycle = Cycle(members=cycle_members)
 
-                if cycle.family_key not in family_key_to_cycles:
-                    family_key_to_cycles[cycle.family_key] = []
+            if cycle.family_key not in family_key_to_cycles:
+                family_key_to_cycles[cycle.family_key] = []
 
-                family_key_to_cycles[cycle.family_key].append(cycle)
+            family_key_to_cycles[cycle.family_key].append(cycle)
 
-                if self._max_cycles_families is not None and len(family_key_to_cycles) == self._max_cycles_families:
-                    break
+            if self._max_cycles_families is not None and len(family_key_to_cycles) == self._max_cycles_families:
+                break
 
         cycles_families = [
             CyclesFamily(key=key, cycles=cycles)

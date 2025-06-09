@@ -4,9 +4,13 @@ from importlinter.contracts.acyclic import AcyclicContract, Cycle, CyclesFamily,
 from importlinter.domain.contract import ContractCheck
 
 
-def _build_contract(consider_package_dependencies: bool = True) -> AcyclicContract:
+def _build_contract(
+        consider_package_dependencies: bool = True,
+        max_cycle_families: int = 0
+    ) -> AcyclicContract:
     return AcyclicContract(name="test", session_options={}, contract_options={
-        "consider_package_dependencies": str(consider_package_dependencies)
+        "consider_package_dependencies": str(consider_package_dependencies),
+        "max_cycle_families": str(max_cycle_families)
     })
 
 
@@ -17,6 +21,19 @@ class TestAcyclicContractCheck:
     <level_in_the_directory_tree>_<hierarchy_lvl_in_the_package>
 
     """
+
+    def _get_test_graph(self) -> ImportGraph:
+        """
+        Return an import graph with two cycle families between packages.
+        """
+        graph = ImportGraph()
+
+        for module in ("1_a", "1_a.2_a", "1_a.2_b", "1_b", "1_b.2_a", "1_b.2_b"):
+            graph.add_module(module)
+
+        graph.add_import(importer="1_a.2_a", imported="1_b.2_b")
+        graph.add_import(importer="1_b.2_a", imported="1_a.2_b")
+        return graph
 
     def test_dag_indeed(self) -> None:
         # Given
@@ -47,13 +64,7 @@ class TestAcyclicContractCheck:
 
     def test_not_dag_structure(self) -> None:
         # Given
-        graph = ImportGraph()
-
-        for module in ("1_a", "1_a.2_a", "1_a.2_b", "1_b", "1_b.2_a", "1_b.2_b"):
-            graph.add_module(module)
-
-        graph.add_import(importer="1_a.2_a", imported="1_b.2_b")
-        graph.add_import(importer="1_b.2_a", imported="1_a.2_b")
+        graph = self._get_test_graph()
         contract = _build_contract()
         # When
         contract_check = contract.check(graph=graph, verbose=False)
@@ -62,18 +73,22 @@ class TestAcyclicContractCheck:
 
     def test_do_not_consider_package_dependencies(self) -> None:
         # Given
-        graph = ImportGraph()
-
-        for module in ("1_a", "1_a.2_a", "1_a.2_b", "1_b", "1_b.2_a", "1_b.2_b"):
-            graph.add_module(module)
-
-        graph.add_import(importer="1_a.2_a", imported="1_b.2_b")
-        graph.add_import(importer="1_b.2_a", imported="1_a.2_b")
+        graph = self._get_test_graph()
         contract = _build_contract(consider_package_dependencies=False)
         # When
         contract_check = contract.check(graph=graph, verbose=False)
         # Then
         assert contract_check.kept
+
+    def test_max_cycle_families(self) -> None:
+        # Given
+        graph = self._get_test_graph()
+        contract = _build_contract(max_cycle_families=1)
+        # When
+        contract_check = contract.check(graph=graph, verbose=False)
+        # Then
+        cycles = AcyclicContract._get_cycles_from_metadata(contract_check)  # type: ignore
+        assert len(cycles) == 1
 
 
 class TestAcyclicContractRenderBrokenContract:
