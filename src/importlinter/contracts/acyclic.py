@@ -19,7 +19,7 @@ def _longest_common_package(modules: tuple[str, ...]) -> str:
 
     for index, module_part in enumerate(module_lists[0]):
         for other_module in module_lists[1:]:
-            if module_part != other_module[index]:
+            if index + 1 > len(other_module) or module_part != other_module[index]:
                 longest_common_package = ".".join(module_lists[0][:index])
 
                 if longest_common_package == "":
