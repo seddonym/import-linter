@@ -11,32 +11,36 @@ class AcyclicContractError(Exception):
 
 
 def _longest_common_package(modules: tuple[str, ...]) -> str:
-    parents: list[str] = []
+    module_lists = [
+        module.split(".")
+        for module in modules
+    ]
+    index = 0
 
-    for module in sorted(modules, key=lambda x: len(x)):
-        module_parent = ".".join(module.split(".")[:-1])
-        parents.append(module_parent if module_parent != "" else module)
+    for index, module_part in enumerate(module_lists[0]):
+        for other_module in module_lists[1:]:
+            if module_part != other_module[index]:
+                longest_common_package = ".".join(module_lists[0][:index])
 
-    longest_common_package = parents[0]
-    longest_common_package_length = len(longest_common_package)
-    current_length = longest_common_package_length
+                if longest_common_package == "":
+                    raise AcyclicContractError(f"No common package for the provided modules: {modules}")
+                else:
+                    return longest_common_package
 
-    for parent in parents[1:]:
-        current_length = min(longest_common_package_length, len(parent))
-        while current_length > 0 and longest_common_package[0:current_length] != parent[0:current_length]:
-            current_length = current_length - 1
-
-            if current_length == 0:
-                raise AcyclicContractError(f"No common package for the provided modules: {modules}")
-
-    return longest_common_package[0:current_length]
+    raise AcyclicContractError(f"No common package for the provided modules: {modules}")
 
 
 def _get_package_dependency(importer: str, imported: str) -> tuple[str, str] | None:
     try:
         common_package = _longest_common_package(modules=(importer, imported))
     except AcyclicContractError:
-        return None
+        imported_split = imported.split('.')
+        importer_split = importer.split('.')
+
+        if len(imported_split) == 1 and len(importer_split) == 1:
+            return None
+        else:
+            return importer_split[0], imported_split[0]
 
     if common_package == importer or common_package == imported:
         return None
@@ -45,11 +49,12 @@ def _get_package_dependency(importer: str, imported: str) -> tuple[str, str] | N
     imported_reduced = imported.removeprefix(f"{common_package}.")
     importer_package = f"{common_package}.{importer_reduced.split('.')[0]}"
     imported_package = f"{common_package}.{imported_reduced.split('.')[0]}"
+    package_dependency = (importer_package, imported_package)
 
-    if (importer, imported) == (importer_package, imported_package):
+    if package_dependency == (importer, imported):
         return None
     
-    return (importer_package, imported_package)
+    return package_dependency
 
 
 @dataclass(frozen=True)
@@ -166,25 +171,27 @@ class AcyclicContract(Contract):
                 imported_modules = graph.find_modules_directly_imported_by(module=importer_module)
 
                 for imported_module in sorted(imported_modules):
-                    package_dependency = _get_package_dependency(importer=importer_module, imported=imported_module)
+                    new_import = _get_package_dependency(importer=importer_module, imported=imported_module)
+                    
+                    if new_import is None:
+                        continue
 
-                    if package_dependency is None or package_dependency in _already_added_package_dependencies:
+                    if new_import in _already_added_package_dependencies:
                         continue
 
                     if verbose:
                         # TODO(K4liber): this should not be print_heading
                         output.print_heading(
-                            text=f"Adding package dependency ({package_dependency[0]} -> {package_dependency[1]}) "
+                            text=f"Adding package dependency ({new_import[0]} -> {new_import[1]}) "
                                  f"based on import ({importer_module} -> {imported_module})",
                             level=1
                         )
                     
-                    importer_package, imported_module = package_dependency
                     graph.add_import(
-                        importer=importer_package,
-                        imported=imported_module
+                        importer=new_import[0],
+                        imported=new_import[1]
                     )
-                    _already_added_package_dependencies.add(package_dependency)
+                    _already_added_package_dependencies.add(new_import)
 
         family_key_to_cycles: dict[CyclesFamilyKey, list[Cycle]] = {}
 

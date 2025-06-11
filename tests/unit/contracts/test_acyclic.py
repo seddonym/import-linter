@@ -28,11 +28,11 @@ class TestAcyclicContractCheck:
         """
         graph = ImportGraph()
 
-        for module in ("1_a", "1_a.2_a", "1_a.2_b", "1_b", "1_b.2_a", "1_b.2_b"):
+        for module in ("root.1_a", "root.1_a.2_a", "root.1_a.2_b", "root.1_b", "root.1_b.2_a", "root.1_b.2_b"):
             graph.add_module(module)
 
-        graph.add_import(importer="1_a.2_a", imported="1_b.2_b")
-        graph.add_import(importer="1_b.2_a", imported="1_a.2_b")
+        graph.add_import(importer="root.1_a.2_a", imported="root.1_b.2_b")
+        graph.add_import(importer="root.1_b.2_a", imported="root.1_a.2_b")
         return graph
 
     def test_dag_indeed(self) -> None:
@@ -40,22 +40,22 @@ class TestAcyclicContractCheck:
         graph = ImportGraph()
 
         for module in (
-            "1_a",
-            "1_a.2_a",
-            "1_a.2_b",
-            "1_b",
-            "1_b.2_a",
-            "1_b.2_b",
-            "1_c",
-            "1_c.2_a",
-            "1_c.2_b",
+            "root.1_a",
+            "root.1_a.2_a",
+            "root.1_a.2_b",
+            "root.1_b",
+            "root.1_b.2_a",
+            "root.1_b.2_b",
+            "root.1_c",
+            "root.1_c.2_a",
+            "root.1_c.2_b",
         ):
             graph.add_module(module)
 
-        graph.add_import(importer="1_a.2_a", imported="1_b.2_b")
-        graph.add_import(importer="1_a.2_a", imported="1_a.2_b")
-        graph.add_import(importer="1_a.2_b", imported="1_c.2_a")
-        graph.add_import(importer="1_b.2_a", imported="1_c.2_b")
+        graph.add_import(importer="root.1_a.2_a", imported="root.1_b.2_b")
+        graph.add_import(importer="root.1_a.2_a", imported="root.1_a.2_b")
+        graph.add_import(importer="root.1_a.2_b", imported="root.1_c.2_a")
+        graph.add_import(importer="root.1_b.2_a", imported="root.1_c.2_b")
         contract = _build_contract()
         # When
         contract_check = contract.check(graph=graph, verbose=False)
