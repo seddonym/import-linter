@@ -154,6 +154,7 @@ class AcyclicContract(Contract):
         # If we consider package dependencies, we need to expand the graph with the artificialy created imports 
         # from importer module ancestors to imported module ancestors. It allows to mimic package dependencies.
         if verbose:
+            # TODO(K4liber): those should not be print_heading
             output.print_heading(text=f"Consider package dependencies: {self._consider_package_dependencies}", level=1)
             output.print_heading(text=f"Max cycle families: {self._max_cycles_families}", level=1)
 
@@ -171,7 +172,12 @@ class AcyclicContract(Contract):
                         continue
 
                     if verbose:
-                        output.print_heading(text=f"Adding package dependency: {package_dependency}", level=1)
+                        # TODO(K4liber): this should not be print_heading
+                        output.print_heading(
+                            text=f"Adding package dependency ({package_dependency[0]} -> {package_dependency[1]}) "
+                                 f"based on import ({importer_module} -> {imported_module})",
+                            level=1
+                        )
                     
                     importer_package, imported_module = package_dependency
                     graph.add_import(
