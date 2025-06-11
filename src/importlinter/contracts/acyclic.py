@@ -40,7 +40,12 @@ def _get_package_dependency(importer: str, imported: str) -> tuple[str, str] | N
         if len(imported_split) == 1 and len(importer_split) == 1:
             return None
         else:
-            return importer_split[0], imported_split[0]
+            imported_package = importer_split[0], imported_split[0]
+
+            if imported_package[0] == imported_package[1]:
+                return None
+
+            return imported_package
 
     if common_package == importer or common_package == imported:
         return None
@@ -51,7 +56,7 @@ def _get_package_dependency(importer: str, imported: str) -> tuple[str, str] | N
     imported_package = f"{common_package}.{imported_reduced.split('.')[0]}"
     package_dependency = (importer_package, imported_package)
 
-    if package_dependency == (importer, imported):
+    if package_dependency == (importer, imported) or importer_package == imported_package:
         return None
     
     return package_dependency
