@@ -32,6 +32,26 @@ def _longest_common_package(modules: tuple[str, ...]) -> str:
     return longest_common_package[0:current_length]
 
 
+def _get_package_dependency(importer: str, imported: str) -> tuple[str, str] | None:
+    try:
+        common_package = _longest_common_package(modules=(importer, imported))
+    except AcyclicContractError:
+        return None
+
+    if common_package == importer or common_package == imported:
+        return None
+
+    importer_reduced = importer.removeprefix(f"{common_package}.")
+    imported_reduced = imported.removeprefix(f"{common_package}.")
+    importer_package = f"{common_package}.{importer_reduced.split('.')[0]}"
+    imported_package = f"{common_package}.{imported_reduced.split('.')[0]}"
+
+    if (importer, imported) == (importer_package, imported_package):
+        return None
+    
+    return (importer_package, imported_package)
+
+
 @dataclass(frozen=True)
 class CyclesFamilyKey:
     parent: str
@@ -133,26 +153,32 @@ class AcyclicContract(Contract):
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
         # If we consider package dependencies, we need to expand the graph with the artificialy created imports 
         # from importer module ancestors to imported module ancestors. It allows to mimic package dependencies.
+        if verbose:
+            output.print_heading(text=f"Consider package dependencies: {self._consider_package_dependencies}", level=1)
+            output.print_heading(text=f"Max cycle families: {self._max_cycles_families}", level=1)
+
         if self._consider_package_dependencies:
             graph = copy.deepcopy(graph)
+            _already_added_package_dependencies: set[tuple[str, str]] = set()
 
-            for importer_module in graph.modules:
-                importer_module_family = [importer_module] + self._get_module_ancestors(module=importer_module)
+            for importer_module in sorted(graph.modules):
                 imported_modules = graph.find_modules_directly_imported_by(module=importer_module)
 
                 for imported_module in sorted(imported_modules):
-                    imported_module_family = [imported_module] + self._get_module_ancestors(module=imported_module)
+                    package_dependency = _get_package_dependency(importer=importer_module, imported=imported_module)
 
-                    for imported_module_family_member in sorted(imported_module_family):
-                        for importer_module_family_member in importer_module_family:
-                            # do not include upwards package dependencies
-                            if importer_module_family_member.startswith(imported_module_family_member):
-                                continue
+                    if package_dependency is None or package_dependency in _already_added_package_dependencies:
+                        continue
 
-                            graph.add_import(
-                                importer=importer_module_family_member,
-                                imported=imported_module_family_member
-                            )
+                    if verbose:
+                        output.print_heading(text=f"Adding package dependency: {package_dependency}", level=1)
+                    
+                    importer_package, imported_module = package_dependency
+                    graph.add_import(
+                        importer=importer_package,
+                        imported=imported_module
+                    )
+                    _already_added_package_dependencies.add(package_dependency)
 
         family_key_to_cycles: dict[CyclesFamilyKey, list[Cycle]] = {}
 
