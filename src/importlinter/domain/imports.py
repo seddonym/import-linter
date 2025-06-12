@@ -103,6 +103,9 @@ class ModuleExpression(ValueObject):
     def has_wildcard_expression(self) -> bool:
         return "*" in self.expression
 
+    def __str__(self) -> str:
+        return self.expression
+
 
 class ImportExpression(ValueObject):
     """

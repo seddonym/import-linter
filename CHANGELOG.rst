@@ -3,7 +3,8 @@ Changelog
 
 latest
 ------
-- Fixed incorrect handling of unicode characters in TOML files on Windows.
+- Fix incorrect handling of unicode characters in TOML files on Windows.
+- Fix RecursionError when running repr on a ModuleExpression.
 
 2.3 (2025-03-11)
 ----------------
