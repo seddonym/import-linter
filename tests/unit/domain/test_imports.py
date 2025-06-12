@@ -96,6 +96,12 @@ class TestDirectImport:
         assert str(test_object) == expected_string
 
 
+class TestModuleExpression:
+    def test_object_representation(self):
+        expression = ModuleExpression("mypackage.foo.**")
+        assert repr(expression) == "<ModuleExpression: mypackage.foo.**>"
+
+
 class TestImportExpression:
     def test_object_representation(self):
         test_object = ImportExpression(
