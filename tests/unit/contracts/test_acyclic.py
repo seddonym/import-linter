@@ -16,12 +16,6 @@ def _build_contract(
 
 
 class TestAcyclicContractCheck:
-    """
-    Naming convention for modules:
-
-    <level_in_the_directory_tree>_<hierarchy_lvl_in_the_package>
-
-    """
 
     def _get_test_graph(self) -> ImportGraph:
         """

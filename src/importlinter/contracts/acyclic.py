@@ -154,9 +154,9 @@ class AcyclicContract(Contract):
 
     <<<< Cycles family for parent module 'django'
 
-    Configuration options:
+    Configuration options (all options are optional):
         - consider_package_dependencies:  Whether to consider cyclic dependencies between packages.
-            "True" or "true" will be treated as True. (Optional.)
+            "True" or "true" will be treated as True.
         - max_cycles_families: stop searching for cycles after the provided number of cycles families
             have been found.
         - include_parents: a list of parent modules to include in the search for cycles.
@@ -182,11 +182,11 @@ class AcyclicContract(Contract):
     exclude_parents = fields.ListField(subfield=fields.StringField(), required=False, default=[])
 
     _CYCLE_FAMILIES_METADATA_KEY = "cycle_families"
-    _PACKAGE_DEPENDENCY_METADATA_KEY = "package_dependency"
+    _PACKAGE_DEPENDENCY_METADATA_KEY = "package_dependencies"
 
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
-        # If we consider package dependencies, we need to expand the graph with the artificialy created imports 
-        # from importer module ancestors to imported module ancestors. It allows to mimic package dependencies.
+        # If we consider package dependencies, 
+        # we need to expand the graph with the artificialy created package dependencies. 
         if verbose:
             configuration_heading_msg = [
                 "CONFIG:\n",
@@ -201,7 +201,7 @@ class AcyclicContract(Contract):
 
         if self._consider_package_dependencies:
             graph = copy.deepcopy(graph)
-            _already_added_package_dependencies: set[tuple[str, str]] = set()
+            already_added_package_dependencies: set[tuple[str, str]] = set()
 
             for importer_module in sorted(graph.modules):
                 imported_modules = graph.find_modules_directly_imported_by(module=importer_module)
@@ -212,7 +212,7 @@ class AcyclicContract(Contract):
                     if package_dependency is None:
                         continue
 
-                    if package_dependency in _already_added_package_dependencies:
+                    if package_dependency in already_added_package_dependencies:
                         continue
 
                     package_import_already_exists = graph.get_import_details(
@@ -227,7 +227,7 @@ class AcyclicContract(Contract):
                         importer=package_dependency[0],
                         imported=package_dependency[1]
                     )
-                    _already_added_package_dependencies.add(package_dependency)
+                    already_added_package_dependencies.add(package_dependency)
                     self._add_package_dependency(
                         metadata=contract_metadata,
                         origin_dependency=(importer_module, imported_module),
@@ -358,21 +358,15 @@ class AcyclicContract(Contract):
 
             if origin_dependency is not None:
                 if package_dependency[0] != origin_dependency[0]:
-                    # if the package dependency is not the same as the origin dependency,
-                    # we add the package dependency as well
                     formatted_members.append(f"{package_dependency[0]} (full path: '{origin_dependency[0]}')")
                     is_package_dependency = True
                 else:
                     formatted_members.append(origin_dependency[0])
                 
                 if package_dependency[1] != origin_dependency[1]:
-                    # if the package dependency is not the same as the origin dependency,
-                    # we add the package dependency as well
                     formatted_members.append(f"{package_dependency[1]} (full path: '{origin_dependency[1]}')")
                     is_package_dependency = True
                 else:
-                    # if the package dependency is the same as the origin dependency,
-                    # we add the origin dependency
                     formatted_members.append(origin_dependency[1])
             else:
                 # could already be added by the previous iteration
