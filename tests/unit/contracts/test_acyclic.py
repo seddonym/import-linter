@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, call, patch
 from grimp.adaptors.graph import ImportGraph
-from importlinter.contracts.acyclic import AcyclicContract, Cycle, CyclesFamily, CyclesFamilyKey, _longest_common_package
+from importlinter.contracts.acyclic import AcyclicContract, Cycle, CyclesFamily, CyclesFamilyKey
+from importlinter.contracts.acyclic import _longest_common_package, _get_package_dependency  # type: ignore
 from importlinter.domain.contract import ContractCheck
 
 
@@ -124,11 +125,11 @@ class TestAcyclicContractRenderBrokenContract:
         # Then
         print_error_mock.assert_has_calls([
             call(text=">>>> Cycles family for parent module '1_a'"),
-            call(text='\nSibilings:\n(\n  1_a\n  1_b\n)'),
-            call(text='\nNumber of cycles: 1\n'),
-            call(text='Cycle 1:\n\n(\n -> 1_a.2_a\n -> 1_b.2_b\n -> 1_a.2_b\n -> 1_c.2_a\n)\n'),
+            call(text="\nSibilings:\n(\n  1_a\n  1_b\n)"),
+            call(text="\nNumber of cycles: 1\n"),
+            call(text="Cycle 1:\n\n(\n -> 1_a.2_a\n -> 1_b.2_b\n -> 1_a.2_b\n -> 1_c.2_a\n)\n"),
             call(text="<<<< Cycles family for parent module '1_a'\n"),
-            call(text='Acyclic contract broken. Number of cycle families found: 1\n')
+            call(text="Number of cycle families found for a contract 'test': 1\n")
         ])
 
 
@@ -147,3 +148,28 @@ class TestLongestCommonPackage:
         longest_common_package = _longest_common_package(modules=modules)
         # Then
         assert "django" == longest_common_package
+
+
+class TestGetPackageDependency:
+
+    def test_common_package_exist(self) -> None:
+        # Given
+        origin_dependency = ("a.b.c.x", "a.b.d.z")
+        # When
+        package_dependency = _get_package_dependency(
+            importer=origin_dependency[0],
+            imported=origin_dependency[1]
+        )  # type: ignore
+        # Then
+        assert ("a.b.c", "a.b.d") == package_dependency
+
+    def test_no_common_package(self) -> None:
+        # Given
+        origin_dependency = ("a.b.c", "x.y.z")
+        # When
+        package_dependency = _get_package_dependency(
+            importer=origin_dependency[0],
+            imported=origin_dependency[1]
+        )  # type: ignore
+        # Then
+        assert ("a", "x") == package_dependency
