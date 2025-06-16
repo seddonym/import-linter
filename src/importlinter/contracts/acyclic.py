@@ -11,6 +11,9 @@ class AcyclicContractError(Exception):
     pass
 
 
+_PARENT_PACKAGE_FOR_MULTIPLE_ROOTS = "__root__"
+
+
 def _longest_common_package(modules: tuple[str, ...]) -> str:
     module_lists = [
         module.split(".")
@@ -96,7 +99,11 @@ class Cycle:
         if self._family_key is not None:
             return self._family_key
 
-        parent = _longest_common_package(modules=self.members)
+        try:
+            parent = _longest_common_package(modules=self.members)
+        except AcyclicContractError:
+            parent = _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS
+    
         sibilings_set: set[str] = set()
         parent_nesting = parent.count(".")
 
@@ -104,6 +111,8 @@ class Cycle:
             if member.startswith(parent) and member != parent:
                 sibiling = ".".join(member.split(".")[:parent_nesting + 2])
                 sibilings_set.add(sibiling)
+            else:
+                sibilings_set.add(member.split(".")[0])
 
         sibilings = tuple(sorted(sibilings_set))
         return CyclesFamilyKey(parent=parent, sibilings=sibilings)
@@ -239,7 +248,9 @@ class AcyclicContract(Contract):
         for importer_module in sorted(graph.modules):
             cycle_members = graph.find_shortest_cycle(
                 module=importer_module,
-                as_package=True
+                as_package=False  # package dependencies are already added to the graph,
+                # while turned on, we lose traceability of package dependencies
+                # which are logged later for better understanding
             )
 
             if cycle_members is None:
@@ -256,8 +267,9 @@ class AcyclicContract(Contract):
                     continue
 
             if verbose:
+                cycle_members_str = "\n-> ".join(cycle_members)
                 output.print_warning(
-                    text=f"Found cycle for module '{importer_module}':\n-> {'\n-> '.join(cycle_members)}\n"
+                    text=f"Found cycle for module '{importer_module}':{chr(10)}-> {cycle_members_str}{chr(10)}"
                 )
 
             if cycle.family_key not in family_key_to_cycles:
@@ -308,6 +320,8 @@ class AcyclicContract(Contract):
 
         if not cycle_families:
             return
+        
+        number_of_family_package_dependencies = 0
 
         for cycle_family in cycle_families:
             output.print_error(
@@ -315,21 +329,27 @@ class AcyclicContract(Contract):
             )
             output.print_error(text=f"\nSibilings:\n{cycle_family.key.get_siblings_format()}")
             output.print_error(text=f"\nNumber of cycles: {len(cycle_family.cycles)}\n")
+            is_family_package_dependency = False
 
             for index, cycle in enumerate(cycle_family.cycles, start=1):
                 cycle_formatted, is_package_dependency = self._get_cycle_formatted_for_logging(
                     cycle=cycle,
                     contract_check=check
                 )
+                is_family_package_dependency = is_family_package_dependency or is_package_dependency
                 title = f"Cycle {index} (package dependency)" if is_package_dependency else f"Cycle {index}"
                 output.print_error(text=f"{title}:\n\n{cycle_formatted.get_members_format()}\n")
 
+            number_of_family_package_dependencies += 1 if is_family_package_dependency else 0
             output.print_error(text=f"<<<< Cycles family for parent module '{cycle_family.key.parent}'\n")
 
         summary_msg = f"Number of cycle families found for a contract '{self.name}': {len(cycle_families)}"
 
         if self._max_cycles_families is not None:
             summary_msg += f" (limit = {self._max_cycles_families})"
+
+        if number_of_family_package_dependencies > 0:
+            summary_msg += f"\nNumber of cycle families with package dependencies: {number_of_family_package_dependencies}"
 
         output.print_error(text=summary_msg + "\n")
 
