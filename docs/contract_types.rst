@@ -11,8 +11,10 @@ Forbidden modules
 
 Forbidden contracts check that one set of modules are not imported by another set of modules.
 
-Descendants of each module will be checked - so if ``mypackage.one`` is forbidden from importing ``mypackage.two``, then
-``mypackage.one.blue`` will be forbidden from importing ``mypackage.two.green``. Indirect imports will also be checked.
+By default, descendants of each module will be checked - so if ``mypackage.one`` is forbidden from importing ``mypackage.two``, then
+``mypackage.one.blue`` will be forbidden from importing ``mypackage.two.green``. Indirect imports will also be checked. This
+descendant behaviour can be changed by setting ``as_packages`` to ``False``: in that case, only explicitly listed modules will be
+checked, not their descendants.
 
 External packages may also be forbidden.
 
@@ -66,6 +68,9 @@ External packages may also be forbidden.
     - ``unmatched_ignore_imports_alerting``: See :ref:`Shared options`.
     - ``allow_indirect_imports``: If ``True``, allow indirect imports to forbidden modules without interpreting them
       as a reason to mark the contract broken. (Optional.)
+    - ``as_packages``: Whether to treat the source and forbidden modules as packages. If ``False``, each of the modules
+      passed in will be treated as a module rather than a package. Default behaviour is ``True`` (treat modules as
+      packages).
 
 Independence
 ------------

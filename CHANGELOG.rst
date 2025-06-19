@@ -3,8 +3,19 @@ Changelog
 
 latest
 ------
+- Fixed incorrect handling of unicode characters in TOML files on Windows.
+
+2.3 (2025-03-11)
+----------------
+
+* Add as_packages field to forbidden contracts.
+* Improve performance of parsing module / import expressions.
+
+2.2 (2025-02-07)
+----------------
 
 * Add support for wildcards in layers contract containers.
+* Improve performance of `helpers.pop_imports`.
 
 2.1 (2024-10-8)
 ---------------

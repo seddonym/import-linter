@@ -69,3 +69,21 @@ To set up `import-linter` for local development:
     git push origin name-of-your-bugfix-or-feature
 
 6. Submit a pull request through the GitHub website.
+
+Releasing to Pypi
+=================
+
+(Only maintainers can do this.)
+
+1. Choose a new version number (based on `semver <https://semver.org/>`_).
+2. ``git pull origin master``
+3. Update ``CHANGELOG.rst`` with the new version number.
+4. Update the ``release`` variable in ``docs/conf.py`` with the new version number.
+5. Update the ``__version__`` variable in ``src/importlinter/__init__.py`` with the new version number.
+6. Update ``project.version`` in ``pyproject.toml`` with the new version number.
+7. ``git commit -am "Release v{new version number"``
+8. ``git push``
+9. Wait for tests to pass on CI.
+10. ``git tag v{new version number}``
+11. ``git push --tags``
+12. This should kick start the Github ``release`` workflow which releases the project to PyPI.
