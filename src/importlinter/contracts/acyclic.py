@@ -7,14 +7,10 @@ from importlinter.application import output
 from importlinter.domain import fields
 
 
-class AcyclicContractError(Exception):
-    pass
-
-
 _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS = "__root__"
 
 
-def _longest_common_package(modules: tuple[str, ...]) -> str:
+def _longest_common_package(modules: tuple[str, ...]) -> str | None:
     module_lists = [
         module.split(".")
         for module in modules
@@ -27,11 +23,11 @@ def _longest_common_package(modules: tuple[str, ...]) -> str:
                 longest_common_package = ".".join(module_lists[0][:index])
 
                 if longest_common_package == "":
-                    raise AcyclicContractError(f"No common package for the provided modules: {modules}")
+                    return None
                 else:
                     return longest_common_package
 
-    raise AcyclicContractError(f"No common package for the provided modules: {modules}")
+    return None
 
 
 def _get_package_dependency(importer: str, imported: str) -> tuple[str, str] | None:
@@ -42,21 +38,21 @@ def _get_package_dependency(importer: str, imported: str) -> tuple[str, str] | N
     If there is a common package, it returns the package dependency as a tuple of two strings.
     If the common package is the same as the importer or imported module, it returns None.
     """
-    try:
-        common_package = _longest_common_package(modules=(importer, imported))
-    except AcyclicContractError:
+    common_package = _longest_common_package(modules=(importer, imported))
+    # If there is no common package, we check if root packages make package dependency
+    if common_package is None:
         imported_split = imported.split('.')
         importer_split = importer.split('.')
 
         if len(imported_split) == 1 and len(importer_split) == 1:
             return None
         else:
-            imported_package = importer_split[0], imported_split[0]
+            package_dependency = importer_split[0], imported_split[0]
 
-            if imported_package[0] == imported_package[1]:
+            if package_dependency[0] == package_dependency[1]:
                 return None
 
-            return imported_package
+            return package_dependency
 
     if common_package == importer or common_package == imported:
         return None
@@ -69,7 +65,7 @@ def _get_package_dependency(importer: str, imported: str) -> tuple[str, str] | N
 
     if package_dependency == (importer, imported) or importer_package == imported_package:
         return None
-    
+
     return package_dependency
 
 
@@ -99,11 +95,11 @@ class Cycle:
         if self._family_key is not None:
             return self._family_key
 
-        try:
-            parent = _longest_common_package(modules=self.members)
-        except AcyclicContractError:
+        parent = _longest_common_package(modules=self.members)
+        # If there is no common package, we assume that the cycle is formed between root packages
+        if parent is None:
             parent = _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS
-    
+
         sibilings_set: set[str] = set()
         parent_nesting = parent.count(".")
 
@@ -132,7 +128,7 @@ class AcyclicContract(Contract):
     A contract that checks whether the dependency graph of modules (or packages) 
     stick to an acyclic dependencies principle (ADP).
 
-    The acyclic dependencies principle (ADP) is a software design principle defined by 
+    ADP is a software design principle defined by 
     Robert C. Martin that states that "the dependency graph of packages or components should have no cycles".
     This implies that the dependencies form a directed acyclic graph (DAG).
 
@@ -166,8 +162,8 @@ class AcyclicContract(Contract):
     Configuration options (all options are optional):
         - consider_package_dependencies:  Whether to consider cyclic dependencies between packages.
             "True" or "true" will be treated as True.
-        - max_cycles_families: stop searching for cycles after the provided number of cycles families
-            have been found.
+        - max_cycles_families: limit a search for cycles to the provided number of cycles families. 
+            The limited families are not guaranteed to be complete.
         - include_parents: a list of parent modules to include in the search for cycles.
         - exclude_parents: a list of parent modules to exclude from the search for cycles.
 
@@ -177,8 +173,8 @@ class AcyclicContract(Contract):
         - imported: "a.b.e.f.z"
         - package dependency: ("a.b.c", "a.b.e")
 
-        If no include_parents or exclude_parents are provided, all modules will be considered.
-        If a parent module is provided in both include_parents and exclude_parents,
+        If no 'include_parents' or 'exclude_parents' are provided, all modules will be considered.
+        If a parent module is provided in both 'include_parents' and 'exclude_parents',
         it will be excluded from the search for cycles.
         
     """
@@ -194,8 +190,9 @@ class AcyclicContract(Contract):
     _PACKAGE_DEPENDENCY_METADATA_KEY = "package_dependencies"
 
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
-        # If we consider package dependencies, 
-        # we need to expand the graph with the artificialy created package dependencies. 
+        """
+        Check the import graph for cyclic dependencies.
+        """
         if verbose:
             configuration_heading_msg = [
                 "CONFIG:\n",
@@ -207,7 +204,8 @@ class AcyclicContract(Contract):
             output.print_heading(text="\n".join(configuration_heading_msg), level=2)
 
         contract_metadata: dict[str, Any] = {}
-
+        # If we consider package dependencies, 
+        # we need to expand the graph with the artificialy created package dependencies. 
         if self._consider_package_dependencies:
             graph = copy.deepcopy(graph)
             already_added_package_dependencies: set[tuple[str, str]] = set()
@@ -250,7 +248,7 @@ class AcyclicContract(Contract):
                 module=importer_module,
                 as_package=False  # package dependencies are already added to the graph,
                 # while turned on, we lose traceability of package dependencies
-                # which are logged later for better understanding
+                # which are logged later for a better understanding
             )
 
             if cycle_members is None:
@@ -258,13 +256,11 @@ class AcyclicContract(Contract):
 
             cycle = Cycle(members=cycle_members)
 
-            if self._include_parents is not None:
-                if cycle.family_key.parent not in self._include_parents:
-                    continue
-            
-            if self._exclude_parents is not None:
-                if cycle.family_key.parent in self._exclude_parents:
-                    continue
+            if self._include_parents is not None and cycle.family_key.parent not in self._include_parents:
+                continue
+
+            if self._exclude_parents is not None and cycle.family_key.parent in self._exclude_parents:
+                continue
 
             if verbose:
                 cycle_members_str = "\n-> ".join(cycle_members)
@@ -389,9 +385,9 @@ class AcyclicContract(Contract):
                 else:
                     formatted_members.append(origin_dependency[1])
             else:
-                # could already be added by the previous iteration
                 if len(formatted_members) == 0:
                     formatted_members.append(package_dependency[0])
+                # could have been already added by the previous iteration
                 elif formatted_members[-1] != package_dependency[0]:
                     formatted_members.append(package_dependency[0])
                 
