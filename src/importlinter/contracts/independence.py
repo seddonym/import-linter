@@ -36,7 +36,7 @@ class IndependenceContract(Contract):
 
     Configuration options:
 
-        - modules:        A list of Modules that should be independent of each other.
+        - modules:        A set of Modules that should be independent of each other.
         - ignore_imports: A set of ImportExpressions. These imports will be ignored: if the import
                           would cause a contract to be broken, adding it to the set will cause
                           the contract be kept instead. (Optional.)
@@ -47,7 +47,7 @@ class IndependenceContract(Contract):
 
     type_name = "independence"
 
-    modules = fields.ListField(subfield=fields.ModuleExpressionField())
+    modules = fields.SetField(subfield=fields.ModuleExpressionField())
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
 
