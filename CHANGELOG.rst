@@ -1,6 +1,11 @@
 Changelog
 =========
 
+latest
+------
+
+* Add protected contract type.
+
 2.4 (2025-08-15)
 ----------------
 
