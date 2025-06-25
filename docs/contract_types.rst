@@ -324,6 +324,49 @@ Note: you are not allowed to mix different kinds of separators on the same line.
         mypackage.low
 
 
+Protected modules
+-----------------
+
+*Type name:* ``protected``
+
+Protected contracts check that one set of modules is only imported by another set of modules.
+
+By default, descendants of each module will be checked - so if ``mypackage.one`` is protected, with ``mypackage.two`` 
+marked as allow to import it, then ``mypackage.two.blue`` can import ``mypackage.one.green`` when ``mypackage.three.red``
+cannot. This descendant behaviour can be changed by setting ``as_packages`` to ``False``: in that case, only explicitly
+listed modules will be checked, not their descendants.
+
+**Examples:**
+
+.. code-block:: ini
+
+    [importlinter]
+    root_package = mypackage
+
+    [importlinter:contract:my-protected-contract]
+    name = My protected contract
+    type = protected
+    protected_modules =
+        mypackage.one
+    allowed_importers =
+        mypackage.two
+        mypackage.three.blue
+    ignore_imports = 
+        mypackage.four.green -> mypackage.one.red
+        mypackage.three.green -> mypackage.one
+    
+
+**Configuration options**
+
+    - ``protected_modules``: The modules that must not be imported except by the list of importers, and by each other. Supports :ref:`wildcards`.
+    - ``allowed_importers``: The only modules allowed to import the target modules. Supports :ref:`wildcards`.
+    - ``ignore_imports``:  See :ref:`Shared options`.
+    - ``unmatched_ignore_imports_alerting``: See :ref:`Shared options`.
+    - ``as_packages``: Whether to treat the source and forbidden modules as packages. If ``False``, each of the modules
+      passed in will be treated as a module rather than a package. Default behaviour is ``True`` (treat modules as
+      packages).
+
+
 Custom contract types
 ---------------------
 
