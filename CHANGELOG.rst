@@ -12,6 +12,7 @@ Changelog
 * Upgrade latest tox requirements (fixing error with `tox -echeck`).
 * Rename default Git repository branch to 'main'.
 * Increase accuracy of timings when using --show-timings.
+* Add a protected contract type.
 
 2.3 (2025-03-11)
 ----------------
