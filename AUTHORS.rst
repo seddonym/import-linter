@@ -26,3 +26,4 @@ Contributors
 * Neil Williams - https://github.com/spladug
 * Nicholas Bunn - https://github.com/NicholasBunn
 * Felix Uhl - https://github.com/iFreilicht
+* Alexandre Beaufays - https://github.com/abeaufays
