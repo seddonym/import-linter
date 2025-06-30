@@ -181,7 +181,7 @@ def test_respects_passed_filename(passed_filename, expected_foo_value):
                         "key": "value",
                         "multiple_values": ["one", "two", "three", "foo.one -> foo.two"],
                     },
-                    {"name": "Contract Two", "baz": 3},
+                    {"name": "Contract Two", "id": "1", "baz": 3},
                 ],
             ),
         ),
