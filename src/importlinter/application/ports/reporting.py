@@ -4,11 +4,11 @@ from importlinter.domain.contract import Contract, ContractCheck, InvalidContrac
 from grimp import ImportGraph
 
 
-class Reporter: 
+class Reporter:
     ...
 
 
-class ExceptionReporter: 
+class ExceptionReporter:
     ...
 
 
