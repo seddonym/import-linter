@@ -86,19 +86,31 @@ def import_expression_to_imports(
 
 
 def module_expressions_to_modules(
-    graph: ImportGraph, expressions: Iterable[ModuleExpression]
+    graph: ImportGraph, expressions: Iterable[ModuleExpression], as_packages: bool = False
 ) -> Set[Module]:
     modules = set()
     for expression in expressions:
-        modules |= module_expression_to_modules(graph, expression)
+        modules |= module_expression_to_modules(graph, expression, as_packages)
     return modules
 
 
-def module_expression_to_modules(graph: ImportGraph, expression: ModuleExpression) -> Set[Module]:
+def module_expression_to_modules(
+    graph: ImportGraph, expression: ModuleExpression, as_packages: bool = False
+) -> Set[Module]:
     if not expression.has_wildcard_expression():
         return {Module(expression.expression)}
 
     matching_modules = graph.find_matching_modules(expression.expression)
+
+    if as_packages:
+        extra_modules = {
+            descendant
+            for module in matching_modules
+            for descendant in graph.find_descendants(module)
+        }
+
+        matching_modules.update(extra_modules)
+
     return {Module(module) for module in matching_modules}
 
 
