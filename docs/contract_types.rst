@@ -329,15 +329,28 @@ Protected modules
 
 *Type name:* ``protected``
 
-Protected contracts check that one set of modules is only imported by another set of modules.
+Protected contracts prevent certain modules from being directly imported, except by modules in an allow-list. 
+By default, descendants of each module will be checked too.
 
-By default, descendants of each module will be checked - so if ``mypackage.one`` is protected, with ``mypackage.two`` 
-marked as allow to import it, then ``mypackage.two.blue`` can import ``mypackage.one.green`` when ``mypackage.three.red``
-cannot. This descendant behaviour can be changed by setting ``as_packages`` to ``False``: in that case, only explicitly
-listed modules will be checked, not their descendants.
+For example, if blue is protected, and green is the only module in the allow list,
+then no module other than green (and its descendants) will be allowed to import blue (and its descendants) directly.
 
 **Examples:**
 
+.. code-block:: ini
+
+    [importlinter]
+    root_package = mypackage
+
+    [importlinter:contract:my-simple-protected-contract]
+    name = My simple protected contract
+    type = protected
+    protected_modules =
+        mypackage.one
+    allowed_importers =
+        mypackage.two
+        mypackage.three.blue
+    
 .. code-block:: ini
 
     [importlinter]
@@ -347,14 +360,17 @@ listed modules will be checked, not their descendants.
     name = My protected contract
     type = protected
     protected_modules =
-        mypackage.one
+        mypackage.**.models
     allowed_importers =
-        mypackage.two
-        mypackage.three.blue
+        mypackage.colors.*
     ignore_imports = 
-        mypackage.four.green -> mypackage.one.red
-        mypackage.three.green -> mypackage.one
-    
+        mypackage.one.green -> mypackage.one.models
+        mypackage.colors.red.foo -> mypackage.three.models
+    unmatched_ignore_imports_alerting = warn
+    as_packages = False
+
+    # In this example, modules named `models` contained in `mypackage` can only be imported 
+    # by modules directly below `mypackage.colors`.
 
 **Configuration options**
 
