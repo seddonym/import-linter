@@ -687,6 +687,14 @@ class TestModuleExpressionToModules:
                 "Double wildcard in the middle of expression",
             ),
             (
+                "mypackage.**.one",
+                {
+                    "mypackage.bar.one",
+                    "mypackage.foo.one",
+                },
+                "Double wildcard in the middle of expression where expected target has submodules",
+            ),
+            (
                 "mypackage.bar.*",
                 {
                     "mypackage.bar.one",
@@ -704,6 +712,14 @@ class TestModuleExpressionToModules:
                 },
                 "Simple wildcard in the middle of expression",
             ),
+            (
+                "mypackage.*.one",
+                {
+                    "mypackage.bar.one",
+                    "mypackage.foo.one",
+                },
+                "Simple wildcard in the middle of expression where expected target has submodules",
+            ),
         ],
     )
     def test_expected_conversion(self, expression: str, expected: set[str], description: str):
@@ -711,6 +727,99 @@ class TestModuleExpressionToModules:
 
         conversion_result = module_expression_to_modules(
             graph, expression=ModuleExpression(expression)
+        )
+        expected_modules = set(map(lambda name: Module(name), expected))
+
+        assert conversion_result == expected_modules, description
+
+    @pytest.mark.parametrize(
+        "expression,expected,description",
+        [
+            (
+                "mypackage.foo.**",
+                {
+                    "mypackage.foo.one",
+                    "mypackage.foo.one.red",
+                    "mypackage.foo.one.blue",
+                    "mypackage.foo.one.green",
+                },
+                "Double wildcard at the end of expression",
+            ),
+            (
+                "mypackage.**.red",
+                {
+                    "mypackage.bar.one.red",
+                    "mypackage.bar.two.red",
+                    "mypackage.bar.three.red",
+                    "mypackage.foo.one.red",
+                    "mypackage.toto.red",
+                },
+                "Double wildcard in the middle of expression",
+            ),
+            (
+                "mypackage.**.one",
+                {
+                    "mypackage.bar.one",
+                    "mypackage.bar.one.red",
+                    "mypackage.bar.one.blue",
+                    "mypackage.bar.one.green",
+                    "mypackage.foo.one",
+                    "mypackage.foo.one.red",
+                    "mypackage.foo.one.blue",
+                    "mypackage.foo.one.green",
+                },
+                "Double wildcard in the middle of expression where expected target has submodules",
+            ),
+            (
+                "mypackage.bar.*",
+                {
+                    "mypackage.bar.one",
+                    "mypackage.bar.one.red",
+                    "mypackage.bar.one.blue",
+                    "mypackage.bar.one.green",
+                    "mypackage.bar.two",
+                    "mypackage.bar.two.red",
+                    "mypackage.bar.two.blue",
+                    "mypackage.bar.two.green",
+                    "mypackage.bar.three",
+                    "mypackage.bar.three.red",
+                    "mypackage.bar.three.blue",
+                    "mypackage.bar.three.green",
+                },
+                "Simple wildcard at the end of expression",
+            ),
+            (
+                "mypackage.bar.*.red",
+                {
+                    "mypackage.bar.one.red",
+                    "mypackage.bar.two.red",
+                    "mypackage.bar.three.red",
+                },
+                "Simple wildcard in the middle of expression",
+            ),
+            (
+                "mypackage.*.one",
+                {
+                    "mypackage.bar.one",
+                    "mypackage.bar.one.red",
+                    "mypackage.bar.one.blue",
+                    "mypackage.bar.one.green",
+                    "mypackage.foo.one",
+                    "mypackage.foo.one.red",
+                    "mypackage.foo.one.blue",
+                    "mypackage.foo.one.green",
+                },
+                "Simple wildcard in the middle of expression where expected target has submodules",
+            ),
+        ],
+    )
+    def test_expected_conversion_with_as_package_option(
+        self, expression: str, expected: set[str], description: str
+    ):
+        graph = self._build_default_graph()
+
+        conversion_result = module_expression_to_modules(
+            graph, expression=ModuleExpression(expression), as_packages=True
         )
         expected_modules = set(map(lambda name: Module(name), expected))
 
