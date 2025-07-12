@@ -1,6 +1,6 @@
 PyYAML~=6.0.1
 black~=22.3.0
-flake8~=4.0.1
+flake8~=7.3.0
 mypy~=0.730
 pytest~=7.4.0
 pytest-cov~=4.1.0
