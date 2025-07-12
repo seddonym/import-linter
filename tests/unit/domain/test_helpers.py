@@ -9,6 +9,7 @@ from importlinter.domain.helpers import (
     MissingImport,
     add_imports,
     import_expressions_to_imports,
+    module_expression_to_modules,
     pop_import_expressions,
     pop_imports,
     resolve_import_expressions,
@@ -628,6 +629,92 @@ class TestPopImportExpressions:
             line_number=import_details["line_number"],
             line_contents=import_details["line_contents"],
         )
+
+
+class TestModuleExpressionToModules:
+    def _build_default_graph(self) -> ImportGraph:
+        graph = ImportGraph()
+        for module in (
+            "mypackage",
+            "mypackage.bar",
+            "mypackage.bar.one",
+            "mypackage.bar.one.red",
+            "mypackage.bar.one.blue",
+            "mypackage.bar.one.green",
+            "mypackage.bar.two",
+            "mypackage.bar.two.red",
+            "mypackage.bar.two.blue",
+            "mypackage.bar.two.green",
+            "mypackage.bar.three",
+            "mypackage.bar.three.red",
+            "mypackage.bar.three.blue",
+            "mypackage.bar.three.green",
+            "mypackage.foo",
+            "mypackage.foo.one",
+            "mypackage.foo.one.red",
+            "mypackage.foo.one.blue",
+            "mypackage.foo.one.green",
+            "mypackage.toto",
+            "mypackage.toto.red",
+            "mypackage.toto.blue",
+            "mypackage.toto.green",
+        ):
+            graph.add_module(module)
+        return graph
+
+    @pytest.mark.parametrize(
+        "expression,expected,description",
+        [
+            (
+                "mypackage.foo.**",
+                {
+                    "mypackage.foo.one",
+                    "mypackage.foo.one.red",
+                    "mypackage.foo.one.blue",
+                    "mypackage.foo.one.green",
+                },
+                "Double wildcard at the end of expression",
+            ),
+            (
+                "mypackage.**.red",
+                {
+                    "mypackage.bar.one.red",
+                    "mypackage.bar.two.red",
+                    "mypackage.bar.three.red",
+                    "mypackage.foo.one.red",
+                    "mypackage.toto.red",
+                },
+                "Double wildcard in the middle of expression",
+            ),
+            (
+                "mypackage.bar.*",
+                {
+                    "mypackage.bar.one",
+                    "mypackage.bar.two",
+                    "mypackage.bar.three",
+                },
+                "Simple wildcard at the end of expression",
+            ),
+            (
+                "mypackage.bar.*.red",
+                {
+                    "mypackage.bar.one.red",
+                    "mypackage.bar.two.red",
+                    "mypackage.bar.three.red",
+                },
+                "Simple wildcard in the middle of expression",
+            ),
+        ],
+    )
+    def test_expected_conversion(self, expression: str, expected: set[str], description: str):
+        graph = self._build_default_graph()
+
+        conversion_result = module_expression_to_modules(
+            graph, expression=ModuleExpression(expression)
+        )
+        expected_modules = set(map(lambda name: Module(name), expected))
+
+        assert conversion_result == expected_modules, description
 
 
 def test_add_imports() -> None:
