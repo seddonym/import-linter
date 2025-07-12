@@ -5,7 +5,7 @@ from tests.adapters.printing import FakePrinter
 from grimp.adaptors.graph import ImportGraph
 
 
-class TestAllowListContract:
+class TestProtectedContract:
     @staticmethod
     def _build_default_graph() -> ImportGraph:
         graph = ImportGraph()
