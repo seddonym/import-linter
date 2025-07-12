@@ -55,14 +55,22 @@ class ProtectedContract(Contract):
         # Target modules can import between themselves
         allowed_modules.update(protected_modules)
 
-        illegal_imports: list[grimp.DetailedImport] = []
+        illegal_imports: list = []
         for protected_module in protected_modules:
             illegal_importers = (
                 graph.find_modules_that_directly_import(protected_module) - allowed_modules
             )
             for illegal_importer in illegal_importers:
+                import_details = graph.get_import_details(
+                    importer=illegal_importer, imported=protected_module
+                )
+
                 illegal_imports.append(
-                    *graph.get_import_details(importer=illegal_importer, imported=protected_module)
+                    {
+                        "importer": illegal_importer,
+                        "imported": protected_module,
+                        "line_numbers": [detail["line_number"] for detail in import_details],
+                    }
                 )
 
         return ContractCheck(
@@ -80,12 +88,12 @@ class ProtectedContract(Contract):
         )
 
         for illegal_import in illegal_imports:
-            importer, imported, line_number = (
+            importer, imported, line_numbers = (
                 illegal_import["importer"],
                 illegal_import["imported"],
-                illegal_import["line_number"],
+                illegal_import["line_numbers"],
             )
-            output.print_error(f"{importer} -> {imported} (l.{line_number})")
+            output.print_error(f"{importer} -> {imported} (l.{', '.join(map(str, line_numbers))})")
         output.new_line()
 
     def _resolve_module_expressions(

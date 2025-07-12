@@ -311,6 +311,36 @@ class TestAllowListContract:
         contract_check = contract.check(graph=graph, verbose=False)
         assert contract_check.kept == contract_kept, description
 
+    def test_handle_duplicated_illegal_imports(self):
+        graph = self._build_default_graph()
+        graph.add_import(
+            importer="mypackage.bar.other_package.one",
+            imported="mypackage.foo.protected.models",
+            line_number=6,
+            line_contents="import models",
+        )
+        graph.add_import(
+            importer="mypackage.bar.other_package.one",
+            imported="mypackage.foo.protected.models",
+            line_number=27,
+            line_contents="import models",
+        )
+
+        contract = ProtectedContract(
+            name="Protected contract",
+            session_options={
+                "root_packages": ["mypackage"],
+            },
+            contract_options={
+                "protected_modules": ("mypackage.foo.protected.*"),
+                "allowed_importers": ("mypackage.bar.allowed.*"),
+                "as_packages": "False",
+            },
+        )
+
+        contract_check = contract.check(graph=graph, verbose=False)
+        assert not contract_check.kept
+
     def test_render_broken_contract(self):
         settings.configure(PRINTER=FakePrinter())
         graph = self._build_default_graph()
