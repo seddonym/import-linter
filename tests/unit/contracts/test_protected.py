@@ -353,6 +353,101 @@ class TestProtectedContract:
         contract_check = contract.check(graph=graph, verbose=False)
         assert not contract_check.kept
 
+    @pytest.mark.parametrize(
+        "import_details,as_packages,contract_kept,description",
+        [
+            (
+                {
+                    "importer": "mypackage.bar.allowed",
+                    "imported": "django",
+                    "line_number": 3,
+                    "line_contents": "print",
+                },
+                "False",
+                True,
+                "Allowed module can import external protected module",
+            ),
+            (
+                {
+                    "importer": "mypackage.bar.allowed.one",
+                    "imported": "django.core",
+                    "line_number": 3,
+                    "line_contents": "print",
+                },
+                "True",
+                True,
+                "Allowed package can import external protected package",
+            ),
+            (
+                {
+                    "importer": "mypackage.bar.other_package",
+                    "imported": "django",
+                    "line_number": 3,
+                    "line_contents": "print",
+                },
+                "False",
+                False,
+                "Non-allowed module cannot import external protected module",
+            ),
+            (
+                {
+                    "importer": "mypackage.bar.other_package.one",
+                    "imported": "django.core",
+                    "line_number": 3,
+                    "line_contents": "print",
+                },
+                "True",
+                False,
+                "Non-allowed package cannot import external protected package",
+            ),
+            (
+                {
+                    "importer": "mypackage.bar.other_package",
+                    "imported": "mypackage.foo.sibling",
+                    "line_number": 3,
+                    "line_contents": "print",
+                },
+                "False",
+                True,
+                "Unrelated imports are not affected without as_package",
+            ),
+            (
+                {
+                    "importer": "mypackage.bar.other_package.one",
+                    "imported": "mypackage.foo.sibling",
+                    "line_number": 3,
+                    "line_contents": "print",
+                },
+                "True",
+                True,
+                "Unrelated imports are not affected with as_package",
+            ),
+        ],
+    )
+    @pytest.mark.xfail
+    def test_protect_external_package(
+        self, import_details, as_packages, contract_kept, description
+    ):
+        graph = self._build_default_graph()
+        graph.add_module("django", is_squashed=True)
+
+        graph.add_import(**import_details)
+
+        contract = ProtectedContract(
+            name="Protected contract",
+            session_options={
+                "root_packages": ["mypackage"],
+            },
+            contract_options={
+                "protected_modules": ("django"),
+                "allowed_importers": ("mypackage.bar.allowed"),
+                "as_packages": as_packages,
+            },
+        )
+
+        contract_check = contract.check(graph, verbose=False)
+        assert contract_check.kept == contract_kept, description
+
     def test_render_broken_contract_simple_with_package(self):
         settings.configure(PRINTER=FakePrinter())
 
