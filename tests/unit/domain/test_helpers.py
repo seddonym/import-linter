@@ -720,6 +720,13 @@ class TestModuleExpressionToModules:
                 },
                 "Simple wildcard in the middle of expression where expected target has submodules",
             ),
+            (
+                "mypackage.bar.one",
+                {
+                    "mypackage.bar.one",
+                },
+                "No wildcard",
+            ),
         ],
     )
     def test_expected_conversion(self, expression: str, expected: set[str], description: str):
@@ -810,6 +817,16 @@ class TestModuleExpressionToModules:
                     "mypackage.foo.one.green",
                 },
                 "Simple wildcard in the middle of expression where expected target has submodules",
+            ),
+            (
+                "mypackage.bar.one",
+                {
+                    "mypackage.bar.one",
+                    "mypackage.bar.one.red",
+                    "mypackage.bar.one.blue",
+                    "mypackage.bar.one.green",
+                },
+                "No wildcard",
             ),
         ],
     )
