@@ -8,6 +8,7 @@ latest
   any file changes, not just a Python file.
 - Fix RecursionError when running repr on a ModuleExpression.
 - Fix messages being always colored white on Windows.
+- Add a protected contract type.
 
 2.3 (2025-03-11)
 ----------------
