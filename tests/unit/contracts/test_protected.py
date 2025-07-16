@@ -464,7 +464,8 @@ class TestProtectedContract:
         assert (
             settings.PRINTER._buffer
             == """Following imports do not respect the protected policy:
-mypackage.bar.other_package.one -> mypackage.foo.protected.models (l.7)
+mypackage.foo.protected.models rule is imported by unallowed modules:
+- mypackage.bar.other_package.one -> mypackage.foo.protected.models (l.7)
 
 """
         )

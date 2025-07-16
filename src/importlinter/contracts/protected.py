@@ -46,55 +46,74 @@ class ProtectedContract(Contract):
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
         )
 
-        protected_modules = self._resolve_module_expressions(
-            self.protected_modules, graph  # type: ignore
-        )
         allowed_modules = self._resolve_module_expressions(
             self.allowed_importers, graph  # type: ignore
         )
+        protected_modules_expressions: set[
+            imports.ModuleExpression
+        ] = self.protected_modules  # type: ignore
 
-        # Target modules can import between themselves
-        allowed_modules.update(protected_modules)
+        illegal_imports_metadata: dict[str, Iterable[Link]] = dict()
 
-        illegal_imports: list[Link] = []
-        for protected_module in protected_modules:
-            illegal_importers = (
-                graph.find_modules_that_directly_import(protected_module) - allowed_modules
+        for protected_module_expression in protected_modules_expressions:
+            protected_modules = self._resolve_module_expressions(
+                {protected_module_expression}, graph
             )
-            for illegal_importer in illegal_importers:
-                import_details = graph.get_import_details(
-                    importer=illegal_importer, imported=protected_module
+            illegal_imports: list[Link] = []
+
+            for protected_module in protected_modules:
+                illegal_importers = (
+                    graph.find_modules_that_directly_import(protected_module)
+                    - allowed_modules
+                    - protected_modules
                 )
 
-                illegal_imports.append(
-                    {
-                        "importer": illegal_importer,
-                        "imported": protected_module,
-                        "line_numbers": tuple(detail["line_number"] for detail in import_details),
-                    }
-                )
+                for illegal_importer in illegal_importers:
+                    import_details = graph.get_import_details(
+                        importer=illegal_importer, imported=protected_module
+                    )
+
+                    illegal_imports.append(
+                        {
+                            "importer": illegal_importer,
+                            "imported": protected_module,
+                            "line_numbers": tuple(
+                                detail["line_number"] for detail in import_details
+                            ),
+                        }
+                    )
+                if illegal_importers:
+                    illegal_imports_metadata[
+                        protected_module_expression.expression
+                    ] = illegal_imports
 
         return ContractCheck(
             kept=not bool(illegal_imports),
             warnings=warnings,
-            metadata={"illegal_imports": illegal_imports},
+            metadata={"illegal_imports": illegal_imports_metadata},
         )
 
     def render_broken_contract(self, check: ContractCheck) -> None:
-        illegal_imports = check.metadata["illegal_imports"]
+        illegal_imports_metadata: dict[str, Iterable[Link]] = check.metadata["illegal_imports"]
 
         output.print_error(
             "Following imports do not respect the protected policy:",
             bold=False,
         )
 
-        for illegal_import in illegal_imports:
-            importer, imported, line_numbers = (
-                illegal_import["importer"],
-                illegal_import["imported"],
-                illegal_import["line_numbers"],
+        for protected_module_expression, illegal_imports in illegal_imports_metadata.items():
+            output.print_error(
+                f"{protected_module_expression} rule is imported by unallowed modules:"
             )
-            output.print_error(f"{importer} -> {imported} (l.{', '.join(map(str, line_numbers))})")
+            for illegal_import in illegal_imports:
+                importer, imported, line_numbers = (
+                    illegal_import["importer"],
+                    illegal_import["imported"],
+                    illegal_import["line_numbers"],
+                )
+                output.print_error(
+                    f"- {importer} -> {imported} (l.{', '.join(map(str, line_numbers))})"
+                )
         output.new_line()
 
     def _resolve_module_expressions(
