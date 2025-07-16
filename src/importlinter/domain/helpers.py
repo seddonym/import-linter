@@ -97,10 +97,10 @@ def module_expressions_to_modules(
 def module_expression_to_modules(
     graph: ImportGraph, expression: ModuleExpression, as_packages: bool = False
 ) -> Set[Module]:
-    if not expression.has_wildcard_expression():
-        return {Module(expression.expression)}
-
-    matching_modules = graph.find_matching_modules(expression.expression)
+    if expression.has_wildcard_expression():
+        matching_modules = graph.find_matching_modules(expression.expression)
+    else:
+        matching_modules = {expression.expression}
 
     if as_packages:
         extra_modules = {
