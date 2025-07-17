@@ -27,6 +27,9 @@ class Module(ValueObject):
         """
         self.name = name
 
+    def has_wildcard_expression(self) -> bool:
+        return "*" in self.name
+
     def __str__(self) -> str:
         return self.name
 
