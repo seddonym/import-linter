@@ -1,6 +1,6 @@
 import copy
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 from grimp import ImportGraph
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.application import output
@@ -10,7 +10,7 @@ from importlinter.domain import fields
 _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS = "__root__"
 
 
-def _longest_common_package(modules: tuple[str, ...]) -> str | None:
+def _longest_common_package(modules: tuple[str, ...]) -> Optional[str]:
     module_lists = [
         module.split(".")
         for module in modules
@@ -30,7 +30,7 @@ def _longest_common_package(modules: tuple[str, ...]) -> str | None:
     return None
 
 
-def _get_package_dependency(importer: str, imported: str) -> tuple[str, str] | None:
+def _get_package_dependency(importer: str, imported: str) -> Optional[tuple[str, str]]:
     """
     Get the package dependency between two modules.
 
@@ -88,7 +88,7 @@ class CyclesFamilyKey:
 @dataclass(frozen=True)
 class Cycle:
     members: tuple[str, ...]
-    _family_key: CyclesFamilyKey | None = None
+    _family_key: Optional[CyclesFamilyKey] = None
 
     @property
     def family_key(self) -> CyclesFamilyKey:
@@ -302,7 +302,7 @@ class AcyclicContract(Contract):
     def _get_origin_dependency(
             contract_check: ContractCheck,
             package_dependency: tuple[str, str]
-    ) -> tuple[str, str] | None:
+    ) -> Optional[tuple[str, str]]:
         """
         Retrieves a package dependency from the contract check metadata.
         """
@@ -402,16 +402,16 @@ class AcyclicContract(Contract):
         return str(self.consider_package_dependencies).lower() == "true"
 
     @property
-    def _max_cycles_families(self) -> int | None:
+    def _max_cycles_families(self) -> Optional[int]:
         value_int = int(str(self.max_cycle_families))
         return None if value_int < 1 else value_int
 
     @property
-    def _include_parents(self) -> list[str] | None:
+    def _include_parents(self) -> Optional[list[str]]:
         return [module for module in self.include_parents if module] or None
 
     @property
-    def _exclude_parents(self) -> list[str] | None:
+    def _exclude_parents(self) -> Optional[list[str]]:
         return [module for module in self.exclude_parents if module] or None
 
     @staticmethod
