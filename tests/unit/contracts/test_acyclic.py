@@ -1,29 +1,38 @@
 from unittest.mock import MagicMock, call, patch
 from grimp.adaptors.graph import ImportGraph
 from importlinter.contracts.acyclic import AcyclicContract, Cycle, CyclesFamily, CyclesFamilyKey
-from importlinter.contracts.acyclic import _longest_common_package, _get_package_dependency  # type: ignore
+from importlinter.contracts.acyclic import _longest_common_package, _get_package_dependency
 from importlinter.domain.contract import ContractCheck
 
 
 def _build_contract(
-        consider_package_dependencies: bool = True,
-        max_cycle_families: int = 0
-    ) -> AcyclicContract:
-    return AcyclicContract(name="test", session_options={}, contract_options={
-        "consider_package_dependencies": str(consider_package_dependencies),
-        "max_cycle_families": str(max_cycle_families)
-    })
+    consider_package_dependencies: bool = True, max_cycle_families: int = 0
+) -> AcyclicContract:
+    return AcyclicContract(
+        name="test",
+        session_options={},
+        contract_options={
+            "consider_package_dependencies": str(consider_package_dependencies),
+            "max_cycle_families": str(max_cycle_families),
+        },
+    )
 
 
 class TestAcyclicContractCheck:
-
     def _get_test_graph(self) -> ImportGraph:
         """
         Return an import graph with two cycle families between packages.
         """
         graph = ImportGraph()
 
-        for module in ("root.1_a", "root.1_a.2_a", "root.1_a.2_b", "root.1_b", "root.1_b.2_a", "root.1_b.2_b"):
+        for module in (
+            "root.1_a",
+            "root.1_a.2_a",
+            "root.1_a.2_b",
+            "root.1_b",
+            "root.1_b.2_a",
+            "root.1_b.2_b",
+        ):
             graph.add_module(module)
 
         graph.add_import(importer="root.1_a.2_a", imported="root.1_b.2_b")
@@ -82,7 +91,7 @@ class TestAcyclicContractCheck:
         # When
         contract_check = contract.check(graph=graph, verbose=False)
         # Then
-        cycles = AcyclicContract._get_cycles_from_metadata(contract_check)  # type: ignore
+        cycles = AcyclicContract._get_cycles_from_metadata(contract_check)
         assert len(cycles) == 1
 
 
@@ -101,34 +110,34 @@ class TestAcyclicContractRenderBrokenContract:
     def test_cycle_exists(self, print_error_mock: MagicMock) -> None:
         # Given
         contract = _build_contract()
-        contract_check = ContractCheck(
-            kept=True, metadata={}
-        )
+        contract_check = ContractCheck(kept=True, metadata={})
         cycle_families = [
             CyclesFamily(
                 key=CyclesFamilyKey(parent="1_a", sibilings=("1_a", "1_b")),
-                cycles=[Cycle(members=("1_a.2_a", "1_b.2_b", "1_a.2_b", "1_c.2_a"))]
+                cycles=[Cycle(members=("1_a.2_a", "1_b.2_b", "1_a.2_b", "1_c.2_a"))],
             )
         ]
-        AcyclicContract._set_cycles_in_metadata( # type: ignore , just mocking
-            check=contract_check,
-            cycle_families=cycle_families
+        AcyclicContract._set_cycles_in_metadata(
+            check=contract_check, cycle_families=cycle_families
         )
         # When
         contract.render_broken_contract(check=contract_check)
         # Then
-        print_error_mock.assert_has_calls([
-            call(text=">>>> Cycles family for parent module '1_a'"),
-            call(text="\nSibilings:\n(\n  1_a\n  1_b\n)"),
-            call(text="\nNumber of cycles: 1\n"),
-            call(text="Cycle 1:\n\n(\n -> 1_a.2_a\n -> 1_b.2_b\n -> 1_a.2_b\n -> 1_c.2_a\n)\n"),
-            call(text="<<<< Cycles family for parent module '1_a'\n"),
-            call(text="Number of cycle families found for a contract 'test': 1\n")
-        ])
+        print_error_mock.assert_has_calls(
+            [
+                call(text=">>>> Cycles family for parent module '1_a'"),
+                call(text="\nSibilings:\n(\n  1_a\n  1_b\n)"),
+                call(text="\nNumber of cycles: 1\n"),
+                call(
+                    text="Cycle 1:\n\n(\n -> 1_a.2_a\n -> 1_b.2_b\n -> 1_a.2_b\n -> 1_c.2_a\n)\n"
+                ),
+                call(text="<<<< Cycles family for parent module '1_a'\n"),
+                call(text="Number of cycle families found for a contract 'test': 1\n"),
+            ]
+        )
 
 
 class TestLongestCommonPackage:
-
     def test_some_packages_and_root_in_cycle(self) -> None:
         # Given
         modules = (
@@ -136,7 +145,7 @@ class TestLongestCommonPackage:
             "django.utils.translation",
             "django.utils.autoreload",
             "django",
-            "django.core.paginator"
+            "django.core.paginator",
         )
         # When
         longest_common_package = _longest_common_package(modules=modules)
@@ -145,15 +154,13 @@ class TestLongestCommonPackage:
 
 
 class TestGetPackageDependency:
-
     def test_common_package_exist(self) -> None:
         # Given
         origin_dependency = ("a.b.c.x", "a.b.d.z")
         # When
         package_dependency = _get_package_dependency(
-            importer=origin_dependency[0],
-            imported=origin_dependency[1]
-        )  # type: ignore
+            importer=origin_dependency[0], imported=origin_dependency[1]
+        )
         # Then
         assert ("a.b.c", "a.b.d") == package_dependency
 
@@ -162,8 +169,7 @@ class TestGetPackageDependency:
         origin_dependency = ("a.b.c", "x.y.z")
         # When
         package_dependency = _get_package_dependency(
-            importer=origin_dependency[0],
-            imported=origin_dependency[1]
-        )  # type: ignore
+            importer=origin_dependency[0], imported=origin_dependency[1]
+        )
         # Then
         assert ("a", "x") == package_dependency
