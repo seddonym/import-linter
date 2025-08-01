@@ -9,6 +9,7 @@ latest
 * Fix RecursionError when running repr on a ModuleExpression.
 * Fix messages being always colored white on Windows.
 * Upgrade latest tox requirements (fixing error with `tox -echeck`).
+* Rename default Git repository branch to 'main'.
 
 2.3 (2025-03-11)
 ----------------
