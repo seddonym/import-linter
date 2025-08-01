@@ -76,7 +76,7 @@ Releasing to Pypi
 (Only maintainers can do this.)
 
 1. Choose a new version number (based on `semver <https://semver.org/>`_).
-2. ``git pull origin master``
+2. ``git pull origin main``
 3. Update ``CHANGELOG.rst`` with the new version number.
 4. Update the ``release`` variable in ``docs/conf.py`` with the new version number.
 5. Update the ``__version__`` variable in ``src/importlinter/__init__.py`` with the new version number.
