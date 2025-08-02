@@ -182,7 +182,7 @@ class AcyclicContract(Contract):
     type_name = "acyclic"
 
     consider_package_dependencies = fields.BooleanField(required=False, default=True)
-    max_cycle_families = fields.StringField(required=False, default="0")
+    max_cycle_families = fields.IntegerField(required=False, default=0)
     include_parents = fields.ListField(subfield=fields.StringField(), required=False, default=[])
     exclude_parents = fields.ListField(subfield=fields.StringField(), required=False, default=[])
 
@@ -430,7 +430,7 @@ class AcyclicContract(Contract):
 
     @property
     def _max_cycles_families(self) -> Optional[int]:
-        value_int = int(str(self.max_cycle_families))
+        value_int = self.max_cycle_families.value
         return None if value_int < 1 else value_int
 
     @property
