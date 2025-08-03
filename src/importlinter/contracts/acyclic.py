@@ -7,76 +7,17 @@ from importlinter.application import output
 from importlinter.domain import fields
 
 
-_PARENT_PACKAGE_FOR_MULTIPLE_ROOTS = "__root__"
-
-
-def _longest_common_package(modules: tuple[str, ...]) -> Optional[str]:
-    module_lists = [module.split(".") for module in modules]
-    index = 0
-
-    for index, module_part in enumerate(module_lists[0]):
-        for other_module in module_lists[1:]:
-            if index + 1 > len(other_module) or module_part != other_module[index]:
-                longest_common_package = ".".join(module_lists[0][:index])
-
-                if longest_common_package == "":
-                    return None
-                else:
-                    return longest_common_package
-
-    return None
-
-
-def _get_package_dependency(importer: str, imported: str) -> Optional[tuple[str, str]]:
-    """
-    Get the package dependency between two modules.
-
-    The function checks if there is a common package between the two modules.
-    If there is a common package, it returns the package dependency as a tuple of two strings.
-    If the common package is the same as the importer or imported module, it returns None.
-    """
-    common_package = _longest_common_package(modules=(importer, imported))
-    # If there is no common package, we check if root packages make package dependency
-    if common_package is None:
-        imported_split = imported.split(".")
-        importer_split = importer.split(".")
-
-        if len(imported_split) == 1 and len(importer_split) == 1:
-            return None
-        else:
-            package_dependency = importer_split[0], imported_split[0]
-
-            if package_dependency[0] == package_dependency[1]:
-                return None
-
-            return package_dependency
-
-    if common_package == importer or common_package == imported:
-        return None
-
-    importer_reduced = importer.removeprefix(f"{common_package}.")
-    imported_reduced = imported.removeprefix(f"{common_package}.")
-    importer_package = f"{common_package}.{importer_reduced.split('.')[0]}"
-    imported_package = f"{common_package}.{imported_reduced.split('.')[0]}"
-    package_dependency = (importer_package, imported_package)
-
-    if package_dependency == (importer, imported) or importer_package == imported_package:
-        return None
-
-    return package_dependency
-
-
 @dataclass(frozen=True)
 class CyclesFamilyKey:
     parent: str
-    sibilings: tuple[str, ...]
+    siblings: tuple[str, ...]
 
     def get_siblings_format(self) -> str:
         return "(\n  " + "\n  ".join(f"{sibling}" for sibling in self.sorted_siblings) + "\n)"
 
     @property
     def sorted_siblings(self) -> tuple[str, ...]:
-        return tuple(sorted(self.sibilings))
+        return tuple(sorted(self.siblings))
 
     def __hash__(self) -> int:
         return hash((self.parent, self.sorted_siblings))
@@ -97,18 +38,18 @@ class Cycle:
         if parent is None:
             parent = _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS
 
-        sibilings_set: set[str] = set()
+        siblings_set: set[str] = set()
         parent_nesting = parent.count(".")
 
         for member in self.members:
             if member.startswith(parent) and member != parent:
                 sibiling = ".".join(member.split(".")[: parent_nesting + 2])
-                sibilings_set.add(sibiling)
+                siblings_set.add(sibiling)
             else:
-                sibilings_set.add(member.split(".")[0])
+                siblings_set.add(member.split(".")[0])
 
-        sibilings = tuple(sorted(sibilings_set))
-        return CyclesFamilyKey(parent=parent, sibilings=sibilings)
+        siblings = tuple(sorted(siblings_set))
+        return CyclesFamilyKey(parent=parent, siblings=siblings)
 
     def get_members_format(self) -> str:
         return "(\n -> " + "\n -> ".join(f"{member}" for member in self.members) + "\n)"
@@ -125,19 +66,14 @@ class AcyclicContract(Contract):
     A contract that checks whether the dependency graph of modules (or packages)
     stick to an acyclic dependencies principle (ADP).
 
-    ADP is a software design principle defined by
-    Robert C. Martin that states that
-    "the dependency graph of packages or components should have no cycles".
-    This implies that the dependencies form a directed acyclic graph (DAG).
-
-    The found cycles are grouped into cycle families.
+    If any cycles are found, they are grouped into cycle families.
     Cycle family aggregates all cycles that have the same
-    parent package and the cycle is formed between a particular set of sibilings.
+    parent package and the cycle is formed between the same set of siblings.
     The example of a cycles family inside django library:
 
     >>>> Cycles family for parent module 'django'
 
-    Sibilings:
+    siblings:
     (
       django.forms
       django.template
@@ -163,8 +99,52 @@ class AcyclicContract(Contract):
             "True" or "true" will be treated as True.
         - max_cycles_families: limit a search for cycles to the provided number of cycles families.
             The limited families are not guaranteed to be complete.
-        - include_parents: a list of parent modules to include in the search for cycles.
+        - include_parents: a list of parent modules to include in the search for cycles. If the list
+        is not empty, all packages that are not in the list will be excluded from the search.
+        If not provided, all packages will be considered.
+        ########## Example usage of include_parents ##########
+        [importlinter]
+        root_packages =
+            django
+
+        [importlinter:contract:1]
+        name=Acyclic
+        type=acyclic
+        consider_package_dependencies=true
+        max_cycle_families=1
+        include_parents=
+            django.contrib
+
+        >>>> Cycles family for parent module 'django.contrib'
+
+        siblings:
+        (
+            django.contrib.admin
+            django.contrib.auth
+        )
+
+        Number of cycles: 1
+
+        Cycle 1 (package dependency):
+
+        (
+            -> django.contrib.admin.forms
+            -> django.contrib.auth.forms
+            -> django.contrib.auth
+            -> django.contrib.auth (full path: 'django.contrib.auth.admin')
+            -> django.contrib.admin
+            -> django.contrib.admin.sites
+            -> django.contrib.admin.forms
+        )
+
+        <<<< Cycles family for parent module 'django.contrib'
+
+        Number of cycle families found for a contract 'Acyclic': 1 (limit = 1)
+        Number of cycle families with package dependencies: 1
+        ########## End of include_parents example usage ##########
         - exclude_parents: a list of parent modules to exclude from the search for cycles.
+        If a parent module is provided in both 'include_parents' and 'exclude_parents',
+        it will be excluded from the search for cycles.
 
         Package dependency between two modules is understood
         as a common package between the two modules, plus the first uncommon part of accordingly,
@@ -172,10 +152,6 @@ class AcyclicContract(Contract):
         - importer: "a.b.c.d.x"
         - imported: "a.b.e.f.z"
         - package dependency: ("a.b.c", "a.b.e")
-
-        If no 'include_parents' or 'exclude_parents' are provided, all modules will be considered.
-        If a parent module is provided in both 'include_parents' and 'exclude_parents',
-        it will be excluded from the search for cycles.
 
     """
 
@@ -339,7 +315,7 @@ class AcyclicContract(Contract):
             output.print_error(
                 text=f">>>> Cycles family for parent module '{cycle_family.key.parent}'"
             )
-            output.print_error(text=f"\nSibilings:\n{cycle_family.key.get_siblings_format()}")
+            output.print_error(text=f"\nSiblings:\n{cycle_family.key.get_siblings_format()}")
             output.print_error(text=f"\nNumber of cycles: {len(cycle_family.cycles)}\n")
             is_family_package_dependency = False
 
@@ -454,3 +430,62 @@ class AcyclicContract(Contract):
     @staticmethod
     def _get_cycles_from_metadata(check: ContractCheck) -> list[CyclesFamily]:
         return check.metadata.get(AcyclicContract._CYCLE_FAMILIES_METADATA_KEY, [])
+
+
+_PARENT_PACKAGE_FOR_MULTIPLE_ROOTS = "__root__"
+
+
+def _longest_common_package(modules: tuple[str, ...]) -> Optional[str]:
+    module_lists = [module.split(".") for module in modules]
+    index = 0
+
+    for index, module_part in enumerate(module_lists[0]):
+        for other_module in module_lists[1:]:
+            if index + 1 > len(other_module) or module_part != other_module[index]:
+                longest_common_package = ".".join(module_lists[0][:index])
+
+                if longest_common_package == "":
+                    return None
+                else:
+                    return longest_common_package
+
+    return None
+
+
+def _get_package_dependency(importer: str, imported: str) -> Optional[tuple[str, str]]:
+    """
+    Get the package dependency between two modules.
+
+    The function checks if there is a common package between the two modules.
+    If there is a common package, it returns the package dependency as a tuple of two strings.
+    If the common package is the same as the importer or imported module, it returns None.
+    """
+    common_package = _longest_common_package(modules=(importer, imported))
+    # If there is no common package, we check if root packages make package dependency
+    if common_package is None:
+        imported_split = imported.split(".")
+        importer_split = importer.split(".")
+
+        if len(imported_split) == 1 and len(importer_split) == 1:
+            return None
+        else:
+            package_dependency = importer_split[0], imported_split[0]
+
+            if package_dependency[0] == package_dependency[1]:
+                return None
+
+            return package_dependency
+
+    if common_package == importer or common_package == imported:
+        return None
+
+    importer_reduced = importer.removeprefix(f"{common_package}.")
+    imported_reduced = imported.removeprefix(f"{common_package}.")
+    importer_package = f"{common_package}.{importer_reduced.split('.')[0]}"
+    imported_package = f"{common_package}.{imported_reduced.split('.')[0]}"
+    package_dependency = (importer_package, imported_package)
+
+    if package_dependency == (importer, imported) or importer_package == imported_package:
+        return None
+
+    return package_dependency

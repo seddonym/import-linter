@@ -113,7 +113,7 @@ class TestAcyclicContractRenderBrokenContract:
         contract_check = ContractCheck(kept=True, metadata={})
         cycle_families = [
             CyclesFamily(
-                key=CyclesFamilyKey(parent="1_a", sibilings=("1_a", "1_b")),
+                key=CyclesFamilyKey(parent="1_a", siblings=("1_a", "1_b")),
                 cycles=[Cycle(members=("1_a.2_a", "1_b.2_b", "1_a.2_b", "1_c.2_a"))],
             )
         ]
@@ -126,7 +126,7 @@ class TestAcyclicContractRenderBrokenContract:
         print_error_mock.assert_has_calls(
             [
                 call(text=">>>> Cycles family for parent module '1_a'"),
-                call(text="\nSibilings:\n(\n  1_a\n  1_b\n)"),
+                call(text="\nSiblings:\n(\n  1_a\n  1_b\n)"),
                 call(text="\nNumber of cycles: 1\n"),
                 call(
                     text="Cycle 1:\n\n(\n -> 1_a.2_a\n -> 1_b.2_b\n -> 1_a.2_b\n -> 1_c.2_a\n)\n"
