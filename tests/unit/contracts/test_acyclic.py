@@ -6,16 +6,14 @@ from importlinter.domain.contract import ContractCheck
 
 
 def _build_contract(
-    consider_package_dependencies: bool = True, max_cycle_families: int = 0
+    consider_package_dependencies: bool = True, max_cycle_families: int | None = None
 ) -> AcyclicContract:
-    return AcyclicContract(
-        name="test",
-        session_options={},
-        contract_options={
-            "consider_package_dependencies": str(consider_package_dependencies),
-            "max_cycle_families": str(max_cycle_families),
-        },
-    )
+    contract_options = {"consider_package_dependencies": str(consider_package_dependencies)}
+
+    if max_cycle_families is not None:
+        contract_options["max_cycle_families"] = str(max_cycle_families)
+
+    return AcyclicContract(name="test", session_options={}, contract_options=contract_options)
 
 
 class TestAcyclicContractCheck:
