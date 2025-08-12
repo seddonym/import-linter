@@ -5,6 +5,7 @@ from typing import Iterable, List, cast
 from grimp import ImportGraph
 
 from importlinter.application import contract_utils, output
+from importlinter.application import rendering
 from importlinter.application.contract_utils import AlertLevel
 from importlinter.configuration import settings
 from importlinter.domain import fields
@@ -126,9 +127,9 @@ class ForbiddenContract(Contract):
                 if verbose:
                     chain_count = len(subpackage_chain_data["chains"])
                     pluralized = "s" if chain_count != 1 else ""
+                    duration = rendering.format_duration(timer.duration_in_ms)
                     output.print(
-                        f"Found {chain_count} illegal chain{pluralized} "
-                        f"in {timer.duration_in_s}s.",
+                        f"Found {chain_count} illegal chain{pluralized} in {duration}.",
                     )
 
         # Sorting by upstream and downstream module ensures that the output is deterministic

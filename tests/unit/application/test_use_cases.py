@@ -240,7 +240,7 @@ class TestCheckContractsAndPrintReport:
             Import Linter
             =============
 
-            Building graph took 5s.
+            Building graph took 5.0s.
 
             ---------
             Contracts
@@ -288,7 +288,7 @@ class TestCheckContractsAndPrintReport:
 
                 Verbose mode.
                 {{ graph building output }}
-                Built graph in 5s.
+                Built graph in 5.0s.
                 Checking Contract foo...
                 Hello from the noisy contract!
                 Contract foo KEPT [15s]

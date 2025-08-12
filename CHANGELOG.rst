@@ -10,6 +10,7 @@ latest
 * Fix messages being always colored white on Windows.
 * Upgrade latest tox requirements (fixing error with `tox -echeck`).
 * Rename default Git repository branch to 'main'.
+* Changed timings to show 1 decimal under 10s and 3 decimals under 1s.
 
 2.3 (2025-03-11)
 ----------------

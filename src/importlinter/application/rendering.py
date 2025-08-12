@@ -18,7 +18,7 @@ def render_report(report: Report) -> None:
         return
 
     if report.show_timings:
-        output.print(f"Building graph took {report.graph_building_duration}s.")
+        output.print(f"Building graph took {format_duration(report.graph_building_duration)}.")
         output.new_line()
 
     output.print_heading("Contracts", output.HEADING_LEVEL_TWO)
@@ -55,7 +55,7 @@ def render_contract_result_line(
 
     Args:
         ...
-        duration: The number of seconds the contract took to check (optional).
+        duration: The contract check duration in milliseconds (optional).
                   The duration will only be displayed if it is provided.
     """
     result_text = "KEPT" if contract_check.kept else "BROKEN"
@@ -66,7 +66,7 @@ def render_contract_result_line(
     output.print(result_text, color=color, newline=False)
     output.print(warning_text, color=output.COLORS[output.WARNING], newline=False)
     if duration is not None:
-        output.print(f" [{duration}s]", newline=False)
+        output.print(f" [{format_duration(duration)}]", newline=False)
     output.new_line()
 
 
@@ -121,3 +121,23 @@ def _render_broken_contracts_details(report: Report) -> None:
         output.print_heading(contract.name, output.HEADING_LEVEL_THREE, style=output.ERROR)
 
         contract.render_broken_contract(check)
+
+
+def format_duration(milliseconds: int) -> str:
+    """
+    Format a duration in milliseconds with units always in seconds:
+    - < 1s: to three decimal places, e.g. 0.127s
+    - < 10s: to one decimal place, e.g. 5.9s, 3.0s
+    - >= 10s: to 0 decimal places, e.g. 10s, 132s
+    """
+    try:
+        ms = int(milliseconds)
+    except Exception:
+        return f"{milliseconds}ms"
+
+    s = ms / 1000.0
+    if s < 1:
+        return f"{s:.3f}s"
+    if s < 10:
+        return f"{s:.1f}s"
+    return f"{int(round(s))}s"

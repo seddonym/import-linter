@@ -22,6 +22,7 @@ class Report:
         self.contains_failures = False
         self.contracts: List[Contract] = []
         self._check_map: Dict[Contract, ContractCheck] = {}
+        # Durations are stored as integer milliseconds
         self._durations: Dict[Contract, int] = {}
         self.warnings_count = 0
         self.broken_count = 0
