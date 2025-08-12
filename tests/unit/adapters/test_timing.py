@@ -11,7 +11,7 @@ class TestSystemClockTimer:
         with SystemClockTimer() as timer:
             time.sleep(some_seconds)
 
-        assert timer.duration_in_s >= some_seconds
+        assert timer.duration_in_ms >= some_seconds * 1000
 
     def test_nested(self):
         timer = SystemClockTimer()
@@ -22,12 +22,12 @@ class TestSystemClockTimer:
                 time.sleep(some_seconds)
                 with timer:
                     time.sleep(some_seconds)
-                inner_duration = timer.duration_in_s
-            middle_duration = timer.duration_in_s
-        outer_duration = timer.duration_in_s
+                inner_duration = timer.duration_in_ms
+            middle_duration = timer.duration_in_ms
+        outer_duration = timer.duration_in_ms
 
-        assert inner_duration >= some_seconds
-        assert middle_duration >= inner_duration + some_seconds
+        assert inner_duration >= some_seconds * 1000
+        assert middle_duration >= inner_duration + some_seconds * 1000
         assert outer_duration >= middle_duration
 
 
@@ -39,7 +39,7 @@ class TestFakeTimer:
         for expected in (10, 13, 16):
             with timer:
                 pass
-            assert timer.duration_in_s == expected
+            assert timer.duration_in_ms == expected * 1000
 
     def test_nested(self):
         timer = FakeTimer()
@@ -51,6 +51,6 @@ class TestFakeTimer:
             with timer:
                 with timer:
                     pass
-                assert timer.duration_in_s == 10
-            assert timer.duration_in_s == 23
-        assert timer.duration_in_s == 39
+                assert timer.duration_in_ms == 10 * 1000
+            assert timer.duration_in_ms == 23 * 1000
+        assert timer.duration_in_ms == 39 * 1000
