@@ -113,7 +113,7 @@ Running this will check that your project adheres to the contracts you've define
   The directory to use for caching. Defaults to ``.import_linter_cache``. See :doc:`caching`. (Optional.)
 - ``--no-cache``:
   Disable caching. See :doc:`caching`. (Optional.)
-- ``--show_timings``:
+- ``--show-timings``:
   Display the times taken to build the graph and check each contract. (Optional.)
 - ``--verbose``:
   Noisily output progress as it goes along. (Optional.)
