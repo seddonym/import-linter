@@ -1,8 +1,9 @@
 Changelog
 =========
 
-latest
-------
+2.4 (2025-08-15)
+----------------
+
 * Fix incorrect handling of unicode characters in TOML files on Windows.
 * Change pre-commit hook to use the system virtualenv and to run whenever
   any file changes, not just a Python file.
@@ -10,7 +11,7 @@ latest
 * Fix messages being always colored white on Windows.
 * Upgrade latest tox requirements (fixing error with `tox -echeck`).
 * Rename default Git repository branch to 'main'.
-* Changed timings to show 1 decimal under 10s and 3 decimals under 1s.
+* Increase accuracy of timings when using --show-timings.
 
 2.3 (2025-03-11)
 ----------------
