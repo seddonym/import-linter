@@ -323,6 +323,51 @@ Note: you are not allowed to mix different kinds of separators on the same line.
         mypackage.blue | mypackage.green : mypackage.yellow  # Invalid as it mixes separators.
         mypackage.low
 
+Acyclic dependencies
+-----------------
+
+*Type name:* ``acyclic``
+
+A contract that checks whether the dependency graph of modules (or packages) stick to an acyclic dependencies principle (ADP).
+It indicates that modules (or packages) dependencies form a directed acyclic graph (DAG).
+
+If any cycles are found, they are grouped into cycle families.
+Cycle family aggregates all cycles that have the same parent package and the cycle is formed between the same set of siblings.
+
+Package dependency between two modules is understood as a common package between the two modules,
+plus the first uncommon part of accordingly, the importer and the imported module eg.:
+- importer: "a.b.c.d.x"
+- imported: "a.b.e.f.z"
+- package dependency: ("a.b.c", "a.b.e")
+
+**Examples:**
+
+.. code-block:: ini
+
+    [importlinter]
+    root_packages =
+        django
+
+    [importlinter:contract:1]
+    name=Acyclic
+    type=acyclic
+    consider_package_dependencies=true
+    max_cycle_families=1
+    include_parents=
+        django.contrib
+
+**Configuration options (all options are optional)**
+
+    - ``consider_package_dependencies``:  Whether to consider cyclic dependencies between packages.
+        "True" or "true" will be treated as True.
+    - ``max_cycles_families``: limit a search for cycles to the provided number of cycles families.
+        The limited families are not guaranteed to be complete.
+    - ``include_parents``: a list of parent modules to include in the search for cycles. If the list
+        is not empty, all packages that are not in the list will be excluded from the search.
+        If not provided, all packages will be considered.
+    - ``exclude_parents``: a list of parent modules to exclude from the search for cycles.
+        If a parent module is provided in both 'include_parents' and 'exclude_parents',
+        it will be excluded from the search for cycles.
 
 Custom contract types
 ---------------------
