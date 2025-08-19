@@ -4,7 +4,7 @@ import grimp
 from grimp import ImportGraph
 
 from importlinter.application.ports import building as ports
-
+from importlinter.contracts import acyclic
 
 class GraphBuilder(ports.GraphBuilder):
     """
