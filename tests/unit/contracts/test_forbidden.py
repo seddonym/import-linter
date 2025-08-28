@@ -3,6 +3,7 @@ from typing import Tuple, List, Dict
 import pytest
 from grimp.adaptors.graph import ImportGraph
 
+from importlinter.application import output
 from importlinter.configuration import settings
 from importlinter.contracts.forbidden import ForbiddenContract
 from importlinter.domain.contract import ContractCheck
@@ -281,6 +282,168 @@ class TestForbiddenContract:
                 },
             ],
         }
+
+    def test_third_party_keyword_forbids_external_non_stdlib_modules(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            forbidden_modules=("<third_party>",),
+            source_modules=("mypackage.one",),
+            include_external_packages=True,
+        )
+
+        graph.add_import(
+            importer="mypackage.one",
+            imported="requests",
+            line_number=1,
+            line_contents="import requests",
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+
+        assert not check.kept
+        assert check.metadata["invalid_chains"] == [
+            {
+                "upstream_module": "requests",
+                "downstream_module": "mypackage.one", 
+                "chains": [
+                    [
+                        {
+                            "importer": "mypackage.one",
+                            "imported": "requests",
+                            "line_numbers": (1,),
+                        }
+                    ]
+                ]
+            }
+        ]
+
+    def test_third_party_keyword_combined_with_explicit_modules(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            forbidden_modules=("<third_party>", "mypackage.green"),
+            source_modules=("mypackage.one",),
+            include_external_packages=True,
+        )
+
+        graph.add_import(
+            importer="mypackage.one",
+            imported="requests",
+            line_number=1,
+            line_contents="import requests",
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+
+        assert not check.kept
+
+        invalid_chains = check.metadata["invalid_chains"]
+        invalid_chains_by_upstream = {chain["upstream_module"]: chain for chain in invalid_chains}
+
+        assert "requests" in invalid_chains_by_upstream
+        requests_chain = invalid_chains_by_upstream["requests"]
+        assert requests_chain["downstream_module"] == "mypackage.one"
+        assert len(requests_chain["chains"]) == 1
+        assert requests_chain["chains"][0][0]["importer"] == "mypackage.one"
+        assert requests_chain["chains"][0][0]["imported"] == "requests"
+
+        assert "mypackage.green" in invalid_chains_by_upstream
+        green_chain = invalid_chains_by_upstream["mypackage.green"]
+        assert green_chain["downstream_module"] == "mypackage.one"
+
+    def test_third_party_keyword_excludes_stdlib_modules(self):
+        graph = self._build_graph()
+
+        graph.add_module("json", is_squashed=True)
+        graph.add_import(
+            importer="mypackage.one", 
+            imported="json",
+            line_number=1,
+            line_contents="import json",
+        )
+
+        graph.add_import(
+            importer="mypackage.one",
+            imported="requests", 
+            line_number=2,
+            line_contents="import requests",
+        )
+
+        contract = self._build_contract(
+            forbidden_modules=("<third_party>",),
+            source_modules=("mypackage.one",),
+            include_external_packages=True,
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+
+        assert not check.kept
+        assert len(check.metadata["invalid_chains"]) == 1
+        assert check.metadata["invalid_chains"][0]["upstream_module"] == "requests"
+
+    def test_third_party_keyword_requires_external_packages(self):
+        """Test that using <third_party> without include_external_packages=True raises an error."""
+        graph = self._build_graph()
+        contract = self._build_contract(
+            forbidden_modules=("<third_party>",),
+            source_modules=("mypackage.one",),
+            include_external_packages=False,
+        )
+
+        with pytest.raises(
+            ValueError,
+            match=(
+                "Cannot use '<third_party>' in forbidden_modules when "
+                "include_external_packages=False"
+            )
+        ):
+            contract.check(graph=graph, verbose=False)
+
+    def test_third_party_verbose_output(self):
+        """Test that verbose output shows detected third-party modules."""
+        fake_printer = FakePrinter()
+        settings.configure(PRINTER=fake_printer, TIMER=FakeTimer())
+
+        graph = self._build_graph()
+        contract = self._build_contract(
+            forbidden_modules=("<third_party>",),
+            source_modules=("mypackage.one",),
+            include_external_packages=True,
+        )
+
+        graph.add_import(
+            importer="mypackage.one",
+            imported="requests",
+            line_number=1,
+            line_contents="import requests",
+        )
+
+        contract.check(graph=graph, verbose=True)
+
+        output_text = fake_printer._buffer
+        assert "Detected 3 third-party modules" in output_text
+        assert "google, requests, sqlalchemy" in output_text
+
+    def test_third_party_no_modules_verbose_output(self):
+        """Test verbose output when no third-party modules are found."""
+        fake_printer = FakePrinter()
+        settings.configure(PRINTER=fake_printer, TIMER=FakeTimer())
+
+        graph = ImportGraph()
+        for module in ("one", "two", "three"):
+            graph.add_module(f"mypackage.{module}")
+
+        contract = self._build_contract(
+            forbidden_modules=("<third_party>",),
+            source_modules=("mypackage.one",),
+            include_external_packages=True,
+        )
+
+        contract.check(graph=graph, verbose=True)
+        
+        output_text = fake_printer._buffer
+        assert "Detected 0 third-party modules" in output_text
+        assert "No third-party modules found" in output_text
+        assert "may be expected if your project has no external dependencies" in output_text
 
     def test_recursive_wildcards_in_source_modules_are_resolved(self):
         graph = self._build_graph()
