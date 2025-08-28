@@ -58,12 +58,49 @@ External packages may also be forbidden.
     ignore_imports =
         mypackage.one.green -> sqlalchemy
 
+.. code-block:: ini
+
+    [importlinter]
+    root_package = mypackage
+    include_external_packages = True
+
+    [importlinter:contract:forbid-third-party]
+    name = Domain layer must not import third-party libraries
+    type = forbidden
+    source_modules =
+        mypackage.domain
+    forbidden_modules =
+        <third_party>
+
+.. code-block:: ini
+
+    [importlinter]
+    root_package = mypackage
+    include_external_packages = True
+
+    [importlinter:contract:mixed-forbidden]
+    name = Business logic forbidden from third-party and legacy code
+    type = forbidden
+    source_modules =
+        mypackage.business
+        mypackage.core
+    forbidden_modules =
+        <third_party>
+        mypackage.legacy
+        mypackage.deprecated
+    ignore_imports =
+        mypackage.business.config -> mypackage.legacy.settings
+
 **Configuration options**
 
     - ``source_modules``:    A list of modules that should not import the forbidden modules. Supports :ref:`wildcards`.
     - ``forbidden_modules``: A list of modules that should not be imported by the source modules. These may include
       root level external packages (i.e. ``django``, but not ``django.db.models``). If external packages are included,
       the top level configuration must have ``include_external_packages = True``. Supports :ref:`wildcards`.
+
+      **Special keyword**: Use ``<third_party>`` to automatically forbid all third-party packages (external packages
+      that are not part of the Python standard library). This keyword can be combined with explicit module names.
+      When using ``<third_party>``, you must set ``include_external_packages = True`` in the main configuration.
     - ``ignore_imports``: See :ref:`Shared options`.
     - ``unmatched_ignore_imports_alerting``: See :ref:`Shared options`.
     - ``allow_indirect_imports``: If ``True``, allow indirect imports to forbidden modules without interpreting them
