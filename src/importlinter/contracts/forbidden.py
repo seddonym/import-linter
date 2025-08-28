@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from sys import stdlib_module_names
 from typing import Iterable, List, cast
 
 from grimp import ImportGraph
@@ -238,3 +239,52 @@ class ForbiddenContract(Contract):
         if not graph.is_module_squashed(module.name):
             importer_modules |= {Module(m) for m in graph.find_descendants(module.name)}
         return importer_modules
+
+    def _get_third_party_modules(self, graph: ImportGraph) -> List[Module]:
+        """
+        Return all third-party modules in the graph.
+
+        Third-party modules are modules that are:
+        1. Not in any root package (external modules)
+        2. Not stdlib modules
+
+        Returns:
+            List of third-party modules found in the graph.
+
+        Raises:
+            ValueError: If third-party detection is requested but external packages are not included.
+        """
+        if not self._graph_was_built_with_externals():
+            raise ValueError(
+                "Cannot use '<third_party>' in forbidden_modules when "
+                "include_external_packages=False. Set include_external_packages=True "
+                "in your configuration to enable third-party module detection."
+            )
+
+        all_modules = [Module(name) for name in graph.modules]
+
+        try:
+            root_packages = [Module(name) for name in self.session_options["root_packages"]]
+        except KeyError:
+            raise ValueError(
+                "Cannot detect third-party modules: 'root_packages' not configured. "
+                "Please specify root_packages in your configuration."
+            )
+
+        if not root_packages:
+            raise ValueError(
+                "Cannot detect third-party modules: 'root_packages' is empty. "
+                "Please specify at least one root package in your configuration."
+            )
+
+        external_modules = [
+            module for module in all_modules
+            if not any(module.is_in_package(root_package) for root_package in root_packages)
+        ]
+
+        third_party_modules = [
+            module for module in external_modules
+            if module.root_package_name not in stdlib_module_names
+        ]
+
+        return third_party_modules
