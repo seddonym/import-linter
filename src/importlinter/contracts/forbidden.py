@@ -12,7 +12,7 @@ from importlinter.configuration import settings
 from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.helpers import module_expressions_to_modules
-from importlinter.domain.imports import Module
+from importlinter.domain.imports import Module, ModuleExpression
 
 from ._common import format_line_numbers
 
@@ -25,6 +25,10 @@ class ForbiddenContract(Contract):
     Configuration options:
         - source_modules:    A set of Modules that should not import the forbidden modules.
         - forbidden_modules: A set of Modules that should not be imported by the source modules.
+                             Supports the special keyword "<third_party>" to automatically
+                             forbid all third-party packages (external packages that are not
+                             part of the Python standard library). Can be combined with explicit
+                             module names.
         - ignore_imports:    A set of ImportExpressions. These imports will be ignored if the import
                              would cause a contract to be broken, adding it to the set will cause
                              the contract be kept instead. (Optional.)
@@ -64,12 +68,50 @@ class ForbiddenContract(Contract):
                 self.source_modules,  # type: ignore
             )
         )
-        forbidden_modules = list(
-            module_expressions_to_modules(
-                graph,
-                self.forbidden_modules,  # type: ignore
-            )
+
+        forbidden_module_expressions = self.forbidden_modules  # type: ignore
+        has_third_party_keyword = any(
+            str(expr) == "<third_party>" for expr in forbidden_module_expressions
         )
+
+        if has_third_party_keyword:
+            third_party_modules = self._get_third_party_modules(graph)
+            
+            output.verbose_print(
+                verbose,
+                f"Detected {len(third_party_modules)} third-party modules: "
+                f"{', '.join(sorted(m.name for m in third_party_modules))}"
+            )
+            
+            if not third_party_modules:
+                output.verbose_print(
+                    verbose,
+                    "No third-party modules found in the import graph. "
+                    "This may be expected if your project has no external dependencies, "
+                    "or if include_external_packages=False."
+                )
+
+            expanded_expressions = set()
+            for expr in forbidden_module_expressions:
+                if str(expr) != "<third_party>":
+                    expanded_expressions.add(expr)
+
+            for module in third_party_modules:
+                expanded_expressions.add(ModuleExpression(module.name))
+            
+            forbidden_modules = list(
+                module_expressions_to_modules(
+                    graph,
+                    expanded_expressions,
+                )
+            )
+        else:
+            forbidden_modules = list(
+                module_expressions_to_modules(
+                    graph,
+                    forbidden_module_expressions,
+                )
+            )
 
         self._check_all_modules_exist_in_graph(source_modules, graph)
         self._check_external_forbidden_modules(forbidden_modules)
