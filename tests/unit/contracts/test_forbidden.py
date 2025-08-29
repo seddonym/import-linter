@@ -3,7 +3,6 @@ from typing import Tuple, List, Dict
 import pytest
 from grimp.adaptors.graph import ImportGraph
 
-from importlinter.application import output
 from importlinter.configuration import settings
 from importlinter.contracts.forbidden import ForbiddenContract
 from importlinter.domain.contract import ContractCheck
@@ -304,7 +303,7 @@ class TestForbiddenContract:
         assert check.metadata["invalid_chains"] == [
             {
                 "upstream_module": "requests",
-                "downstream_module": "mypackage.one", 
+                "downstream_module": "mypackage.one",
                 "chains": [
                     [
                         {
@@ -313,7 +312,7 @@ class TestForbiddenContract:
                             "line_numbers": (1,),
                         }
                     ]
-                ]
+                ],
             }
         ]
 
@@ -355,7 +354,7 @@ class TestForbiddenContract:
 
         graph.add_module("json", is_squashed=True)
         graph.add_import(
-            importer="mypackage.one", 
+            importer="mypackage.one",
             imported="json",
             line_number=1,
             line_contents="import json",
@@ -363,7 +362,7 @@ class TestForbiddenContract:
 
         graph.add_import(
             importer="mypackage.one",
-            imported="requests", 
+            imported="requests",
             line_number=2,
             line_contents="import requests",
         )
@@ -394,7 +393,7 @@ class TestForbiddenContract:
             match=(
                 "Cannot use '<third_party>' in forbidden_modules when "
                 "include_external_packages=False"
-            )
+            ),
         ):
             contract.check(graph=graph, verbose=False)
 
@@ -439,7 +438,7 @@ class TestForbiddenContract:
         )
 
         contract.check(graph=graph, verbose=True)
-        
+
         output_text = fake_printer._buffer
         assert "Detected 0 third-party modules" in output_text
         assert "No third-party modules found" in output_text
@@ -518,7 +517,7 @@ class TestForbiddenContract:
 
         with pytest.raises(
             ValueError,
-            match="The top level configuration must have include_external_packages=True"
+            match="The top level configuration must have include_external_packages=True",
         ):
             contract.check(graph=graph, verbose=False)
 
