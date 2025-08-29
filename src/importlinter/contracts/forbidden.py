@@ -25,10 +25,11 @@ class ForbiddenContract(Contract):
     Configuration options:
         - source_modules:    A set of Modules that should not import the forbidden modules.
         - forbidden_modules: A set of Modules that should not be imported by the source modules.
-                             Supports the special keyword "<third_party>" to automatically
-                             forbid all third-party packages (external packages that are not
-                             part of the Python standard library). Can be combined with explicit
-                             module names.
+                             Supports special keywords for dynamic module detection:
+                             - "<third_party>": All third-party packages (external packages that are not
+                               part of the Python standard library)
+                             - "<stdlib>": All Python standard library modules
+                             These keywords can be combined with explicit module names.
         - ignore_imports:    A set of ImportExpressions. These imports will be ignored if the import
                              would cause a contract to be broken, adding it to the set will cause
                              the contract be kept instead. (Optional.)
@@ -41,6 +42,25 @@ class ForbiddenContract(Contract):
                              False, each of the modules passed in will be treated as a module
                              rather than a package. Default behaviour is True (treat modules as
                              packages).
+
+    Examples:
+        Basic usage forbidding specific modules:
+            forbidden_modules = ["mypackage.utils", "external_lib"]
+
+        Forbid all third-party dependencies:
+            forbidden_modules = ["<third_party>"]
+
+        Forbid only standard library modules:
+            forbidden_modules = ["<stdlib>"]
+
+        Combine multiple keywords and explicit modules:
+            forbidden_modules = ["<third_party>", "<stdlib>", "mypackage.legacy"]
+
+        Granular control with different keyword types:
+            forbidden_modules = ["<third_party>", "mypackage.deprecated"]
+
+        Note: When using "<third_party>", you must set
+        include_external_packages=True in the main configuration section.
     """
 
     type_name = "forbidden"
@@ -70,34 +90,61 @@ class ForbiddenContract(Contract):
         )
 
         forbidden_module_expressions = self.forbidden_modules  # type: ignore
-        has_third_party_keyword = any(
-            str(expr) == "<third_party>" for expr in forbidden_module_expressions
-        )
 
-        if has_third_party_keyword:
-            third_party_modules = self._get_third_party_modules(graph)
-            
-            output.verbose_print(
-                verbose,
-                f"Detected {len(third_party_modules)} third-party modules: "
-                f"{', '.join(sorted(m.name for m in third_party_modules))}"
-            )
-            
-            if not third_party_modules:
+        expanded_expressions = set()
+        special_keywords_found = []
+        for expr in forbidden_module_expressions:
+            expr_str = str(expr)
+            if expr_str == "<third_party>":
+                special_keywords_found.append("third_party")
+
+            elif expr_str == "<stdlib>":
+                special_keywords_found.append("stdlib")
+
+            else:
+                expanded_expressions.add(expr)
+
+        if special_keywords_found:
+            keyword_modules = {}
+
+            if "third_party" in special_keywords_found:
+                third_party_modules = self._get_third_party_modules(graph)
+                keyword_modules["third_party"] = third_party_modules
+
                 output.verbose_print(
                     verbose,
-                    "No third-party modules found in the import graph. "
-                    "This may be expected if your project has no external dependencies, "
-                    "or if include_external_packages=False."
+                    f"Detected {len(third_party_modules)} third-party modules: "
+                    f"{', '.join(sorted(m.name for m in third_party_modules))}"
                 )
 
-            expanded_expressions = set()
-            for expr in forbidden_module_expressions:
-                if str(expr) != "<third_party>":
-                    expanded_expressions.add(expr)
+                if not third_party_modules:
+                    output.verbose_print(
+                        verbose,
+                        "No third-party modules found in the import graph. "
+                        "This may be expected if your project has no external dependencies, "
+                        "or if include_external_packages=False."
+                    )
 
-            for module in third_party_modules:
-                expanded_expressions.add(ModuleExpression(module.name))
+            if "stdlib" in special_keywords_found:
+                stdlib_modules = self._get_stdlib_modules(graph)
+                keyword_modules["stdlib"] = stdlib_modules
+
+                output.verbose_print(
+                    verbose,
+                    f"Detected {len(stdlib_modules)} stdlib modules: "
+                    f"{', '.join(sorted(m.name for m in stdlib_modules))}"
+                )
+
+                if not stdlib_modules:
+                    output.verbose_print(
+                        verbose,
+                        "No stdlib modules found in the import graph. "
+                        "This may be expected on Python < 3.10 or if no stdlib modules are imported."
+                    )
+
+            for _, modules in keyword_modules.items():
+                for module in modules:
+                    expanded_expressions.add(ModuleExpression(module.name))
             
             forbidden_modules = list(
                 module_expressions_to_modules(
@@ -282,6 +329,20 @@ class ForbiddenContract(Contract):
             importer_modules |= {Module(m) for m in graph.find_descendants(module.name)}
         return importer_modules
 
+    def _get_stdlib_modules(self, graph: ImportGraph) -> List[Module]:
+        """
+        Return all stdlib modules in the graph.
+
+        Returns:
+            List of stdlib modules found in the graph.
+        """
+        all_modules = [Module(name) for name in graph.modules]
+
+        return [
+            module for module in all_modules
+            if module.root_package_name in stdlib_module_names
+        ]
+
     def _get_third_party_modules(self, graph: ImportGraph) -> List[Module]:
         """
         Return all third-party modules in the graph.
@@ -324,9 +385,7 @@ class ForbiddenContract(Contract):
             if not any(module.is_in_package(root_package) for root_package in root_packages)
         ]
 
-        third_party_modules = [
+        return [
             module for module in external_modules
             if module.root_package_name not in stdlib_module_names
         ]
-
-        return third_party_modules
