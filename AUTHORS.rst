@@ -28,3 +28,4 @@ Contributors
 * Felix Uhl - https://github.com/iFreilicht
 * Ilya S. (Tapeline) - https://github.com/Tapeline
 * Uberto Barbini - https://github.com/uberto
+* Adria Montoto - https://github.com/adriamontoto
