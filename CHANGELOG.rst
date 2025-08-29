@@ -1,6 +1,11 @@
 Changelog
 =========
 
+latest
+------
+
+* Add support for special keywords in forbidden contracts: ``<third_party>`` to forbid all third-party packages and ``<stdlib>`` to forbid all Python standard library modules. These keywords can be combined with explicit module names for granular control.
+
 2.4 (2025-08-15)
 ----------------
 

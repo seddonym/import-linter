@@ -43,6 +43,74 @@ Following, an example with a layered configuration:
         "low",
     ]
 
+Third-party dependencies
+------------------------
+
+The ``<third_party>`` keyword is also supported in TOML configuration:
+
+.. code-block:: toml
+
+    [tool.importlinter]
+    root_package = "mypackage"
+    include_external_packages = true
+
+    [[tool.importlinter.contracts]]
+    name = "Domain layer must not import third-party libraries"
+    type = "forbidden"
+    source_modules = ["mypackage.domain"]
+    forbidden_modules = ["<third_party>"]
+
+.. code-block:: toml
+
+    [tool.importlinter]
+    root_package = "mypackage" 
+    include_external_packages = true
+
+    [[tool.importlinter.contracts]]
+    name = "Core modules forbidden from third-party and legacy"
+    type = "forbidden"
+    source_modules = [
+        "mypackage.core",
+        "mypackage.business",
+    ]
+    forbidden_modules = [
+        "<third_party>",
+        "mypackage.legacy",
+        "mypackage.deprecated",
+    ]
+    ignore_imports = [
+        "mypackage.core.config -> mypackage.legacy.settings",
+    ]
+
+.. code-block:: toml
+
+    [tool.importlinter]
+    root_package = "mypackage"
+    include_external_packages = true
+
+    [[tool.importlinter.contracts]]
+    name = "Forbid stdlib usage"
+    type = "forbidden"
+    source_modules = ["mypackage.core"]
+    forbidden_modules = ["<stdlib>"]
+
+
+.. code-block:: toml
+
+    [tool.importlinter]
+    root_package = "mypackage"
+    include_external_packages = true
+
+    [[tool.importlinter.contracts]]
+    name = "Granular keyword control"
+    type = "forbidden"
+    source_modules = ["mypackage.domain"]
+    forbidden_modules = [
+        "<third_party>",
+        "<stdlib>",
+        "mypackage.legacy",
+    ]
+
 Contract ids
 ------------
 
