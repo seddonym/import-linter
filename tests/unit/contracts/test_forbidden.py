@@ -445,6 +445,130 @@ class TestForbiddenContract:
         assert "No third-party modules found" in output_text
         assert "may be expected if your project has no external dependencies" in output_text
 
+    def test_stdlib_keyword_forbids_stdlib_modules(self):
+        """Test that <stdlib> keyword correctly identifies standard library modules."""
+        graph = self._build_graph()
+
+        graph.add_module("json", is_squashed=True)
+        graph.add_module("os", is_squashed=True)
+        graph.add_import(
+            importer="mypackage.one",
+            imported="json",
+            line_number=1,
+            line_contents="import json",
+        )
+
+        contract = self._build_contract(
+            forbidden_modules=("<stdlib>",),
+            source_modules=("mypackage.one",),
+            include_external_packages=True,
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+
+        assert not check.kept
+        assert len(check.metadata["invalid_chains"]) == 1
+        assert check.metadata["invalid_chains"][0]["upstream_module"] == "json"
+
+    def test_multiple_keywords_combined(self):
+        """Test that multiple keywords can be used together."""
+        graph = self._build_graph()
+
+        graph.add_module("json", is_squashed=True)
+        graph.add_import(
+            importer="mypackage.one",
+            imported="json",
+            line_number=1,
+            line_contents="import json",
+        )
+        graph.add_import(
+            importer="mypackage.one",
+            imported="requests",
+            line_number=2,
+            line_contents="import requests",
+        )
+
+        contract = self._build_contract(
+            forbidden_modules=("<stdlib>", "<third_party>", "mypackage.blue"),
+            source_modules=("mypackage.one",),
+            include_external_packages=True,
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+
+        assert not check.kept
+
+        upstream_modules = {chain["upstream_module"] for chain in check.metadata["invalid_chains"]}
+        assert "json" in upstream_modules
+        assert "requests" in upstream_modules
+
+    def test_stdlib_keyword_with_external_packages_disabled_raises_error(self):
+        """Test that <stdlib> keyword requires external packages to be analyzed properly."""
+        graph = ImportGraph()
+
+        for module in ("one", "two"):
+            graph.add_module(f"mypackage.{module}")
+        graph.add_module("json", is_squashed=True)
+
+        contract = self._build_contract(
+            forbidden_modules=("<stdlib>",),
+            source_modules=("mypackage.one",),
+            include_external_packages=False,
+        )
+
+        with pytest.raises(
+            ValueError,
+            match="The top level configuration must have include_external_packages=True"
+        ):
+            contract.check(graph=graph, verbose=False)
+
+    def test_keywords_verbose_output(self):
+        """Test verbose output for all keyword types."""
+        fake_printer = FakePrinter()
+        settings.configure(PRINTER=fake_printer, TIMER=FakeTimer())
+
+        graph = self._build_graph()
+        graph.add_module("json", is_squashed=True)
+        graph.add_import(
+            importer="mypackage.one",
+            imported="json",
+            line_number=1,
+            line_contents="import json",
+        )
+
+        contract = self._build_contract(
+            forbidden_modules=("<stdlib>", "<third_party>"),
+            source_modules=("mypackage.one",),
+            include_external_packages=True,
+        )
+
+        contract.check(graph=graph, verbose=True)
+
+        output_text = fake_printer._buffer
+        assert "Detected" in output_text and "stdlib modules" in output_text
+        assert "Detected" in output_text and "third-party modules" in output_text
+
+    def test_empty_keyword_results_verbose_output(self):
+        """Test verbose output when keywords return no modules."""
+        fake_printer = FakePrinter()
+        settings.configure(PRINTER=fake_printer, TIMER=FakeTimer())
+
+        graph = ImportGraph()
+        for module in ("one", "two"):
+            graph.add_module(f"mypackage.{module}")
+
+        contract = self._build_contract(
+            forbidden_modules=("<stdlib>", "<third_party>"),
+            source_modules=("mypackage.one",),
+            include_external_packages=True,
+        )
+
+        contract.check(graph=graph, verbose=True)
+
+        output_text = fake_printer._buffer
+        assert "No stdlib modules found" in output_text
+        assert "No third-party modules found" in output_text
+
     def test_recursive_wildcards_in_source_modules_are_resolved(self):
         graph = self._build_graph()
         contract = self._build_contract(
