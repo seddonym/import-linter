@@ -82,6 +82,35 @@ The ``<third_party>`` keyword is also supported in TOML configuration:
         "mypackage.core.config -> mypackage.legacy.settings",
     ]
 
+.. code-block:: toml
+
+    [tool.importlinter]
+    root_package = "mypackage"
+    include_external_packages = true
+
+    [[tool.importlinter.contracts]]
+    name = "Forbid stdlib usage"
+    type = "forbidden"
+    source_modules = ["mypackage.core"]
+    forbidden_modules = ["<stdlib>"]
+
+
+.. code-block:: toml
+
+    [tool.importlinter]
+    root_package = "mypackage"
+    include_external_packages = true
+
+    [[tool.importlinter.contracts]]
+    name = "Granular keyword control"
+    type = "forbidden"
+    source_modules = ["mypackage.domain"]
+    forbidden_modules = [
+        "<third_party>",
+        "<stdlib>",
+        "mypackage.legacy",
+    ]
+
 Contract ids
 ------------
 

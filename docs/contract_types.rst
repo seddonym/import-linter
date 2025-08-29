@@ -91,6 +91,39 @@ External packages may also be forbidden.
     ignore_imports =
         mypackage.business.config -> mypackage.legacy.settings
 
+.. code-block:: ini
+
+    [importlinter]
+    root_package = mypackage
+    include_external_packages = True
+
+    [importlinter:contract:forbid-stdlib]
+    name = Core modules should not use stdlib directly
+    type = forbidden
+    source_modules =
+        mypackage.core
+    forbidden_modules =
+        <stdlib>
+
+
+.. code-block:: ini
+
+    [importlinter]
+    root_package = mypackage
+    include_external_packages = True
+
+    [importlinter:contract:granular-forbidden]
+    name = Mixed granular restrictions
+    type = forbidden
+    source_modules =
+        mypackage.domain
+    forbidden_modules =
+        <third_party>
+        <stdlib>
+        mypackage.legacy
+    ignore_imports =
+        mypackage.domain.config -> mypackage.legacy.settings
+
 **Configuration options**
 
     - ``source_modules``:    A list of modules that should not import the forbidden modules. Supports :ref:`wildcards`.
@@ -98,9 +131,14 @@ External packages may also be forbidden.
       root level external packages (i.e. ``django``, but not ``django.db.models``). If external packages are included,
       the top level configuration must have ``include_external_packages = True``. Supports :ref:`wildcards`.
 
-      **Special keyword**: Use ``<third_party>`` to automatically forbid all third-party packages (external packages
-      that are not part of the Python standard library). This keyword can be combined with explicit module names.
+      **Special keywords**: Dynamic module detection using special keywords:
+      
+      - ``<third_party>``: All third-party packages (external packages that are not part of the Python standard library)
+      - ``<stdlib>``: All Python standard library modules
+      
+      These keywords can be combined with explicit module names and with each other.
       When using ``<third_party>``, you must set ``include_external_packages = True`` in the main configuration.
+      The ``<stdlib>`` keyword works regardless of this setting.
     - ``ignore_imports``: See :ref:`Shared options`.
     - ``unmatched_ignore_imports_alerting``: See :ref:`Shared options`.
     - ``allow_indirect_imports``: If ``True``, allow indirect imports to forbidden modules without interpreting them
