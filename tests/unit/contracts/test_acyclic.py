@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, call, patch
 from grimp.adaptors.graph import ImportGraph
-from importlinter.contracts.acyclic import AcyclicContract, Cycle, CyclesFamily, CyclesFamilyKey
+from importlinter.contracts.acyclic import AcyclicContract, Cycle
 from importlinter.contracts.acyclic import _longest_common_package, _get_package_dependency
 from importlinter.domain.contract import ContractCheck
 
@@ -109,15 +109,10 @@ class TestAcyclicContractRenderBrokenContract:
         # Given
         contract = _build_contract()
         contract_check = ContractCheck(kept=True, metadata={})
-        cycle_families = [
-            CyclesFamily(
-                key=CyclesFamilyKey(parent="1_a", siblings=("1_a", "1_b")),
-                cycles=[Cycle(members=("1_a.2_a", "1_b.2_b", "1_a.2_b", "1_c.2_a"))],
-            )
+        cycles = [
+            Cycle(members=("1_a.2_a", "1_b.2_b", "1_a.2_b", "1_c.2_a"), package_lvl_cycle=True)
         ]
-        AcyclicContract._set_cycles_in_metadata(
-            check=contract_check, cycle_families=cycle_families
-        )
+        AcyclicContract._set_cycles_in_metadata(check=contract_check, cycles=cycles)
         # When
         contract.render_broken_contract(check=contract_check)
         # Then

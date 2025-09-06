@@ -331,9 +331,6 @@ Acyclic dependencies
 A contract that checks whether the dependency graph of modules (or packages) stick to an acyclic dependencies principle (ADP).
 It indicates that modules (or packages) dependencies form a directed acyclic graph (DAG).
 
-If any cycles are found, they are grouped into cycle families.
-Cycle family aggregates all cycles that have the same parent package and the cycle is formed between the same set of siblings.
-
 Package dependency between two modules is understood as a common package between the two modules,
 plus the first uncommon part of accordingly, the importer and the imported module eg.:
 - importer: "a.b.c.d.x"
@@ -352,7 +349,7 @@ plus the first uncommon part of accordingly, the importer and the imported modul
     name=Acyclic
     type=acyclic
     consider_package_dependencies=true
-    max_cycle_families=1
+    max_cycles=1
     include_parents=
         django.contrib
 
@@ -360,8 +357,8 @@ plus the first uncommon part of accordingly, the importer and the imported modul
 
     - ``consider_package_dependencies``:  Whether to consider cyclic dependencies between packages.
         "True" or "true" will be treated as True.
-    - ``max_cycles_families``: limit a search for cycles to the provided number of cycles families.
-        The limited families are not guaranteed to be complete.
+    - ``max_cycles``: limit a search for cycles.
+        Default is 0 (no limit).
     - ``include_parents``: a list of parent modules to include in the search for cycles. If the list
         is not empty, all packages that are not in the list will be excluded from the search.
         If not provided, all packages will be considered.

@@ -7,102 +7,91 @@ from importlinter.application import output
 from importlinter.domain import fields
 
 
-@dataclass(frozen=True)
-class CyclesFamilyKey:
-    parent: str
-    siblings: tuple[str, ...]
-
-    def get_siblings_format(self) -> str:
-        return "(\n  " + "\n  ".join(f"{sibling}" for sibling in self.sorted_siblings) + "\n)"
-
-    @property
-    def sorted_siblings(self) -> tuple[str, ...]:
-        return tuple(sorted(self.siblings))
-
-    def __hash__(self) -> int:
-        return hash((self.parent, self.sorted_siblings))
-
-
-@dataclass(frozen=True)
+@dataclass
 class Cycle:
     members: tuple[str, ...]
-    _family_key: Optional[CyclesFamilyKey] = None
+    package_lvl_cycle: bool
+    _parent: Optional[str] = None
+    _siblings: Optional[tuple[str, ...]] = None
 
     @property
-    def family_key(self) -> CyclesFamilyKey:
-        if self._family_key is not None:
-            return self._family_key
+    def parent(self) -> str:
+        if self._parent is None:
 
-        parent = _longest_common_package(modules=self.members)
-        # If there is no common package, we assume that the cycle is formed between root packages
-        if parent is None:
-            parent = _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS
+            parent = _longest_common_package(modules=self.members)
+            # If there is no common package,
+            # we assume that the cycle is formed between root packages
+            if parent is None:
+                parent = _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS
 
-        siblings_set: set[str] = set()
-        parent_nesting = parent.count(".")
+            self._parent = parent
 
-        for member in self.members:
-            if member.startswith(parent) and member != parent:
-                sibiling = ".".join(member.split(".")[: parent_nesting + 2])
-                siblings_set.add(sibiling)
-            else:
-                siblings_set.add(member.split(".")[0])
+        return self._parent
 
-        siblings = tuple(sorted(siblings_set))
-        return CyclesFamilyKey(parent=parent, siblings=siblings)
+    @property
+    def siblings(self) -> tuple[str, ...]:
+        if self._siblings is None:
 
-    def get_members_format(self) -> str:
-        return "(\n -> " + "\n -> ".join(f"{member}" for member in self.members) + "\n)"
+            siblings_list: list[str] = []
+            parent_nesting = self.parent.count(".")
+
+            for member in self.members:
+                if member.startswith(self.parent) and member != self.parent:
+                    sibiling = ".".join(member.split(".")[: parent_nesting + 2])
+                    siblings_list.append(sibiling)
+                else:
+                    siblings_list.append(member.split(".")[0])
+
+            siblings_unique: list[str] = [siblings_list[0]]
+
+            for sibling in siblings_list[1:]:
+                if sibling != siblings_unique[-1]:
+                    siblings_unique.append(sibling)
+
+            self._siblings = tuple(siblings_unique)
+
+        return self._siblings
 
 
-@dataclass(frozen=True)
-class CyclesFamily:
-    key: CyclesFamilyKey
-    cycles: list[Cycle]
+class AcyclicContractError(Exception):
+    pass
 
 
 class AcyclicContract(Contract):
     """
     A contract that checks whether the dependency graph of modules (or packages)
     stick to an acyclic dependencies principle (ADP).
+    It indicates that modules (or packages) dependencies form a directed acyclic graph (DAG).
 
-    If any cycles are found, they are grouped into cycle families.
-    Cycle family aggregates all cycles that have the same
-    parent package and the cycle is formed between the same set of siblings.
-    The example of a cycles family inside django library:
+    Package dependency between two modules is understood as a common package between the two
+    modules, plus the first uncommon part of accordingly, the importer and the imported module eg.:
+    - importer: "a.b.c.d.x"
+    - imported: "a.b.e.f.z"
+    - package dependency: ("a.b.c", "a.b.e")
 
-    >>>> Cycles family for parent module 'django'
+    Example output when the contract is broken:
 
-    siblings:
-    (
-      django.forms
-      django.template
-      django.utils
-    )
+    Package 'django' contains a module dependencies cycle:
 
-    Number of cycles: 1
+        1. 'apps' depends on 'utils':
+            - 'django.apps' -> 'django.apps.config' (l.1)
+            - 'django.apps.config' -> 'django.utils.module_loading' (l.7)
 
-    Cycle 1:
-
-    (
-      -> django.utils.dates
-      -> django.utils.translation
-      -> django.template
-      -> django.forms
-      -> django.utils.dates
-    )
-
-    <<<< Cycles family for parent module 'django'
+        2. 'utils' depends on 'apps':
+            - 'django.utils.module_loading' -> 'django.apps' (l.48)
 
     Configuration options (all options are optional):
         - consider_package_dependencies:  Whether to consider cyclic dependencies between packages.
             "True" or "true" will be treated as True.
-        - max_cycles_families: limit a search for cycles to the provided number of cycles families.
-            The limited families are not guaranteed to be complete.
+        - max_cycles: limit a search for cycles.
+            Default is 0 (no limit).
         - include_parents: a list of parent modules to include in the search for cycles. If the list
-        is not empty, all packages that are not in the list will be excluded from the search.
-        If not provided, all packages will be considered.
+            is not empty, all packages that are not in the list will be excluded from the search.
+            If not provided, all packages will be considered.
         ########## Example usage of include_parents ##########
+
+        Config:
+
         [importlinter]
         root_packages =
             django
@@ -111,59 +100,49 @@ class AcyclicContract(Contract):
         name=Acyclic
         type=acyclic
         consider_package_dependencies=true
-        max_cycle_families=1
+        max_cycles=1
         include_parents=
             django.contrib
 
-        >>>> Cycles family for parent module 'django.contrib'
+        Output:
 
-        siblings:
-        (
-            django.contrib.admin
-            django.contrib.auth
-        )
+        Acyclic
+        -------
 
-        Number of cycles: 1
 
-        Cycle 1 (package dependency):
+        Package 'django.contrib' contains a subpackage dependencies cycle:
 
-        (
-            -> django.contrib.admin.forms
-            -> django.contrib.auth.forms
-            -> django.contrib.auth
-            -> django.contrib.auth (full path: 'django.contrib.auth.admin')
-            -> django.contrib.admin
-            -> django.contrib.admin.sites
-            -> django.contrib.admin.forms
-        )
+        1. 'admin' depends on 'auth':
+            - 'django.contrib.admin' -> 'django.contrib.admin.sites' (l.22)
+            - 'django.contrib.admin.sites' -> 'django.contrib.admin.forms' (l.354)
+            - 'django.contrib.admin.forms' -> 'django.contrib.auth.forms' (l.1)
 
-        <<<< Cycles family for parent module 'django.contrib'
+        2. 'auth' depends on 'admin':
+            - 'django.contrib.auth.forms' -> 'django.contrib.auth' (l.5)
+            - 'django.contrib.auth' -> 'django.contrib.auth.admin' ('django.contrib.auth' package dependency)  # noqa E501
+            - 'django.contrib.auth.admin' -> 'django.contrib.admin' (l.2)
 
-        Number of cycle families found for a contract 'Acyclic': 1 (limit = 1)
-        Number of cycle families with package dependencies: 1
+        Number of dependency cycles found for a contract 'Acyclic': 1
+        Package level cycles: 1
+        Module level cycles: 0
+        Limit: 1
+
         ########## End of include_parents example usage ##########
         - exclude_parents: a list of parent modules to exclude from the search for cycles.
-        If a parent module is provided in both 'include_parents' and 'exclude_parents',
-        it will be excluded from the search for cycles.
-
-        Package dependency between two modules is understood
-        as a common package between the two modules, plus the first uncommon part of accordingly,
-        the importer and the imported module eg.:
-        - importer: "a.b.c.d.x"
-        - imported: "a.b.e.f.z"
-        - package dependency: ("a.b.c", "a.b.e")
+            If a parent module is provided in both 'include_parents' and 'exclude_parents',
+            it will be excluded from the search for cycles.
 
     """
 
     type_name = "acyclic"
 
     consider_package_dependencies = fields.BooleanField(required=False, default=True)
-    max_cycle_families = fields.IntegerField(required=False, default=0)
+    max_cycles = fields.IntegerField(required=False, default=0)
     include_parents = fields.ListField(subfield=fields.StringField(), required=False, default=[])
     exclude_parents = fields.ListField(subfield=fields.StringField(), required=False, default=[])
 
     _CYCLE_FAMILIES_METADATA_KEY = "cycle_families"
-    _PACKAGE_DEPENDENCY_METADATA_KEY = "package_dependencies"
+    _IMPORT_GRAPH_METADATA_KEY = "import_graph"
 
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
         """
@@ -173,240 +152,243 @@ class AcyclicContract(Contract):
             configuration_heading_msg = [
                 "CONFIG:\n",
                 f"Consider package dependencies: {self._consider_package_dependencies}",
-                f"Max cycle families: {self._max_cycles_families}",
+                f"Max cycles: {self._max_cycles}",
                 f"Include parents: {self._include_parents}",
                 f"Exclude parents: {self._exclude_parents}",
             ]
             output.print_heading(text="\n".join(configuration_heading_msg), level=2)
 
         contract_metadata: dict[str, Any] = {}
-        # If we consider package dependencies,
-        # we need to expand the graph with the artificialy created package dependencies.
+        package_to_origin_dependency: dict[tuple[str, str], tuple[str, str]] = {}
+
         if self._consider_package_dependencies:
-            graph = copy.deepcopy(graph)
-            already_added_package_dependencies: set[tuple[str, str]] = set()
+            # If we consider package dependencies,
+            # we need to expand the graph with the artificially created package dependencies.
+            graph, package_to_origin_dependency = self._get_graph_including_package_dependencies(
+                graph=graph
+            )
 
-            for importer_module in sorted(graph.modules):
-                imported_modules = graph.find_modules_directly_imported_by(module=importer_module)
-
-                for imported_module in sorted(imported_modules):
-                    package_dependency = _get_package_dependency(
-                        importer=importer_module, imported=imported_module
-                    )
-
-                    if package_dependency is None:
-                        continue
-
-                    if package_dependency in already_added_package_dependencies:
-                        continue
-
-                    package_import_already_exists = (
-                        graph.get_import_details(
-                            importer=package_dependency[0],
-                            imported=package_dependency[1],
-                        )
-                        != []
-                    )
-
-                    if package_import_already_exists:
-                        continue
-
-                    graph.add_import(
-                        importer=package_dependency[0], imported=package_dependency[1]
-                    )
-                    already_added_package_dependencies.add(package_dependency)
-                    self._add_package_dependency(
-                        metadata=contract_metadata,
-                        origin_dependency=(importer_module, imported_module),
-                        package_dependency=package_dependency,
-                    )
-
-        family_key_to_cycles: dict[CyclesFamilyKey, list[Cycle]] = {}
+        cycles: list[Cycle] = []
+        unique_member_strings: set[str] = set()
 
         for importer_module in sorted(graph.modules):
             cycle_members = graph.find_shortest_cycle(
                 module=importer_module,
                 as_package=False,  # package dependencies are already added to the graph,
                 # while turned on, we lose traceability of package dependencies
-                # which are logged later for a better understanding
+                # which are logged later for a better understanding of the cycles
             )
 
             if cycle_members is None:
                 continue
 
-            cycle = Cycle(members=cycle_members)
+            cycle = self._get_cycle(
+                cycle_members=cycle_members,
+                package_to_origin_dependency=package_to_origin_dependency,
+            )
 
-            if (
-                self._include_parents is not None
-                and cycle.family_key.parent not in self._include_parents
-            ):
+            if self._include_parents is not None and cycle.parent not in self._include_parents:
                 continue
 
-            if (
-                self._exclude_parents is not None
-                and cycle.family_key.parent in self._exclude_parents
-            ):
+            if self._exclude_parents is not None and cycle.parent in self._exclude_parents:
+                continue
+
+            unique_member_string = str(cycle.members)
+
+            if unique_member_string not in unique_member_strings:
+                unique_member_strings.add(unique_member_string)
+                cycles.append(cycle)
+            else:
+                if verbose:
+                    output.print_warning(
+                        text=f"Skipping already reported cycle:\n{' -> '.join(cycle.members)}"
+                    )
+
                 continue
 
             if verbose:
-                cycle_members_str = "\n-> ".join(cycle_members)
-                warning_msg = (
-                    f"Found cycle for module "
-                    f"'{importer_module}':{chr(10)}-> {cycle_members_str}{chr(10)}"
-                )
+                warning_msg = f"Found cycle:\n{' -> '.join(cycle.members)}"
                 output.print_warning(text=warning_msg)
 
-            if cycle.family_key not in family_key_to_cycles:
-                family_key_to_cycles[cycle.family_key] = []
-
-            family_key_to_cycles[cycle.family_key].append(cycle)
-
-            if (
-                self._max_cycles_families is not None
-                and len(family_key_to_cycles) == self._max_cycles_families
-            ):
+            if self._max_cycles is not None and len(cycles) == self._max_cycles:
                 break
 
-        cycles_families = [
-            CyclesFamily(key=key, cycles=cycles) for key, cycles in family_key_to_cycles.items()
-        ]
-        contract_check = ContractCheck(kept=len(cycles_families) == 0, metadata=contract_metadata)
-        AcyclicContract._set_cycles_in_metadata(
-            check=contract_check, cycle_families=cycles_families
-        )
+        contract_check = ContractCheck(kept=len(cycles) == 0, metadata=contract_metadata)
+        AcyclicContract._set_cycles_in_metadata(check=contract_check, cycles=cycles)
+        AcyclicContract._set_graph_in_metadata(check=contract_check, import_graph=graph)
         return contract_check
 
-    @staticmethod
-    def _add_package_dependency(
-        metadata: dict[str, Any],
-        origin_dependency: tuple[str, str],
-        package_dependency: tuple[str, str],
-    ) -> None:
-        """
-        Adds a package dependency to the contract check metadata.
-        """
-        if AcyclicContract._PACKAGE_DEPENDENCY_METADATA_KEY not in metadata:
-            metadata[AcyclicContract._PACKAGE_DEPENDENCY_METADATA_KEY] = {}
-
-        metadata[AcyclicContract._PACKAGE_DEPENDENCY_METADATA_KEY][
-            package_dependency
-        ] = origin_dependency
-
-    @staticmethod
-    def _get_origin_dependency(
-        contract_check: ContractCheck, package_dependency: tuple[str, str]
-    ) -> Optional[tuple[str, str]]:
-        """
-        Retrieves a package dependency from the contract check metadata.
-        """
-        return contract_check.metadata.get(
-            AcyclicContract._PACKAGE_DEPENDENCY_METADATA_KEY, {}
-        ).get(package_dependency, None)
-
     def render_broken_contract(self, check: ContractCheck) -> None:
-        cycle_families = AcyclicContract._get_cycles_from_metadata(check=check)
+        cycles = AcyclicContract._get_cycles_from_metadata(check=check)
 
-        if not cycle_families:
+        if not cycles:
             return
 
-        number_of_family_package_dependencies = 0
+        import_graph = AcyclicContract._get_graph_from_metadata(check=check)
 
-        for cycle_family in cycle_families:
+        for cycle in cycles:
+            cycle_type = "subpackage" if cycle.package_lvl_cycle else "module"
             output.print_error(
-                text=f">>>> Cycles family for parent module '{cycle_family.key.parent}'"
+                text=f"\nPackage '{cycle.parent}' contains a {cycle_type} dependencies cycle:"
             )
-            output.print_error(text=f"\nSiblings:\n{cycle_family.key.get_siblings_format()}")
-            output.print_error(text=f"\nNumber of cycles: {len(cycle_family.cycles)}\n")
-            is_family_package_dependency = False
-
-            for index, cycle in enumerate(cycle_family.cycles, start=1):
-                cycle_formatted, is_package_dependency = self._get_cycle_formatted_for_logging(
-                    cycle=cycle, contract_check=check
-                )
-                is_family_package_dependency = (
-                    is_family_package_dependency or is_package_dependency
-                )
-                title = (
-                    f"Cycle {index} (package dependency)"
-                    if is_package_dependency
-                    else f"Cycle {index}"
-                )
-                output.print_error(text=f"{title}:\n\n{cycle_formatted.get_members_format()}\n")
-
-            number_of_family_package_dependencies += 1 if is_family_package_dependency else 0
+            index_sibling = 0
+            sibling = cycle.siblings[index_sibling]
+            dependent_sibling = cycle.siblings[index_sibling + 1]
             output.print_error(
-                text=f"<<<< Cycles family for parent module '{cycle_family.key.parent}'\n"
+                text=(
+                    f"\n  {index_sibling + 1}. "
+                    f"'{_get_relative_module(sibling, cycle.parent)}' depends on "
+                    f"'{_get_relative_module(dependent_sibling, cycle.parent)}':"
+                )
             )
 
-        summary_msg = (
-            f"Number of cycle families found for a contract '{self.name}': {len(cycle_families)}"
+            for index_importer, importer in enumerate(cycle.members[:-1]):
+                if not importer.startswith(sibling):
+                    index_sibling += 1
+
+                    if index_sibling + 1 < len(cycle.siblings):
+                        sibling = cycle.siblings[index_sibling]
+                        dependent_sibling = cycle.siblings[index_sibling + 1]
+                        output.print_error(
+                            text=(
+                                f"\n  {index_sibling + 1}. "
+                                f"'{_get_relative_module(sibling, cycle.parent)}' depends on "
+                                f"'{_get_relative_module(dependent_sibling, cycle.parent)}':"
+                            )
+                        )
+
+                imported = cycle.members[index_importer + 1]
+                import_details = import_graph.get_import_details(
+                    importer=importer, imported=imported
+                )
+                line_number = import_details[0].get("line_number") if import_details else None
+
+                if line_number is None and not cycle.package_lvl_cycle:
+                    raise AcyclicContractError(
+                        "Line number is None. This should not happen on a module lvl cycle."
+                        f" Importer: {importer}, Imported: {imported}."
+                    )
+
+                line_info = (
+                    f"l.{line_number}"
+                    if line_number is not None
+                    else f"'{sibling}' package dependency"
+                )
+                output.print_error(text=f"      - '{importer}' -> '{imported}' ({line_info})")
+
+        output.print_error(text=self._get_summary_msg(cycles=cycles))
+
+    def _get_graph_including_package_dependencies(
+        self, graph: ImportGraph
+    ) -> tuple[ImportGraph, dict[tuple[str, str], tuple[str, str]]]:
+        package_to_origin_dependency: dict[tuple[str, str], tuple[str, str]] = {}
+        graph = copy.deepcopy(graph)
+        already_added_package_dependencies: set[tuple[str, str]] = set()
+
+        for importer_module in sorted(graph.modules):
+            imported_modules = graph.find_modules_directly_imported_by(module=importer_module)
+
+            for imported_module in sorted(imported_modules):
+                package_dependency = _get_package_dependency(
+                    importer=importer_module, imported=imported_module
+                )
+
+                if package_dependency is None:
+                    continue
+
+                if package_dependency in already_added_package_dependencies:
+                    continue
+
+                package_import_already_exists = (
+                    graph.get_import_details(
+                        importer=package_dependency[0],
+                        imported=package_dependency[1],
+                    )
+                    != []
+                )
+
+                if package_import_already_exists:
+                    continue
+
+                graph.add_import(importer=package_dependency[0], imported=package_dependency[1])
+                already_added_package_dependencies.add(package_dependency)
+                package_to_origin_dependency[package_dependency] = (
+                    importer_module,
+                    imported_module,
+                )
+
+        return graph, package_to_origin_dependency
+
+    def _get_summary_msg(self, cycles: list[Cycle]) -> str:
+        number_of_package_lvl_cycles = len([cycle for cycle in cycles if cycle.package_lvl_cycle])
+        number_of_module_lvl_cycles = len(cycles) - number_of_package_lvl_cycles
+        cycles_type = (
+            "dependency cycles" if self._consider_package_dependencies else "module level cycles"
         )
-
-        if self._max_cycles_families is not None:
-            summary_msg += f" (limit = {self._max_cycles_families})"
-
-        if number_of_family_package_dependencies > 0:
-            summary_msg += (
-                "\nNumber of cycle families with package dependencies: "
-                f"{number_of_family_package_dependencies}"
+        summary_msg = (
+            f"\nNumber of {cycles_type} found for a contract '{self.name}': {len(cycles)}\n"
+            + (
+                f"Package level cycles: {number_of_package_lvl_cycles}\n"
+                if self._consider_package_dependencies
+                else ""
             )
-
-        output.print_error(text=summary_msg + "\n")
-
-    def _get_cycle_formatted_for_logging(
-        self, cycle: Cycle, contract_check: ContractCheck
-    ) -> tuple[Cycle, bool]:
-        """
-        Retrieves a formatted cycle for logging purposes.
-
-        It is useful for a better understanding of package dependencies.
-        """
-        if self._consider_package_dependencies is False:
-            return cycle, False
-
-        formatted_members: list[str] = []
-        is_package_dependency = False
-
-        for index, member in enumerate(cycle.members[:-1]):
-            package_dependency = (member, cycle.members[index + 1])
-            origin_dependency = AcyclicContract._get_origin_dependency(
-                contract_check=contract_check, package_dependency=package_dependency
+            + (
+                f"Module level cycles: {number_of_module_lvl_cycles}\n"
+                if self._consider_package_dependencies
+                else ""
             )
+            + (f"Limit: {self._max_cycles}\n" if self._max_cycles is not None else "")
+        )
+        return summary_msg
 
-            if origin_dependency is not None:
-                if package_dependency[0] != origin_dependency[0]:
-                    formatted_members.append(
-                        f"{package_dependency[0]} (full path: '{origin_dependency[0]}')"
-                    )
-                    is_package_dependency = True
+    def _get_cycle(
+        self,
+        cycle_members: tuple[str, ...],
+        package_to_origin_dependency: dict[tuple[str, str], tuple[str, str]],
+    ) -> Cycle:
+        """Retrieves a clean cycle taking into account package dependencies."""
+        package_lvl_cycle = False
+
+        if self._consider_package_dependencies:
+            formatted_members: list[str] = []
+
+            for index, member in enumerate(cycle_members[:-1]):
+                package_dependency = (member, cycle_members[index + 1])
+                origin_dependency = package_to_origin_dependency.get(package_dependency)
+
+                if origin_dependency is not None:
+                    if package_dependency[0] != origin_dependency[0]:
+                        formatted_members.append(origin_dependency[0])
+                        package_lvl_cycle = True
+                    else:
+                        formatted_members.append(origin_dependency[0])
+
+                    if package_dependency[1] != origin_dependency[1]:
+                        formatted_members.append(origin_dependency[1])
+                        package_lvl_cycle = True
+                    else:
+                        formatted_members.append(origin_dependency[1])
                 else:
-                    formatted_members.append(origin_dependency[0])
+                    if len(formatted_members) == 0:
+                        formatted_members.append(package_dependency[0])
+                    # could have been already added by the previous iteration
+                    elif formatted_members[-1] != package_dependency[0]:
+                        formatted_members.append(package_dependency[0])
 
-                if package_dependency[1] != origin_dependency[1]:
-                    formatted_members.append(
-                        f"{package_dependency[1]} (full path: '{origin_dependency[1]}')"
-                    )
-                    is_package_dependency = True
-                else:
-                    formatted_members.append(origin_dependency[1])
-            else:
-                if len(formatted_members) == 0:
-                    formatted_members.append(package_dependency[0])
-                # could have been already added by the previous iteration
-                elif formatted_members[-1] != package_dependency[0]:
-                    formatted_members.append(package_dependency[0])
+                    formatted_members.append(package_dependency[1])
+        else:
+            formatted_members = list(cycle_members)
 
-                formatted_members.append(package_dependency[1])
-
-        return Cycle(members=tuple(formatted_members)), is_package_dependency
+        members = _get_clean_cycle_members(cycle_members=formatted_members)
+        return Cycle(members=tuple(members), package_lvl_cycle=package_lvl_cycle)
 
     @property
     def _consider_package_dependencies(self) -> bool:
         return str(self.consider_package_dependencies).lower() == "true"
 
     @property
-    def _max_cycles_families(self) -> Optional[int]:
-        value_int = self.max_cycle_families.value
+    def _max_cycles(self) -> Optional[int]:
+        value_int = self.max_cycles.value
         return None if value_int < 1 else value_int
 
     @property
@@ -424,15 +406,51 @@ class AcyclicContract(Contract):
         return [module for module in self.exclude_parents if module]  # type: ignore
 
     @staticmethod
-    def _set_cycles_in_metadata(check: ContractCheck, cycle_families: list[CyclesFamily]) -> None:
-        check.metadata[AcyclicContract._CYCLE_FAMILIES_METADATA_KEY] = cycle_families
+    def _set_cycles_in_metadata(check: ContractCheck, cycles: list[Cycle]) -> None:
+        check.metadata[AcyclicContract._CYCLE_FAMILIES_METADATA_KEY] = cycles
 
     @staticmethod
-    def _get_cycles_from_metadata(check: ContractCheck) -> list[CyclesFamily]:
+    def _get_cycles_from_metadata(check: ContractCheck) -> list[Cycle]:
         return check.metadata.get(AcyclicContract._CYCLE_FAMILIES_METADATA_KEY, [])
+
+    @staticmethod
+    def _set_graph_in_metadata(check: ContractCheck, import_graph: ImportGraph) -> None:
+        check.metadata[AcyclicContract._IMPORT_GRAPH_METADATA_KEY] = import_graph
+
+    @staticmethod
+    def _get_graph_from_metadata(check: ContractCheck) -> ImportGraph:
+        return check.metadata[AcyclicContract._IMPORT_GRAPH_METADATA_KEY]
 
 
 _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS = "__root__"
+
+
+def _get_clean_cycle_members(cycle_members: list[str]) -> tuple[str, ...]:
+    # reorder the cycle to start from the lexicographically smallest member
+    min_member = min(cycle_members)
+    min_index = cycle_members.index(min_member)
+    sorted_members = cycle_members[min_index:] + cycle_members[:min_index] + [min_member]
+    # remove duplicated modules placed next to each other
+    unique_members: list[str] = [sorted_members[0]]
+
+    for member in sorted_members[1:]:
+        if member != unique_members[-1]:
+            unique_members.append(member)
+
+    return tuple(unique_members)
+
+
+def _get_relative_module(module: str, parent: str) -> str:
+    if parent == _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS:
+        return module
+
+    if module == parent:
+        return ""
+
+    if module.startswith(f"{parent}."):
+        return module.removeprefix(f"{parent}.")
+
+    raise AcyclicContractError(f"Module '{module}' is not a child of parent package '{parent}'.")
 
 
 def _longest_common_package(modules: tuple[str, ...]) -> Optional[str]:
