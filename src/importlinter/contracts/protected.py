@@ -128,7 +128,8 @@ class ProtectedContract(Contract):
 
             output.print_error(
                 f"Illegal imports of protected package {broken_contract_metadata.top_level_module}"
-                f"{expression_warning}:"
+                f"{expression_warning}:",
+                bold=False,
             )
 
             output.new_line()
@@ -140,7 +141,8 @@ class ProtectedContract(Contract):
                     illegal_import["line_numbers"],
                 )
                 output.print_error(
-                    f"- {importer} -> {imported} (l.{', '.join(map(str, line_numbers))})"
+                    f"- {importer} -> {imported} (l.{', '.join(map(str, line_numbers))})",
+                    bold=False,
                 )
                 output.new_line()
         output.new_line()
