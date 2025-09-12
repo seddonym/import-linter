@@ -109,23 +109,19 @@ class AcyclicContract(Contract):
         Acyclic
         -------
 
+        Package django.contrib contains a dependency cycle:
 
-        Package 'django.contrib' contains a subpackage dependencies cycle:
+        1. admin depends on auth:
 
-        1. 'admin' depends on 'auth':
-            - 'django.contrib.admin' -> 'django.contrib.admin.sites' (l.22)
-            - 'django.contrib.admin.sites' -> 'django.contrib.admin.forms' (l.354)
-            - 'django.contrib.admin.forms' -> 'django.contrib.auth.forms' (l.1)
+            - django.contrib.admin -> django.contrib.admin.sites (l. 22)
+            - django.contrib.admin.sites -> django.contrib.admin.forms (l. 354)
+            - django.contrib.admin.forms -> django.contrib.auth.forms (l. 1)
 
-        2. 'auth' depends on 'admin':
-            - 'django.contrib.auth.forms' -> 'django.contrib.auth' (l.5)
-            - 'django.contrib.auth' -> 'django.contrib.auth.admin' ('django.contrib.auth' package dependency)  # noqa E501
-            - 'django.contrib.auth.admin' -> 'django.contrib.admin' (l.2)
+        2. auth depends on admin:
 
-        Number of dependency cycles found for a contract 'Acyclic': 1
-        Package level cycles: 1
-        Module level cycles: 0
-        Limit: 1
+            - django.contrib.auth.forms -> django.contrib.auth (l. 5)
+            - django.contrib.auth -> django.contrib.auth.admin (django.contrib.auth package dependency)  # noqa E501
+            - django.contrib.auth.admin -> django.contrib.admin (l. 2)
 
         ########## End of include_parents example usage ##########
         - exclude_parents: a list of parent modules to exclude from the search for cycles.
@@ -213,6 +209,10 @@ class AcyclicContract(Contract):
             if self._max_cycles is not None and len(cycles) == self._max_cycles:
                 break
 
+        if verbose:
+            summary_msg = self._get_cycles_summary_msg(cycles=cycles)
+            output.print_warning(text=summary_msg)
+
         contract_check = ContractCheck(kept=len(cycles) == 0, metadata=contract_metadata)
         AcyclicContract._set_cycles_in_metadata(check=contract_check, cycles=cycles)
         AcyclicContract._set_graph_in_metadata(check=contract_check, import_graph=graph)
@@ -227,9 +227,8 @@ class AcyclicContract(Contract):
         import_graph = AcyclicContract._get_graph_from_metadata(check=check)
 
         for cycle in cycles:
-            cycle_type = "subpackage" if cycle.package_lvl_cycle else "module"
             output.print_error(
-                text=f"\nPackage '{cycle.parent}' contains a {cycle_type} dependencies cycle:"
+                text=f"\nPackage {cycle.parent} contains a dependency cycle:"
             )
             index_sibling = 0
             sibling = cycle.siblings[index_sibling]
@@ -237,8 +236,8 @@ class AcyclicContract(Contract):
             output.print_error(
                 text=(
                     f"\n  {index_sibling + 1}. "
-                    f"'{_get_relative_module(sibling, cycle.parent)}' depends on "
-                    f"'{_get_relative_module(dependent_sibling, cycle.parent)}':"
+                    f"{_get_relative_module(sibling, cycle.parent)} depends on "
+                    f"{_get_relative_module(dependent_sibling, cycle.parent)}:\n"
                 )
             )
 
@@ -252,8 +251,8 @@ class AcyclicContract(Contract):
                         output.print_error(
                             text=(
                                 f"\n  {index_sibling + 1}. "
-                                f"'{_get_relative_module(sibling, cycle.parent)}' depends on "
-                                f"'{_get_relative_module(dependent_sibling, cycle.parent)}':"
+                                f"{_get_relative_module(sibling, cycle.parent)} depends on "
+                                f"{_get_relative_module(dependent_sibling, cycle.parent)}:\n"
                             )
                         )
 
@@ -269,14 +268,15 @@ class AcyclicContract(Contract):
                         f" Importer: {importer}, Imported: {imported}."
                     )
 
-                line_info = (
-                    f"l.{line_number}"
-                    if line_number is not None
-                    else f"'{sibling}' package dependency"
-                )
-                output.print_error(text=f"      - '{importer}' -> '{imported}' ({line_info})")
+                if line_number is None:
+                    dependency_sibling = sibling if imported.startswith(sibling) else dependent_sibling
+                    line_info = f"{dependency_sibling} package dependency"
+                else:
+                    line_info = f"l. {line_number}"
 
-        output.print_error(text=self._get_summary_msg(cycles=cycles))
+                output.print_error(text=f"      - {importer} -> {imported} ({line_info})")
+        
+        output.print_error(text="\n")
 
     def _get_graph_including_package_dependencies(
         self, graph: ImportGraph
@@ -319,7 +319,7 @@ class AcyclicContract(Contract):
 
         return graph, package_to_origin_dependency
 
-    def _get_summary_msg(self, cycles: list[Cycle]) -> str:
+    def _get_cycles_summary_msg(self, cycles: list[Cycle]) -> str:
         number_of_package_lvl_cycles = len([cycle for cycle in cycles if cycle.package_lvl_cycle])
         number_of_module_lvl_cycles = len(cycles) - number_of_package_lvl_cycles
         cycles_type = (
