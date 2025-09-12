@@ -332,7 +332,7 @@ Protected modules
 Protected contracts prevent certain modules from being directly imported, except by modules in an allow-list. 
 By default, descendants of each module will be checked too.
 
-For example, if ``blue`` is protected, and green is the only module in the allow list,
+For example, if ``blue`` is protected, and ``green`` is the only module in the allow list,
 then no module other than ``green`` (and its descendants) will be allowed to import ``blue`` (and its descendants) directly.
 
 **Examples:**
