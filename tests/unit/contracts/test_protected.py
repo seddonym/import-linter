@@ -403,7 +403,6 @@ class TestProtectedContract:
             ),
         ],
     )
-    @pytest.mark.xfail
     def test_protect_external_package(
         self, import_details, as_packages, contract_kept, description
     ):

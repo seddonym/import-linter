@@ -82,7 +82,7 @@ class ProtectedContract(Contract):
                 )
 
                 protected_modules = {top_level_protected_module}
-                if self.as_packages:
+                if self.as_packages and not graph.is_module_squashed(top_level_protected_module):
                     protected_modules.update(graph.find_descendants(top_level_protected_module))
 
                 for protected_module in sorted(protected_modules):
