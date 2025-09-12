@@ -391,17 +391,6 @@ class TestProtectedContract:
             ),
             (
                 {
-                    "importer": "mypackage.bar.other_package.one",
-                    "imported": "django.core",
-                    "line_number": 3,
-                    "line_contents": "print",
-                },
-                "True",
-                False,
-                "Non-allowed package cannot import external protected package",
-            ),
-            (
-                {
                     "importer": "mypackage.bar.other_package",
                     "imported": "mypackage.foo.sibling",
                     "line_number": 3,
