@@ -72,6 +72,62 @@ External packages may also be forbidden.
       passed in will be treated as a module rather than a package. Default behaviour is ``True`` (treat modules as
       packages).
 
+Protected modules
+-----------------
+
+*Type name:* ``protected``
+
+Protected contracts prevent certain modules from being directly imported, except by modules in an allow-list.
+By default, descendants of each module will be checked too.
+
+For example, if ``blue`` is protected, and ``green`` is the only module in the allow list,
+then no module other than ``green`` (and its descendants) will be allowed to import ``blue`` (and its descendants) directly.
+
+**Examples:**
+
+.. code-block:: ini
+
+    [importlinter]
+    root_package = mypackage
+
+    [importlinter:contract:my-simple-protected-contract]
+    name = My simple protected contract
+    type = protected
+    protected_modules =
+        mypackage.one
+    allowed_importers =
+        mypackage.two
+        mypackage.three.blue
+
+.. code-block:: ini
+
+    [importlinter]
+    root_package = mypackage
+
+
+    [importlinter:contract:models-can-only-be-imported-by-colors]
+    name = Models can only be imported by colors direct descendant
+    type = protected
+    protected_modules =
+        mypackage.**.models
+    allowed_importers =
+        mypackage.colors.*
+    ignore_imports =
+        mypackage.one.green -> mypackage.one.models
+        mypackage.colors.red.foo -> mypackage.three.models
+    unmatched_ignore_imports_alerting = warn
+    as_packages = False
+
+**Configuration options**
+
+    - ``protected_modules``: The modules that must not be imported except by the list of importers, and by each other. Supports :ref:`wildcards`.
+    - ``allowed_importers``: The only modules allowed to import the target modules. Supports :ref:`wildcards`.
+    - ``ignore_imports``:  See :ref:`Shared options`.
+    - ``unmatched_ignore_imports_alerting``: See :ref:`Shared options`.
+    - ``as_packages``: Whether to treat the source and forbidden modules as packages. If ``False``, each of the modules
+      passed in will be treated as a module rather than a package. Default behaviour is ``True`` (treat modules as
+      packages).
+
 Independence
 ------------
 
@@ -322,63 +378,6 @@ Note: you are not allowed to mix different kinds of separators on the same line.
         mypackage.high
         mypackage.blue | mypackage.green : mypackage.yellow  # Invalid as it mixes separators.
         mypackage.low
-
-
-Protected modules
------------------
-
-*Type name:* ``protected``
-
-Protected contracts prevent certain modules from being directly imported, except by modules in an allow-list. 
-By default, descendants of each module will be checked too.
-
-For example, if ``blue`` is protected, and ``green`` is the only module in the allow list,
-then no module other than ``green`` (and its descendants) will be allowed to import ``blue`` (and its descendants) directly.
-
-**Examples:**
-
-.. code-block:: ini
-
-    [importlinter]
-    root_package = mypackage
-
-    [importlinter:contract:my-simple-protected-contract]
-    name = My simple protected contract
-    type = protected
-    protected_modules =
-        mypackage.one
-    allowed_importers =
-        mypackage.two
-        mypackage.three.blue
-    
-.. code-block:: ini
-
-    [importlinter]
-    root_package = mypackage
-
-
-    [importlinter:contract:models-can-only-be-imported-by-colors]
-    name = Models can only be imported by colors direct descendant
-    type = protected
-    protected_modules =
-        mypackage.**.models
-    allowed_importers =
-        mypackage.colors.*
-    ignore_imports = 
-        mypackage.one.green -> mypackage.one.models
-        mypackage.colors.red.foo -> mypackage.three.models
-    unmatched_ignore_imports_alerting = warn
-    as_packages = False
-
-**Configuration options**
-
-    - ``protected_modules``: The modules that must not be imported except by the list of importers, and by each other. Supports :ref:`wildcards`.
-    - ``allowed_importers``: The only modules allowed to import the target modules. Supports :ref:`wildcards`.
-    - ``ignore_imports``:  See :ref:`Shared options`.
-    - ``unmatched_ignore_imports_alerting``: See :ref:`Shared options`.
-    - ``as_packages``: Whether to treat the source and forbidden modules as packages. If ``False``, each of the modules
-      passed in will be treated as a module rather than a package. Default behaviour is ``True`` (treat modules as
-      packages).
 
 
 Custom contract types
