@@ -360,8 +360,6 @@ class TestProtectedContract:
                 {
                     "importer": "mypackage.bar.allowed",
                     "imported": "django",
-                    "line_number": 3,
-                    "line_contents": "print",
                 },
                 "False",
                 True,
@@ -371,8 +369,6 @@ class TestProtectedContract:
                 {
                     "importer": "mypackage.bar.allowed.one",
                     "imported": "django.core",
-                    "line_number": 3,
-                    "line_contents": "print",
                 },
                 "True",
                 True,
@@ -382,8 +378,6 @@ class TestProtectedContract:
                 {
                     "importer": "mypackage.bar.other_package",
                     "imported": "django",
-                    "line_number": 3,
-                    "line_contents": "print",
                 },
                 "False",
                 False,
@@ -393,8 +387,6 @@ class TestProtectedContract:
                 {
                     "importer": "mypackage.bar.other_package",
                     "imported": "mypackage.foo.sibling",
-                    "line_number": 3,
-                    "line_contents": "print",
                 },
                 "False",
                 True,
@@ -404,8 +396,6 @@ class TestProtectedContract:
                 {
                     "importer": "mypackage.bar.other_package.one",
                     "imported": "mypackage.foo.sibling",
-                    "line_number": 3,
-                    "line_contents": "print",
                 },
                 "True",
                 True,
@@ -419,22 +409,21 @@ class TestProtectedContract:
     ):
         graph = self._build_default_graph()
         graph.add_module("django", is_squashed=True)
-
         graph.add_import(**import_details)
-
         contract = ProtectedContract(
             name="Protected contract",
             session_options={
                 "root_packages": ["mypackage"],
             },
             contract_options={
-                "protected_modules": ("django"),
-                "allowed_importers": ("mypackage.bar.allowed"),
+                "protected_modules": ("django",),
+                "allowed_importers": ("mypackage.bar.allowed",),
                 "as_packages": as_packages,
             },
         )
 
         contract_check = contract.check(graph, verbose=False)
+
         assert contract_check.kept == contract_kept, description
 
     def test_render_broken_contract_simple_with_package(self):
