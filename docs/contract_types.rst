@@ -323,6 +323,49 @@ Note: you are not allowed to mix different kinds of separators on the same line.
         mypackage.blue | mypackage.green : mypackage.yellow  # Invalid as it mixes separators.
         mypackage.low
 
+Acyclic dependencies
+-----------------
+
+*Type name:* ``acyclic``
+
+A contract that checks whether the dependency graph of modules (or packages) stick to an acyclic dependencies principle (ADP).
+It indicates that modules (or packages) dependencies form a directed acyclic graph (DAG).
+
+Package dependency between two modules is understood as a common package between the two modules,
+plus the first uncommon part of accordingly, the importer and the imported module eg.:
+- importer: "a.b.c.d.x"
+- imported: "a.b.e.f.z"
+- package dependency: ("a.b.c", "a.b.e")
+
+**Examples:**
+
+.. code-block:: ini
+
+    [importlinter]
+    root_packages =
+        django
+
+    [importlinter:contract:1]
+    name=Acyclic
+    type=acyclic
+    packages=
+        django.contrib
+    max_cycles=1
+
+**Configuration options**
+    
+    - ``packages``: a list of packages to consider in the search for cycles. For each package,
+            all its subpackages and modules will be considered in the search for cycles.
+            If a package is a subpackage of another provided package, it will be ignored with a warning.
+            E.g. if 'a.b' and 'a.b.c' are provided, 'a.b.c' will be ignored.
+    - ``ignore_packages``: a set of packages to ignore in the search for cycles. 
+        If a package is included in both "packages" and "ignore_packages", it will be ignored.
+        Default is an empty set.
+    - ``consider_package_dependencies``:  Whether to consider cyclic dependencies between packages.
+        "True" or "true" will be treated as True.
+        Default is True.
+    - ``max_cycles``: limit a search for cycles.
+        Default is 0 (no limit).
 
 Custom contract types
 ---------------------

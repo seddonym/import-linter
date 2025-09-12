@@ -18,6 +18,10 @@ class ValidationError(Exception):
         self.message = message
 
 
+class NotParsedError(Exception):
+    pass
+
+
 class Field(Generic[FieldValue], abc.ABC):
     """
     Base class for containers for some data on a Contract.
@@ -60,6 +64,13 @@ class Field(Generic[FieldValue], abc.ABC):
         """
         raise NotImplementedError
 
+    @property
+    def value(self) -> FieldValue:
+        raise NotParsedError(
+            "Field is still a class-level descriptor. It has not been parsed yet or "
+            "it does not support value property access."
+        )
+
 
 class StringField(Field):
     """
@@ -70,6 +81,17 @@ class StringField(Field):
         if isinstance(raw_data, list):
             raise ValidationError("Expected a single value, got multiple values.")
         return str(raw_data)
+
+
+class IntegerField(Field[int]):
+    """
+    A field for single values of integers.
+    """
+
+    def parse(self, raw_data: Union[str, List[str]]) -> int:
+        if isinstance(raw_data, list):
+            raise ValidationError("Expected a single value, got multiple values.")
+        return int(raw_data)
 
 
 class BooleanField(Field):

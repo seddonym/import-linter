@@ -6,6 +6,15 @@ from grimp import ImportGraph
 from . import fields
 
 
+class _ParsedField:
+    def __init__(self, value: Any) -> None:
+        self._value = value
+
+    @property
+    def value(self) -> Any:
+        return self._value
+
+
 class Contract(abc.ABC):
     def __init__(
         self, name: str, session_options: Dict[str, Any], contract_options: Dict[str, Any]
@@ -31,7 +40,8 @@ class Contract(abc.ABC):
                 raw_data = self.contract_options[field_name]
             except KeyError:
                 if field.default is not fields.NotSupplied:
-                    setattr(self, field_name, field.default)
+                    default_data = _get_value_for_field(field, field.default)
+                    setattr(self, field_name, default_data)
                 elif field.required:
                     errors[field_name] = "This is a required field."
                 else:
@@ -43,7 +53,9 @@ class Contract(abc.ABC):
             except fields.ValidationError as e:
                 errors[field_name] = str(e)
                 continue
-            setattr(self, field_name, clean_data)
+
+            value = _get_value_for_field(field, clean_data)
+            setattr(self, field_name, value)
 
         if errors:
             raise InvalidContractOptions(errors)
@@ -132,3 +144,10 @@ class ContractRegistry:
 
 
 registry = ContractRegistry()
+
+
+def _get_value_for_field(field: fields.Field[Any], value: Any) -> Any:
+    if isinstance(field, fields.IntegerField):
+        return _ParsedField(value=value)
+
+    return value
