@@ -20,4 +20,5 @@ exhaustive = true
 [importlinter:contract:2]
 name=Acyclic
 type=acyclic
-consider_package_dependencies=true
+packages:
+    importlinter

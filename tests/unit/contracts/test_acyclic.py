@@ -145,6 +145,26 @@ class TestLongestCommonPackage:
         # Then
         assert "django" == longest_common_package
 
+    def test_short_cycle(self) -> None:
+        # Given
+        modules = ("django", "django.conf", "django")
+        # When
+        longest_common_package = _longest_common_package(modules=modules)
+        # Then
+        assert "django" == longest_common_package
+
+    def test_no_common_package(self) -> None:
+        # Given
+        modules = (
+            "a.b.c",
+            "x.y.z",
+            "m.n.o",
+        )
+        # When
+        longest_common_package = _longest_common_package(modules=modules)
+        # Then
+        assert longest_common_package is None
+
 
 class TestGetPackageDependency:
     def test_common_package_exist(self) -> None:

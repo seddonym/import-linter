@@ -36,11 +36,13 @@ class Cycle:
             parent_nesting = self.parent.count(".")
 
             for member in self.members:
-                if member.startswith(self.parent) and member != self.parent:
-                    sibiling = ".".join(member.split(".")[: parent_nesting + 2])
-                    siblings_list.append(sibiling)
-                else:
-                    siblings_list.append(member.split(".")[0])
+                if not member.startswith(self.parent):
+                    raise AcyclicContractError(
+                        f"Member '{member}' is not a child of parent package '{self.parent}'."
+                    )
+
+                sibling = ".".join(member.split(".")[: parent_nesting + 2])
+                siblings_list.append(sibling)
 
             siblings_unique: list[str] = [siblings_list[0]]
 
@@ -69,26 +71,21 @@ class AcyclicContract(Contract):
     - imported: "a.b.e.f.z"
     - package dependency: ("a.b.c", "a.b.e")
 
-    Example output when the contract is broken:
-
-    Package 'django' contains a module dependencies cycle:
-
-        1. 'apps' depends on 'utils':
-            - 'django.apps' -> 'django.apps.config' (l.1)
-            - 'django.apps.config' -> 'django.utils.module_loading' (l.7)
-
-        2. 'utils' depends on 'apps':
-            - 'django.utils.module_loading' -> 'django.apps' (l.48)
-
-    Configuration options (all options are optional):
+    Configuration options:
+        - packages: a list of packages to consider in the search for cycles. For each package,
+            all its subpackages and modules will be considered in the search for cycles.
+            If a package is a subpackage of another provided package, it will be ignored with a warning.
+            E.g. if 'a.b' and 'a.b.c' are provided, 'a.b.c' will be ignored.
+        - ignore_packages: a set of packages to ignore in the search for cycles.
+            If a package is included in both "packages" and "ignore_packages", it will be ignored.
+            Default is an empty set.
         - consider_package_dependencies:  Whether to consider cyclic dependencies between packages.
             "True" or "true" will be treated as True.
+            Default is True.
         - max_cycles: limit a search for cycles.
             Default is 0 (no limit).
-        - include_parents: a list of parent modules to include in the search for cycles. If the list
-            is not empty, all packages that are not in the list will be excluded from the search.
-            If not provided, all packages will be considered.
-        ########## Example usage of include_parents ##########
+
+        ########## Example ##########
 
         Config:
 
@@ -99,10 +96,9 @@ class AcyclicContract(Contract):
         [importlinter:contract:1]
         name=Acyclic
         type=acyclic
-        consider_package_dependencies=true
-        max_cycles=1
-        include_parents=
+        packages=
             django.contrib
+        max_cycles=1
 
         Output:
 
@@ -123,10 +119,7 @@ class AcyclicContract(Contract):
             - django.contrib.auth -> django.contrib.auth.admin (django.contrib.auth package dependency)  # noqa E501
             - django.contrib.auth.admin -> django.contrib.admin (l. 2)
 
-        ########## End of include_parents example usage ##########
-        - exclude_parents: a list of parent modules to exclude from the search for cycles.
-            If a parent module is provided in both 'include_parents' and 'exclude_parents',
-            it will be excluded from the search for cycles.
+        ########## End of example ##########
 
     """
 
@@ -134,8 +127,8 @@ class AcyclicContract(Contract):
 
     consider_package_dependencies = fields.BooleanField(required=False, default=True)
     max_cycles = fields.IntegerField(required=False, default=0)
-    include_parents = fields.ListField(subfield=fields.StringField(), required=False, default=[])
-    exclude_parents = fields.ListField(subfield=fields.StringField(), required=False, default=[])
+    packages = fields.SetField(subfield=fields.StringField(), required=True)
+    ignore_packages = fields.ListField(subfield=fields.StringField(), required=False, default=[])
 
     _CYCLE_FAMILIES_METADATA_KEY = "cycle_families"
     _IMPORT_GRAPH_METADATA_KEY = "import_graph"
@@ -149,8 +142,8 @@ class AcyclicContract(Contract):
                 "CONFIG:\n",
                 f"Consider package dependencies: {self._consider_package_dependencies}",
                 f"Max cycles: {self._max_cycles}",
-                f"Include parents: {self._include_parents}",
-                f"Exclude parents: {self._exclude_parents}",
+                f"Packages: {self._packages}",
+                f"Ignore packages: {self._ignore_packages}",
             ]
             output.print_heading(text="\n".join(configuration_heading_msg), level=2)
 
@@ -183,10 +176,27 @@ class AcyclicContract(Contract):
                 package_to_origin_dependency=package_to_origin_dependency,
             )
 
-            if self._include_parents is not None and cycle.parent not in self._include_parents:
+            if not any(cycle.parent.startswith(package) for package in self._packages):
+                if verbose:
+                    output.print_warning(
+                        text=(
+                            f"Skipping cycle in parent '{cycle.parent}' as it is not in any of "
+                            f"the packages {self._packages}."
+                        )
+                    )
+
                 continue
 
-            if self._exclude_parents is not None and cycle.parent in self._exclude_parents:
+            if self._ignore_packages is not None and any(
+                cycle.parent.startswith(package) for package in self._ignore_packages
+            ):
+                if verbose:
+                    output.print_warning(
+                        text=(
+                            f"Skipping cycle in parent '{cycle.parent}' as it is in "
+                            f"the ignored packages {self._ignore_packages}."
+                        )
+                    )
                 continue
 
             unique_member_string = str(cycle.members)
@@ -203,7 +213,10 @@ class AcyclicContract(Contract):
                 continue
 
             if verbose:
-                warning_msg = f"Found cycle:\n{' -> '.join(cycle.members)}"
+                warning_msg = (
+                    f"Found cycle in a package {cycle.parent}, siblings: {cycle.siblings}, "
+                    f"members:\n{' -> '.join(cycle.members)}"
+                )
                 output.print_warning(text=warning_msg)
 
             if self._max_cycles is not None and len(cycles) == self._max_cycles:
@@ -227,9 +240,7 @@ class AcyclicContract(Contract):
         import_graph = AcyclicContract._get_graph_from_metadata(check=check)
 
         for cycle in cycles:
-            output.print_error(
-                text=f"\nPackage {cycle.parent} contains a dependency cycle:"
-            )
+            output.print_error(text=f"\nPackage {cycle.parent} contains a dependency cycle:")
             index_sibling = 0
             sibling = cycle.siblings[index_sibling]
             dependent_sibling = cycle.siblings[index_sibling + 1]
@@ -242,7 +253,11 @@ class AcyclicContract(Contract):
             )
 
             for index_importer, importer in enumerate(cycle.members[:-1]):
-                if not importer.startswith(sibling):
+                imported = cycle.members[index_importer + 1]
+                has_importer_different_sibling = not importer.startswith(sibling)
+                is_importing_from_ancestor = importer.startswith(imported)
+
+                if has_importer_different_sibling or is_importing_from_ancestor:
                     index_sibling += 1
 
                     if index_sibling + 1 < len(cycle.siblings):
@@ -256,7 +271,6 @@ class AcyclicContract(Contract):
                             )
                         )
 
-                imported = cycle.members[index_importer + 1]
                 import_details = import_graph.get_import_details(
                     importer=importer, imported=imported
                 )
@@ -269,13 +283,15 @@ class AcyclicContract(Contract):
                     )
 
                 if line_number is None:
-                    dependency_sibling = sibling if imported.startswith(sibling) else dependent_sibling
+                    dependency_sibling = (
+                        sibling if imported.startswith(sibling) else dependent_sibling
+                    )
                     line_info = f"{dependency_sibling} package dependency"
                 else:
                     line_info = f"l. {line_number}"
 
                 output.print_error(text=f"      - {importer} -> {imported} ({line_info})")
-        
+
         output.print_error(text="\n")
 
     def _get_graph_including_package_dependencies(
@@ -392,18 +408,58 @@ class AcyclicContract(Contract):
         return None if value_int < 1 else value_int
 
     @property
-    def _include_parents(self) -> Optional[list[str]]:
-        if not self.include_parents:
-            return None
+    def _packages(self) -> set[str]:
+        if not hasattr(self, "_unique_packages"):
+            self._unique_packages: set[str] = set()
+            all_packages: list[str] = sorted(
+                {module for module in self.packages if module}, key=len  # type: ignore
+            )
 
-        return [module for module in self.include_parents if module]  # type: ignore
+            for package in all_packages:
+                is_unique = True
+
+                for existing in self._unique_packages:
+                    if package.startswith(existing):
+                        output.print_warning(
+                            text=f"Skipping redundant package '{package}' "
+                            f"as it is a subpackage of already provided '{existing}'."
+                        )
+                        is_unique = False
+                        break
+
+                if not is_unique:
+                    continue
+
+                self._unique_packages.add(package)
+
+        return self._unique_packages
 
     @property
-    def _exclude_parents(self) -> Optional[list[str]]:
-        if not self.exclude_parents:
-            return None
+    def _ignore_packages(self) -> Optional[set[str]]:
+        if not hasattr(self, "_unique_ignore_packages"):
+            self._unique_ignore_packages: set[str] = set()
+            all_ignore_packages: list[str] = sorted(
+                {module for module in self.ignore_packages if module}, key=len  # type: ignore
+            )
 
-        return [module for module in self.exclude_parents if module]  # type: ignore
+            for package in all_ignore_packages:
+                is_unique = True
+
+                for existing in self._unique_ignore_packages:
+                    if package.startswith(existing):
+                        output.print_warning(
+                            text=f"Skipping redundant ignore package '{package}' "
+                            f"as it is a subpackage of already provided '{existing}'."
+                        )
+                        is_unique = False
+                        break
+
+                if not is_unique:
+                    continue
+
+                self._unique_ignore_packages.add(package)
+
+        return self._unique_ignore_packages if self._unique_ignore_packages else None
 
     @staticmethod
     def _set_cycles_in_metadata(check: ContractCheck, cycles: list[Cycle]) -> None:
@@ -445,7 +501,7 @@ def _get_relative_module(module: str, parent: str) -> str:
         return module
 
     if module == parent:
-        return ""
+        return "__init__"
 
     if module.startswith(f"{parent}."):
         return module.removeprefix(f"{parent}.")
@@ -467,7 +523,12 @@ def _longest_common_package(modules: tuple[str, ...]) -> Optional[str]:
                 else:
                     return longest_common_package
 
-    return None
+    sorted_modules = sorted(modules, key=len)
+    return (
+        sorted_modules[0]
+        if all(module.startswith(sorted_modules[0]) for module in modules)
+        else None
+    )
 
 
 def _get_package_dependency(importer: str, imported: str) -> Optional[tuple[str, str]]:

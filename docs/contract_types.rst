@@ -348,23 +348,24 @@ plus the first uncommon part of accordingly, the importer and the imported modul
     [importlinter:contract:1]
     name=Acyclic
     type=acyclic
-    consider_package_dependencies=true
-    max_cycles=1
-    include_parents=
+    packages=
         django.contrib
+    max_cycles=1
 
-**Configuration options (all options are optional)**
-
+**Configuration options**
+    
+    - ``packages``: a list of packages to consider in the search for cycles. For each package,
+            all its subpackages and modules will be considered in the search for cycles.
+            If a package is a subpackage of another provided package, it will be ignored with a warning.
+            E.g. if 'a.b' and 'a.b.c' are provided, 'a.b.c' will be ignored.
+    - ``ignore_packages``: a set of packages to ignore in the search for cycles. 
+        If a package is included in both "packages" and "ignore_packages", it will be ignored.
+        Default is an empty set.
     - ``consider_package_dependencies``:  Whether to consider cyclic dependencies between packages.
         "True" or "true" will be treated as True.
+        Default is True.
     - ``max_cycles``: limit a search for cycles.
         Default is 0 (no limit).
-    - ``include_parents``: a list of parent modules to include in the search for cycles. If the list
-        is not empty, all packages that are not in the list will be excluded from the search.
-        If not provided, all packages will be considered.
-    - ``exclude_parents``: a list of parent modules to exclude from the search for cycles.
-        If a parent module is provided in both 'include_parents' and 'exclude_parents',
-        it will be excluded from the search for cycles.
 
 Custom contract types
 ---------------------
