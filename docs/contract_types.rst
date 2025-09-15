@@ -120,7 +120,7 @@ then no module other than ``green`` (and its descendants) will be allowed to imp
 
 **Configuration options**
 
-    - ``protected_modules``: The modules that must not be imported except by the list of importers, and by each other. Supports :ref:`wildcards`.
+    - ``protected_modules``: The modules that must not be imported except by the list of importers, and those in the same package. Supports :ref:`wildcards`.
     - ``allowed_importers``: The only modules allowed to import the target modules. Supports :ref:`wildcards`.
     - ``ignore_imports``:  See :ref:`Shared options`.
     - ``unmatched_ignore_imports_alerting``: See :ref:`Shared options`.
