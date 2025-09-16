@@ -229,6 +229,27 @@ class TestProtectedContract:
         contract_check = contract.check(graph=graph, verbose=False)
         assert contract_check.kept == contract_kept, description
 
+    def test_can_add_protected_modules_to_allowed_importers(self):
+        graph = self._build_default_graph()
+        graph.add_import(
+            importer="mypackage.other_protected.blue",
+            imported="mypackage.foo.protected.models",
+        )
+        contract = ProtectedContract(
+            name="Protected contract",
+            session_options={
+                "root_packages": ["mypackage"],
+            },
+            contract_options={
+                "protected_modules": ["mypackage.foo.protected", "mypackage.other_protected"],
+                "allowed_importers": ["mypackage.other_protected"],
+            },
+        )
+
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        assert contract_check.kept is True
+
     @pytest.mark.parametrize(
         "import_details,contract_kept,description",
         [
