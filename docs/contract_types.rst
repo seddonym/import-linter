@@ -90,20 +90,20 @@ then no module other than ``green`` (and its descendants) will be allowed to imp
     [importlinter]
     root_package = mypackage
 
-    [importlinter:contract:my-simple-protected-contract]
-    name = My simple protected contract
+    [importlinter:contract:simple-protected-contract]
+    name = Simple protected contract
     type = protected
     protected_modules =
-        mypackage.one
+        mypackage.protected
+        mypackage.also_protected
     allowed_importers =
-        mypackage.two
-        mypackage.three.blue
+        mypackage.allowed
+        mypackage.also_allowed
 
 .. code-block:: ini
 
     [importlinter]
     root_package = mypackage
-
 
     [importlinter:contract:models-can-only-be-imported-by-colors]
     name = Models can only be imported by colors direct descendant
@@ -115,12 +115,15 @@ then no module other than ``green`` (and its descendants) will be allowed to imp
     ignore_imports =
         mypackage.one.green -> mypackage.one.models
         mypackage.colors.red.foo -> mypackage.three.models
-    unmatched_ignore_imports_alerting = warn
     as_packages = False
 
 **Configuration options**
 
-    - ``protected_modules``: The modules that must not be imported except by the list of importers, and by each other. Supports :ref:`wildcards`.
+    - ``protected_modules``: The modules that must not be imported except by the list of allowed importers.
+      If ``as_packages`` is ``True``, descendants of a protected module are also allowed to import each other.
+      For example, in the *Simple protected contract* above, ``mypackage.protected.green`` is allowed to import
+      ``mypackage.protected.blue``, but ``mypackage.red`` and ``mypackage.also_protected.yellow`` are not.
+      Supports :ref:`wildcards`.
     - ``allowed_importers``: The only modules allowed to import the target modules. Supports :ref:`wildcards`.
     - ``ignore_imports``:  See :ref:`Shared options`.
     - ``unmatched_ignore_imports_alerting``: See :ref:`Shared options`.

@@ -13,8 +13,10 @@ class ProtectedContract(Contract):
     modules.
 
     Configuration options:
-        - protected_modules:    The modules that must not be imported except by allowed_importers,
-                                and by each other.
+        - protected_modules:    The modules that must not be imported except by allowed_importers.
+                                The modules that must not be imported except by the list of allowed
+                                importers. If `as_packages` is True, descendants of a protected
+                                module are also allowed to import each other.
         - allowed_importers:    The only modules allowed to import the protected modules.
         - ignore_imports:       A set of ImportExpressions. These imports will be ignored if the
                                 import would cause a contract to be broken, adding it to the set
