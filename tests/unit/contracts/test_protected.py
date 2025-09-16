@@ -24,6 +24,8 @@ class TestProtectedContract:
             "mypackage.foo.protected.models.one",
             "mypackage.foo.protected.models.two",
             "mypackage.foo.protected.other_models",
+            "mypackage.other_protected",
+            "mypackage.other_protected.blue",
             "mypackage.foo.sibling",
             "mypackage.foo.sibling.models",
         ):
@@ -140,7 +142,7 @@ class TestProtectedContract:
                     "line_contents": "print",
                 },
                 True,
-                "Modules inside protected package can import each others",
+                "Modules inside protected package can import each other",
             ),
             (
                 {
@@ -160,7 +162,17 @@ class TestProtectedContract:
                     "line_contents": "print",
                 },
                 False,
-                "Other modules are not allowed to protected ones",
+                "Modules not mentioned in the contract are not allowed to import protected ones",
+            ),
+            (
+                {
+                    "importer": "mypackage.other_protected.blue",
+                    "imported": "mypackage.foo.protected.models",
+                    "line_number": 3,
+                    "line_contents": "print",
+                },
+                False,
+                "Other protected modules are not allowed to import protected ones",
             ),
             (
                 {
@@ -208,8 +220,8 @@ class TestProtectedContract:
                 "root_packages": ["mypackage"],
             },
             contract_options={
-                "protected_modules": ("mypackage.foo.protected"),
-                "allowed_importers": ("mypackage.bar.allowed"),
+                "protected_modules": ["mypackage.foo.protected", "mypackage.other_protected"],
+                "allowed_importers": ["mypackage.bar.allowed"],
                 "as_packages": "True",
             },
         )
