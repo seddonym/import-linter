@@ -8,7 +8,9 @@ without warning.
 
 from __future__ import annotations
 
+import importlib.util
 import itertools
+from pathlib import Path
 from typing import List, Optional, Sequence, Tuple, Union
 
 import grimp
@@ -164,6 +166,9 @@ def _format_importer(
     if format == "default":
         return f"{importer} -> {imported} ({line_numbers})"
     if format == "filenames":
+        spec = importlib.util.find_spec(importer)
+        if spec is not None:
+            importer = str(Path(spec.origin).relative_to(Path().resolve()))
         return f"{importer}:{line_numbers} -> {imported}"
     raise ValueError(f"Unknown format: {format}")
 
