@@ -149,6 +149,19 @@ def format_line_numbers(line_numbers: Sequence[Optional[int]]) -> str:
     )
 
 
+def _format_importer(
+    format: str,
+    importer: str,
+    imported: str,
+    line_numbers: str,
+) -> str:
+    if format == "default":
+        return f"{importer} -> {imported} ({line_numbers})"
+    if format == "filenames":
+        return f"{importer.upper()} -> {imported} ({line_numbers})"
+    raise ValueError(f"Unknown format: {format}")
+
+
 def _render_direct_import(
     direct_import,
     format: str,
@@ -168,14 +181,18 @@ def _render_direct_import(
         importer = importer.upper() if format == "filenames" else importer
 
         line_numbers = format_line_numbers(extra_firsts[-1]["line_numbers"])
-        import_strings.append(f"& {importer} -> {imported} ({line_numbers})")
+        import_strings.append(
+            "& " + _format_importer(format, importer, imported, line_numbers)
+        )
     else:
         importer, imported = direct_import["importer"], direct_import["imported"]
 
         importer = importer.upper() if format == "filenames" else importer
 
         line_numbers = format_line_numbers(direct_import["line_numbers"])
-        import_strings.append(f"{importer} -> {imported} ({line_numbers})")
+        import_strings.append(
+            _format_importer(format, importer, imported, line_numbers)
+        )
 
     if extra_lasts:
         indent_string = (len(direct_import["importer"]) + 4) * " "
