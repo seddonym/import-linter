@@ -62,6 +62,11 @@ To set up `import-linter` for local development:
 
     tox
 
+   Or if you're a `uv <https://docs.astral.sh/uv/>` user and want to just run against eg. Python 3.12::
+
+    uv tool install tox --with tox-uv
+    uv tool run tox -e py312
+
 5. Commit your changes and push your branch to GitHub::
 
     git add .
