@@ -137,16 +137,22 @@ def _pop_shortest_chains(graph: ImportGraph, importer: str, imported: str):
             yield chain
 
 
-def format_line_numbers(line_numbers: Sequence[Optional[int]]) -> str:
+def format_line_numbers(format: str, line_numbers: Sequence[Optional[int]]) -> str:
     """
     Return a human-readable string of the supplied line numbers.
 
     Unknown line numbers should be provided as a None value in the sequence. E.g.
     (None,) will be returned as "l.?".
     """
-    return ", ".join(
-        "l.?" if line_number is None else f"l.{line_number}" for line_number in line_numbers
-    )
+    if format == "default":
+        return ", ".join(
+            "l.?" if line_number is None else f"l.{line_number}" for line_number in line_numbers
+        )
+    if format == "filenames":
+        return ", ".join(
+            "l.?" if line_number is None else f"l.{line_number}" for line_number in line_numbers
+        )
+    raise ValueError(f"Unknown format: {format}")
 
 
 def _format_importer(
@@ -174,13 +180,13 @@ def _render_direct_import(
         for position, source in enumerate([direct_import] + extra_firsts[:-1]):
             prefix = "& " if position > 0 else ""
             importer = source["importer"]
-            line_numbers = format_line_numbers(source["line_numbers"])
+            line_numbers = format_line_numbers(format, source["line_numbers"])
             import_strings.append(f"{prefix}{importer} ({line_numbers})")
         importer, imported = extra_firsts[-1]["importer"], extra_firsts[-1]["imported"]
 
         importer = importer.upper() if format == "filenames" else importer
 
-        line_numbers = format_line_numbers(extra_firsts[-1]["line_numbers"])
+        line_numbers = format_line_numbers(format, extra_firsts[-1]["line_numbers"])
         import_strings.append(
             "& " + _format_importer(format, importer, imported, line_numbers)
         )
@@ -189,7 +195,7 @@ def _render_direct_import(
 
         importer = importer.upper() if format == "filenames" else importer
 
-        line_numbers = format_line_numbers(direct_import["line_numbers"])
+        line_numbers = format_line_numbers(format, direct_import["line_numbers"])
         import_strings.append(
             _format_importer(format, importer, imported, line_numbers)
         )
@@ -198,7 +204,7 @@ def _render_direct_import(
         indent_string = (len(direct_import["importer"]) + 4) * " "
         for destination in extra_lasts:
             imported = destination["imported"]
-            line_numbers = format_line_numbers(destination["line_numbers"])
+            line_numbers = format_line_numbers(format, destination["line_numbers"])
             import_strings.append(f"{indent_string}& {imported} ({line_numbers})")
 
     for position, import_string in enumerate(import_strings):
