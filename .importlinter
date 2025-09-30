@@ -21,4 +21,4 @@ exhaustive = true
 name=Acyclic
 type=acyclic
 packages:
-    importlinter
+    __root__

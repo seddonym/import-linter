@@ -35,7 +35,7 @@ class Cycle:
             parent_nesting = self.parent.count(".")
 
             for member in self.members:
-                if not member.startswith(self.parent):
+                if not _is_child(module=member, parent=self.parent):
                     raise AcyclicContractError(
                         f"Member '{member}' is not a child of parent package '{self.parent}'."
                     )
@@ -135,6 +135,23 @@ class AcyclicContract(Contract):
         """
         Check the import graph for cyclic dependencies.
         """
+        for package in self._packages:
+            if package == _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS:
+                continue
+
+            if not graph.find_matching_modules(expression=package):
+                msg = f"Package '{package}' does not exist in the import graph."
+                raise AcyclicContractError(msg)
+
+        for ignore_package in (self._ignore_packages or set()):
+            if not graph.find_matching_modules(expression=ignore_package):
+                msg = f"Ignore package '{ignore_package}' does not exist in the import graph."
+                raise AcyclicContractError(msg)
+
+        if self._ignore_packages and _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS in self._ignore_packages:
+            msg = f"Ignore package '{_PARENT_PACKAGE_FOR_MULTIPLE_ROOTS}' cannot be used."
+            raise AcyclicContractError(msg)
+
         if verbose:
             configuration_heading_msg = [
                 "CONFIG:\n",
@@ -148,6 +165,9 @@ class AcyclicContract(Contract):
         contract_metadata: dict[str, Any] = {}
         cycles: list[Cycle] = []
         unique_member_strings: set[str] = set()
+        is_root_included = any(
+            package == _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS for package in self._packages
+        )
 
         for importer_module in sorted(graph.modules):
             cycle_members = graph.find_shortest_cycle(
@@ -163,7 +183,9 @@ class AcyclicContract(Contract):
                 import_graph=graph
             )
 
-            if not any(cycle.parent.startswith(package) for package in self._packages):
+            if not is_root_included and not any(
+                _is_child(module=cycle.parent, parent=package) for package in self._packages
+            ):
                 if verbose:
                     output.print_warning(
                         text=(
@@ -175,7 +197,7 @@ class AcyclicContract(Contract):
                 continue
 
             if self._ignore_packages is not None and any(
-                cycle.parent.startswith(package) for package in self._ignore_packages
+                _is_child(module=cycle.parent, parent=package) for package in self._ignore_packages
             ):
                 if verbose:
                     output.print_warning(
@@ -283,8 +305,8 @@ class AcyclicContract(Contract):
                 importer = cycle.members[index_importer]
                 imported = cycle.members[index_importer + 1]
                 is_new_subsection = (
-                    importer.startswith(dependent_sibling) and
-                    not imported.startswith(dependent_sibling)
+                    _is_child(module=importer, parent=dependent_sibling) and
+                    not _is_child(module=imported, parent=dependent_sibling)
                 )
 
                 if is_new_subsection:
@@ -295,7 +317,8 @@ class AcyclicContract(Contract):
                     # if we consider package dependencies,
                     # we only include imports between the two siblings in the section
                     is_import_between_siblings = (
-                        importer.startswith(sibling) and imported.startswith(dependent_sibling)
+                        _is_child(module=importer, parent=sibling) and
+                        _is_child(module=imported, parent=dependent_sibling)
                     )
 
                     if is_import_between_siblings:
@@ -374,22 +397,32 @@ class AcyclicContract(Contract):
                 {module for module in self.packages if module}, key=len  # type: ignore
             )
 
-            for package in all_packages:
-                is_unique = True
+            if _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS in all_packages and len(all_packages) > 1:
+                output.print_warning(
+                    text=(
+                        f"Package '{_PARENT_PACKAGE_FOR_MULTIPLE_ROOTS}' is provided together "
+                        "with other packages. It will be the only considered package."
+                    )
+                )
+                self._unique_packages = {_PARENT_PACKAGE_FOR_MULTIPLE_ROOTS}
 
-                for existing in self._unique_packages:
-                    if package.startswith(existing):
-                        output.print_warning(
-                            text=f"Skipping redundant package '{package}' "
-                            f"as it is a subpackage of already provided '{existing}'."
-                        )
-                        is_unique = False
-                        break
+            else:
+                for package in all_packages:
+                    is_unique = True
 
-                if not is_unique:
-                    continue
+                    for existing in self._unique_packages:
+                        if _is_child(module=package, parent=existing):
+                            output.print_warning(
+                                text=f"Skipping redundant package '{package}' "
+                                f"as it is a child of already provided '{existing}'."
+                            )
+                            is_unique = False
+                            break
 
-                self._unique_packages.add(package)
+                    if not is_unique:
+                        continue
+
+                    self._unique_packages.add(package)
 
         return self._unique_packages
 
@@ -405,10 +438,10 @@ class AcyclicContract(Contract):
                 is_unique = True
 
                 for existing in self._unique_ignore_packages:
-                    if package.startswith(existing):
+                    if _is_child(module=package, parent=existing):
                         output.print_warning(
                             text=f"Skipping redundant ignore package '{package}' "
-                            f"as it is a subpackage of already provided '{existing}'."
+                            f"as it is a child of already provided '{existing}'."
                         )
                         is_unique = False
                         break
@@ -455,6 +488,13 @@ def _get_reordered_cycle_members(cycle_members: list[str]) -> tuple[str, ...]:
     return tuple(unique_members)
 
 
+def _is_child(module: str, parent: str) -> bool:
+    if parent == _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS:
+        return True
+
+    return module == parent or module.startswith(f"{parent}.")
+
+
 def _get_relative_module(module: str, parent: str) -> str:
     if parent == _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS:
         return module
@@ -485,6 +525,6 @@ def _longest_common_package(modules: tuple[str, ...]) -> Optional[str]:
     sorted_modules = sorted(modules, key=len)
     return (
         sorted_modules[0]
-        if all(module.startswith(sorted_modules[0]) for module in modules)
+        if all(_is_child(module=module, parent=sorted_modules[0]) for module in modules)
         else None
     )
