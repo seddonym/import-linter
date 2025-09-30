@@ -83,7 +83,7 @@ class IndependenceContract(Contract):
             output.new_line()
 
             for chain_data in chains_data["chains"]:
-                render_chain_data(chain_data)
+                render_chain_data(chain_data, self.session_options.get("format", "default"))
                 output.new_line()
 
             output.new_line()

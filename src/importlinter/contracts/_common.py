@@ -35,15 +35,15 @@ class DetailedChain(TypedDict):
     extra_lasts: List[Link]
 
 
-def render_chain_data(chain_data: DetailedChain) -> None:
+def render_chain_data(chain_data: DetailedChain, format: str) -> None:
     main_chain = chain_data["chain"]
-    _render_direct_import(main_chain[0], extra_firsts=chain_data["extra_firsts"], first_line=True)
+    _render_direct_import(main_chain[0], format, extra_firsts=chain_data["extra_firsts"], first_line=True)
 
     for direct_import in main_chain[1:-1]:
-        _render_direct_import(direct_import)
+        _render_direct_import(direct_import, format)
 
     if len(main_chain) > 1:
-        _render_direct_import(main_chain[-1], extra_lasts=chain_data["extra_lasts"])
+        _render_direct_import(main_chain[-1], format, extra_lasts=chain_data["extra_lasts"])
 
 
 def find_segments(
@@ -151,6 +151,7 @@ def format_line_numbers(line_numbers: Sequence[Optional[int]]) -> str:
 
 def _render_direct_import(
     direct_import,
+    format: str,
     first_line: bool = False,
     extra_firsts: Optional[List] = None,
     extra_lasts: Optional[List] = None,
@@ -163,10 +164,16 @@ def _render_direct_import(
             line_numbers = format_line_numbers(source["line_numbers"])
             import_strings.append(f"{prefix}{importer} ({line_numbers})")
         importer, imported = extra_firsts[-1]["importer"], extra_firsts[-1]["imported"]
+
+        importer = importer.upper() if format == "filenames" else importer
+
         line_numbers = format_line_numbers(extra_firsts[-1]["line_numbers"])
         import_strings.append(f"& {importer} -> {imported} ({line_numbers})")
     else:
         importer, imported = direct_import["importer"], direct_import["imported"]
+
+        importer = importer.upper() if format == "filenames" else importer
+
         line_numbers = format_line_numbers(direct_import["line_numbers"])
         import_strings.append(f"{importer} -> {imported} ({line_numbers})")
 
