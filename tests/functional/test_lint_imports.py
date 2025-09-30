@@ -102,3 +102,13 @@ def test_logging_configuration_respects_verbose_flag(verbose, capsys):
 
     # N.B. "Wrote data cache file" is logged by Grimp.
     assert ("Wrote data cache file" in captured.out) == verbose
+
+
+def test_stdout(capsys):
+    os.chdir(testpackage_directory)
+
+    cli.lint_imports(config_filename=".brokencontractlayers.ini")
+
+    captured = capsys.readouterr()
+
+    assert "- testpackage/high/blue/one.py:3 -> testpackage.utils" in captured.out
