@@ -111,4 +111,4 @@ def test_stdout(capsys):
 
     captured = capsys.readouterr()
 
-    assert "- TESTPACKAGE.HIGH.BLUE.ONE -> testpackage.utils (l.3)" in captured.out
+    assert "- testpackage.high.blue.one:3 -> testpackage.utils" in captured.out

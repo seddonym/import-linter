@@ -150,7 +150,7 @@ def format_line_numbers(format: str, line_numbers: Sequence[Optional[int]]) -> s
         )
     if format == "filenames":
         return ", ".join(
-            "l.?" if line_number is None else f"l.{line_number}" for line_number in line_numbers
+            "?" if line_number is None else f"{line_number}" for line_number in line_numbers
         )
     raise ValueError(f"Unknown format: {format}")
 
@@ -164,7 +164,7 @@ def _format_importer(
     if format == "default":
         return f"{importer} -> {imported} ({line_numbers})"
     if format == "filenames":
-        return f"{importer.upper()} -> {imported} ({line_numbers})"
+        return f"{importer}:{line_numbers} -> {imported}"
     raise ValueError(f"Unknown format: {format}")
 
 
@@ -183,18 +183,12 @@ def _render_direct_import(
             line_numbers = format_line_numbers(format, source["line_numbers"])
             import_strings.append(f"{prefix}{importer} ({line_numbers})")
         importer, imported = extra_firsts[-1]["importer"], extra_firsts[-1]["imported"]
-
-        importer = importer.upper() if format == "filenames" else importer
-
         line_numbers = format_line_numbers(format, extra_firsts[-1]["line_numbers"])
         import_strings.append(
             "& " + _format_importer(format, importer, imported, line_numbers)
         )
     else:
         importer, imported = direct_import["importer"], direct_import["imported"]
-
-        importer = importer.upper() if format == "filenames" else importer
-
         line_numbers = format_line_numbers(format, direct_import["line_numbers"])
         import_strings.append(
             _format_importer(format, importer, imported, line_numbers)
