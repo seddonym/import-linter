@@ -2,8 +2,7 @@
 Contributing
 ============
 
-Contributions are welcome, and they are greatly appreciated! Every
-little bit helps, and credit will always be given.
+We welcome contributions to Import Linter.
 
 Bug reports
 ===========
@@ -22,8 +21,8 @@ The best way to send feedback is to file an issue at https://github.com/seddonym
 If you are proposing a feature:
 
 * Explain in detail how it would work.
-* Keep the scope as narrow as possible, to make it easier to implement.
-* Remember that this is a volunteer-driven project, and that code contributions are welcome :)
+* Keep the scope as narrow as possible.
+* Remember that this is a volunteer-driven project.
 
 Submitting pull requests
 ========================
@@ -36,7 +35,7 @@ This doesn't apply to trivial pull requests such as spelling corrections.
 
 For merging, you should:
 
-1. Include passing tests (run ``tox``).
+1. Include passing tests (run ``just test-all``).
 2. Update documentation when there's new API, functionality etc.
 3. Add a note to ``CHANGELOG.rst`` about the changes.
 4. Add yourself to ``AUTHORS.rst``.
@@ -44,7 +43,19 @@ For merging, you should:
 Development
 ===========
 
-To set up `import-linter` for local development:
+System prerequisites
+--------------------
+
+Make sure these are installed first.
+
+- `git <https://github.com/git-guides/install-git>`_
+- `uv <https://docs.astral.sh/uv/#installation>`_
+- `just <https://just.systems/man/en/packages.html>`_
+
+Setup
+-----
+
+You don't need to activate or manage a virtual environment - this is taken care in the background of by ``uv``.
 
 1. Fork `import-linter <https://github.com/seddonym/import-linter>`_
    (look for the "Fork" button).
@@ -52,23 +63,61 @@ To set up `import-linter` for local development:
 
     git clone git@github.com:your_name_here/import-linter.git
 
-3. Create a branch for local development::
+3. Change into the directory you just cloned::
 
-    git checkout -b name-of-your-bugfix-or-feature
+    cd import-linter
 
-   Now you can make your changes locally.
+4. Set up pre-commit. (Optional, but recommended.)::
 
-4. When you're done making changes, run all the checks with `tox <https://tox.wiki/en/latest/installation.html>`_ one command::
+    just install-precommit
 
-    tox
 
-5. Commit your changes and push your branch to GitHub::
+You will now be able to run commands prefixed with ``just``, providing you're in the Import Linter directory.
+To see available commands, run ``just``.
 
-    git add .
-    git commit -m "Your detailed description of your changes."
-    git push origin name-of-your-bugfix-or-feature
+Formatting code
+---------------
 
-6. Submit a pull request through the GitHub website.
+::
+
+    just format
+
+Running linters
+---------------
+
+::
+
+    just lint
+
+Running tests
+-------------
+
+When you're developing a feature, you'll probably want to run tests quickly, using just the latest supported Python version::
+
+    just test
+
+
+There are also version-specific test commands (e.g. ``just test-3-13``) - run ``just help`` to see which ones.
+
+Finally, you can run all of the tests in parallel with ``just test-all``. This gives a more complete picture of whether
+the changes are compatible with all supported versions, but any failure output may be difficult to read.
+
+Before you push
+---------------
+
+It's a good idea to run ``just check`` before getting a review. This will run linters, docs build and tests under
+every supported Python version.
+
+Building documentation
+----------------------
+
+To build docs and open them in a browser::
+
+    just build-and-open-docs
+
+Or, if you just want to build them::
+
+    just build-docs
 
 Releasing to Pypi
 =================
