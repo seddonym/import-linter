@@ -136,7 +136,8 @@ class TestModuleField(BaseFieldTest):
         (
             "*.*.* -> mypackage.*.foo.*",
             ImportExpression(
-                importer=ModuleExpression("*.*.*"), imported=ModuleExpression("mypackage.*.foo.*")
+                importer=ModuleExpression("*.*.*"),
+                imported=ModuleExpression("mypackage.*.foo.*"),
             ),
         ),
         (
@@ -163,7 +164,8 @@ class TestModuleField(BaseFieldTest):
         (
             "** -> mypackage.**.foo.*",
             ImportExpression(
-                importer=ModuleExpression("**"), imported=ModuleExpression("mypackage.**.foo.*")
+                importer=ModuleExpression("**"),
+                imported=ModuleExpression("mypackage.**.foo.*"),
             ),
         ),
         # Invalid expressions
@@ -213,8 +215,14 @@ class TestImportExpressionField(BaseFieldTest):
 @pytest.mark.parametrize(
     "raw_data, expected_value",
     (
-        (["mypackage.foo", "mypackage.bar"], [Module("mypackage.foo"), Module("mypackage.bar")]),
-        (["mypackage.foo", "mypackage.foo"], [Module("mypackage.foo"), Module("mypackage.foo")]),
+        (
+            ["mypackage.foo", "mypackage.bar"],
+            [Module("mypackage.foo"), Module("mypackage.bar")],
+        ),
+        (
+            ["mypackage.foo", "mypackage.foo"],
+            [Module("mypackage.foo"), Module("mypackage.foo")],
+        ),
         (["mypackage.foo", "    "], [Module("mypackage.foo")]),
         ("singlevalue", [Module("singlevalue")]),
     ),
@@ -227,7 +235,10 @@ class TestListField(BaseFieldTest):
 @pytest.mark.parametrize(
     "raw_data, expected_value",
     (
-        (["mypackage.foo", "mypackage.bar"], {Module("mypackage.foo"), Module("mypackage.bar")}),
+        (
+            ["mypackage.foo", "mypackage.bar"],
+            {Module("mypackage.foo"), Module("mypackage.bar")},
+        ),
         (["mypackage.foo", "mypackage.foo"], {Module("mypackage.foo")}),
         (["mypackage.foo", "    "], {Module("mypackage.foo")}),
         ("singlevalue", {Module("singlevalue")}),
@@ -308,6 +319,7 @@ class TestEnumFieldExtras:
             BLUE = 2
 
         with pytest.raises(
-            TypeError, match="Unsupported Enum for EnumField: member values must all be strings."
+            TypeError,
+            match="Unsupported Enum for EnumField: member values must all be strings.",
         ):
             EnumField(InvalidEnum)

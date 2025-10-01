@@ -44,11 +44,17 @@ class AnotherContract(Contract):
     "contract_options, expected_errors",
     (
         (
-            {"foo": "The quick brown fox jumps over the lazy dog.", "bar": "To be, or not to be."},
+            {
+                "foo": "The quick brown fox jumps over the lazy dog.",
+                "bar": "To be, or not to be.",
+            },
             None,  # Valid.
         ),
         ({}, {"foo": "This is a required field."}),  # No data.
-        ({"foo": "something invalid"}, {"foo": '"something invalid" is not a valid value.'}),
+        (
+            {"foo": "something invalid"},
+            {"foo": '"something invalid" is not a valid value.'},
+        ),
         ({"foo": "hello", "baz": "hello"}, {"baz": "Baz must not equal foo."}),
     ),
 )

@@ -15,7 +15,6 @@ from importlinter.application.user_options import UserOptions
 
 
 class AbstractUserOptionReader(ports.UserOptionReader):
-
     potential_config_filenames: List[str]
 
     def read_options(self, config_filename: Optional[str] = None) -> Optional[UserOptions]:

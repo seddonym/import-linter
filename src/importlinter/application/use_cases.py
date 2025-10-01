@@ -177,7 +177,9 @@ def _build_report(
     verbose: bool,
 ) -> Report:
     report = Report(
-        graph=graph, show_timings=show_timings, graph_building_duration=graph_building_duration
+        graph=graph,
+        show_timings=show_timings,
+        graph_building_duration=graph_building_duration,
     )
     contracts_options = _filter_contract_options(
         user_options.contracts_options, limit_to_contracts
@@ -256,7 +258,9 @@ def _get_built_in_contract_types() -> List[Tuple[str, Type[Contract]]]:
     )
 
 
-def _get_plugin_contract_types(user_options: UserOptions) -> List[Tuple[str, Type[Contract]]]:
+def _get_plugin_contract_types(
+    user_options: UserOptions,
+) -> List[Tuple[str, Type[Contract]]]:
     contract_types = []
     if "contract_types" in user_options.session_options:
         for contract_type_string in user_options.session_options["contract_types"]:

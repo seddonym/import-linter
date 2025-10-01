@@ -3,7 +3,12 @@ from grimp.adaptors.graph import ImportGraph
 
 from importlinter.application.contract_utils import AlertLevel, remove_ignored_imports
 from importlinter.domain.helpers import MissingImport
-from importlinter.domain.imports import DirectImport, ImportExpression, Module, ModuleExpression
+from importlinter.domain.imports import (
+    DirectImport,
+    ImportExpression,
+    Module,
+    ModuleExpression,
+)
 
 
 class TestRemoveIgnoredImports:

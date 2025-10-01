@@ -28,8 +28,16 @@ sys.path.extend(
         (testpackage_directory, ".malformedcontract.ini", cli.EXIT_STATUS_ERROR),
         (testpackage_directory, ".customkeptcontract.ini", cli.EXIT_STATUS_SUCCESS),
         (testpackage_directory, ".externalbrokencontract.ini", cli.EXIT_STATUS_ERROR),
-        (multipleroots_directory, ".multiplerootskeptcontract.ini", cli.EXIT_STATUS_SUCCESS),
-        (multipleroots_directory, ".multiplerootsbrokencontract.ini", cli.EXIT_STATUS_ERROR),
+        (
+            multipleroots_directory,
+            ".multiplerootskeptcontract.ini",
+            cli.EXIT_STATUS_SUCCESS,
+        ),
+        (
+            multipleroots_directory,
+            ".multiplerootsbrokencontract.ini",
+            cli.EXIT_STATUS_ERROR,
+        ),
         (testpackage_directory, ".setup.toml", cli.EXIT_STATUS_SUCCESS),
         (testpackage_directory, ".customkeptcontract.toml", cli.EXIT_STATUS_SUCCESS),
         (testpackage_directory, ".externalkeptcontract.ini", cli.EXIT_STATUS_SUCCESS),

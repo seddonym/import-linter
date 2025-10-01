@@ -58,9 +58,7 @@ class ProtectedContract(Contract):
             )
         }
 
-        protected_modules_expressions: set[
-            imports.ModuleExpression
-        ] = self.protected_modules  # type: ignore
+        protected_modules_expressions: set[imports.ModuleExpression] = self.protected_modules  # type: ignore
 
         illegal_imports_metadata: list[BrokenContractMetadata] = []
 
@@ -68,7 +66,9 @@ class ProtectedContract(Contract):
             top_level_protected_modules = {
                 module.name
                 for module in helpers.module_expression_to_modules(
-                    graph=graph, expression=protected_module_expression, as_packages=False
+                    graph=graph,
+                    expression=protected_module_expression,
+                    as_packages=False,
                 )
             }
 
