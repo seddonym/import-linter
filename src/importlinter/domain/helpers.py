@@ -86,7 +86,9 @@ def import_expression_to_imports(
 
 
 def module_expressions_to_modules(
-    graph: ImportGraph, expressions: Iterable[ModuleExpression], as_packages: bool = False
+    graph: ImportGraph,
+    expressions: Iterable[ModuleExpression],
+    as_packages: bool = False,
 ) -> Set[Module]:
     modules = set()
     for expression in expressions:

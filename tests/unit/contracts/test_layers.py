@@ -22,7 +22,13 @@ def configure():
         ("(one)", Layer({ModuleTail(name="one", is_optional=True)})),
         (
             "one | two |    three",
-            Layer({ModuleTail(name="one"), ModuleTail(name="two"), ModuleTail(name="three")}),
+            Layer(
+                {
+                    ModuleTail(name="one"),
+                    ModuleTail(name="two"),
+                    ModuleTail(name="three"),
+                }
+            ),
         ),
         (
             "one | (two) | three",
@@ -37,7 +43,11 @@ def configure():
         (
             "one : two :    three",
             Layer(
-                {ModuleTail(name="one"), ModuleTail(name="two"), ModuleTail(name="three")},
+                {
+                    ModuleTail(name="one"),
+                    ModuleTail(name="two"),
+                    ModuleTail(name="three"),
+                },
                 is_independent=False,
             ),
         ),
@@ -127,7 +137,10 @@ class TestLayerContractSingleContainers:
         return LayersContract(
             name="Layer contract",
             session_options={"root_packages": ["mypackage"]},
-            contract_options={"containers": ["mypackage"], "layers": ["high", "medium", "low"]},
+            contract_options={
+                "containers": ["mypackage"],
+                "layers": ["high", "medium", "low"],
+            },
         )
 
 
@@ -224,11 +237,14 @@ class TestLayerMultipleContainers:
 
         assert contract_check.kept is True
 
-    def test_imports_from_low_to_high_but_in_different_container_doesnt_break_contract(self):
+    def test_imports_from_low_to_high_but_in_different_container_doesnt_break_contract(
+        self,
+    ):
         contract = self._build_contract()
         graph = self._build_graph()
         graph.add_import(
-            importer="mypackage.two.medium.green.beta", imported="mypackage.one.high.green"
+            importer="mypackage.two.medium.green.beta",
+            imported="mypackage.one.high.green",
         )
         graph.add_import(
             importer="mypackage.three.low.cyan", imported="mypackage.two.high.red.alpha"
@@ -242,7 +258,8 @@ class TestLayerMultipleContainers:
         contract = self._build_contract()
         graph = self._build_graph()
         graph.add_import(
-            importer="mypackage.two.medium.green.beta", imported="mypackage.two.high.red.alpha"
+            importer="mypackage.two.medium.green.beta",
+            imported="mypackage.two.high.red.alpha",
         )
 
         contract_check = contract.check(graph=graph, verbose=False)
@@ -253,10 +270,12 @@ class TestLayerMultipleContainers:
         contract = self._build_contract()
         graph = self._build_graph()
         graph.add_import(
-            importer="mypackage.one.medium.orange", imported="mypackage.noncontainer.blue"
+            importer="mypackage.one.medium.orange",
+            imported="mypackage.noncontainer.blue",
         )
         graph.add_import(
-            importer="mypackage.noncontainer.blue", imported="mypackage.two.high.red.alpha"
+            importer="mypackage.noncontainer.blue",
+            imported="mypackage.two.high.red.alpha",
         )
         graph.add_import(
             importer="mypackage.two.high.red.alpha", imported="mypackage.one.high.green"
@@ -310,30 +329,36 @@ class TestLayerMultipleContainers:
             importer="mypackage.one.high.green", imported="mypackage.one.medium.orange"
         )
         graph.add_import(
-            importer="mypackage.one.high.green", imported="mypackage.one.low.white.gamma"
+            importer="mypackage.one.high.green",
+            imported="mypackage.one.low.white.gamma",
         )
         graph.add_import(
             importer="mypackage.one.medium.orange", imported="mypackage.one.low.white"
         )
 
         graph.add_import(
-            importer="mypackage.two.high.red.alpha", imported="mypackage.two.medium.green.beta"
+            importer="mypackage.two.high.red.alpha",
+            imported="mypackage.two.medium.green.beta",
         )
         graph.add_import(
-            importer="mypackage.two.high.red.alpha", imported="mypackage.two.low.blue.gamma"
+            importer="mypackage.two.high.red.alpha",
+            imported="mypackage.two.low.blue.gamma",
         )
         graph.add_import(
-            importer="mypackage.two.medium.green.beta", imported="mypackage.two.low.blue.gamma"
+            importer="mypackage.two.medium.green.beta",
+            imported="mypackage.two.low.blue.gamma",
         )
 
         graph.add_import(
-            importer="mypackage.three.high.white", imported="mypackage.three.medium.purple"
+            importer="mypackage.three.high.white",
+            imported="mypackage.three.medium.purple",
         )
         graph.add_import(
             importer="mypackage.three.high.white", imported="mypackage.three.low.cyan"
         )
         graph.add_import(
-            importer="mypackage.three.medium.purple", imported="mypackage.three.low.cyan"
+            importer="mypackage.three.medium.purple",
+            imported="mypackage.three.low.cyan",
         )
 
         return graph
@@ -395,30 +420,36 @@ class TestLayerContractWildcardContainers:
             importer="mypackage.one.high.green", imported="mypackage.one.medium.orange"
         )
         graph.add_import(
-            importer="mypackage.one.high.green", imported="mypackage.one.low.white.gamma"
+            importer="mypackage.one.high.green",
+            imported="mypackage.one.low.white.gamma",
         )
         graph.add_import(
             importer="mypackage.one.medium.orange", imported="mypackage.one.low.white"
         )
 
         graph.add_import(
-            importer="mypackage.two.high.red.alpha", imported="mypackage.two.medium.green.beta"
+            importer="mypackage.two.high.red.alpha",
+            imported="mypackage.two.medium.green.beta",
         )
         graph.add_import(
-            importer="mypackage.two.high.red.alpha", imported="mypackage.two.low.blue.gamma"
+            importer="mypackage.two.high.red.alpha",
+            imported="mypackage.two.low.blue.gamma",
         )
         graph.add_import(
-            importer="mypackage.two.medium.green.beta", imported="mypackage.two.low.blue.gamma"
+            importer="mypackage.two.medium.green.beta",
+            imported="mypackage.two.low.blue.gamma",
         )
 
         graph.add_import(
-            importer="mypackage.three.high.white", imported="mypackage.three.medium.purple"
+            importer="mypackage.three.high.white",
+            imported="mypackage.three.medium.purple",
         )
         graph.add_import(
             importer="mypackage.three.high.white", imported="mypackage.three.low.cyan"
         )
         graph.add_import(
-            importer="mypackage.three.medium.purple", imported="mypackage.three.low.cyan"
+            importer="mypackage.three.medium.purple",
+            imported="mypackage.three.low.cyan",
         )
 
         return graph
@@ -584,7 +615,11 @@ class TestLayerContractPopulatesMetadata:
         contract = self._create_contract()
 
         # Add imports with three illegal starting points, only one indirect step.
-        for starting_point in ("mypackage.low.blue", "mypackage.low.green", "mypackage.low.red"):
+        for starting_point in (
+            "mypackage.low.blue",
+            "mypackage.low.green",
+            "mypackage.low.red",
+        ):
             graph.add_import(
                 importer=starting_point,
                 imported="mypackage.utils.foo",
@@ -716,7 +751,11 @@ class TestLayerContractPopulatesMetadata:
             line_number=1,
             line_contents="-",
         )
-        for ending_point in ("mypackage.high.blue", "mypackage.high.green", "mypackage.high.red"):
+        for ending_point in (
+            "mypackage.high.blue",
+            "mypackage.high.green",
+            "mypackage.high.red",
+        ):
             graph.add_import(
                 importer="mypackage.utils.foo",
                 imported=ending_point,
@@ -1007,7 +1046,10 @@ class TestLayerContractPopulatesMetadata:
         return LayersContract(
             name="Layer contract",
             session_options={"root_packages": ["mypackage"]},
-            contract_options={"containers": ["mypackage"], "layers": ["high", "medium", "low"]},
+            contract_options={
+                "containers": ["mypackage"],
+                "layers": ["high", "medium", "low"],
+            },
         )
 
 
@@ -1305,7 +1347,10 @@ def test_render_broken_contract():
     contract = LayersContract(
         name="Layers contract",
         session_options={"root_packages": ["mypackage"]},
-        contract_options={"containers": ["mypackage"], "layers": ["high", "medium", "low"]},
+        contract_options={
+            "containers": ["mypackage"],
+            "layers": ["high", "medium", "low"],
+        },
     )
     check = ContractCheck(
         kept=False,
@@ -1460,7 +1505,11 @@ def test_render_broken_contract():
                     ],
                 },
             ],
-            "undeclared_modules": {"mypackage.purple", "mypackage.green", "mypackage.brown"},
+            "undeclared_modules": {
+                "mypackage.purple",
+                "mypackage.green",
+                "mypackage.brown",
+            },
         },
     )
 
@@ -1563,7 +1612,10 @@ def test_invalid_container_multiple_packages():
     contract = LayersContract(
         name="Layer contract",
         session_options={"root_packages": ["packageone", "packagetwo"]},
-        contract_options={"containers": ["notinpackages"], "layers": ["high", "medium", "low"]},
+        contract_options={
+            "containers": ["notinpackages"],
+            "layers": ["high", "medium", "low"],
+        },
     )
 
     with pytest.raises(
@@ -1598,16 +1650,21 @@ class TestLayerContractNoContainer:
 
         assert contract_check.kept is False
 
-    def test_no_illegal_imports_across_multiple_root_packages_means_contract_is_kept(self):
+    def test_no_illegal_imports_across_multiple_root_packages_means_contract_is_kept(
+        self,
+    ):
         contract = self._build_contract_without_containers(
-            root_packages=["high", "medium", "low", "utils"], layers=["high", "medium", "low"]
+            root_packages=["high", "medium", "low", "utils"],
+            layers=["high", "medium", "low"],
         )
         graph = self._build_legal_graph()
         contract_check = contract.check(graph=graph, verbose=False)
 
         assert contract_check.kept is True
 
-    def test_illegal_imports_across_multiple_root_packages_means_contract_is_broken(self):
+    def test_illegal_imports_across_multiple_root_packages_means_contract_is_broken(
+        self,
+    ):
         contract = self._build_contract_without_containers(layers=["high", "medium", "low"])
         graph = self._build_legal_graph()
         graph.add_import(importer="medium.orange", imported="high.green")
@@ -1662,7 +1719,13 @@ class TestLayersContractForNamespacePackages:
     @pytest.mark.parametrize(
         "containers, is_kept",
         [
-            (("namespace.subnamespace.portiontwo.green", "namespace.portionone.blue"), True),
+            (
+                (
+                    "namespace.subnamespace.portiontwo.green",
+                    "namespace.portionone.blue",
+                ),
+                True,
+            ),
             (
                 (
                     "namespace.subnamespace.portiontwo.green",
@@ -1714,7 +1777,10 @@ class TestLayersContractForNamespacePackages:
         contract = LayersContract(
             name="Layers contract",
             session_options={
-                "root_packages": ["namespace.portionone", "namespace.subnamespace.portiontwo"]
+                "root_packages": [
+                    "namespace.portionone",
+                    "namespace.subnamespace.portiontwo",
+                ]
             },
             contract_options={
                 "layers": ["high", "middle", "low"],
@@ -1781,7 +1847,11 @@ class TestExhaustiveContracts:
         contract = LayersContract(
             name="Layer contract",
             session_options={"root_packages": ["foo"]},
-            contract_options={"containers": ["foo"], "layers": ["red"], "exhaustive": "true"},
+            contract_options={
+                "containers": ["foo"],
+                "layers": ["red"],
+                "exhaustive": "true",
+            },
         )
 
         contract_check = contract.check(graph=graph, verbose=False)

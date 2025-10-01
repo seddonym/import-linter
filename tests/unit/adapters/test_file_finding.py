@@ -9,7 +9,10 @@ from tests.adapters.filesystem import FakeFileSystem
     "filenames, expected_result",
     (
         (["foo.txt"], ["/path/to/folder/foo.txt"]),
-        (["foo.txt", ".another"], ["/path/to/folder/foo.txt", "/path/to/folder/.another"]),
+        (
+            ["foo.txt", ".another"],
+            ["/path/to/folder/foo.txt", "/path/to/folder/.another"],
+        ),
         (["bar.txt"], []),
     ),
 )

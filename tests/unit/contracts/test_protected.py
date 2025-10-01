@@ -220,7 +220,10 @@ class TestProtectedContract:
                 "root_packages": ["mypackage"],
             },
             contract_options={
-                "protected_modules": ["mypackage.foo.protected", "mypackage.other_protected"],
+                "protected_modules": [
+                    "mypackage.foo.protected",
+                    "mypackage.other_protected",
+                ],
                 "allowed_importers": ["mypackage.bar.allowed"],
                 "as_packages": "True",
             },
@@ -241,7 +244,10 @@ class TestProtectedContract:
                 "root_packages": ["mypackage"],
             },
             contract_options={
-                "protected_modules": ["mypackage.foo.protected", "mypackage.other_protected"],
+                "protected_modules": [
+                    "mypackage.foo.protected",
+                    "mypackage.other_protected",
+                ],
                 "allowed_importers": ["mypackage.other_protected"],
             },
         )

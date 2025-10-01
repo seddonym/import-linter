@@ -1,6 +1,9 @@
 import pytest
 
-from importlinter.adapters.user_options import IniFileUserOptionReader, TomlFileUserOptionReader
+from importlinter.adapters.user_options import (
+    IniFileUserOptionReader,
+    TomlFileUserOptionReader,
+)
 from importlinter.application.app_config import settings
 from importlinter.application.user_options import UserOptions
 from tests.adapters.filesystem import FakeFileSystem
@@ -56,7 +59,12 @@ from tests.adapters.filesystem import FakeFileSystem
                         "name": "Contract One",
                         "id": "contract-one",
                         "key": "value",
-                        "multiple_values": ["one", "two", "three", "foo.one -> foo.two"],
+                        "multiple_values": [
+                            "one",
+                            "two",
+                            "three",
+                            "foo.one -> foo.two",
+                        ],
                     },
                     {"name": "Contract Two", "id": "contract-two", "baz": "3"},
                 ],
@@ -179,7 +187,12 @@ def test_respects_passed_filename(passed_filename, expected_foo_value):
                         "name": "Contract One",
                         "id": "contract-one",
                         "key": "value",
-                        "multiple_values": ["one", "two", "three", "foo.one -> foo.two"],
+                        "multiple_values": [
+                            "one",
+                            "two",
+                            "three",
+                            "foo.one -> foo.two",
+                        ],
                     },
                     {"name": "Contract Two", "baz": 3},
                 ],

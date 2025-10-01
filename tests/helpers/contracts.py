@@ -46,12 +46,14 @@ class ForbiddenImportContract(Contract):
 
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
         forbidden_import_details = graph.get_import_details(
-            importer=self.importer.name, imported=self.imported.name  # type: ignore
+            importer=self.importer.name,  # type: ignore[attr-defined]
+            imported=self.imported.name,  # type: ignore[attr-defined]
         )
         import_exists = bool(forbidden_import_details)
 
         return ContractCheck(
-            kept=not import_exists, metadata={"forbidden_import_details": forbidden_import_details}
+            kept=not import_exists,
+            metadata={"forbidden_import_details": forbidden_import_details},
         )
 
     def render_broken_contract(self, check: "ContractCheck") -> None:
@@ -93,7 +95,10 @@ class MutationCheckContract(Contract):
         number_of_modules: int = int(self.number_of_modules)  # type: ignore
         number_of_imports: int = int(self.number_of_imports)  # type: ignore
         if not all(
-            [number_of_modules == len(graph.modules), number_of_imports == graph.count_imports()]
+            [
+                number_of_modules == len(graph.modules),
+                number_of_imports == graph.count_imports(),
+            ]
         ):
             raise RuntimeError("Contract was mutated.")
 

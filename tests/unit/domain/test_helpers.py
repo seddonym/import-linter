@@ -14,7 +14,12 @@ from importlinter.domain.helpers import (
     pop_imports,
     resolve_import_expressions,
 )
-from importlinter.domain.imports import DirectImport, ImportExpression, Module, ModuleExpression
+from importlinter.domain.imports import (
+    DirectImport,
+    ImportExpression,
+    Module,
+    ModuleExpression,
+)
 
 
 class TestPopImports:
@@ -272,7 +277,8 @@ class TestImportExpressionsToImports:
         graph = self._build_graph(self.DIRECT_IMPORTS)
 
         assert sorted(
-            import_expressions_to_imports(graph, expressions), key=_direct_import_sort_key
+            import_expressions_to_imports(graph, expressions),
+            key=_direct_import_sort_key,
         ) == sorted(expected, key=_direct_import_sort_key)
 
     def test_raises_missing_import(self):
@@ -280,11 +286,15 @@ class TestImportExpressionsToImports:
         graph.add_module("mypackage")
         graph.add_module("other")
         graph.add_import(
-            importer="mypackage.b", imported="other.foo", line_number=1, line_contents="-"
+            importer="mypackage.b",
+            imported="other.foo",
+            line_number=1,
+            line_contents="-",
         )
 
         expression = ImportExpression(
-            importer=ModuleExpression("mypackage.a.*"), imported=ModuleExpression("other.foo")
+            importer=ModuleExpression("mypackage.a.*"),
+            imported=ModuleExpression("other.foo"),
         )
         with pytest.raises(MissingImport):
             import_expressions_to_imports(graph, [expression])
@@ -512,10 +522,14 @@ class TestResolveImportExpressions:
         graph.add_module("mypackage")
         graph.add_module("other")
         graph.add_import(
-            importer="mypackage.b", imported="other.foo", line_number=1, line_contents="-"
+            importer="mypackage.b",
+            imported="other.foo",
+            line_number=1,
+            line_contents="-",
         )
         expression = ImportExpression(
-            importer=ModuleExpression("mypackage.a.*"), imported=ModuleExpression("other.foo")
+            importer=ModuleExpression("mypackage.a.*"),
+            imported=ModuleExpression("other.foo"),
         )
 
         imports, unresolved_expressions = resolve_import_expressions(graph, [expression])
@@ -598,7 +612,8 @@ class TestPopImportExpressions:
 
         # Cast to direct imports to make comparison easier.
         popped_direct_imports: List[DirectImport] = sorted(
-            map(self._dict_to_direct_import, popped_imports), key=_direct_import_sort_key
+            map(self._dict_to_direct_import, popped_imports),
+            key=_direct_import_sort_key,
         )
         expected = sorted(
             [
@@ -846,15 +861,27 @@ class TestModuleExpressionToModules:
 def test_add_imports() -> None:
     graph = ImportGraph()
     import_details: List[DetailedImport] = [
-        {"importer": "a", "imported": "b", "line_number": 1, "line_contents": "lorem ipsum"},
-        {"importer": "c", "imported": "d", "line_number": 2, "line_contents": "lorem ipsum 2"},
+        {
+            "importer": "a",
+            "imported": "b",
+            "line_number": 1,
+            "line_contents": "lorem ipsum",
+        },
+        {
+            "importer": "c",
+            "imported": "d",
+            "line_number": 2,
+            "line_contents": "lorem ipsum 2",
+        },
     ]
     assert not graph.modules
     add_imports(graph, import_details)
     assert graph.modules == {"a", "b", "c", "d"}
 
 
-def _direct_import_sort_key(direct_import: DirectImport) -> Tuple[str, str, Optional[int]]:
+def _direct_import_sort_key(
+    direct_import: DirectImport,
+) -> Tuple[str, str, Optional[int]]:
     # Doesn't matter how we sort, just a way of sorting consistently for comparison.
     return (
         direct_import.importer.name,
