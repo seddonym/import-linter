@@ -9,26 +9,67 @@ on:
   workflow_dispatch:
 
 jobs:
-  tests:
-    name: tox on ${{ matrix.python-version }}
+  test:
+    name: Test under ${{ matrix.python-version }}
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13-dev"]
+        python-version:  # All Python versions supported by Import Linter.
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+
+      - name: Install just
+        uses: extractions/setup-just@v3
+
+      - name: Install uv and set the Python version
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python-version }}
-          allow-prereleases: true
-      - name: Install dependencies
-        run: |
-          python -VV
-          python -m site
-          python -m pip install --upgrade pip setuptools wheel
-          python -m pip install --upgrade coverage[toml] tox tox-gh-actions          
 
-      - name: Run tox targets for ${{ matrix.python-version }}
-        run: python -m tox
+      - name: Lint
+        run: just lint
+
+  lint:
+    name: Lint under ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.13"  # Latest Python version.
+          - "3.10"  # Lint under a version <3.11 too, due to conditional dependency on tomli.
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install just
+        uses: extractions/setup-just@v3
+
+      - name: Install uv and set the Python version
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Lint
+        run: just lint
+
+  docs:
+    name: Build docs
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install just
+        uses: extractions/setup-just@v3
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Build docs
+        run: just build-docs
