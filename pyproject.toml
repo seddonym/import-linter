@@ -1,7 +1,3 @@
-[build-system]
-requires = ["setuptools>=61.2"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "import-linter"
 version = "2.5"
@@ -35,6 +31,14 @@ classifiers = [
 ]
 dynamic = ["readme"]
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/importlinter"]
+
+
 [project.urls]
 Documentation = "https://import-linter.readthedocs.io/"
 Source-code = "https://github.com/seddonym/import-linter/"
@@ -56,8 +60,11 @@ importlinter = ["py.typed"]
 where = ["src"]
 namespaces = false
 
-[tool.black]
+[tool.ruff]
 line-length = 99
+exclude = [
+    "tests/assets"  # These are sample packages for tests to run under - we don't want ruff to mess with them.
+]
 
 [tool.isort]
 multi_line_output = 3
@@ -72,3 +79,22 @@ exclude = [
 ]
 warn_unused_ignores = true
 warn_redundant_casts = true
+
+[tool.uv.sources]
+import-linter = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "import-linter",
+    "mypy>=1.18.2",
+    "pre-commit>=4.3.0",
+    "pytest>=8.4.2",
+    "pyyaml>=6.0.3",
+    "ruff>=0.13.2",
+    "tox>=4.30.2",
+    "types-pyyaml>=6.0.12.20250915",
+]
+docs = [
+    "sphinx>=7.4.7",
+    "sphinx-rtd-theme>=3.0.2",
+]
