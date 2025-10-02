@@ -130,13 +130,13 @@ class AcyclicContract(Contract):
             if package == _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS:
                 continue
 
-            if not graph.find_matching_modules(expression=package):
-                msg = f"Package '{package}' does not exist in the import graph."
+            if not AcyclicContract._is_internal_module(graph=graph, package=package):
+                msg = f"Package '{package}' is not an internal package."
                 raise AcyclicContractError(msg)
 
         for ignore_package in (self._ignore_packages or set()):
-            if not graph.find_matching_modules(expression=ignore_package):
-                msg = f"Ignore package '{ignore_package}' does not exist in the import graph."
+            if not AcyclicContract._is_internal_module(graph=graph, package=ignore_package):
+                msg = f"Ignore package '{ignore_package}' is not an internal package."
                 raise AcyclicContractError(msg)
 
         if self._ignore_packages and _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS in self._ignore_packages:
@@ -161,6 +161,9 @@ class AcyclicContract(Contract):
         )
 
         for importer_module in sorted(graph.modules):
+            if not AcyclicContract._is_internal_module(graph=graph, package=importer_module):
+                continue
+
             cycle_members = graph.find_shortest_cycle(
                 module=importer_module,
                 as_package=self._consider_package_dependencies
@@ -283,6 +286,13 @@ class AcyclicContract(Contract):
                         output.print_error(text=f"      - {importer} -> {imported} ({line_info})")
 
         output.print_error(text="\n")
+
+    @staticmethod
+    def _is_internal_module(graph: ImportGraph, package: str) -> bool:
+        return (
+            bool(graph.find_matching_modules(expression=package)) and
+            not graph.is_module_squashed(package)
+        )
 
     def _get_cycles_summary_msg(self, cycles: list[Cycle]) -> str:
         number_of_package_lvl_cycles = len([cycle for cycle in cycles if cycle.package_lvl_cycle])
