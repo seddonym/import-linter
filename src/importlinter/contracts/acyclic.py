@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import cached_property
 from typing import Any, Optional
 from grimp import ImportGraph
 from importlinter.domain.contract import Contract, ContractCheck
@@ -6,52 +7,42 @@ from importlinter.application import output
 from importlinter.domain import fields
 
 
-@dataclass
+@dataclass(frozen=True)
 class Cycle:
     members: tuple[str, ...]
     package_lvl_cycle: bool
-    _parent: Optional[str] = None
-    _siblings: Optional[tuple[str, ...]] = None
 
-    @property
+    @cached_property
     def parent(self) -> str:
-        if self._parent is None:
+        parent = _longest_common_package(modules=self.members)
+        # If there is no common package,
+        # we assume that the cycle is formed between root packages
+        if parent is None:
+            parent = _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS
 
-            parent = _longest_common_package(modules=self.members)
-            # If there is no common package,
-            # we assume that the cycle is formed between root packages
-            if parent is None:
-                parent = _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS
+        return parent
 
-            self._parent = parent
-
-        return self._parent
-
-    @property
+    @cached_property
     def siblings(self) -> tuple[str, ...]:
-        if self._siblings is None:
+        siblings_list: list[str] = []
+        parent_nesting = self.parent.count(".")
 
-            siblings_list: list[str] = []
-            parent_nesting = self.parent.count(".")
+        for member in self.members:
+            if not _is_child(module=member, parent=self.parent):
+                raise AcyclicContractError(
+                    f"Member '{member}' is not a child of parent package '{self.parent}'."
+                )
 
-            for member in self.members:
-                if not _is_child(module=member, parent=self.parent):
-                    raise AcyclicContractError(
-                        f"Member '{member}' is not a child of parent package '{self.parent}'."
-                    )
+            sibling = ".".join(member.split(".")[: parent_nesting + 2])
+            siblings_list.append(sibling)
 
-                sibling = ".".join(member.split(".")[: parent_nesting + 2])
-                siblings_list.append(sibling)
+        siblings_unique: list[str] = [siblings_list[0]]
 
-            siblings_unique: list[str] = [siblings_list[0]]
+        for sibling in siblings_list[1:]:
+            if sibling != siblings_unique[-1]:
+                siblings_unique.append(sibling)
 
-            for sibling in siblings_list[1:]:
-                if sibling != siblings_unique[-1]:
-                    siblings_unique.append(sibling)
-
-            self._siblings = tuple(siblings_unique)
-
-        return self._siblings
+        return tuple(siblings_unique)
 
 
 class AcyclicContractError(Exception):
@@ -248,10 +239,10 @@ class AcyclicContract(Contract):
 
         import_graph = AcyclicContract._get_graph_from_metadata(check=check)
         # create sorted sections for rendering
-        all_sections_sorted: list[tuple[Cycle, list[tuple[tuple[str, str], list[tuple[str, str]]]]]] = sorted([
-            (cycle, self._get_sibling_sections(cycle=cycle))
+        all_sections_sorted: list[tuple[Cycle, list[_CycleRenderingSection]]] = sorted([
+            (cycle, _get_sibling_sections(cycle=cycle, consider_package_dependencies=self._consider_package_dependencies))
             for cycle in cycles
-        ], key=lambda item: (sum(len(section[1]) for section in item[1]), len(item[1])))
+        ], key=lambda item: (sum(len(section.imports) for section in item[1]), len(item[1])))
 
         for cycle, sibiling_cycle_sections in all_sections_sorted:
             msg = (
@@ -260,22 +251,22 @@ class AcyclicContract(Contract):
             )
             output.print_error(text=msg)
 
-            for index_sibling, ((sibling, dependent_sibling), imports) in enumerate(sibiling_cycle_sections):
+            for index_sibling, cycle_section in enumerate(sibiling_cycle_sections):
                 output.print_error(
                     text=(
                         f"\n  {index_sibling + 1}. "
-                        f"{_get_relative_module(sibling, cycle.parent)} depends on "
-                        f"{_get_relative_module(dependent_sibling, cycle.parent)}:\n"
+                        f"{_get_relative_module(cycle_section.sibling_from, cycle.parent)} depends on "
+                        f"{_get_relative_module(cycle_section.sibling_to, cycle.parent)}:\n"
                     )
                 )
 
-                if not imports:
+                if not cycle_section.imports:
                     raise AcyclicContractError(
                         "No imports found between siblings in a cycle. This should not happen."
-                        f" Sibling: {sibling}, dependent sibling: {dependent_sibling}."
+                        f" Sibling: {cycle_section.sibling_from}, dependent sibling: {cycle_section.sibling_to}."
                     )
 
-                for importer, imported in imports:
+                for importer, imported in cycle_section.imports:
                     import_details = import_graph.get_import_details(
                         importer=importer, imported=imported
                     )
@@ -292,43 +283,6 @@ class AcyclicContract(Contract):
                         output.print_error(text=f"      - {importer} -> {imported} ({line_info})")
 
         output.print_error(text="\n")
-
-    def _get_sibling_sections(self, cycle: Cycle) -> list[tuple[tuple[str, str], list[tuple[str, str]]]]:
-        sibiling_sections: list[tuple[tuple[str, str], list[tuple[str, str]]]] = []
-        last_member = 0
-
-        for index_sibling, sibling in enumerate(cycle.siblings[:-1]):
-            dependent_sibling = cycle.siblings[index_sibling + 1]
-            imports_in_section: list[tuple[str, str]] = []
-
-            for index_importer in range(last_member, len(cycle.members) - 1):
-                importer = cycle.members[index_importer]
-                imported = cycle.members[index_importer + 1]
-                is_new_subsection = (
-                    _is_child(module=importer, parent=dependent_sibling) and
-                    not _is_child(module=imported, parent=dependent_sibling)
-                )
-
-                if is_new_subsection:
-                    last_member = index_importer
-                    break
-
-                if self._consider_package_dependencies:
-                    # if we consider package dependencies,
-                    # we only include imports between the two siblings in the section
-                    is_import_between_siblings = (
-                        _is_child(module=importer, parent=sibling) and
-                        _is_child(module=imported, parent=dependent_sibling)
-                    )
-
-                    if is_import_between_siblings:
-                        imports_in_section.append((importer, imported))
-                else:
-                    imports_in_section.append((importer, imported))
-
-            sibiling_sections.append(((sibling, dependent_sibling), imports_in_section))
-
-        return sibiling_sections
 
     def _get_cycles_summary_msg(self, cycles: list[Cycle]) -> str:
         number_of_package_lvl_cycles = len([cycle for cycle in cycles if cycle.package_lvl_cycle])
@@ -471,6 +425,57 @@ class AcyclicContract(Contract):
 
 
 _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS = "__root__"
+
+
+@dataclass(frozen=True)
+class _CycleRenderingSection:
+    sibling_from: str
+    sibling_to: str
+    imports: list[tuple[str, str]]
+
+
+def _get_sibling_sections(cycle: Cycle, consider_package_dependencies: bool) -> list[_CycleRenderingSection]:
+    sibiling_sections: list[_CycleRenderingSection] = []
+    last_member = 0
+
+    for index_sibling, sibling in enumerate(cycle.siblings[:-1]):
+        dependent_sibling = cycle.siblings[index_sibling + 1]
+        imports_in_section: list[tuple[str, str]] = []
+
+        for index_importer in range(last_member, len(cycle.members) - 1):
+            importer = cycle.members[index_importer]
+            imported = cycle.members[index_importer + 1]
+            is_new_subsection = (
+                _is_child(module=importer, parent=dependent_sibling) and
+                not _is_child(module=imported, parent=dependent_sibling)
+            )
+
+            if is_new_subsection:
+                last_member = index_importer
+                break
+
+            if consider_package_dependencies:
+                # if we consider package dependencies,
+                # we only include imports between the two siblings in the section
+                is_import_between_siblings = (
+                    _is_child(module=importer, parent=sibling) and
+                    _is_child(module=imported, parent=dependent_sibling)
+                )
+
+                if is_import_between_siblings:
+                    imports_in_section.append((importer, imported))
+            else:
+                imports_in_section.append((importer, imported))
+
+        sibiling_sections.append(
+            _CycleRenderingSection(
+                sibling_from=sibling,
+                sibling_to=dependent_sibling,
+                imports=imports_in_section
+            )
+        )
+
+    return sibiling_sections
 
 
 def _get_reordered_cycle_members(cycle_members: list[str]) -> tuple[str, ...]:
