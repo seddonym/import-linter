@@ -9,7 +9,7 @@ Import Linter
     :alt: Python versions
     :target: https://pypi.org/project/import-linter/
 
-.. image:: https://github.com/seddonym/import-linter/workflows/CI/badge.svg?branch=master
+.. image:: https://github.com/seddonym/import-linter/workflows/CI/badge.svg?branch=main
      :target: https://github.com/seddonym/import-linter/actions?workflow=CI
      :alt: CI Status
 

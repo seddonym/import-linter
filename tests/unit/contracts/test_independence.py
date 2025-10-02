@@ -4,7 +4,10 @@ import pytest
 from grimp.adaptors.graph import ImportGraph
 
 from importlinter.application.app_config import settings
-from importlinter.contracts.independence import IndependenceContract, _SubpackageChainData
+from importlinter.contracts.independence import (
+    IndependenceContract,
+    _SubpackageChainData,
+)
 from importlinter.domain.contract import ContractCheck
 from tests.adapters.printing import FakePrinter
 from tests.adapters.timing import FakeTimer
@@ -464,13 +467,22 @@ def test_ignore_imports(ignore_imports, is_kept):
     graph = ImportGraph()
     graph.add_module("mypackage")
     graph.add_import(
-        importer="mypackage.a", imported="mypackage.irrelevant", line_number=1, line_contents="-"
+        importer="mypackage.a",
+        imported="mypackage.irrelevant",
+        line_number=1,
+        line_contents="-",
     )
     graph.add_import(
-        importer="mypackage.a", imported="mypackage.indirect", line_number=1, line_contents="-"
+        importer="mypackage.a",
+        imported="mypackage.indirect",
+        line_number=1,
+        line_contents="-",
     )
     graph.add_import(
-        importer="mypackage.indirect", imported="mypackage.b", line_number=1, line_contents="-"
+        importer="mypackage.indirect",
+        imported="mypackage.b",
+        line_number=1,
+        line_contents="-",
     )
     contract = IndependenceContract(
         name="Independence contract",
@@ -490,7 +502,10 @@ def test_ignore_imports_adds_warnings():
     graph = ImportGraph()
     graph.add_module("mypackage")
     graph.add_import(
-        importer="mypackage.green", imported="mypackage.blue", line_number=1, line_contents="-"
+        importer="mypackage.green",
+        imported="mypackage.blue",
+        line_number=1,
+        line_contents="-",
     )
     contract = IndependenceContract(
         name="Independence contract",
@@ -711,9 +726,15 @@ def test_ignore_imports_tolerates_duplicates():
     "independent_modules, is_kept",
     (
         (("namespace.portionone.blue", "namespace.subnamespace.portiontwo.blue"), True),
-        (("namespace.portionone.blue", "namespace.subnamespace.portiontwo.green"), False),
         (
-            ("namespace.subnamespace.portiontwo.blue", "namespace.subnamespace.portiontwo.green"),
+            ("namespace.portionone.blue", "namespace.subnamespace.portiontwo.green"),
+            False,
+        ),
+        (
+            (
+                "namespace.subnamespace.portiontwo.blue",
+                "namespace.subnamespace.portiontwo.green",
+            ),
             False,
         ),
     ),
@@ -745,7 +766,10 @@ def test_namespace_packages(independent_modules, is_kept):
     contract = IndependenceContract(
         name="Independence contract",
         session_options={
-            "root_packages": ["namespace.portionone", "namespace.subnamespace.portiontwo"]
+            "root_packages": [
+                "namespace.portionone",
+                "namespace.subnamespace.portiontwo",
+            ]
         },
         contract_options={
             "modules": independent_modules,
@@ -757,5 +781,7 @@ def test_namespace_packages(independent_modules, is_kept):
     assert contract_check.kept == is_kept
 
 
-def _sort_invalid_chains(invalid_chains: list[_SubpackageChainData]) -> list[_SubpackageChainData]:
+def _sort_invalid_chains(
+    invalid_chains: list[_SubpackageChainData],
+) -> list[_SubpackageChainData]:
     return sorted(invalid_chains, key=lambda i: (i["upstream_module"], i["downstream_module"]))

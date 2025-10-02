@@ -96,7 +96,11 @@ def segments_to_collapsed_chains(
             )
             line_numbers = tuple(sorted(set(j["line_number"] for j in import_details_list)))
             head_imports.append(
-                {"importer": module, "imported": imported_module, "line_numbers": line_numbers}
+                {
+                    "importer": module,
+                    "imported": imported_module,
+                    "line_numbers": line_numbers,
+                }
             )
 
         tail_imports: List[Link] = []
@@ -112,7 +116,11 @@ def segments_to_collapsed_chains(
             )
             line_numbers = tuple(sorted(set(j["line_number"] for j in import_details_list)))
             tail_imports.append(
-                {"importer": importer_module, "imported": module, "line_numbers": line_numbers}
+                {
+                    "importer": importer_module,
+                    "imported": module,
+                    "line_numbers": line_numbers,
+                }
             )
 
         collapsed_chains.append(

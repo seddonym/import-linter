@@ -9,7 +9,7 @@ from ..domain.contract import Contract, InvalidContractOptions, registry
 from . import output
 from .app_config import settings
 from .ports.reporting import Report
-from .rendering import render_exception, render_report
+from .rendering import render_exception, render_report, format_duration
 from .sentinels import NotSupplied
 from .user_options import UserOptions
 
@@ -116,8 +116,9 @@ def create_report(
             exclude_type_checking_imports=exclude_type_checking_imports,
             verbose=verbose,
         )
-    graph_building_duration = timer.duration_in_s
-    output.verbose_print(verbose, f"Built graph in {graph_building_duration}s.")
+    graph_building_duration = timer.duration_in_ms
+
+    output.verbose_print(verbose, f"Built graph in {format_duration(graph_building_duration)}.")
 
     return _build_report(
         graph=graph,
@@ -176,7 +177,9 @@ def _build_report(
     verbose: bool,
 ) -> Report:
     report = Report(
-        graph=graph, show_timings=show_timings, graph_building_duration=graph_building_duration
+        graph=graph,
+        show_timings=show_timings,
+        graph_building_duration=graph_building_duration,
     )
     contracts_options = _filter_contract_options(
         user_options.contracts_options, limit_to_contracts
@@ -199,9 +202,10 @@ def _build_report(
             # other contract checks.
             copy_of_graph = deepcopy(graph)
             check = contract.check(copy_of_graph, verbose=verbose)
-        report.add_contract_check(contract, check, duration=timer.duration_in_s)
+        duration_ms = timer.duration_in_ms
+        report.add_contract_check(contract, check, duration=duration_ms)
         if verbose:
-            rendering.render_contract_result_line(contract, check, duration=timer.duration_in_s)
+            rendering.render_contract_result_line(contract, check, duration=duration_ms)
 
     output.verbose_print(verbose, newline=True)
     return report
@@ -248,13 +252,16 @@ def _get_built_in_contract_types() -> List[Tuple[str, Type[Contract]]]:
                 "forbidden: importlinter.contracts.forbidden.ForbiddenContract",
                 "layers: importlinter.contracts.layers.LayersContract",
                 "independence: importlinter.contracts.independence.IndependenceContract",
+                "protected: importlinter.contracts.protected.ProtectedContract",
                 "acyclic: importlinter.contracts.acyclic.AcyclicContract",
             ],
         )
     )
 
 
-def _get_plugin_contract_types(user_options: UserOptions) -> List[Tuple[str, Type[Contract]]]:
+def _get_plugin_contract_types(
+    user_options: UserOptions,
+) -> List[Tuple[str, Type[Contract]]]:
     contract_types = []
     if "contract_types" in user_options.session_options:
         for contract_type_string in user_options.session_options["contract_types"]:

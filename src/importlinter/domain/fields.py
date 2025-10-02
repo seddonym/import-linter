@@ -286,7 +286,7 @@ class EnumField(Field):
             values = list(member_by_value.keys())
             expectation_string = ", ".join(f"'{i}'" for i in values[:-1]) + f" or '{values[-1]}'"
             raise ValidationError(
-                f"Invalid value '{stripped_data}': " f"expected {expectation_string}."
+                f"Invalid value '{stripped_data}': expected {expectation_string}."
             )
 
     def _check_supported_enum_class(self, enum: Type[Enum]) -> None:

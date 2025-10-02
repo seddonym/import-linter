@@ -182,7 +182,10 @@ class LayersContract(Contract):
 
     def render_broken_contract(self, check: ContractCheck) -> None:
         for chains_data in cast(List[_LayerChainData], check.metadata["invalid_dependencies"]):
-            higher_layer, lower_layer = (chains_data["imported"], chains_data["importer"])
+            higher_layer, lower_layer = (
+                chains_data["imported"],
+                chains_data["importer"],
+            )
             output.print(f"{lower_layer} is not allowed to import {higher_layer}:")
             output.new_line()
 

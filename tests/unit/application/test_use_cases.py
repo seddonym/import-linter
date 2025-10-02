@@ -8,12 +8,20 @@ from grimp.adaptors.graph import ImportGraph
 
 from importlinter.application.app_config import settings
 from importlinter.application.ports.building import GraphBuilder
-from importlinter.application.use_cases import FAILURE, SUCCESS, create_report, lint_imports
+from importlinter.application.use_cases import (
+    FAILURE,
+    SUCCESS,
+    create_report,
+    lint_imports,
+)
 from importlinter.application.user_options import UserOptions
 from tests.adapters.building import FakeGraphBuilder
 from tests.adapters.printing import FakePrinter
 from tests.adapters.timing import FakeTimer
-from tests.adapters.user_options import ExceptionRaisingUserOptionReader, FakeUserOptionReader
+from tests.adapters.user_options import (
+    ExceptionRaisingUserOptionReader,
+    FakeUserOptionReader,
+)
 
 SOME_CACHE_DIR = "/path/to/some/cache/dir"
 
@@ -165,7 +173,11 @@ class TestCheckContractsAndPrintReport:
                     "name": "Contract foo",
                     "warnings": ["Some warning.", "Another warning."],
                 },
-                {"type": "always_fails", "name": "Contract bar", "warnings": ["A third warning."]},
+                {
+                    "type": "always_fails",
+                    "name": "Contract bar",
+                    "warnings": ["A third warning."],
+                },
             ]
         )
 
@@ -227,7 +239,11 @@ class TestCheckContractsAndPrintReport:
                     "type": "always_passes",
                     "name": "Contract foo",
                 },
-                {"type": "always_passes", "name": "Contract bar", "warnings": ["A warning."]},
+                {
+                    "type": "always_passes",
+                    "name": "Contract bar",
+                    "warnings": ["A warning."],
+                },
             ],
             timer=timer,
         )
@@ -240,7 +256,7 @@ class TestCheckContractsAndPrintReport:
             Import Linter
             =============
 
-            Building graph took 5s.
+            Building graph took 5.0s.
 
             ---------
             Contracts
@@ -268,7 +284,10 @@ class TestCheckContractsAndPrintReport:
     @pytest.mark.parametrize(
         "cache_dir, expected_graph_building_output",
         (
-            ("/path/to/cache", "Building import graph (cache directory is /path/to/cache)..."),
+            (
+                "/path/to/cache",
+                "Building import graph (cache directory is /path/to/cache)...",
+            ),
             (None, "Building import graph (with caching disabled)..."),
             (
                 sentinel.not_supplied,
@@ -288,7 +307,7 @@ class TestCheckContractsAndPrintReport:
 
                 Verbose mode.
                 {{ graph building output }}
-                Built graph in 5s.
+                Built graph in 5.0s.
                 Checking Contract foo...
                 Hello from the noisy contract!
                 Contract foo KEPT [15s]
@@ -331,7 +350,11 @@ class TestCheckContractsAndPrintReport:
         ],
     )
     def test_verbose_mode(
-        self, verbose, expected_output_template, cache_dir, expected_graph_building_output
+        self,
+        verbose,
+        expected_output_template,
+        cache_dir,
+        expected_graph_building_output,
     ):
         timer = FakeTimer()
         timer.setup(tick_duration=5, increment=10)
@@ -544,7 +567,8 @@ class TestMultipleRootPackages:
 
         create_report(
             UserOptions(
-                session_options={"root_packages": root_package_names}, contracts_options=[]
+                session_options={"root_packages": root_package_names},
+                contracts_options=[],
             )
         )
 
@@ -657,7 +681,11 @@ class TestReadUserOptions:
         toml_reader = ExceptionRaisingUserOptionReader(AssertionError)
 
         settings.configure(
-            USER_OPTION_READERS={"foo": foo_reader, "ini": ini_reader, "toml": toml_reader},
+            USER_OPTION_READERS={
+                "foo": foo_reader,
+                "ini": ini_reader,
+                "toml": toml_reader,
+            },
         )
         with pytest.raises(RuntimeError, match="expected"):
             lint_imports(filename, is_debug_mode=True)
@@ -671,7 +699,11 @@ class TestReadUserOptions:
         toml_reader = ExceptionRaisingUserOptionReader(expected_error)
 
         settings.configure(
-            USER_OPTION_READERS={"foo": foo_reader, "ini": ini_reader, "toml": toml_reader},
+            USER_OPTION_READERS={
+                "foo": foo_reader,
+                "ini": ini_reader,
+                "toml": toml_reader,
+            },
         )
         with pytest.raises(RuntimeError, match="expected"):
             lint_imports(filename, is_debug_mode=True)

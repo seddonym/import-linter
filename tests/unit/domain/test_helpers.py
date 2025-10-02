@@ -9,11 +9,17 @@ from importlinter.domain.helpers import (
     MissingImport,
     add_imports,
     import_expressions_to_imports,
+    module_expression_to_modules,
     pop_import_expressions,
     pop_imports,
     resolve_import_expressions,
 )
-from importlinter.domain.imports import DirectImport, ImportExpression, Module, ModuleExpression
+from importlinter.domain.imports import (
+    DirectImport,
+    ImportExpression,
+    Module,
+    ModuleExpression,
+)
 
 
 class TestPopImports:
@@ -271,7 +277,8 @@ class TestImportExpressionsToImports:
         graph = self._build_graph(self.DIRECT_IMPORTS)
 
         assert sorted(
-            import_expressions_to_imports(graph, expressions), key=_direct_import_sort_key
+            import_expressions_to_imports(graph, expressions),
+            key=_direct_import_sort_key,
         ) == sorted(expected, key=_direct_import_sort_key)
 
     def test_raises_missing_import(self):
@@ -279,11 +286,15 @@ class TestImportExpressionsToImports:
         graph.add_module("mypackage")
         graph.add_module("other")
         graph.add_import(
-            importer="mypackage.b", imported="other.foo", line_number=1, line_contents="-"
+            importer="mypackage.b",
+            imported="other.foo",
+            line_number=1,
+            line_contents="-",
         )
 
         expression = ImportExpression(
-            importer=ModuleExpression("mypackage.a.*"), imported=ModuleExpression("other.foo")
+            importer=ModuleExpression("mypackage.a.*"),
+            imported=ModuleExpression("other.foo"),
         )
         with pytest.raises(MissingImport):
             import_expressions_to_imports(graph, [expression])
@@ -511,10 +522,14 @@ class TestResolveImportExpressions:
         graph.add_module("mypackage")
         graph.add_module("other")
         graph.add_import(
-            importer="mypackage.b", imported="other.foo", line_number=1, line_contents="-"
+            importer="mypackage.b",
+            imported="other.foo",
+            line_number=1,
+            line_contents="-",
         )
         expression = ImportExpression(
-            importer=ModuleExpression("mypackage.a.*"), imported=ModuleExpression("other.foo")
+            importer=ModuleExpression("mypackage.a.*"),
+            imported=ModuleExpression("other.foo"),
         )
 
         imports, unresolved_expressions = resolve_import_expressions(graph, [expression])
@@ -597,7 +612,8 @@ class TestPopImportExpressions:
 
         # Cast to direct imports to make comparison easier.
         popped_direct_imports: List[DirectImport] = sorted(
-            map(self._dict_to_direct_import, popped_imports), key=_direct_import_sort_key
+            map(self._dict_to_direct_import, popped_imports),
+            key=_direct_import_sort_key,
         )
         expected = sorted(
             [
@@ -630,18 +646,242 @@ class TestPopImportExpressions:
         )
 
 
+class TestModuleExpressionToModules:
+    def _build_default_graph(self) -> ImportGraph:
+        graph = ImportGraph()
+        for module in (
+            "mypackage",
+            "mypackage.bar",
+            "mypackage.bar.one",
+            "mypackage.bar.one.red",
+            "mypackage.bar.one.blue",
+            "mypackage.bar.one.green",
+            "mypackage.bar.two",
+            "mypackage.bar.two.red",
+            "mypackage.bar.two.blue",
+            "mypackage.bar.two.green",
+            "mypackage.bar.three",
+            "mypackage.bar.three.red",
+            "mypackage.bar.three.blue",
+            "mypackage.bar.three.green",
+            "mypackage.foo",
+            "mypackage.foo.one",
+            "mypackage.foo.one.red",
+            "mypackage.foo.one.blue",
+            "mypackage.foo.one.green",
+            "mypackage.toto",
+            "mypackage.toto.red",
+            "mypackage.toto.blue",
+            "mypackage.toto.green",
+        ):
+            graph.add_module(module)
+        return graph
+
+    @pytest.mark.parametrize(
+        "expression,expected,description",
+        [
+            (
+                "mypackage.foo.**",
+                {
+                    "mypackage.foo.one",
+                    "mypackage.foo.one.red",
+                    "mypackage.foo.one.blue",
+                    "mypackage.foo.one.green",
+                },
+                "Double wildcard at the end of expression",
+            ),
+            (
+                "mypackage.**.red",
+                {
+                    "mypackage.bar.one.red",
+                    "mypackage.bar.two.red",
+                    "mypackage.bar.three.red",
+                    "mypackage.foo.one.red",
+                    "mypackage.toto.red",
+                },
+                "Double wildcard in the middle of expression",
+            ),
+            (
+                "mypackage.**.one",
+                {
+                    "mypackage.bar.one",
+                    "mypackage.foo.one",
+                },
+                "Double wildcard in the middle of expression where expected target has submodules",
+            ),
+            (
+                "mypackage.bar.*",
+                {
+                    "mypackage.bar.one",
+                    "mypackage.bar.two",
+                    "mypackage.bar.three",
+                },
+                "Simple wildcard at the end of expression",
+            ),
+            (
+                "mypackage.bar.*.red",
+                {
+                    "mypackage.bar.one.red",
+                    "mypackage.bar.two.red",
+                    "mypackage.bar.three.red",
+                },
+                "Simple wildcard in the middle of expression",
+            ),
+            (
+                "mypackage.*.one",
+                {
+                    "mypackage.bar.one",
+                    "mypackage.foo.one",
+                },
+                "Simple wildcard in the middle of expression where expected target has submodules",
+            ),
+            (
+                "mypackage.bar.one",
+                {
+                    "mypackage.bar.one",
+                },
+                "No wildcard",
+            ),
+        ],
+    )
+    def test_expected_conversion(self, expression: str, expected: set[str], description: str):
+        graph = self._build_default_graph()
+
+        conversion_result = module_expression_to_modules(
+            graph, expression=ModuleExpression(expression)
+        )
+        expected_modules = set(map(lambda name: Module(name), expected))
+
+        assert conversion_result == expected_modules, description
+
+    @pytest.mark.parametrize(
+        "expression,expected,description",
+        [
+            (
+                "mypackage.foo.**",
+                {
+                    "mypackage.foo.one",
+                    "mypackage.foo.one.red",
+                    "mypackage.foo.one.blue",
+                    "mypackage.foo.one.green",
+                },
+                "Double wildcard at the end of expression",
+            ),
+            (
+                "mypackage.**.red",
+                {
+                    "mypackage.bar.one.red",
+                    "mypackage.bar.two.red",
+                    "mypackage.bar.three.red",
+                    "mypackage.foo.one.red",
+                    "mypackage.toto.red",
+                },
+                "Double wildcard in the middle of expression",
+            ),
+            (
+                "mypackage.**.one",
+                {
+                    "mypackage.bar.one",
+                    "mypackage.bar.one.red",
+                    "mypackage.bar.one.blue",
+                    "mypackage.bar.one.green",
+                    "mypackage.foo.one",
+                    "mypackage.foo.one.red",
+                    "mypackage.foo.one.blue",
+                    "mypackage.foo.one.green",
+                },
+                "Double wildcard in the middle of expression where expected target has submodules",
+            ),
+            (
+                "mypackage.bar.*",
+                {
+                    "mypackage.bar.one",
+                    "mypackage.bar.one.red",
+                    "mypackage.bar.one.blue",
+                    "mypackage.bar.one.green",
+                    "mypackage.bar.two",
+                    "mypackage.bar.two.red",
+                    "mypackage.bar.two.blue",
+                    "mypackage.bar.two.green",
+                    "mypackage.bar.three",
+                    "mypackage.bar.three.red",
+                    "mypackage.bar.three.blue",
+                    "mypackage.bar.three.green",
+                },
+                "Simple wildcard at the end of expression",
+            ),
+            (
+                "mypackage.bar.*.red",
+                {
+                    "mypackage.bar.one.red",
+                    "mypackage.bar.two.red",
+                    "mypackage.bar.three.red",
+                },
+                "Simple wildcard in the middle of expression",
+            ),
+            (
+                "mypackage.*.one",
+                {
+                    "mypackage.bar.one",
+                    "mypackage.bar.one.red",
+                    "mypackage.bar.one.blue",
+                    "mypackage.bar.one.green",
+                    "mypackage.foo.one",
+                    "mypackage.foo.one.red",
+                    "mypackage.foo.one.blue",
+                    "mypackage.foo.one.green",
+                },
+                "Simple wildcard in the middle of expression where expected target has submodules",
+            ),
+            (
+                "mypackage.bar.one",
+                {
+                    "mypackage.bar.one",
+                    "mypackage.bar.one.red",
+                    "mypackage.bar.one.blue",
+                    "mypackage.bar.one.green",
+                },
+                "No wildcard",
+            ),
+        ],
+    )
+    def test_expected_conversion_with_as_package_option(
+        self, expression: str, expected: set[str], description: str
+    ):
+        graph = self._build_default_graph()
+
+        conversion_result = module_expression_to_modules(
+            graph, expression=ModuleExpression(expression), as_packages=True
+        )
+        expected_modules = set(map(lambda name: Module(name), expected))
+
+        assert conversion_result == expected_modules, description
+
+
 def test_add_imports() -> None:
     graph = ImportGraph()
     import_details: List[DetailedImport] = [
-        {"importer": "a", "imported": "b", "line_number": 1, "line_contents": "lorem ipsum"},
-        {"importer": "c", "imported": "d", "line_number": 2, "line_contents": "lorem ipsum 2"},
+        {
+            "importer": "a",
+            "imported": "b",
+            "line_number": 1,
+            "line_contents": "lorem ipsum",
+        },
+        {
+            "importer": "c",
+            "imported": "d",
+            "line_number": 2,
+            "line_contents": "lorem ipsum 2",
+        },
     ]
     assert not graph.modules
     add_imports(graph, import_details)
     assert graph.modules == {"a", "b", "c", "d"}
 
 
-def _direct_import_sort_key(direct_import: DirectImport) -> Tuple[str, str, Optional[int]]:
+def _direct_import_sort_key(
+    direct_import: DirectImport,
+) -> Tuple[str, str, Optional[int]]:
     # Doesn't matter how we sort, just a way of sorting consistently for comparison.
     return (
         direct_import.importer.name,

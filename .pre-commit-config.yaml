@@ -1,0 +1,33 @@
+# This file contains configuration for the pre-commit (https://pre-commit.com/) tool.
+fail_fast: true
+repos:
+  - repo: local
+    hooks:
+      - id: format
+        name: Format
+        entry: just format
+        language: system
+        require_serial: true
+        pass_filenames: false
+
+      - id: lint
+        name: Lint
+        entry: just lint
+        language: system
+        require_serial: true
+        pass_filenames: false
+        files: "^src|tests/.*$"
+  
+      - id: run-tests
+        name: "Run tests"
+        entry: just test
+        language: system
+        pass_filenames: false
+        files: "^src|tests/.*$"
+
+      - id: build-docs
+        name: "Build docs"
+        entry: just build-docs
+        language: system
+        pass_filenames: false
+        files: "^docs/.*$"

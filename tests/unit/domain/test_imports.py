@@ -2,7 +2,12 @@ from contextlib import contextmanager
 
 import pytest
 
-from importlinter.domain.imports import DirectImport, ImportExpression, Module, ModuleExpression
+from importlinter.domain.imports import (
+    DirectImport,
+    ImportExpression,
+    Module,
+    ModuleExpression,
+)
 
 
 @contextmanager
@@ -56,11 +61,19 @@ class TestModule:
             (Module("somepackage.foo"), Module("somepackage"), True),
             (Module("somepackage.foo.blue"), Module("somepackage"), True),
             (Module("somepackage.foo.blue"), Module("somepackage.foo"), True),
-            (Module("somepackage.foo.blue.one.alpha"), Module("somepackage.foo.blue"), True),
+            (
+                Module("somepackage.foo.blue.one.alpha"),
+                Module("somepackage.foo.blue"),
+                True,
+            ),
             (Module("somepackage"), Module("somepackage.foo"), False),
             (Module("somepackage"), Module("differentpackage"), False),
             (Module("somepackage.foo"), Module("differentpackage"), False),
-            (Module("somepackage.foo.blue.one.alpha"), Module("somepackage.foo.green"), False),
+            (
+                Module("somepackage.foo.blue.one.alpha"),
+                Module("somepackage.foo.green"),
+                False,
+            ),
         ],
     )
     def test_is_in_package(self, candidate, package, expected_bool):
@@ -96,16 +109,24 @@ class TestDirectImport:
         assert str(test_object) == expected_string
 
 
+class TestModuleExpression:
+    def test_object_representation(self):
+        expression = ModuleExpression("mypackage.foo.**")
+        assert repr(expression) == "<ModuleExpression: mypackage.foo.**>"
+
+
 class TestImportExpression:
     def test_object_representation(self):
         test_object = ImportExpression(
-            importer=ModuleExpression("mypackage.foo"), imported=ModuleExpression("mypackage.bar")
+            importer=ModuleExpression("mypackage.foo"),
+            imported=ModuleExpression("mypackage.bar"),
         )
         assert repr(test_object) == "<ImportExpression: mypackage.foo -> mypackage.bar>"
 
     def test_string_object_representation(self):
         expression = ImportExpression(
-            importer=ModuleExpression("mypackage.foo"), imported=ModuleExpression("mypackage.bar")
+            importer=ModuleExpression("mypackage.foo"),
+            imported=ModuleExpression("mypackage.bar"),
         )
         assert str(expression) == "mypackage.foo -> mypackage.bar"
 

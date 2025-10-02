@@ -5,6 +5,7 @@ from typing import Iterable, List, cast
 from grimp import ImportGraph
 
 from importlinter.application import contract_utils, output
+from importlinter.application import rendering
 from importlinter.application.contract_utils import AlertLevel
 from importlinter.configuration import settings
 from importlinter.domain import fields
@@ -19,9 +20,10 @@ class ForbiddenContract(Contract):
     """
     Forbidden contracts check that one set of modules are not imported by another set of modules.
     Indirect imports will also be checked.
+
     Configuration options:
-        - source_modules:    A list of Modules that should not import the forbidden modules.
-        - forbidden_modules: A list of Modules that should not be imported by the source modules.
+        - source_modules:    A set of Modules that should not import the forbidden modules.
+        - forbidden_modules: A set of Modules that should not be imported by the source modules.
         - ignore_imports:    A set of ImportExpressions. These imports will be ignored if the import
                              would cause a contract to be broken, adding it to the set will cause
                              the contract be kept instead. (Optional.)
@@ -38,8 +40,8 @@ class ForbiddenContract(Contract):
 
     type_name = "forbidden"
 
-    source_modules = fields.ListField(subfield=fields.ModuleExpressionField())
-    forbidden_modules = fields.ListField(subfield=fields.ModuleExpressionField())
+    source_modules = fields.SetField(subfield=fields.ModuleExpressionField())
+    forbidden_modules = fields.SetField(subfield=fields.ModuleExpressionField())
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     allow_indirect_imports = fields.BooleanField(required=False, default=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
@@ -81,8 +83,7 @@ class ForbiddenContract(Contract):
             for forbidden_module in sorted(forbidden_modules_in_graph, key=sort_key):
                 output.verbose_print(
                     verbose,
-                    "Searching for import chains from "
-                    f"{source_module} to {forbidden_module}...",
+                    f"Searching for import chains from {source_module} to {forbidden_module}...",
                 )
                 with settings.TIMER as timer:
                     subpackage_chain_data = {
@@ -93,7 +94,10 @@ class ForbiddenContract(Contract):
 
                     if str(self.allow_indirect_imports).lower() == "true":
                         chains = self._get_direct_chains(
-                            source_module, forbidden_module, graph, self.as_packages  # type:ignore
+                            source_module,
+                            forbidden_module,
+                            graph,
+                            self.as_packages,  # type:ignore
                         )
                     else:
                         chains = graph.find_shortest_chains(
@@ -125,9 +129,9 @@ class ForbiddenContract(Contract):
                 if verbose:
                     chain_count = len(subpackage_chain_data["chains"])
                     pluralized = "s" if chain_count != 1 else ""
+                    duration = rendering.format_duration(timer.duration_in_ms)
                     output.print(
-                        f"Found {chain_count} illegal chain{pluralized} "
-                        f"in {timer.duration_in_s}s.",
+                        f"Found {chain_count} illegal chain{pluralized} in {duration}.",
                     )
 
         # Sorting by upstream and downstream module ensures that the output is deterministic
@@ -144,14 +148,20 @@ class ForbiddenContract(Contract):
     def render_broken_contract(self, check: "ContractCheck") -> None:
         count = 0
         for chains_data in check.metadata["invalid_chains"]:
-            downstream, upstream = chains_data["downstream_module"], chains_data["upstream_module"]
+            downstream, upstream = (
+                chains_data["downstream_module"],
+                chains_data["upstream_module"],
+            )
             output.print_error(f"{downstream} is not allowed to import {upstream}:")
             output.new_line()
             count += len(chains_data["chains"])
             for chain in chains_data["chains"]:
                 first_line = True
                 for direct_import in chain:
-                    importer, imported = direct_import["importer"], direct_import["imported"]
+                    importer, imported = (
+                        direct_import["importer"],
+                        direct_import["imported"],
+                    )
                     line_numbers = format_line_numbers(direct_import["line_numbers"])
                     import_string = f"{importer} -> {imported} ({line_numbers})"
                     if first_line:

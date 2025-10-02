@@ -10,7 +10,7 @@ class FakeTimer(Timer):
 
     def __init__(self) -> None:
         super().__init__()
-        self._current_time = float(self.ARBITRARY_SECONDS_SINCE_EPOCH)
+        self._current_time_ms = int(self.ARBITRARY_SECONDS_SINCE_EPOCH * 1000)
         self._tick_duration = 1
         self._increment = 0
 
@@ -23,13 +23,13 @@ class FakeTimer(Timer):
         self._tick()
         super().__exit__(exc_type, exc_val, exc_tb)
 
-    def get_current_time(self) -> float:
-        return self._current_time
+    def get_current_time_ms(self) -> int:
+        return self._current_time_ms
 
     def setup(self, tick_duration: int, increment: int) -> None:
         self._tick_duration = tick_duration
         self._increment = increment
 
     def _tick(self) -> None:
-        self._current_time += self._tick_duration
+        self._current_time_ms += self._tick_duration * 1000
         self._tick_duration += self._increment

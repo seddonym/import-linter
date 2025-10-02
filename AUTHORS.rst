@@ -26,3 +26,6 @@ Contributors
 * Neil Williams - https://github.com/spladug
 * Nicholas Bunn - https://github.com/NicholasBunn
 * Felix Uhl - https://github.com/iFreilicht
+* Ilya S. (Tapeline) - https://github.com/Tapeline
+* Uberto Barbini - https://github.com/uberto
+* Alexandre Beaufays - https://github.com/abeaufays

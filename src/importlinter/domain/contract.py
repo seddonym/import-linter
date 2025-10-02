@@ -17,7 +17,10 @@ class _ParsedField:
 
 class Contract(abc.ABC):
     def __init__(
-        self, name: str, session_options: Dict[str, Any], contract_options: Dict[str, Any]
+        self,
+        name: str,
+        session_options: Dict[str, Any],
+        contract_options: Dict[str, Any],
     ) -> None:
         self.name = name
         self.session_options = session_options

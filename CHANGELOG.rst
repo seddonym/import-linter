@@ -3,7 +3,26 @@ Changelog
 
 latest
 ------
-- Fixed incorrect handling of unicode characters in TOML files on Windows.
+
+* Correct documentation that incorrectly stated that protected modules
+  are allowed to import each other.
+
+2.5 (2025-09-15)
+----------------
+
+* Add protected contract type.
+
+2.4 (2025-08-15)
+----------------
+
+* Fix incorrect handling of unicode characters in TOML files on Windows.
+* Change pre-commit hook to use the system virtualenv and to run whenever
+  any file changes, not just a Python file.
+* Fix RecursionError when running repr on a ModuleExpression.
+* Fix messages being always colored white on Windows.
+* Upgrade latest tox requirements (fixing error with `tox -echeck`).
+* Rename default Git repository branch to 'main'.
+* Increase accuracy of timings when using --show-timings.
 
 2.3 (2025-03-11)
 ----------------

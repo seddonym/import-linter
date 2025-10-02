@@ -90,7 +90,10 @@ class FakeFileSystem(ports.FileSystem):
         """
         first_line = lines[0]
         first_line_indent = len(first_line) - len(first_line.lstrip())
-        dedented = lambda line: line[first_line_indent:]
+
+        def dedented(line):
+            return line[first_line_indent:]
+
         return list(map(dedented, lines))
 
     def read(self, file_name: str, encoding: Optional[str] = None) -> str:

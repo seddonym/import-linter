@@ -31,7 +31,11 @@ class Output:
     """
 
     def print(
-        self, text: str = "", bold: bool = False, color: Optional[str] = None, newline: bool = True
+        self,
+        text: str = "",
+        bold: bool = False,
+        color: Optional[str] = None,
+        newline: bool = True,
     ) -> None:
         """
         Print a line.
