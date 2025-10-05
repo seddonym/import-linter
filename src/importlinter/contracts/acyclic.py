@@ -258,8 +258,8 @@ class AcyclicContract(Contract):
                 output.print_error(
                     text=(
                         f"\n  {index_sibling + 1}. "
-                        f"{_get_relative_module(cycle_section.sibling_from, cycle.parent)} depends on "
-                        f"{_get_relative_module(cycle_section.sibling_to, cycle.parent)}:\n"
+                        f"{_cut_module_ancestors(cycle_section.sibling_from, cycle.parent)} depends on "
+                        f"{_cut_module_ancestors(cycle_section.sibling_to, cycle.parent)}:\n"
                     )
                 )
 
@@ -510,17 +510,19 @@ def _is_child(module: str, parent: str) -> bool:
     return module == parent or module.startswith(f"{parent}.")
 
 
-def _get_relative_module(module: str, parent: str) -> str:
-    if parent == _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS:
+def _cut_module_ancestors(module: str, package: str) -> str:
+    if package == _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS:
         return module
 
-    if module == parent:
-        return "__init__"
+    if module == package:
+        return module.split(".")[-1]
 
-    if module.startswith(f"{parent}."):
-        return module.removeprefix(f"{parent}.")
+    if _is_child(module=module, parent=package):
+        last_ancestor = package.split(".")[-1]
+        ancestors_to_cut = package.removesuffix(last_ancestor)
+        return module.removeprefix(ancestors_to_cut)
 
-    raise AcyclicContractError(f"Module '{module}' is not a child of parent package '{parent}'.")
+    raise AcyclicContractError(f"Module '{module}' is not a child of parent package '{package}'.")
 
 
 def _longest_common_package(modules: tuple[str, ...]) -> Optional[str]:
