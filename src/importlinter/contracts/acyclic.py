@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from functools import cached_property
+from pprint import pprint
 from typing import Any, Optional
 from grimp import ImportGraph
 from importlinter.domain.contract import Contract, ContractCheck
@@ -11,6 +12,13 @@ from importlinter.domain import fields
 class Cycle:
     members: tuple[str, ...]
     package_lvl_cycle: bool
+
+    @cached_property
+    def family(self) -> tuple[str, tuple[str, ...]]:
+        return (
+            self.parent,
+            self.siblings
+        )
 
     @cached_property
     def parent(self) -> str:
@@ -118,6 +126,7 @@ class AcyclicContract(Contract):
     max_cycles = fields.IntegerField(required=False, default=0)
     packages = fields.SetField(subfield=fields.StringField(), required=True)
     ignore_packages = fields.ListField(subfield=fields.StringField(), required=False, default=[])
+    group_by_family = fields.BooleanField(required=False, default=False)
 
     _CYCLES_METADATA_KEY = "cycles"
     _IMPORT_GRAPH_METADATA_KEY = "import_graph"
@@ -126,6 +135,14 @@ class AcyclicContract(Contract):
         """
         Check the import graph for cyclic dependencies.
         """
+        # Validate configuration
+        if not self._consider_package_dependencies and self._group_by_family:
+            msg = (
+                "Configuration error: 'group_by_family' cannot be True if "
+                "'consider_package_dependencies' is False."
+            )
+            raise AcyclicContractError(msg)
+
         for package in self._packages:
             if package == _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS:
                 continue
@@ -142,7 +159,7 @@ class AcyclicContract(Contract):
         if self._ignore_packages and _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS in self._ignore_packages:
             msg = f"Ignore package '{_PARENT_PACKAGE_FOR_MULTIPLE_ROOTS}' cannot be used."
             raise AcyclicContractError(msg)
-
+        # Print configuration
         if verbose:
             configuration_heading_msg = [
                 "CONFIG:\n",
@@ -152,7 +169,7 @@ class AcyclicContract(Contract):
                 f"Ignore packages: {self._ignore_packages}",
             ]
             output.print_heading(text="\n".join(configuration_heading_msg), level=2)
-
+        # Find cycles
         contract_metadata: dict[str, Any] = {}
         cycles: list[Cycle] = []
         unique_member_strings: set[str] = set()
@@ -224,11 +241,11 @@ class AcyclicContract(Contract):
 
             if self._max_cycles is not None and len(cycles) == self._max_cycles:
                 break
-
+        # Print summary
         if verbose:
             summary_msg = self._get_cycles_summary_msg(cycles=cycles)
             output.print_warning(text=summary_msg)
-
+        # Prepare result
         contract_check = ContractCheck(kept=len(cycles) == 0, metadata=contract_metadata)
         AcyclicContract._set_cycles_in_metadata(check=contract_check, cycles=cycles)
         AcyclicContract._set_graph_in_metadata(check=contract_check, import_graph=graph)
@@ -239,6 +256,27 @@ class AcyclicContract(Contract):
 
         if not cycles:
             return
+
+        if self._group_by_family:
+            # keep only one cycle per family
+            cycle_family_counts: dict[tuple[str, tuple[str, ...]], int] = {}
+            reduced_cycles: list[Cycle] = []
+
+            for cycle in cycles:
+                if not cycle.package_lvl_cycle:
+                    reduced_cycles.append(cycle)
+                    continue
+
+                if cycle.family not in cycle_family_counts:
+                    cycle_family_counts[cycle.family] = 0
+                    reduced_cycles.append(cycle)
+
+                cycle_family_counts[cycle.family] += 1
+
+            cycles = reduced_cycles
+            # TODO(K4liber): remove debug print
+            print(len(cycles))
+            pprint(cycle_family_counts)
 
         import_graph = AcyclicContract._get_graph_from_metadata(check=check)
         # create sorted sections for rendering
@@ -344,67 +382,43 @@ class AcyclicContract(Contract):
 
         return Cycle(members=cycle_members, package_lvl_cycle=package_lvl_cycle)
 
-    @property
+    @cached_property
     def _consider_package_dependencies(self) -> bool:
         return str(self.consider_package_dependencies).lower() == "true"
 
-    @property
+    @cached_property
+    def _group_by_family(self) -> bool:
+        return str(self.group_by_family).lower() == "true"
+
+    @cached_property
     def _max_cycles(self) -> Optional[int]:
         value_int = self.max_cycles.value
         return None if value_int < 1 else value_int
 
-    @property
+    @cached_property
     def _packages(self) -> set[str]:
-        if not hasattr(self, "_unique_packages"):
-            self._unique_packages: set[str] = set()
-            all_packages: list[str] = sorted(
-                {module for module in self.packages if module}, key=len  # type: ignore
-            )
+        unique_packages: set[str] = set()
+        all_packages: list[str] = sorted(
+            {module for module in self.packages if module}, key=len  # type: ignore
+        )
 
-            if _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS in all_packages and len(all_packages) > 1:
-                output.print_warning(
-                    text=(
-                        f"Package '{_PARENT_PACKAGE_FOR_MULTIPLE_ROOTS}' is provided together "
-                        "with other packages. It will be the only considered package."
-                    )
+        if _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS in all_packages and len(all_packages) > 1:
+            output.print_warning(
+                text=(
+                    f"Package '{_PARENT_PACKAGE_FOR_MULTIPLE_ROOTS}' is provided together "
+                    "with other packages. It will be the only considered package."
                 )
-                self._unique_packages = {_PARENT_PACKAGE_FOR_MULTIPLE_ROOTS}
-
-            else:
-                for package in all_packages:
-                    is_unique = True
-
-                    for existing in self._unique_packages:
-                        if _is_child(module=package, parent=existing):
-                            output.print_warning(
-                                text=f"Skipping redundant package '{package}' "
-                                f"as it is a child of already provided '{existing}'."
-                            )
-                            is_unique = False
-                            break
-
-                    if not is_unique:
-                        continue
-
-                    self._unique_packages.add(package)
-
-        return self._unique_packages
-
-    @property
-    def _ignore_packages(self) -> Optional[set[str]]:
-        if not hasattr(self, "_unique_ignore_packages"):
-            self._unique_ignore_packages: set[str] = set()
-            all_ignore_packages: list[str] = sorted(
-                {module for module in self.ignore_packages if module}, key=len  # type: ignore
             )
+            unique_packages = {_PARENT_PACKAGE_FOR_MULTIPLE_ROOTS}
 
-            for package in all_ignore_packages:
+        else:
+            for package in all_packages:
                 is_unique = True
 
-                for existing in self._unique_ignore_packages:
+                for existing in unique_packages:
                     if _is_child(module=package, parent=existing):
                         output.print_warning(
-                            text=f"Skipping redundant ignore package '{package}' "
+                            text=f"Skipping redundant package '{package}' "
                             f"as it is a child of already provided '{existing}'."
                         )
                         is_unique = False
@@ -413,9 +427,35 @@ class AcyclicContract(Contract):
                 if not is_unique:
                     continue
 
-                self._unique_ignore_packages.add(package)
+                unique_packages.add(package)
 
-        return self._unique_ignore_packages if self._unique_ignore_packages else None
+        return unique_packages
+
+    @cached_property
+    def _ignore_packages(self) -> Optional[set[str]]:
+        unique_ignore_packages: set[str] = set()
+        all_ignore_packages: list[str] = sorted(
+            {module for module in self.ignore_packages if module}, key=len  # type: ignore
+        )
+
+        for package in all_ignore_packages:
+            is_unique = True
+
+            for existing in unique_ignore_packages:
+                if _is_child(module=package, parent=existing):
+                    output.print_warning(
+                        text=f"Skipping redundant ignore package '{package}' "
+                        f"as it is a child of already provided '{existing}'."
+                    )
+                    is_unique = False
+                    break
+
+            if not is_unique:
+                continue
+
+            unique_ignore_packages.add(package)
+
+        return unique_ignore_packages if unique_ignore_packages else None
 
     @staticmethod
     def _set_cycles_in_metadata(check: ContractCheck, cycles: list[Cycle]) -> None:
