@@ -30,7 +30,7 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Utilities",
 ]
-dynamic = ["readme"]
+readme = "README.rst"
 
 [build-system]
 requires = ["hatchling"]
