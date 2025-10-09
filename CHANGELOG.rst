@@ -1,8 +1,8 @@
 Changelog
 =========
 
-latest
-------
+2.5.1 (2025-10-09)
+------------------
 
 * Correct documentation that incorrectly stated that protected modules
   are allowed to import each other.
