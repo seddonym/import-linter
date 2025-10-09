@@ -9,7 +9,7 @@ from .ports.reporting import Report
 # ----------------
 
 
-def render_report(report: Report) -> None:
+def render_report(report: Report, json: bool) -> None:
     """
     Output the supplied report to the console.
     """
