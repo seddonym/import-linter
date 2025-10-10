@@ -1,6 +1,6 @@
+import copy
 from dataclasses import dataclass
 from functools import cached_property
-from pprint import pprint
 from typing import Any, Optional
 from grimp import ImportGraph
 from importlinter.domain.contract import Contract, ContractCheck
@@ -15,10 +15,7 @@ class Cycle:
 
     @cached_property
     def family(self) -> tuple[str, tuple[str, ...]]:
-        return (
-            self.parent,
-            self.siblings
-        )
+        return (self.parent, self.siblings)
 
     @cached_property
     def parent(self) -> str:
@@ -151,7 +148,7 @@ class AcyclicContract(Contract):
                 msg = f"Package '{package}' is not an internal package."
                 raise AcyclicContractError(msg)
 
-        for ignore_package in (self._ignore_packages or set()):
+        for ignore_package in self._ignore_packages or set():
             if not AcyclicContract._is_internal_module(graph=graph, package=ignore_package):
                 msg = f"Ignore package '{ignore_package}' is not an internal package."
                 raise AcyclicContractError(msg)
@@ -177,21 +174,26 @@ class AcyclicContract(Contract):
             package == _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS for package in self._packages
         )
 
+        if self._consider_package_dependencies:
+            graph, package_to_origin_dependency = _get_graph_including_package_dependencies(
+                graph=graph
+            )
+        else:
+            package_to_origin_dependency = {}
+
         for importer_module in sorted(graph.modules):
             if not AcyclicContract._is_internal_module(graph=graph, package=importer_module):
                 continue
 
-            cycle_members = graph.find_shortest_cycle(
-                module=importer_module,
-                as_package=self._consider_package_dependencies
-            )
+            cycle_members = graph.find_shortest_cycle(module=importer_module, as_package=False)
 
             if cycle_members is None:
                 continue
 
             cycle = self._get_cycle(
                 cycle_members=cycle_members,
-                import_graph=graph
+                import_graph=graph,
+                package_to_origin_dependency=package_to_origin_dependency,
             )
 
             if not is_root_included and not any(
@@ -275,15 +277,23 @@ class AcyclicContract(Contract):
 
             cycles = reduced_cycles
             # TODO(K4liber): remove debug print
-            print(len(cycles))
-            pprint(cycle_family_counts)
+            print(f"Length of grouped cycles: {len(cycles)}")
 
         import_graph = AcyclicContract._get_graph_from_metadata(check=check)
         # create sorted sections for rendering
-        all_sections_sorted: list[tuple[Cycle, list[_CycleRenderingSection]]] = sorted([
-            (cycle, _get_sibling_sections(cycle=cycle, consider_package_dependencies=self._consider_package_dependencies))
-            for cycle in cycles
-        ], key=lambda item: (sum(len(section.imports) for section in item[1]), len(item[1])))
+        all_sections_sorted: list[tuple[Cycle, list[_CycleRenderingSection]]] = sorted(
+            [
+                (
+                    cycle,
+                    _get_sibling_sections(
+                        cycle=cycle,
+                        consider_package_dependencies=self._consider_package_dependencies,
+                    ),
+                )
+                for cycle in cycles
+            ],
+            key=lambda item: (sum(len(section.imports) for section in item[1]), len(item[1])),
+        )
 
         for cycle, sibiling_cycle_sections in all_sections_sorted:
             msg = (
@@ -307,30 +317,41 @@ class AcyclicContract(Contract):
                         f" Sibling: {cycle_section.sibling_from}, dependent sibling: {cycle_section.sibling_to}."
                     )
 
+                import_statements = 0
+
                 for importer, imported in cycle_section.imports:
                     import_details = import_graph.get_import_details(
                         importer=importer, imported=imported
                     )
-                    line_number = import_details[0].get("line_number") if import_details else None
 
-                    if line_number is None and not cycle.package_lvl_cycle:
-                        raise AcyclicContractError(
-                            "Line number is None. This should not happen on a module lvl cycle."
-                            f" Importer: {importer}, Imported: {imported}."
-                        )
+                    if len(import_details) == 0:
+                        if not cycle.package_lvl_cycle:
+                            raise AcyclicContractError(
+                                "No import details found between modules in a cycle. This should not happen."
+                                f" Importer: {importer}, Imported: {imported}."
+                            )
+                        # In case of package level cycle, we might not have import details here.
+                        # So we just continue without raising an error.
+                        continue
 
-                    if line_number is not None:
-                        line_info = f"l. {line_number}"
-                        output.print_error(text=f"      - {importer} -> {imported} ({line_info})")
+                    line_number = import_details[0].get("line_number")
+                    line_info = f"l. {line_number}"
+                    output.print_error(text=f"      - {importer} -> {imported} ({line_info})")
+                    import_statements += 1
+
+                if import_statements == 0:
+                    raise AcyclicContractError(
+                        "No import statements found between siblings in a cycle. This should not happen."
+                        f" Sibling: {cycle_section.sibling_from}, dependent sibling: {cycle_section.sibling_to}."
+                    )
 
         output.print_error(text="\n")
 
     @staticmethod
     def _is_internal_module(graph: ImportGraph, package: str) -> bool:
-        return (
-            bool(graph.find_matching_modules(expression=package)) and
-            not graph.is_module_squashed(package)
-        )
+        return bool(
+            graph.find_matching_modules(expression=package)
+        ) and not graph.is_module_squashed(package)
 
     def _get_cycles_summary_msg(self, cycles: list[Cycle]) -> str:
         number_of_package_lvl_cycles = len([cycle for cycle in cycles if cycle.package_lvl_cycle])
@@ -357,30 +378,55 @@ class AcyclicContract(Contract):
     def _get_cycle(
         self,
         cycle_members: tuple[str, ...],
-        import_graph: ImportGraph
+        import_graph: ImportGraph,
+        package_to_origin_dependency: dict[tuple[str, str], tuple[str, str]],
     ) -> Cycle:
-        """Retrieves a cycle from cycle members.
+        """Retrieves a cycle from cycle members and origin dependencies.
 
-        If there is at least one import missing between cycle members,
+        If at least once import details are missing between cycle members,
         it is considered a package level cycle.
         """
         package_lvl_cycle = False
-        cycle_members = _get_reordered_cycle_members(cycle_members=list(cycle_members))
+        cycle_members_list = _get_reordered_cycle_members(cycle_members=list(cycle_members))
+        cycle_members_original: list[str] = []
 
-        for index, importer in enumerate(cycle_members[:-1]):
-            imported = cycle_members[index + 1]
+        for index, importer in enumerate(cycle_members_list[:-1]):
+            imported = cycle_members_list[index + 1]
+            import_details = import_graph.get_import_details(importer=importer, imported=imported)
+            line_number = import_details[0].get("line_number") if import_details else None
 
-            if not import_graph.get_import_details(
-                importer=importer, imported=imported
-            ):
+            if line_number is None:
                 package_lvl_cycle = True
+                origin_import = package_to_origin_dependency.get((importer, imported))
 
-        if import_graph.get_import_details(
-            importer=cycle_members[-1], imported=cycle_members[0]
-        ):
-            package_lvl_cycle = True
+                if origin_import is None:
+                    raise AcyclicContractError(
+                        "Origin import is None. This should not happen on a package lvl cycle."
+                        f" Importer: {importer}, Imported: {imported}."
+                    )
 
-        return Cycle(members=cycle_members, package_lvl_cycle=package_lvl_cycle)
+                importer = origin_import[0]
+                imported = origin_import[1]
+                import_details = import_graph.get_import_details(
+                    importer=importer, imported=imported
+                )
+
+                if len(import_details) == 0:
+                    raise AcyclicContractError(
+                        "Origin import details is None."
+                        f" Importer: {importer}, Imported: {imported}."
+                    )
+
+            if len(cycle_members_original) == 0:
+                cycle_members_original.append(importer)
+
+            if cycle_members_original[-1] != importer:
+                cycle_members_original.append(importer)
+
+            if cycle_members_original[-1] != imported:
+                cycle_members_original.append(imported)
+
+        return Cycle(members=tuple(cycle_members_original), package_lvl_cycle=package_lvl_cycle)
 
     @cached_property
     def _consider_package_dependencies(self) -> bool:
@@ -399,7 +445,8 @@ class AcyclicContract(Contract):
     def _packages(self) -> set[str]:
         unique_packages: set[str] = set()
         all_packages: list[str] = sorted(
-            {module for module in self.packages if module}, key=len  # type: ignore
+            {module for module in self.packages if module},  # type: ignore
+            key=len,
         )
 
         if _PARENT_PACKAGE_FOR_MULTIPLE_ROOTS in all_packages and len(all_packages) > 1:
@@ -435,7 +482,8 @@ class AcyclicContract(Contract):
     def _ignore_packages(self) -> Optional[set[str]]:
         unique_ignore_packages: set[str] = set()
         all_ignore_packages: list[str] = sorted(
-            {module for module in self.ignore_packages if module}, key=len  # type: ignore
+            {module for module in self.ignore_packages if module},  # type: ignore
+            key=len,
         )
 
         for package in all_ignore_packages:
@@ -484,7 +532,9 @@ class _CycleRenderingSection:
     imports: list[tuple[str, str]]
 
 
-def _get_sibling_sections(cycle: Cycle, consider_package_dependencies: bool) -> list[_CycleRenderingSection]:
+def _get_sibling_sections(
+    cycle: Cycle, consider_package_dependencies: bool
+) -> list[_CycleRenderingSection]:
     sibiling_sections: list[_CycleRenderingSection] = []
     last_member = 0
 
@@ -495,10 +545,9 @@ def _get_sibling_sections(cycle: Cycle, consider_package_dependencies: bool) -> 
         for index_importer in range(last_member, len(cycle.members) - 1):
             importer = cycle.members[index_importer]
             imported = cycle.members[index_importer + 1]
-            is_new_subsection = (
-                _is_child(module=importer, parent=dependent_sibling) and
-                not _is_child(module=imported, parent=dependent_sibling)
-            )
+            is_new_subsection = _is_child(
+                module=importer, parent=dependent_sibling
+            ) and not _is_child(module=imported, parent=dependent_sibling)
 
             if is_new_subsection:
                 last_member = index_importer
@@ -507,10 +556,9 @@ def _get_sibling_sections(cycle: Cycle, consider_package_dependencies: bool) -> 
             if consider_package_dependencies:
                 # if we consider package dependencies,
                 # we only include imports between the two siblings in the section
-                is_import_between_siblings = (
-                    _is_child(module=importer, parent=sibling) and
-                    _is_child(module=imported, parent=dependent_sibling)
-                )
+                is_import_between_siblings = _is_child(
+                    module=importer, parent=sibling
+                ) and _is_child(module=imported, parent=dependent_sibling)
 
                 if is_import_between_siblings:
                     imports_in_section.append((importer, imported))
@@ -519,16 +567,14 @@ def _get_sibling_sections(cycle: Cycle, consider_package_dependencies: bool) -> 
 
         sibiling_sections.append(
             _CycleRenderingSection(
-                sibling_from=sibling,
-                sibling_to=dependent_sibling,
-                imports=imports_in_section
+                sibling_from=sibling, sibling_to=dependent_sibling, imports=imports_in_section
             )
         )
 
     return sibiling_sections
 
 
-def _get_reordered_cycle_members(cycle_members: list[str]) -> tuple[str, ...]:
+def _get_reordered_cycle_members(cycle_members: list[str]) -> list[str]:
     # reorder the cycle to start from the lexicographically smallest member
     min_member = min(cycle_members)
     min_index = cycle_members.index(min_member)
@@ -540,7 +586,7 @@ def _get_reordered_cycle_members(cycle_members: list[str]) -> tuple[str, ...]:
         if member != unique_members[-1]:
             unique_members.append(member)
 
-    return tuple(unique_members)
+    return unique_members
 
 
 def _is_child(module: str, parent: str) -> bool:
@@ -585,3 +631,84 @@ def _longest_common_package(modules: tuple[str, ...]) -> Optional[str]:
         if all(_is_child(module=module, parent=sorted_modules[0]) for module in modules)
         else None
     )
+
+
+def _get_graph_including_package_dependencies(
+    graph: ImportGraph,
+) -> tuple[ImportGraph, dict[tuple[str, str], tuple[str, str]]]:
+    package_to_origin_dependency: dict[tuple[str, str], tuple[str, str]] = {}
+    graph = copy.deepcopy(graph)
+    already_added_package_dependencies: set[tuple[str, str]] = set()
+
+    for importer_module in sorted(graph.modules):
+        imported_modules = graph.find_modules_directly_imported_by(module=importer_module)
+
+        for imported_module in sorted(imported_modules):
+            package_dependency = _get_package_dependency(
+                importer=importer_module, imported=imported_module
+            )
+
+            if package_dependency is None:
+                continue
+
+            if package_dependency in already_added_package_dependencies:
+                continue
+
+            package_import_already_exists = (
+                graph.get_import_details(
+                    importer=package_dependency[0],
+                    imported=package_dependency[1],
+                )
+                != []
+            )
+
+            if package_import_already_exists:
+                continue
+
+            graph.add_import(importer=package_dependency[0], imported=package_dependency[1])
+            already_added_package_dependencies.add(package_dependency)
+            package_to_origin_dependency[package_dependency] = (
+                importer_module,
+                imported_module,
+            )
+
+    return graph, package_to_origin_dependency
+
+
+def _get_package_dependency(importer: str, imported: str) -> Optional[tuple[str, str]]:
+    """
+    Get the package dependency between two modules.
+
+    The function checks if there is a common package between the two modules.
+    If there is a common package, it returns the package dependency as a tuple of two strings.
+    If the common package is the same as the importer or imported module, it returns None.
+    """
+    common_package = _longest_common_package(modules=(importer, imported))
+    # If there is no common package, we check if root packages make package dependency
+    if common_package is None:
+        imported_split = imported.split(".")
+        importer_split = importer.split(".")
+
+        if len(imported_split) == 1 and len(importer_split) == 1:
+            return None
+        else:
+            package_dependency = importer_split[0], imported_split[0]
+
+            if package_dependency[0] == package_dependency[1]:
+                return None
+
+            return package_dependency
+
+    if common_package == importer or common_package == imported:
+        return None
+
+    importer_reduced = importer.removeprefix(f"{common_package}.")
+    imported_reduced = imported.removeprefix(f"{common_package}.")
+    importer_package = f"{common_package}.{importer_reduced.split('.')[0]}"
+    imported_package = f"{common_package}.{imported_reduced.split('.')[0]}"
+    package_dependency = (importer_package, imported_package)
+
+    if package_dependency == (importer, imported) or importer_package == imported_package:
+        return None
+
+    return package_dependency

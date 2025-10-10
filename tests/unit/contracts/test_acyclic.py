@@ -1,14 +1,20 @@
 from unittest.mock import MagicMock, call, patch
 from grimp.adaptors.graph import ImportGraph
-from importlinter.contracts.acyclic import AcyclicContract, Cycle
-from importlinter.contracts.acyclic import _longest_common_package, _get_package_dependency
+from importlinter.contracts.acyclic import AcyclicContract, Cycle, _get_package_dependency
+from importlinter.contracts.acyclic import _longest_common_package
 from importlinter.domain.contract import ContractCheck
+
+
+_ROOT_PACKAGE = "root"
 
 
 def _build_contract(
     consider_package_dependencies: bool = True, max_cycle_families: int | None = None
 ) -> AcyclicContract:
-    contract_options = {"consider_package_dependencies": str(consider_package_dependencies)}
+    contract_options = {
+        "packages": [_ROOT_PACKAGE],
+        "consider_package_dependencies": str(consider_package_dependencies),
+    }
 
     if max_cycle_families is not None:
         contract_options["max_cycle_families"] = str(max_cycle_families)
@@ -22,42 +28,54 @@ class TestAcyclicContractCheck:
         Return an import graph with two cycle families between packages.
         """
         graph = ImportGraph()
+        graph.add_module(_ROOT_PACKAGE)
 
         for module in (
-            "root.1_a",
-            "root.1_a.2_a",
-            "root.1_a.2_b",
-            "root.1_b",
-            "root.1_b.2_a",
-            "root.1_b.2_b",
+            f"{_ROOT_PACKAGE}.1_a",
+            f"{_ROOT_PACKAGE}.1_a.2_a",
+            f"{_ROOT_PACKAGE}.1_a.2_b",
+            f"{_ROOT_PACKAGE}.1_b",
+            f"{_ROOT_PACKAGE}.1_b.2_a",
+            f"{_ROOT_PACKAGE}.1_b.2_b",
         ):
             graph.add_module(module)
 
-        graph.add_import(importer="root.1_a.2_a", imported="root.1_b.2_b")
-        graph.add_import(importer="root.1_b.2_a", imported="root.1_a.2_b")
+        graph.add_import(
+            importer=f"{_ROOT_PACKAGE}.1_a.2_a",
+            imported=f"{_ROOT_PACKAGE}.1_b.2_b",
+            line_number=1,
+            line_contents="-",
+        )
+        graph.add_import(
+            importer=f"{_ROOT_PACKAGE}.1_b.2_a",
+            imported=f"{_ROOT_PACKAGE}.1_a.2_b",
+            line_number=1,
+            line_contents="-",
+        )
         return graph
 
     def test_dag_indeed(self) -> None:
         # Given
         graph = ImportGraph()
+        graph.add_module(_ROOT_PACKAGE)
 
         for module in (
-            "root.1_a",
-            "root.1_a.2_a",
-            "root.1_a.2_b",
-            "root.1_b",
-            "root.1_b.2_a",
-            "root.1_b.2_b",
-            "root.1_c",
-            "root.1_c.2_a",
-            "root.1_c.2_b",
+            f"{_ROOT_PACKAGE}.1_a",
+            f"{_ROOT_PACKAGE}.1_a.2_a",
+            f"{_ROOT_PACKAGE}.1_a.2_b",
+            f"{_ROOT_PACKAGE}.1_b",
+            f"{_ROOT_PACKAGE}.1_b.2_a",
+            f"{_ROOT_PACKAGE}.1_b.2_b",
+            f"{_ROOT_PACKAGE}.1_c",
+            f"{_ROOT_PACKAGE}.1_c.2_a",
+            f"{_ROOT_PACKAGE}.1_c.2_b",
         ):
             graph.add_module(module)
 
-        graph.add_import(importer="root.1_a.2_a", imported="root.1_b.2_b")
-        graph.add_import(importer="root.1_a.2_a", imported="root.1_a.2_b")
-        graph.add_import(importer="root.1_a.2_b", imported="root.1_c.2_a")
-        graph.add_import(importer="root.1_b.2_a", imported="root.1_c.2_b")
+        graph.add_import(importer=f"{_ROOT_PACKAGE}.1_a.2_a", imported=f"{_ROOT_PACKAGE}.1_b.2_b")
+        graph.add_import(importer=f"{_ROOT_PACKAGE}.1_a.2_a", imported=f"{_ROOT_PACKAGE}.1_a.2_b")
+        graph.add_import(importer=f"{_ROOT_PACKAGE}.1_a.2_b", imported=f"{_ROOT_PACKAGE}.1_c.2_a")
+        graph.add_import(importer=f"{_ROOT_PACKAGE}.1_b.2_a", imported=f"{_ROOT_PACKAGE}.1_c.2_b")
         contract = _build_contract()
         # When
         contract_check = contract.check(graph=graph, verbose=False)
@@ -113,19 +131,24 @@ class TestAcyclicContractRenderBrokenContract:
             Cycle(members=("1_a.2_a", "1_b.2_b", "1_a.2_b", "1_c.2_a"), package_lvl_cycle=True)
         ]
         AcyclicContract._set_cycles_in_metadata(check=contract_check, cycles=cycles)
+        import_graph_mock = MagicMock()
+        import_graph_mock.get_import_details = MagicMock(return_value=[{"line_number": 1}])
+        AcyclicContract._set_graph_in_metadata(
+            check=contract_check, import_graph=import_graph_mock
+        )
         # When
         contract.render_broken_contract(check=contract_check)
         # Then
         print_error_mock.assert_has_calls(
             [
-                call(text=">>>> Cycles family for parent module '1_a'"),
-                call(text="\nSiblings:\n(\n  1_a\n  1_b\n)"),
-                call(text="\nNumber of cycles: 1\n"),
-                call(
-                    text="Cycle 1:\n\n(\n -> 1_a.2_a\n -> 1_b.2_b\n -> 1_a.2_b\n -> 1_c.2_a\n)\n"
-                ),
-                call(text="<<<< Cycles family for parent module '1_a'\n"),
-                call(text="Number of cycle families found for a contract 'test': 1\n"),
+                call(text="\nPackage __root__ contains a (package) dependency cycle:"),
+                call(text="\n  1. 1_a.2_a depends on 1_b.2_b:\n"),
+                call(text="      - 1_a.2_a -> 1_b.2_b (l. 1)"),
+                call(text="\n  2. 1_b.2_b depends on 1_a.2_b:\n"),
+                call(text="      - 1_b.2_b -> 1_a.2_b (l. 1)"),
+                call(text="\n  3. 1_a.2_b depends on 1_c.2_a:\n"),
+                call(text="      - 1_a.2_b -> 1_c.2_a (l. 1)"),
+                call(text="\n"),
             ]
         )
 

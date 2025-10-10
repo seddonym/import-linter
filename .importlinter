@@ -22,3 +22,5 @@ name=Acyclic
 type=acyclic
 packages:
     __root__
+consider_package_dependencies=true
+group_by_family=true
