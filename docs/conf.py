@@ -27,7 +27,7 @@ author = "David Seddon"
 # The short X.Y version
 version = ""
 # The full version, including alpha/beta/rc tags
-release = "2.5"
+release = "2.5.2"
 
 
 # -- General configuration ---------------------------------------------------

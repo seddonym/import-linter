@@ -1,11 +1,17 @@
 Changelog
 =========
 
-latest
-------
+2.5.2 (2025-10-09)
+------------------
+
+* Fix build issue with PyPI description.
+
+2.5.1 (2025-10-09)
+------------------
 
 * Correct documentation that incorrectly stated that protected modules
   are allowed to import each other.
+* Officially support Python 3.14.
 
 2.5 (2025-09-15)
 ----------------

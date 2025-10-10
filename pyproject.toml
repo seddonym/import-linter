@@ -1,6 +1,6 @@
 [project]
 name = "import-linter"
-version = "2.5"
+version = "2.5.2"
 license = {text = "BSD 2-Clause License"}
 description = "Enforces rules for the imports within and between Python packages."
 authors = [
@@ -26,10 +26,11 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Utilities",
 ]
-dynamic = ["readme"]
+readme = "README.rst"
 
 [build-system]
 requires = ["hatchling"]
