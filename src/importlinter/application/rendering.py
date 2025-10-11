@@ -1,4 +1,5 @@
-from typing import Optional
+import json
+from typing import Any, Optional
 
 from importlinter.domain.contract import Contract, ContractCheck
 
@@ -9,10 +10,16 @@ from .ports.reporting import Report
 # ----------------
 
 
-def render_report(report: Report, json: bool) -> None:
+def render_report(report: Report, json_format: bool) -> None:
     """
     Output the supplied report to the console.
     """
+    if json_format:
+        json_report = build_json_report(report)
+        json_str = json.dumps(json_report, indent=4, sort_keys=True)
+        output.print(json_str)
+        return
+
     if report.could_not_run:
         _render_could_not_run(report)
         return
@@ -47,6 +54,34 @@ def render_report(report: Report, json: bool) -> None:
         _render_broken_contracts_details(report)
 
 
+def build_json_report(report: Report) -> dict:
+    contracts_lines: list[dict] = []
+    for contract, contract_check in report.get_contracts_and_checks():
+        duration = report.get_duration(contract) if report.show_timings else None
+        contracts_lines.append(
+            build_json_contract_result(contract, contract_check, duration=duration)
+        )
+    header_lines = [
+        {
+            "file_count": report.module_count,
+            "dependency_count": report.import_count,
+        }
+    ]
+    final_dict: dict[str, Any] = {
+        "correct_run": not report.could_not_run,
+        "header": header_lines,
+        "contracts": contracts_lines,
+    }
+    if report.show_timings:
+        formatted_duration = format_duration(report.graph_building_duration)
+        final_dict["graph_building_duration"] = formatted_duration
+    if report.warnings_count:
+        final_dict["warnings_count"] = report.warnings_count
+    if report.broken_count:
+        final_dict["broken_count"] = report.broken_count
+    return final_dict
+
+
 def render_contract_result_line(
     contract: Contract, contract_check: ContractCheck, duration: Optional[int]
 ) -> None:
@@ -68,6 +103,20 @@ def render_contract_result_line(
     if duration is not None:
         output.print(f" [{format_duration(duration)}]", newline=False)
     output.new_line()
+
+
+def build_json_contract_result(
+    contract: Contract, contract_check: ContractCheck, duration: Optional[int]
+) -> dict:
+    warnings_text = _build_warning_text(warnings_count=len(contract_check.warnings))
+    final_dict: dict[str, Any] = {
+        "name": contract.name,
+        "kept": "KEPT" if contract_check.kept else "BROKEN",
+        "warnings": warnings_text,
+    }
+    if duration is not None:
+        final_dict["duration"] = format_duration(duration)
+    return final_dict
 
 
 def render_exception(exception: Exception) -> None:
