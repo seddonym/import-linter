@@ -55,22 +55,18 @@ def render_report(report: Report, json_format: bool) -> None:
 
 
 def build_json_report(report: Report) -> dict:
-    contracts_lines: list[dict] = []
+    contracts_lines: dict[str, Any] = {}
     for contract, contract_check in report.get_contracts_and_checks():
         duration = report.get_duration(contract) if report.show_timings else None
-        contracts_lines.append(
-            build_json_contract_result(contract, contract_check, duration=duration)
+        contracts_lines[contract.name] = build_json_contract_result(
+            contract, contract_check, duration=duration
         )
-    header_lines = [
-        {
-            "file_count": report.module_count,
-            "dependency_count": report.import_count,
-        }
-    ]
     final_dict: dict[str, Any] = {
-        "correct_run": not report.could_not_run,
-        "header": header_lines,
+        "completed": not report.could_not_run,
         "contracts": contracts_lines,
+        "file_count": report.module_count,
+        "dependency_count": report.import_count,
+        "kept": not report.contains_failures,
     }
     if report.show_timings:
         formatted_duration = format_duration(report.graph_building_duration)
@@ -105,14 +101,22 @@ def render_contract_result_line(
     output.new_line()
 
 
+def _build_warning_json(warning: str) -> dict[str, Any]:
+    return {
+        "message": warning,
+    }
+
+
 def build_json_contract_result(
     contract: Contract, contract_check: ContractCheck, duration: Optional[int]
 ) -> dict:
-    warnings_text = _build_warning_text(warnings_count=len(contract_check.warnings))
+    warnings: list[dict[str, Any]] = [
+        _build_warning_json(warning) for warning in contract_check.warnings
+    ]
     final_dict: dict[str, Any] = {
         "name": contract.name,
-        "kept": "KEPT" if contract_check.kept else "BROKEN",
-        "warnings": warnings_text,
+        "kept": contract_check.kept,
+        "warnings": warnings,
     }
     if duration is not None:
         final_dict["duration"] = format_duration(duration)
