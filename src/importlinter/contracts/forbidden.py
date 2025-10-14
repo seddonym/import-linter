@@ -198,7 +198,7 @@ class ForbiddenContract(Contract):
                 )
 
     def _get_external_forbidden_modules(self, forbidden_modules) -> set[Module]:
-        root_packages = [Module(name) for name in self.session_options["root_packages"]]
+        root_packages = [Module(name=name) for name in self.session_options["root_packages"]]
         return {
             forbidden_module
             for forbidden_module in cast(List[Module], forbidden_modules)
@@ -231,7 +231,7 @@ class ForbiddenContract(Contract):
         for source_module in source_modules:
             imported_module_names = graph.find_modules_directly_imported_by(source_module.name)
             for imported_module_name in imported_module_names:
-                imported_module = Module(imported_module_name)
+                imported_module = Module(name=imported_module_name)
                 if imported_module in forbidden_modules:
                     chains.add((source_module.name, imported_module.name))
         return chains
@@ -244,5 +244,5 @@ class ForbiddenContract(Contract):
         """
         importer_modules = {module}
         if not graph.is_module_squashed(module.name):
-            importer_modules |= {Module(m) for m in graph.find_descendants(module.name)}
+            importer_modules |= {Module(name=m) for m in graph.find_descendants(module.name)}
         return importer_modules

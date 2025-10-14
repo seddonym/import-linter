@@ -89,7 +89,7 @@ def segments_to_collapsed_chains(
         for module in [
             m
             for m in candidate_modules
-            if Module(m) == importer or Module(m).is_descendant_of(importer)
+            if Module(name=m) == importer or Module(name=m).is_descendant_of(importer)
         ]:
             import_details_list = graph.get_import_details(
                 importer=module, imported=imported_module
@@ -109,7 +109,7 @@ def segments_to_collapsed_chains(
         for module in [
             m
             for m in candidate_modules
-            if Module(m) == imported or Module(m).is_descendant_of(imported)
+            if Module(name=m) == imported or Module(name=m).is_descendant_of(imported)
         ]:
             import_details_list = graph.get_import_details(
                 importer=importer_module, imported=module

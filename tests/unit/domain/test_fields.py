@@ -74,7 +74,7 @@ class TestBooleanField(BaseFieldTest):
 @pytest.mark.parametrize(
     "raw_data, expected_value",
     (
-        ("mypackage.foo.bar", Module("mypackage.foo.bar")),
+        ("mypackage.foo.bar", Module(name="mypackage.foo.bar")),
         (
             ["one", "two", "three"],
             ValidationError("Expected a single value, got multiple values."),
@@ -92,22 +92,22 @@ class TestModuleField(BaseFieldTest):
         (
             "mypackage.foo -> mypackage.bar",
             ImportExpression(
-                importer=ModuleExpression("mypackage.foo"),
-                imported=ModuleExpression("mypackage.bar"),
+                importer=ModuleExpression(expression="mypackage.foo"),
+                imported=ModuleExpression(expression="mypackage.bar"),
             ),
         ),
         (
             "my_package.foo   ->   my_package.bar",  # Extra whitespaces are supported.
             ImportExpression(
-                importer=ModuleExpression("my_package.foo"),
-                imported=ModuleExpression("my_package.bar"),
+                importer=ModuleExpression(expression="my_package.foo"),
+                imported=ModuleExpression(expression="my_package.bar"),
             ),
         ),
         (
             "my_package.foo -> my_package.foo_bar",  # Underscores are supported.
             ImportExpression(
-                importer=ModuleExpression("my_package.foo"),
-                imported=ModuleExpression("my_package.foo_bar"),
+                importer=ModuleExpression(expression="my_package.foo"),
+                imported=ModuleExpression(expression="my_package.foo_bar"),
             ),
         ),
         # Wildcards
@@ -115,57 +115,57 @@ class TestModuleField(BaseFieldTest):
         (
             "mypackage.foo.* -> mypackage.bar",
             ImportExpression(
-                importer=ModuleExpression("mypackage.foo.*"),
-                imported=ModuleExpression("mypackage.bar"),
+                importer=ModuleExpression(expression="mypackage.foo.*"),
+                imported=ModuleExpression(expression="mypackage.bar"),
             ),
         ),
         (
             "mypackage.foo.*.baz -> mypackage.bar",
             ImportExpression(
-                importer=ModuleExpression("mypackage.foo.*.baz"),
-                imported=ModuleExpression("mypackage.bar"),
+                importer=ModuleExpression(expression="mypackage.foo.*.baz"),
+                imported=ModuleExpression(expression="mypackage.bar"),
             ),
         ),
         (
             "mypackage.foo -> mypackage.bar.*",
             ImportExpression(
-                importer=ModuleExpression("mypackage.foo"),
-                imported=ModuleExpression("mypackage.bar.*"),
+                importer=ModuleExpression(expression="mypackage.foo"),
+                imported=ModuleExpression(expression="mypackage.bar.*"),
             ),
         ),
         (
             "*.*.* -> mypackage.*.foo.*",
             ImportExpression(
-                importer=ModuleExpression("*.*.*"),
-                imported=ModuleExpression("mypackage.*.foo.*"),
+                importer=ModuleExpression(expression="*.*.*"),
+                imported=ModuleExpression(expression="mypackage.*.foo.*"),
             ),
         ),
         (
             "mypackage.foo.** -> mypackage.bar",
             ImportExpression(
-                importer=ModuleExpression("mypackage.foo.**"),
-                imported=ModuleExpression("mypackage.bar"),
+                importer=ModuleExpression(expression="mypackage.foo.**"),
+                imported=ModuleExpression(expression="mypackage.bar"),
             ),
         ),
         (
             "mypackage.foo.**.baz -> mypackage.bar",
             ImportExpression(
-                importer=ModuleExpression("mypackage.foo.**.baz"),
-                imported=ModuleExpression("mypackage.bar"),
+                importer=ModuleExpression(expression="mypackage.foo.**.baz"),
+                imported=ModuleExpression(expression="mypackage.bar"),
             ),
         ),
         (
             "mypackage.foo -> mypackage.bar.**",
             ImportExpression(
-                importer=ModuleExpression("mypackage.foo"),
-                imported=ModuleExpression("mypackage.bar.**"),
+                importer=ModuleExpression(expression="mypackage.foo"),
+                imported=ModuleExpression(expression="mypackage.bar.**"),
             ),
         ),
         (
             "** -> mypackage.**.foo.*",
             ImportExpression(
-                importer=ModuleExpression("**"),
-                imported=ModuleExpression("mypackage.**.foo.*"),
+                importer=ModuleExpression(expression="**"),
+                imported=ModuleExpression(expression="mypackage.**.foo.*"),
             ),
         ),
         # Invalid expressions
@@ -217,14 +217,14 @@ class TestImportExpressionField(BaseFieldTest):
     (
         (
             ["mypackage.foo", "mypackage.bar"],
-            [Module("mypackage.foo"), Module("mypackage.bar")],
+            [Module(name="mypackage.foo"), Module(name="mypackage.bar")],
         ),
         (
             ["mypackage.foo", "mypackage.foo"],
-            [Module("mypackage.foo"), Module("mypackage.foo")],
+            [Module(name="mypackage.foo"), Module(name="mypackage.foo")],
         ),
-        (["mypackage.foo", "    "], [Module("mypackage.foo")]),
-        ("singlevalue", [Module("singlevalue")]),
+        (["mypackage.foo", "    "], [Module(name="mypackage.foo")]),
+        ("singlevalue", [Module(name="singlevalue")]),
     ),
 )
 class TestListField(BaseFieldTest):
@@ -237,11 +237,11 @@ class TestListField(BaseFieldTest):
     (
         (
             ["mypackage.foo", "mypackage.bar"],
-            {Module("mypackage.foo"), Module("mypackage.bar")},
+            {Module(name="mypackage.foo"), Module(name="mypackage.bar")},
         ),
-        (["mypackage.foo", "mypackage.foo"], {Module("mypackage.foo")}),
-        (["mypackage.foo", "    "], {Module("mypackage.foo")}),
-        ("singlevalue", {Module("singlevalue")}),
+        (["mypackage.foo", "mypackage.foo"], {Module(name="mypackage.foo")}),
+        (["mypackage.foo", "    "], {Module(name="mypackage.foo")}),
+        ("singlevalue", {Module(name="singlevalue")}),
     ),
 )
 class TestSetField(BaseFieldTest):

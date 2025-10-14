@@ -14,26 +14,26 @@ from importlinter.domain.imports import (
 class TestRemoveIgnoredImports:
     DIRECT_IMPORTS = [
         DirectImport(
-            importer=Module("mypackage.green"),
-            imported=Module("mypackage.yellow"),
+            importer=Module(name="mypackage.green"),
+            imported=Module(name="mypackage.yellow"),
             line_number=1,
             line_contents="-",
         ),
         DirectImport(
-            importer=Module("mypackage.green"),
-            imported=Module("mypackage.purple"),
+            importer=Module(name="mypackage.green"),
+            imported=Module(name="mypackage.purple"),
             line_number=1,
             line_contents="-",
         ),
         DirectImport(
-            importer=Module("mypackage.green"),
-            imported=Module("mypackage.blue"),
+            importer=Module(name="mypackage.green"),
+            imported=Module(name="mypackage.blue"),
             line_number=1,
             line_contents="-",
         ),
         DirectImport(  # Direct Imports can appear twice, for different line numbers.
-            importer=Module("mypackage.green"),
-            imported=Module("mypackage.blue"),
+            importer=Module(name="mypackage.green"),
+            imported=Module(name="mypackage.blue"),
             line_number=2,
             line_contents="-",
         ),
@@ -47,12 +47,12 @@ class TestRemoveIgnoredImports:
             graph=graph,
             ignore_imports=[
                 ImportExpression(
-                    importer=ModuleExpression("mypackage.green"),
-                    imported=ModuleExpression("mypackage.blue"),
+                    importer=ModuleExpression(expression="mypackage.green"),
+                    imported=ModuleExpression(expression="mypackage.blue"),
                 ),
                 ImportExpression(
-                    importer=ModuleExpression("mypackage.green"),
-                    imported=ModuleExpression("mypackage.purple"),
+                    importer=ModuleExpression(expression="mypackage.green"),
+                    imported=ModuleExpression(expression="mypackage.purple"),
                 ),
             ],
             unmatched_alerting=alert_level,
@@ -84,20 +84,20 @@ class TestRemoveIgnoredImports:
         graph = self._build_graph(self.DIRECT_IMPORTS)
         ignore_imports = [
             ImportExpression(
-                importer=ModuleExpression("mypackage.green"),
-                imported=ModuleExpression("mypackage.blue"),
+                importer=ModuleExpression(expression="mypackage.green"),
+                imported=ModuleExpression(expression="mypackage.blue"),
             ),
             ImportExpression(
-                importer=ModuleExpression("mypackage.*"),
-                imported=ModuleExpression("mypackage.nonexistent"),
+                importer=ModuleExpression(expression="mypackage.*"),
+                imported=ModuleExpression(expression="mypackage.nonexistent"),
             ),
             ImportExpression(
-                importer=ModuleExpression("mypackage.green"),
-                imported=ModuleExpression("mypackage.purple"),
+                importer=ModuleExpression(expression="mypackage.green"),
+                imported=ModuleExpression(expression="mypackage.purple"),
             ),
             ImportExpression(
-                importer=ModuleExpression("mypackage.nonexistent"),
-                imported=ModuleExpression("mypackage.blue"),
+                importer=ModuleExpression(expression="mypackage.nonexistent"),
+                imported=ModuleExpression(expression="mypackage.blue"),
             ),
         ]
 

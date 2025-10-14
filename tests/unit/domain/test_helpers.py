@@ -52,7 +52,9 @@ class TestPopImports:
         result = pop_imports(
             graph,
             [
-                DirectImport(importer=Module(i["importer"]), imported=Module(i["imported"]))
+                DirectImport(
+                    importer=Module(name=i["importer"]), imported=Module(name=i["imported"])
+                )
                 for i in imports_to_pop
             ],
         )
@@ -66,8 +68,8 @@ class TestPopImports:
     def test_raises_missing_import_if_module_not_found(self) -> None:
         graph = self._build_graph(imports=self.IMPORTS)
         non_existent_import = DirectImport(
-            importer=Module("mypackage.nonexistent"),
-            imported=Module("mypackage.yellow"),
+            importer=Module(name="mypackage.nonexistent"),
+            imported=Module(name="mypackage.yellow"),
             line_number=1,
             line_contents="-",
         )
@@ -102,8 +104,8 @@ class TestPopImports:
             graph,
             [
                 DirectImport(
-                    importer=Module(i["importer"]),
-                    imported=Module(i["imported"]),
+                    importer=Module(name=i["importer"]),
+                    imported=Module(name=i["imported"]),
                     line_number=i["line_number"],
                     line_contents=i["line_contents"],
                 )
@@ -129,52 +131,52 @@ class TestPopImports:
 class TestImportExpressionsToImports:
     DIRECT_IMPORTS = [
         DirectImport(
-            importer=Module("mypackage.green"),
-            imported=Module("mypackage.yellow"),
+            importer=Module(name="mypackage.green"),
+            imported=Module(name="mypackage.yellow"),
             line_number=1,
             line_contents="-",
         ),
         DirectImport(
-            importer=Module("mypackage.green"),
-            imported=Module("mypackage.blue"),
+            importer=Module(name="mypackage.green"),
+            imported=Module(name="mypackage.blue"),
             line_number=1,
             line_contents="-",
         ),
         DirectImport(
-            importer=Module("mypackage.blue"),
-            imported=Module("mypackage.green"),
+            importer=Module(name="mypackage.blue"),
+            imported=Module(name="mypackage.green"),
             line_number=1,
             line_contents="-",
         ),
         DirectImport(
-            importer=Module("mypackage.blue.cats"),
-            imported=Module("mypackage.purple.dogs"),
+            importer=Module(name="mypackage.blue.cats"),
+            imported=Module(name="mypackage.purple.dogs"),
             line_number=1,
             line_contents="-",
         ),
         DirectImport(
-            importer=Module("mypackage.green.cats"),
-            imported=Module("mypackage.orange.dogs"),
+            importer=Module(name="mypackage.green.cats"),
+            imported=Module(name="mypackage.orange.dogs"),
             line_number=1,
             line_contents="-",
         ),
         DirectImport(
-            importer=Module("mypackage.green.cats"),
-            imported=Module("mypackage.orange.mice"),
+            importer=Module(name="mypackage.green.cats"),
+            imported=Module(name="mypackage.orange.mice"),
             line_number=1,
             line_contents="-",
         ),
         # Direct imports of external packages can appear more than once, as the external package
         # is squashed.
         DirectImport(
-            importer=Module("mypackage.brown"),
-            imported=Module("someotherpackage"),
+            importer=Module(name="mypackage.brown"),
+            imported=Module(name="someotherpackage"),
             line_number=1,
             line_contents="from someotherpackage import one",
         ),
         DirectImport(
-            importer=Module("mypackage.brown"),
-            imported=Module("someotherpackage"),
+            importer=Module(name="mypackage.brown"),
+            imported=Module(name="someotherpackage"),
             line_number=2,
             line_contents="from someotherpackage import two",
         ),
@@ -187,8 +189,8 @@ class TestImportExpressionsToImports:
                 "No wildcards",
                 [
                     ImportExpression(
-                        importer=ModuleExpression(DIRECT_IMPORTS[0].importer.name),
-                        imported=ModuleExpression(DIRECT_IMPORTS[0].imported.name),
+                        importer=ModuleExpression(expression=DIRECT_IMPORTS[0].importer.name),
+                        imported=ModuleExpression(expression=DIRECT_IMPORTS[0].imported.name),
                     ),
                 ],
                 [DIRECT_IMPORTS[0]],
@@ -197,8 +199,8 @@ class TestImportExpressionsToImports:
                 "Importer wildcard",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.*"),
-                        imported=ModuleExpression("mypackage.blue"),
+                        importer=ModuleExpression(expression="mypackage.*"),
+                        imported=ModuleExpression(expression="mypackage.blue"),
                     ),
                 ],
                 [DIRECT_IMPORTS[1]],
@@ -207,8 +209,8 @@ class TestImportExpressionsToImports:
                 "Imported wildcard",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.green"),
-                        imported=ModuleExpression("mypackage.*"),
+                        importer=ModuleExpression(expression="mypackage.green"),
+                        imported=ModuleExpression(expression="mypackage.*"),
                     ),
                 ],
                 DIRECT_IMPORTS[0:2],
@@ -217,8 +219,8 @@ class TestImportExpressionsToImports:
                 "Importer and imported wildcards",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.*"),
-                        imported=ModuleExpression("mypackage.*"),
+                        importer=ModuleExpression(expression="mypackage.*"),
+                        imported=ModuleExpression(expression="mypackage.*"),
                     ),
                 ],
                 DIRECT_IMPORTS[0:3],
@@ -227,8 +229,8 @@ class TestImportExpressionsToImports:
                 "Inner wildcard",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.*.cats"),
-                        imported=ModuleExpression("mypackage.*.dogs"),
+                        importer=ModuleExpression(expression="mypackage.*.cats"),
+                        imported=ModuleExpression(expression="mypackage.*.dogs"),
                     ),
                 ],
                 DIRECT_IMPORTS[3:5],
@@ -237,12 +239,12 @@ class TestImportExpressionsToImports:
                 "Multiple expressions, non-overlapping",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.green"),
-                        imported=ModuleExpression("mypackage.*"),
+                        importer=ModuleExpression(expression="mypackage.green"),
+                        imported=ModuleExpression(expression="mypackage.*"),
                     ),
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.green.cats"),
-                        imported=ModuleExpression("mypackage.orange.*"),
+                        importer=ModuleExpression(expression="mypackage.green.cats"),
+                        imported=ModuleExpression(expression="mypackage.orange.*"),
                     ),
                 ],
                 DIRECT_IMPORTS[0:2] + DIRECT_IMPORTS[4:6],
@@ -251,12 +253,12 @@ class TestImportExpressionsToImports:
                 "Multiple expressions, overlapping",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.*"),
-                        imported=ModuleExpression("mypackage.blue"),
+                        importer=ModuleExpression(expression="mypackage.*"),
+                        imported=ModuleExpression(expression="mypackage.blue"),
                     ),
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.green"),
-                        imported=ModuleExpression("mypackage.blue"),
+                        importer=ModuleExpression(expression="mypackage.green"),
+                        imported=ModuleExpression(expression="mypackage.blue"),
                     ),
                 ],
                 [DIRECT_IMPORTS[1]],
@@ -265,8 +267,8 @@ class TestImportExpressionsToImports:
                 "Multiple imports of external package with same importer",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.brown"),
-                        imported=ModuleExpression("someotherpackage"),
+                        importer=ModuleExpression(expression="mypackage.brown"),
+                        imported=ModuleExpression(expression="someotherpackage"),
                     ),
                 ],
                 DIRECT_IMPORTS[6:8],
@@ -293,8 +295,8 @@ class TestImportExpressionsToImports:
         )
 
         expression = ImportExpression(
-            importer=ModuleExpression("mypackage.a.*"),
-            imported=ModuleExpression("other.foo"),
+            importer=ModuleExpression(expression="mypackage.a.*"),
+            imported=ModuleExpression(expression="other.foo"),
         )
         with pytest.raises(MissingImport):
             import_expressions_to_imports(graph, [expression])
@@ -314,58 +316,58 @@ class TestImportExpressionsToImports:
 class TestResolveImportExpressions:
     DIRECT_IMPORTS = [
         DirectImport(
-            importer=Module("mypackage.green"),
-            imported=Module("mypackage.yellow"),
+            importer=Module(name="mypackage.green"),
+            imported=Module(name="mypackage.yellow"),
             line_number=1,
             line_contents="-",
         ),
         DirectImport(
-            importer=Module("mypackage.green"),
-            imported=Module("mypackage.blue"),
+            importer=Module(name="mypackage.green"),
+            imported=Module(name="mypackage.blue"),
             line_number=1,
             line_contents="-",
         ),
         DirectImport(
-            importer=Module("mypackage.blue"),
-            imported=Module("mypackage.green"),
+            importer=Module(name="mypackage.blue"),
+            imported=Module(name="mypackage.green"),
             line_number=1,
             line_contents="-",
         ),
         DirectImport(
-            importer=Module("mypackage.blue.cats"),
-            imported=Module("mypackage.purple.dogs"),
+            importer=Module(name="mypackage.blue.cats"),
+            imported=Module(name="mypackage.purple.dogs"),
             line_number=1,
             line_contents="-",
         ),
         DirectImport(
-            importer=Module("mypackage.green.cats"),
-            imported=Module("mypackage.orange.dogs"),
+            importer=Module(name="mypackage.green.cats"),
+            imported=Module(name="mypackage.orange.dogs"),
             line_number=1,
             line_contents="-",
         ),
         DirectImport(
-            importer=Module("mypackage.green.cats"),
-            imported=Module("mypackage.orange.mice"),
+            importer=Module(name="mypackage.green.cats"),
+            imported=Module(name="mypackage.orange.mice"),
             line_number=1,
             line_contents="-",
         ),
         # Direct imports of external packages can appear more than once, as the external package
         # is squashed.
         DirectImport(
-            importer=Module("mypackage.brown"),
-            imported=Module("someotherpackage"),
+            importer=Module(name="mypackage.brown"),
+            imported=Module(name="someotherpackage"),
             line_number=1,
             line_contents="from someotherpackage import one",
         ),
         DirectImport(
-            importer=Module("mypackage.brown"),
-            imported=Module("someotherpackage"),
+            importer=Module(name="mypackage.brown"),
+            imported=Module(name="someotherpackage"),
             line_number=2,
             line_contents="from someotherpackage import two",
         ),
         DirectImport(
-            importer=Module("mypackage.green.cats.very.deep.module.cats"),
-            imported=Module("mypackage.orange.mice.another.verydeep.one.dogs"),
+            importer=Module(name="mypackage.green.cats.very.deep.module.cats"),
+            imported=Module(name="mypackage.orange.mice.another.verydeep.one.dogs"),
             line_number=1,
             line_contents="-",
         ),
@@ -378,8 +380,8 @@ class TestResolveImportExpressions:
                 "No wildcards",
                 [
                     ImportExpression(
-                        importer=ModuleExpression(DIRECT_IMPORTS[0].importer.name),
-                        imported=ModuleExpression(DIRECT_IMPORTS[0].imported.name),
+                        importer=ModuleExpression(expression=DIRECT_IMPORTS[0].importer.name),
+                        imported=ModuleExpression(expression=DIRECT_IMPORTS[0].imported.name),
                     ),
                 ],
                 {DIRECT_IMPORTS[0]},
@@ -388,8 +390,8 @@ class TestResolveImportExpressions:
                 "Importer wildcard",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.*"),
-                        imported=ModuleExpression("mypackage.blue"),
+                        importer=ModuleExpression(expression="mypackage.*"),
+                        imported=ModuleExpression(expression="mypackage.blue"),
                     ),
                 ],
                 {DIRECT_IMPORTS[1]},
@@ -398,8 +400,8 @@ class TestResolveImportExpressions:
                 "Imported wildcard",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.green"),
-                        imported=ModuleExpression("mypackage.*"),
+                        importer=ModuleExpression(expression="mypackage.green"),
+                        imported=ModuleExpression(expression="mypackage.*"),
                     ),
                 ],
                 set(DIRECT_IMPORTS[0:2]),
@@ -408,8 +410,8 @@ class TestResolveImportExpressions:
                 "Importer and imported wildcards",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.*"),
-                        imported=ModuleExpression("mypackage.*"),
+                        importer=ModuleExpression(expression="mypackage.*"),
+                        imported=ModuleExpression(expression="mypackage.*"),
                     ),
                 ],
                 set(DIRECT_IMPORTS[0:3]),
@@ -418,8 +420,8 @@ class TestResolveImportExpressions:
                 "Inner wildcard",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.*.cats"),
-                        imported=ModuleExpression("mypackage.*.dogs"),
+                        importer=ModuleExpression(expression="mypackage.*.cats"),
+                        imported=ModuleExpression(expression="mypackage.*.dogs"),
                     ),
                 ],
                 set(DIRECT_IMPORTS[3:5]),
@@ -428,8 +430,8 @@ class TestResolveImportExpressions:
                 "Importer recursive wildcard",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.**"),
-                        imported=ModuleExpression("mypackage.blue"),
+                        importer=ModuleExpression(expression="mypackage.**"),
+                        imported=ModuleExpression(expression="mypackage.blue"),
                     ),
                 ],
                 {DIRECT_IMPORTS[1]},
@@ -438,8 +440,8 @@ class TestResolveImportExpressions:
                 "Imported recursive wildcard",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.green"),
-                        imported=ModuleExpression("mypackage.**"),
+                        importer=ModuleExpression(expression="mypackage.green"),
+                        imported=ModuleExpression(expression="mypackage.**"),
                     ),
                 ],
                 set(DIRECT_IMPORTS[0:2]),
@@ -448,8 +450,8 @@ class TestResolveImportExpressions:
                 "Importer and imported recursive wildcards",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.**"),
-                        imported=ModuleExpression("mypackage.**"),
+                        importer=ModuleExpression(expression="mypackage.**"),
+                        imported=ModuleExpression(expression="mypackage.**"),
                     ),
                 ],
                 set(DIRECT_IMPORTS[0:6]) | {DIRECT_IMPORTS[8]},
@@ -458,8 +460,8 @@ class TestResolveImportExpressions:
                 "Inner recursive wildcard",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.**.cats"),
-                        imported=ModuleExpression("mypackage.**.dogs"),
+                        importer=ModuleExpression(expression="mypackage.**.cats"),
+                        imported=ModuleExpression(expression="mypackage.**.dogs"),
                     ),
                 ],
                 set(DIRECT_IMPORTS[3:5]) | {DIRECT_IMPORTS[8]},
@@ -468,12 +470,12 @@ class TestResolveImportExpressions:
                 "Multiple expressions, non-overlapping",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.green"),
-                        imported=ModuleExpression("mypackage.*"),
+                        importer=ModuleExpression(expression="mypackage.green"),
+                        imported=ModuleExpression(expression="mypackage.*"),
                     ),
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.green.cats"),
-                        imported=ModuleExpression("mypackage.orange.*"),
+                        importer=ModuleExpression(expression="mypackage.green.cats"),
+                        imported=ModuleExpression(expression="mypackage.orange.*"),
                     ),
                 ],
                 set(DIRECT_IMPORTS[0:2] + DIRECT_IMPORTS[4:6]),
@@ -482,12 +484,12 @@ class TestResolveImportExpressions:
                 "Multiple expressions, overlapping",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.*"),
-                        imported=ModuleExpression("mypackage.blue"),
+                        importer=ModuleExpression(expression="mypackage.*"),
+                        imported=ModuleExpression(expression="mypackage.blue"),
                     ),
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.green"),
-                        imported=ModuleExpression("mypackage.blue"),
+                        importer=ModuleExpression(expression="mypackage.green"),
+                        imported=ModuleExpression(expression="mypackage.blue"),
                     ),
                 ],
                 {DIRECT_IMPORTS[1]},
@@ -496,8 +498,8 @@ class TestResolveImportExpressions:
                 "Multiple imports of external package with same importer",
                 [
                     ImportExpression(
-                        importer=ModuleExpression("mypackage.brown"),
-                        imported=ModuleExpression("someotherpackage"),
+                        importer=ModuleExpression(expression="mypackage.brown"),
+                        imported=ModuleExpression(expression="someotherpackage"),
                     ),
                 ],
                 set(DIRECT_IMPORTS[6:8]),
@@ -528,8 +530,8 @@ class TestResolveImportExpressions:
             line_contents="-",
         )
         expression = ImportExpression(
-            importer=ModuleExpression("mypackage.a.*"),
-            imported=ModuleExpression("other.foo"),
+            importer=ModuleExpression(expression="mypackage.a.*"),
+            imported=ModuleExpression(expression="other.foo"),
         )
 
         imports, unresolved_expressions = resolve_import_expressions(graph, [expression])
@@ -538,8 +540,8 @@ class TestResolveImportExpressions:
             set(),
             {
                 ImportExpression(
-                    imported=ModuleExpression("other.foo"),
-                    importer=ModuleExpression("mypackage.a.*"),
+                    imported=ModuleExpression(expression="other.foo"),
+                    importer=ModuleExpression(expression="mypackage.a.*"),
                 )
             },
         )
@@ -559,32 +561,32 @@ class TestResolveImportExpressions:
 class TestPopImportExpressions:
     DIRECT_IMPORTS = [
         DirectImport(
-            importer=Module("mypackage.green"),
-            imported=Module("mypackage.yellow"),
+            importer=Module(name="mypackage.green"),
+            imported=Module(name="mypackage.yellow"),
             line_number=1,
             line_contents="-",
         ),
         DirectImport(
-            importer=Module("mypackage.green"),
-            imported=Module("mypackage.blue"),
+            importer=Module(name="mypackage.green"),
+            imported=Module(name="mypackage.blue"),
             line_number=1,
             line_contents="-",
         ),
         DirectImport(
-            importer=Module("mypackage.blue"),
-            imported=Module("mypackage.green"),
+            importer=Module(name="mypackage.blue"),
+            imported=Module(name="mypackage.green"),
             line_number=1,
             line_contents="-",
         ),
         DirectImport(
-            importer=Module("mypackage.blue.cats"),
-            imported=Module("mypackage.purple.dogs"),
+            importer=Module(name="mypackage.blue.cats"),
+            imported=Module(name="mypackage.purple.dogs"),
             line_number=1,
             line_contents="-",
         ),
         DirectImport(
-            importer=Module("mypackage.green.cats"),
-            imported=Module("mypackage.orange.dogs"),
+            importer=Module(name="mypackage.green.cats"),
+            imported=Module(name="mypackage.orange.dogs"),
             line_number=1,
             line_contents="-",
         ),
@@ -594,17 +596,17 @@ class TestPopImportExpressions:
         graph = self._build_graph(self.DIRECT_IMPORTS)
         expressions = [
             ImportExpression(
-                importer=ModuleExpression("mypackage.green"),
-                imported=ModuleExpression("mypackage.*"),
+                importer=ModuleExpression(expression="mypackage.green"),
+                imported=ModuleExpression(expression="mypackage.*"),
             ),
             # Expressions can overlap.
             ImportExpression(
-                importer=ModuleExpression("mypackage.green"),
-                imported=ModuleExpression("mypackage.blue"),
+                importer=ModuleExpression(expression="mypackage.green"),
+                imported=ModuleExpression(expression="mypackage.blue"),
             ),
             ImportExpression(
-                importer=ModuleExpression("mypackage.blue.cats"),
-                imported=ModuleExpression("mypackage.purple.dogs"),
+                importer=ModuleExpression(expression="mypackage.blue.cats"),
+                imported=ModuleExpression(expression="mypackage.purple.dogs"),
             ),
         ]
 
@@ -639,8 +641,8 @@ class TestPopImportExpressions:
 
     def _dict_to_direct_import(self, import_details: DetailedImport) -> DirectImport:
         return DirectImport(
-            importer=Module(import_details["importer"]),
-            imported=Module(import_details["imported"]),
+            importer=Module(name=import_details["importer"]),
+            imported=Module(name=import_details["imported"]),
             line_number=import_details["line_number"],
             line_contents=import_details["line_contents"],
         )
@@ -748,9 +750,9 @@ class TestModuleExpressionToModules:
         graph = self._build_default_graph()
 
         conversion_result = module_expression_to_modules(
-            graph, expression=ModuleExpression(expression)
+            graph, expression=ModuleExpression(expression=expression)
         )
-        expected_modules = set(map(lambda name: Module(name), expected))
+        expected_modules = set(map(lambda name: Module(name=name), expected))
 
         assert conversion_result == expected_modules, description
 
@@ -851,9 +853,9 @@ class TestModuleExpressionToModules:
         graph = self._build_default_graph()
 
         conversion_result = module_expression_to_modules(
-            graph, expression=ModuleExpression(expression), as_packages=True
+            graph, expression=ModuleExpression(expression=expression), as_packages=True
         )
-        expected_modules = set(map(lambda name: Module(name), expected))
+        expected_modules = set(map(lambda name: Module(name=name), expected))
 
         assert conversion_result == expected_modules, description
 

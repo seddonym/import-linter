@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from typing import Any, Optional
+from pydantic import BaseModel
 
 
-class ValueObject:
+class ValueObject(BaseModel):
     def __repr__(self) -> str:
         return "<{}: {}>".format(self.__class__.__name__, self)
 
@@ -20,12 +23,7 @@ class Module(ValueObject):
     A Python module.
     """
 
-    def __init__(self, name: str) -> None:
-        """
-        Args:
-            name: The fully qualified name of a Python module, e.g. 'package.foo.bar'.
-        """
-        self.name = name
+    name: str
 
     def __str__(self) -> str:
         return self.name
@@ -35,23 +33,23 @@ class Module(ValueObject):
         return self.name.split(".")[0]
 
     @property
-    def parent(self) -> "Module":
+    def parent(self) -> Module:
         components = self.name.split(".")
         if len(components) == 1:
             raise ValueError("Module has no parent.")
-        return Module(".".join(components[:-1]))
+        return Module(name=".".join(components[:-1]))
 
-    def is_child_of(self, module: "Module") -> bool:
+    def is_child_of(self, module: Module) -> bool:
         try:
             return module == self.parent
         except ValueError:
             # If this module has no parent, then it cannot be a child of the supplied module.
             return False
 
-    def is_descendant_of(self, module: "Module") -> bool:
+    def is_descendant_of(self, module: Module) -> bool:
         return self.name.startswith(f"{module.name}.")
 
-    def is_in_package(self, package: "Module") -> bool:
+    def is_in_package(self, package: Module) -> bool:
         return self == package or self.is_descendant_of(package)
 
 
@@ -60,18 +58,10 @@ class DirectImport(ValueObject):
     An import between one module and another.
     """
 
-    def __init__(
-        self,
-        *,
-        importer: Module,
-        imported: Module,
-        line_number: Optional[int] = None,
-        line_contents: Optional[str] = None,
-    ) -> None:
-        self.importer = importer
-        self.imported = imported
-        self.line_number = line_number
-        self.line_contents = line_contents
+    importer: Module
+    imported: Module
+    line_number: Optional[int] = None
+    line_contents: Optional[str] = None
 
     def __str__(self) -> str:
         if self.line_number:
@@ -97,8 +87,7 @@ class ModuleExpression(ValueObject):
     Note that * and ** cannot be mixed in the same expression.
     """
 
-    def __init__(self, expression: str) -> None:
-        self.expression = expression
+    expression: str
 
     def has_wildcard_expression(self) -> bool:
         return "*" in self.expression
@@ -115,9 +104,8 @@ class ImportExpression(ValueObject):
     (see ModuleExpression for details).
     """
 
-    def __init__(self, importer: ModuleExpression, imported: ModuleExpression) -> None:
-        self.importer = importer
-        self.imported = imported
+    importer: ModuleExpression
+    imported: ModuleExpression
 
     def has_wildcard_expression(self) -> bool:
         return self.imported.has_wildcard_expression() or self.importer.has_wildcard_expression()

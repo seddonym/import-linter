@@ -75,8 +75,8 @@ def import_expression_to_imports(
             for individual_import_details in import_details:
                 detailed_imports.add(
                     DirectImport(
-                        importer=Module(individual_import_details["importer"]),
-                        imported=Module(individual_import_details["imported"]),
+                        importer=Module(name=individual_import_details["importer"]),
+                        imported=Module(name=individual_import_details["imported"]),
                         line_number=individual_import_details["line_number"],
                         line_contents=individual_import_details["line_contents"],
                     )
@@ -113,7 +113,7 @@ def module_expression_to_modules(
 
         matching_modules.update(extra_modules)
 
-    return {Module(module) for module in matching_modules}
+    return {Module(name=module) for module in matching_modules}
 
 
 def import_expressions_to_imports(
@@ -204,13 +204,13 @@ def _dedupe_imports(imports: Iterable[DirectImport]) -> Iterable[DirectImport]:
 
         _dedupe_imports([
             DirectImport(
-                importer="blue",
+                importer=Module(name="blue"),
                 imported="green",
                 line_number=1,
                 line_contents="from blue import green.one",
             ),
             DirectImport(
-                importer="blue",
+                importer=Module(name="blue"),
                 imported="green",
                 line_number=3,
                 line_contents="from blue import green.two",

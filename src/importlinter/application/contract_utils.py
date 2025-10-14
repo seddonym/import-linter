@@ -42,8 +42,8 @@ def remove_ignored_imports(
             imports_to_remove.update(
                 {
                     DirectImport(
-                        importer=Module(matched_import["importer"]),
-                        imported=Module(matched_import["imported"]),
+                        importer=Module(name=matched_import["importer"]),
+                        imported=Module(name=matched_import["imported"]),
                     )
                     for matched_import in matched_imports
                 }

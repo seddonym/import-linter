@@ -209,11 +209,12 @@ class LayersContract(Contract):
 
     def _validate_containers(self, graph: grimp.ImportGraph, containers: set[str]) -> None:
         root_package_names = self.session_options["root_packages"]
-        root_packages = tuple(Module(name) for name in root_package_names)
+        root_packages = tuple(Module(name=name) for name in root_package_names)
 
         for container in containers:
             if not any(
-                Module(container).is_in_package(root_package) for root_package in root_packages
+                Module(name=container).is_in_package(root_package)
+                for root_package in root_packages
             ):
                 if len(root_package_names) == 1:
                     root_package_name = root_package_names[0]
@@ -280,7 +281,7 @@ class LayersContract(Contract):
             name = ".".join([container, module_tail.name])
         else:
             name = module_tail.name
-        return Module(name)
+        return Module(name=name)
 
     def _build_invalid_chains(
         self, dependencies: set[grimp.PackageDependency], graph: grimp.ImportGraph

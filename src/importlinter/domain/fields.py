@@ -155,7 +155,7 @@ class ModuleField(Field):
     """
 
     def parse(self, raw_data: Union[str, List]) -> Module:
-        return Module(StringField().parse(raw_data))
+        return Module(name=StringField().parse(raw_data))
 
 
 class ModuleExpressionField(Field):
@@ -186,7 +186,7 @@ class ModuleExpressionField(Field):
                 raise ValidationError("A wildcard can only replace a whole module.")
             last_wildcard = None
 
-        return ModuleExpression(expression)
+        return ModuleExpression(expression=expression)
 
 
 class ImportExpressionField(Field):

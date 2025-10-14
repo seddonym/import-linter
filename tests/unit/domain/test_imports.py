@@ -17,15 +17,15 @@ def does_not_raise():
 
 class TestModule:
     def test_object_representation(self):
-        test_object = Module("new_module")
+        test_object = Module(name="new_module")
         assert repr(test_object) == "<Module: new_module>"
 
     @pytest.mark.parametrize(
         ("first_object", "second_object", "expected_bool"),
         [
-            (Module("first"), Module("second"), False),
-            (Module("same"), Module("same"), True),
-            (Module("different"), "different", False),
+            (Module(name="first"), Module(name="second"), False),
+            (Module(name="same"), Module(name="same"), True),
+            (Module(name="different"), "different", False),
         ],
     )
     def test_equal_magic_method(self, first_object, second_object, expected_bool):
@@ -35,8 +35,8 @@ class TestModule:
     @pytest.mark.parametrize(
         ("module", "expected_parent", "exception"),
         [
-            (Module("parent.child"), Module("parent"), does_not_raise()),
-            (Module("child"), Module(""), pytest.raises(ValueError)),
+            (Module(name="parent.child"), Module(name="parent"), does_not_raise()),
+            (Module(name="child"), Module(name=""), pytest.raises(ValueError)),
         ],
     )
     def test_parent(self, module, expected_parent, exception):
@@ -46,9 +46,9 @@ class TestModule:
     @pytest.mark.parametrize(
         ("child", "parent", "expected_bool"),
         [
-            (Module("parent.child"), Module("parent"), True),
-            (Module("grandparent.parent.child"), Module("grandparent"), False),
-            (Module("first_child"), Module("second_child"), False),
+            (Module(name="parent.child"), Module(name="parent"), True),
+            (Module(name="grandparent.parent.child"), Module(name="grandparent"), False),
+            (Module(name="first_child"), Module(name="second_child"), False),
         ],
     )
     def test_is_child_of(self, child, parent, expected_bool):
@@ -57,21 +57,21 @@ class TestModule:
     @pytest.mark.parametrize(
         ("candidate", "package", "expected_bool"),
         [
-            (Module("somepackage"), Module("somepackage"), True),
-            (Module("somepackage.foo"), Module("somepackage"), True),
-            (Module("somepackage.foo.blue"), Module("somepackage"), True),
-            (Module("somepackage.foo.blue"), Module("somepackage.foo"), True),
+            (Module(name="somepackage"), Module(name="somepackage"), True),
+            (Module(name="somepackage.foo"), Module(name="somepackage"), True),
+            (Module(name="somepackage.foo.blue"), Module(name="somepackage"), True),
+            (Module(name="somepackage.foo.blue"), Module(name="somepackage.foo"), True),
             (
-                Module("somepackage.foo.blue.one.alpha"),
-                Module("somepackage.foo.blue"),
+                Module(name="somepackage.foo.blue.one.alpha"),
+                Module(name="somepackage.foo.blue"),
                 True,
             ),
-            (Module("somepackage"), Module("somepackage.foo"), False),
-            (Module("somepackage"), Module("differentpackage"), False),
-            (Module("somepackage.foo"), Module("differentpackage"), False),
+            (Module(name="somepackage"), Module(name="somepackage.foo"), False),
+            (Module(name="somepackage"), Module(name="differentpackage"), False),
+            (Module(name="somepackage.foo"), Module(name="differentpackage"), False),
             (
-                Module("somepackage.foo.blue.one.alpha"),
-                Module("somepackage.foo.green"),
+                Module(name="somepackage.foo.blue.one.alpha"),
+                Module(name="somepackage.foo.green"),
                 False,
             ),
         ],
@@ -83,8 +83,8 @@ class TestModule:
 class TestDirectImport:
     def test_object_representation(self):
         test_object = DirectImport(
-            importer=Module("mypackage.foo"),
-            imported=Module("mypackage.bar"),
+            importer=Module(name="mypackage.foo"),
+            imported=Module(name="mypackage.bar"),
         )
         assert repr(test_object) == "<DirectImport: mypackage.foo -> mypackage.bar>"
 
@@ -92,13 +92,15 @@ class TestDirectImport:
         ("test_object", "expected_string"),
         [
             (
-                DirectImport(importer=Module("mypackage.foo"), imported=Module("mypackage.bar")),
+                DirectImport(
+                    importer=Module(name="mypackage.foo"), imported=Module(name="mypackage.bar")
+                ),
                 "mypackage.foo -> mypackage.bar",
             ),
             (
                 DirectImport(
-                    importer=Module("mypackage.foo"),
-                    imported=Module("mypackage.bar"),
+                    importer=Module(name="mypackage.foo"),
+                    imported=Module(name="mypackage.bar"),
                     line_number=10,
                 ),
                 "mypackage.foo -> mypackage.bar (l. 10)",
@@ -111,22 +113,22 @@ class TestDirectImport:
 
 class TestModuleExpression:
     def test_object_representation(self):
-        expression = ModuleExpression("mypackage.foo.**")
+        expression = ModuleExpression(expression="mypackage.foo.**")
         assert repr(expression) == "<ModuleExpression: mypackage.foo.**>"
 
 
 class TestImportExpression:
     def test_object_representation(self):
         test_object = ImportExpression(
-            importer=ModuleExpression("mypackage.foo"),
-            imported=ModuleExpression("mypackage.bar"),
+            importer=ModuleExpression(expression="mypackage.foo"),
+            imported=ModuleExpression(expression="mypackage.bar"),
         )
         assert repr(test_object) == "<ImportExpression: mypackage.foo -> mypackage.bar>"
 
     def test_string_object_representation(self):
         expression = ImportExpression(
-            importer=ModuleExpression("mypackage.foo"),
-            imported=ModuleExpression("mypackage.bar"),
+            importer=ModuleExpression(expression="mypackage.foo"),
+            imported=ModuleExpression(expression="mypackage.bar"),
         )
         assert str(expression) == "mypackage.foo -> mypackage.bar"
 
@@ -135,45 +137,45 @@ class TestImportExpression:
         [
             (
                 ImportExpression(
-                    importer=ModuleExpression("mypackage.foo"),
-                    imported=ModuleExpression("mypackage.bar"),
+                    importer=ModuleExpression(expression="mypackage.foo"),
+                    imported=ModuleExpression(expression="mypackage.bar"),
                 ),
                 ImportExpression(
-                    importer=ModuleExpression("mypackage.foo"),
-                    imported=ModuleExpression("mypackage.bar"),
+                    importer=ModuleExpression(expression="mypackage.foo"),
+                    imported=ModuleExpression(expression="mypackage.bar"),
                 ),
                 True,
             ),
             (
                 ImportExpression(
-                    importer=ModuleExpression("mypackage.foo"),
-                    imported=ModuleExpression("mypackage.bar"),
+                    importer=ModuleExpression(expression="mypackage.foo"),
+                    imported=ModuleExpression(expression="mypackage.bar"),
                 ),
                 ImportExpression(
-                    importer=ModuleExpression("mypackage.bar"),
-                    imported=ModuleExpression("mypackage.foo"),
-                ),
-                False,
-            ),
-            (
-                ImportExpression(
-                    importer=ModuleExpression("mypackage.foo"),
-                    imported=ModuleExpression("mypackage.bar"),
-                ),
-                ImportExpression(
-                    importer=ModuleExpression("mypackage.foo"),
-                    imported=ModuleExpression("mypackage.foobar"),
+                    importer=ModuleExpression(expression="mypackage.bar"),
+                    imported=ModuleExpression(expression="mypackage.foo"),
                 ),
                 False,
             ),
             (
                 ImportExpression(
-                    importer=ModuleExpression("mypackage.foo"),
-                    imported=ModuleExpression("mypackage.bar"),
+                    importer=ModuleExpression(expression="mypackage.foo"),
+                    imported=ModuleExpression(expression="mypackage.bar"),
                 ),
                 ImportExpression(
-                    importer=ModuleExpression("mypackage.foobar"),
-                    imported=ModuleExpression("mypackage.bar"),
+                    importer=ModuleExpression(expression="mypackage.foo"),
+                    imported=ModuleExpression(expression="mypackage.foobar"),
+                ),
+                False,
+            ),
+            (
+                ImportExpression(
+                    importer=ModuleExpression(expression="mypackage.foo"),
+                    imported=ModuleExpression(expression="mypackage.bar"),
+                ),
+                ImportExpression(
+                    importer=ModuleExpression(expression="mypackage.foobar"),
+                    imported=ModuleExpression(expression="mypackage.bar"),
                 ),
                 False,
             ),
@@ -198,6 +200,7 @@ class TestImportExpression:
     )
     def test_has_wildcard_expression(self, importer, imported, has_wildcard_expression):
         expression = ImportExpression(
-            importer=ModuleExpression(importer), imported=ModuleExpression(imported)
+            importer=ModuleExpression(expression=importer),
+            imported=ModuleExpression(expression=imported),
         )
         assert expression.has_wildcard_expression() == has_wildcard_expression
