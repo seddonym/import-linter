@@ -24,6 +24,7 @@ def lint_imports(
     config_filename: Optional[str] = None,
     limit_to_contracts: Tuple[str, ...] = (),
     cache_dir: Union[str, None, Type[NotSupplied]] = NotSupplied,
+    json: bool = False,
     is_debug_mode: bool = False,
     show_timings: bool = False,
     verbose: bool = False,
@@ -37,6 +38,7 @@ def lint_imports(
         config_filename:    the filename to use to parse user options.
         limit_to_contracts: if supplied, only lint the contracts with the supplied ids.
         cache_dir:          the directory to use for caching. Pass None to disable caching.
+        json:               if True, output the results in JSON format.
         is_debug_mode:      whether debugging should be turned on. In debug mode, exceptions are
                             not swallowed at the top level, so the stack trace can be seen.
         show_timings:       whether to show the times taken to build the graph and to check
@@ -58,7 +60,7 @@ def lint_imports(
         render_exception(e)
         return FAILURE
 
-    render_report(report)
+    render_report(report, json)
 
     if report.contains_failures:
         return FAILURE

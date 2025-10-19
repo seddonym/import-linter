@@ -26,6 +26,7 @@ EXIT_STATUS_ERROR = 1
 )
 @click.option("--cache-dir", default=None, help="The directory to use for caching.")
 @click.option("--no-cache", is_flag=True, help="Disable caching.")
+@click.option("--json", is_flag=True, help="Output the results in JSON format.")
 @click.option("--debug", is_flag=True, help="Run in debug mode.")
 @click.option(
     "--show-timings",
@@ -42,6 +43,7 @@ def lint_imports_command(
     contract: Tuple[str, ...],
     cache_dir: Optional[str],
     no_cache: bool,
+    json: bool,
     debug: bool,
     show_timings: bool,
     verbose: bool,
@@ -54,6 +56,7 @@ def lint_imports_command(
         limit_to_contracts=contract,
         cache_dir=cache_dir,
         no_cache=no_cache,
+        json=json,
         is_debug_mode=debug,
         show_timings=show_timings,
         verbose=verbose,
@@ -66,6 +69,7 @@ def lint_imports(
     limit_to_contracts: Tuple[str, ...] = (),
     cache_dir: Optional[str] = None,
     no_cache: bool = False,
+    json: bool = False,
     is_debug_mode: bool = False,
     show_timings: bool = False,
     verbose: bool = False,
@@ -80,6 +84,7 @@ def lint_imports(
         limit_to_contracts: if supplied, only lint the contracts with the supplied ids.
         cache_dir:          the directory to use for caching, defaults to '.import_linter_cache'.
         no_cache:           if True, disable caching.
+        json:               if True, output the results in JSON format.
         is_debug_mode:      whether debugging should be turned on. In debug mode, exceptions are
                             not swallowed at the top level, so the stack trace can be seen.
         show_timings:       whether to show the times taken to build the graph and to check
@@ -100,6 +105,7 @@ def lint_imports(
         config_filename=config_filename,
         limit_to_contracts=limit_to_contracts,
         cache_dir=combined_cache_dir,
+        json=json,
         is_debug_mode=is_debug_mode,
         show_timings=show_timings,
         verbose=verbose,
