@@ -1,6 +1,13 @@
 Changelog
 =========
 
+2.x.x (2025-xx-xx)
+------------------
+
+* Parsed field logic introduced
+* IntegerField introduced
+
+
 2.5.2 (2025-10-09)
 ------------------
 

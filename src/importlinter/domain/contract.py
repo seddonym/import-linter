@@ -34,7 +34,8 @@ class Contract(abc.ABC):
                 raw_data = self.contract_options[field_name]
             except KeyError:
                 if field.default is not fields.NotSupplied:
-                    setattr(self, field_name, field.default)
+                    default_data = _get_value_for_field(field, field.default)
+                    setattr(self, field_name, default_data)
                 elif field.required:
                     errors[field_name] = "This is a required field."
                 else:
@@ -46,7 +47,9 @@ class Contract(abc.ABC):
             except fields.ValidationError as e:
                 errors[field_name] = str(e)
                 continue
-            setattr(self, field_name, clean_data)
+
+            value = _get_value_for_field(field, clean_data)
+            setattr(self, field_name, value)
 
         if errors:
             raise InvalidContractOptions(errors)
@@ -135,3 +138,21 @@ class ContractRegistry:
 
 
 registry = ContractRegistry()
+
+
+class _ParsedField:
+    def __init__(self, value: Any) -> None:
+        self._value = value
+
+    @property
+    def value(self) -> Any:
+        return self._value
+
+
+def _get_value_for_field(field: fields.Field[Any], value: Any) -> Any:
+    supported_field_types = (fields.BooleanField, fields.StringField, fields.IntegerField)
+
+    if isinstance(field, supported_field_types):
+        return _ParsedField(value=value)
+
+    return value

@@ -54,7 +54,7 @@ class ProtectedContract(Contract):
             for module in helpers.module_expressions_to_modules(
                 graph=graph,
                 expressions=self.allowed_importers,  # type: ignore
-                as_packages=self.as_packages,  # type: ignore
+                as_packages=self.as_packages.value,
             )
         }
 

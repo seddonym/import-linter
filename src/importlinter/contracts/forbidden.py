@@ -92,18 +92,18 @@ class ForbiddenContract(Contract):
                         "chains": [],
                     }
 
-                    if str(self.allow_indirect_imports).lower() == "true":
+                    if self.allow_indirect_imports.value:
                         chains = self._get_direct_chains(
                             source_module,
                             forbidden_module,
                             graph,
-                            self.as_packages,  # type:ignore
+                            self.as_packages.value,
                         )
                     else:
                         chains = graph.find_shortest_chains(
                             importer=source_module.name,
                             imported=forbidden_module.name,
-                            as_packages=self.as_packages,  # type:ignore
+                            as_packages=self.as_packages.value,
                         )
                     if chains:
                         is_kept = False

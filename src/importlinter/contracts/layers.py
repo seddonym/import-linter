@@ -130,7 +130,7 @@ class LayersContract(Contract):
     exhaustive_ignores = fields.SetField(subfield=fields.StringField(), required=False)
 
     def validate(self) -> None:
-        if self.exhaustive and not self.containers:
+        if self.exhaustive.value and not self.containers:
             raise InvalidContractOptions(
                 {
                     "exhaustive": (
@@ -245,7 +245,7 @@ class LayersContract(Contract):
                 )
 
     def _get_undeclared_modules(self, graph: grimp.ImportGraph, containers: set[str]) -> set[str]:
-        if not self.exhaustive:
+        if not self.exhaustive.value:
             return set()
 
         undeclared_modules = set()
