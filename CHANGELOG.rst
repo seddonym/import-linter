@@ -1,6 +1,11 @@
 Changelog
 =========
 
+latest
+------
+
+* Add contract field `IntegerField`.
+
 2.5.2 (2025-10-09)
 ------------------
 

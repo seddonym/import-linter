@@ -1,7 +1,8 @@
+from grimp import ImportGraph
+
 from importlinter.application import output
 from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
-from grimp import ImportGraph
 
 
 class AlwaysPassesContract(Contract):
@@ -88,12 +89,12 @@ class MutationCheckContract(Contract):
     will fail, if the graph gets mutated by other contracts.
     """
 
-    number_of_modules = fields.StringField()
-    number_of_imports = fields.StringField()
+    number_of_modules = fields.IntegerField()
+    number_of_imports = fields.IntegerField()
 
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
-        number_of_modules: int = int(self.number_of_modules)  # type: ignore
-        number_of_imports: int = int(self.number_of_imports)  # type: ignore
+        number_of_modules = int(self.number_of_modules)  # type: ignore
+        number_of_imports = int(self.number_of_imports)  # type: ignore
         if not all(
             [
                 number_of_modules == len(graph.modules),

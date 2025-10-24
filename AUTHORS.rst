@@ -29,3 +29,4 @@ Contributors
 * Ilya S. (Tapeline) - https://github.com/Tapeline
 * Uberto Barbini - https://github.com/uberto
 * Alexandre Beaufays - https://github.com/abeaufays
+* Jan Bielecki - https://github.com/K4liber
