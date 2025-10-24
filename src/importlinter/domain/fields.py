@@ -61,7 +61,7 @@ class Field(Generic[FieldValue], abc.ABC):
         raise NotImplementedError
 
 
-class StringField(Field):
+class StringField(Field[str]):
     """
     A field for single values of strings.
     """
@@ -72,7 +72,7 @@ class StringField(Field):
         return str(raw_data)
 
 
-class BooleanField(Field):
+class BooleanField(Field[bool]):
     """
     A field for single values of booleans.
     """
@@ -87,6 +87,17 @@ class BooleanField(Field):
             return False
         else:
             raise ValidationError(f"Could not parse a boolean from '{raw_data}'.")
+
+
+class IntegerField(Field[int]):
+    """
+    A field for single values of integers.
+    """
+
+    def parse(self, raw_data: Union[str, List[str]]) -> int:
+        if isinstance(raw_data, list):
+            raise ValidationError("Expected a single value, got multiple values.")
+        return int(raw_data)
 
 
 class BaseMultipleValueField(Field):

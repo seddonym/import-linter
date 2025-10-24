@@ -44,6 +44,7 @@ The following field types are available:
 
 - ``StringField`` accepts a string value.
 - ``BooleanField`` accepts a boolean value.
+- ``IntegerField`` accepts an integer value.
 - ``EnumField`` accepts a value from a predefined set of string options.
 - ``ModuleField`` accepts a string value and validates that it refers to a valid Python module.
 - ``ModuleExpressionField`` acts in a similar way as ``ModuleField``, but allows wildcard expressions.
