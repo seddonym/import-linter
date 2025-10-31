@@ -108,6 +108,8 @@ def module_expression_to_modules(
         if raise_if_unmatched and not matching_modules:
             raise ValueError(f"The expression '{expression}' did not match any modules.")
     else:
+        if raise_if_unmatched and expression.expression not in graph.modules:
+            raise ValueError(f"Module '{expression}' does not exist.")
         matching_modules = {expression.expression}
 
     if as_packages:

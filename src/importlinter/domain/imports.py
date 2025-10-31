@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any
 
 
@@ -105,6 +106,9 @@ class ModuleExpression(ValueObject):
 
     def __str__(self) -> str:
         return self.expression
+
+    def __lt__(self, other: ModuleExpression) -> bool:
+        return self.expression < other.expression
 
 
 class ImportExpression(ValueObject):
