@@ -4,6 +4,7 @@ Changelog
 latest
 ------
 
+* Add `acyclic_siblings` contract type.
 * Add contract field `IntegerField`.
 * Drop support for Python 3.9.
 
