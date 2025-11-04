@@ -15,7 +15,6 @@ jobs:
     strategy:
       matrix:
         python-version:  # All Python versions supported by Import Linter.
-          - "3.9"
           - "3.10"
           - "3.11"
           - "3.12"

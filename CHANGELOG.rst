@@ -5,6 +5,7 @@ latest
 ------
 
 * Add contract field `IntegerField`.
+* Drop support for Python 3.9.
 
 2.5.2 (2025-10-09)
 ------------------
