@@ -1,5 +1,3 @@
-from typing import Dict, List, Optional
-
 import yaml
 
 from importlinter.application.ports import filesystem as ports
@@ -8,9 +6,9 @@ from importlinter.application.ports import filesystem as ports
 class FakeFileSystem(ports.FileSystem):
     def __init__(
         self,
-        contents: Optional[str] = None,
-        content_map: Optional[Dict[str, str]] = None,
-        working_directory: Optional[str] = None,
+        contents: str | None = None,
+        content_map: dict[str, str] | None = None,
+        working_directory: str | None = None,
     ) -> None:
         """
         Files can be declared as existing in the file system in two different ways, either
@@ -48,7 +46,7 @@ class FakeFileSystem(ports.FileSystem):
     def join(self, *components: str) -> str:
         return "/".join(components)
 
-    def _parse_contents(self, raw_contents: Optional[str]):
+    def _parse_contents(self, raw_contents: str | None):
         """
         Returns the raw contents parsed in the form:
             {
@@ -84,7 +82,7 @@ class FakeFileSystem(ports.FileSystem):
 
         return yaml.safe_load(yamlified_string)
 
-    def _dedent(self, lines: List[str]) -> List[str]:
+    def _dedent(self, lines: list[str]) -> list[str]:
         """
         Dedent all lines by the same amount.
         """
@@ -96,7 +94,7 @@ class FakeFileSystem(ports.FileSystem):
 
         return list(map(dedented, lines))
 
-    def read(self, file_name: str, encoding: Optional[str] = None) -> str:
+    def read(self, file_name: str, encoding: str | None = None) -> str:
         if not self.exists(file_name):
             raise FileNotFoundError  # pragma: nocover
         try:

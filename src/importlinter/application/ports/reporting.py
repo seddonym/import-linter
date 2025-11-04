@@ -1,4 +1,4 @@
-from typing import Dict, Iterator, List, Tuple
+from collections.abc import Iterator
 
 from importlinter.domain.contract import Contract, ContractCheck, InvalidContractOptions
 from grimp import ImportGraph
@@ -18,12 +18,12 @@ class Report:
         self.show_timings = show_timings
         self.graph_building_duration = graph_building_duration
         self.could_not_run = False
-        self.invalid_contract_options: Dict[str, InvalidContractOptions] = {}
+        self.invalid_contract_options: dict[str, InvalidContractOptions] = {}
         self.contains_failures = False
-        self.contracts: List[Contract] = []
-        self._check_map: Dict[Contract, ContractCheck] = {}
+        self.contracts: list[Contract] = []
+        self._check_map: dict[Contract, ContractCheck] = {}
         # Durations are stored as integer milliseconds
-        self._durations: Dict[Contract, int] = {}
+        self._durations: dict[Contract, int] = {}
         self.warnings_count = 0
         self.broken_count = 0
         self.kept_count = 0
@@ -43,7 +43,7 @@ class Report:
             self.broken_count += 1
             self.contains_failures = True
 
-    def get_contracts_and_checks(self) -> Iterator[Tuple[Contract, ContractCheck]]:
+    def get_contracts_and_checks(self) -> Iterator[tuple[Contract, ContractCheck]]:
         for contract in self.contracts:
             yield contract, self._check_map[contract]
 

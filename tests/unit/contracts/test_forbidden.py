@@ -1,5 +1,3 @@
-from typing import Tuple, List, Dict
-
 import pytest
 from grimp.adaptors.graph import ImportGraph
 
@@ -143,8 +141,8 @@ class TestForbiddenContract:
     def test_is_broken_when_forbidden_modules_imported(
         self,
         as_packages: str,
-        forbidden_modules: Tuple[str],
-        expected_invalid_chains: List[Dict],
+        forbidden_modules: tuple[str],
+        expected_invalid_chains: list[dict],
     ):
         graph = self._build_graph()
         contract = self._build_contract(
@@ -469,8 +467,8 @@ class TestForbiddenContract:
     def test_ignore_imports_with_wildcards(
         self,
         as_packages: str,
-        forbidden_modules: Tuple[str],
-        expected_invalid_chains: List[Dict],
+        forbidden_modules: tuple[str],
+        expected_invalid_chains: list[dict],
     ):
         graph = self._build_graph()
         contract = self._build_contract(

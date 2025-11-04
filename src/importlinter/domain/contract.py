@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 from grimp import ImportGraph
 
@@ -10,8 +10,8 @@ class Contract(abc.ABC):
     def __init__(
         self,
         name: str,
-        session_options: Dict[str, Any],
-        contract_options: Dict[str, Any],
+        session_options: dict[str, Any],
+        contract_options: dict[str, Any],
     ) -> None:
         self.name = name
         self.session_options = session_options
@@ -62,7 +62,7 @@ class Contract(abc.ABC):
         pass
 
     @classmethod
-    def _get_field_names(cls) -> List[str]:
+    def _get_field_names(cls) -> list[str]:
         """
         Returns:
             The names of all the fields on this contract class.
@@ -96,7 +96,7 @@ class InvalidContractOptions(Exception):
     is not suitable for checking in the first place.
     """
 
-    def __init__(self, errors: Dict[str, str]) -> None:
+    def __init__(self, errors: dict[str, str]) -> None:
         self.errors = errors
 
 
@@ -108,8 +108,8 @@ class ContractCheck:
     def __init__(
         self,
         kept: bool,
-        metadata: Optional[Dict[str, Any]] = None,
-        warnings: Optional[List[str]] = None,
+        metadata: dict[str, Any] | None = None,
+        warnings: list[str] | None = None,
     ) -> None:
         self.kept = kept
         self.metadata = metadata or {}
@@ -124,10 +124,10 @@ class ContractRegistry:
     def __init__(self):
         self._classes_by_name = {}
 
-    def register(self, contract_class: Type[Contract], name: str) -> None:
+    def register(self, contract_class: type[Contract], name: str) -> None:
         self._classes_by_name[name] = contract_class
 
-    def get_contract_class(self, name: str) -> Type[Contract]:
+    def get_contract_class(self, name: str) -> type[Contract]:
         try:
             return self._classes_by_name[name]
         except KeyError:

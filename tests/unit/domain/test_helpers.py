@@ -1,5 +1,4 @@
 import re
-from typing import List, Optional, Tuple
 
 import pytest
 from grimp import DetailedImport
@@ -23,7 +22,7 @@ from importlinter.domain.imports import (
 
 
 class TestPopImports:
-    IMPORTS: List[DetailedImport] = [
+    IMPORTS: list[DetailedImport] = [
         dict(
             importer="mypackage.blue",
             imported="mypackage.green",
@@ -81,7 +80,7 @@ class TestPopImports:
             pop_imports(graph, [non_existent_import])
 
     def test_works_with_multiple_external_imports_from_same_module(self) -> None:
-        imports_to_pop: List[DetailedImport] = [
+        imports_to_pop: list[DetailedImport] = [
             dict(
                 importer="mypackage.green",
                 imported="someexternalpackage",
@@ -507,8 +506,8 @@ class TestResolveImportExpressions:
     def test_succeeds(
         self,
         description: str,
-        expressions: List[ImportExpression],
-        expected_imports: List[DirectImport],
+        expressions: list[ImportExpression],
+        expected_imports: list[DirectImport],
     ):
         graph = self._build_graph(self.DIRECT_IMPORTS)
 
@@ -608,10 +607,10 @@ class TestPopImportExpressions:
             ),
         ]
 
-        popped_imports: List[DetailedImport] = pop_import_expressions(graph, expressions)
+        popped_imports: list[DetailedImport] = pop_import_expressions(graph, expressions)
 
         # Cast to direct imports to make comparison easier.
-        popped_direct_imports: List[DirectImport] = sorted(
+        popped_direct_imports: list[DirectImport] = sorted(
             map(self._dict_to_direct_import, popped_imports),
             key=_direct_import_sort_key,
         )
@@ -860,7 +859,7 @@ class TestModuleExpressionToModules:
 
 def test_add_imports() -> None:
     graph = ImportGraph()
-    import_details: List[DetailedImport] = [
+    import_details: list[DetailedImport] = [
         {
             "importer": "a",
             "imported": "b",
@@ -881,7 +880,7 @@ def test_add_imports() -> None:
 
 def _direct_import_sort_key(
     direct_import: DirectImport,
-) -> Tuple[str, str, Optional[int]]:
+) -> tuple[str, str, int | None]:
     # Doesn't matter how we sort, just a way of sorting consistently for comparison.
     return (
         direct_import.importer.name,

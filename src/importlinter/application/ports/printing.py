@@ -1,5 +1,4 @@
 import abc
-from typing import Optional
 
 
 class Printer(abc.ABC):
@@ -8,7 +7,7 @@ class Printer(abc.ABC):
         self,
         text: str = "",
         bold: bool = False,
-        color: Optional[str] = None,
+        color: str | None = None,
         newline: bool = True,
     ) -> None:
         """

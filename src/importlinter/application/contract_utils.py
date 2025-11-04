@@ -1,5 +1,5 @@
 import enum
-from typing import List, Optional, Sequence, Set
+from collections.abc import Sequence
 
 
 from importlinter.domain.helpers import MissingImport
@@ -15,9 +15,9 @@ class AlertLevel(enum.Enum):
 
 def remove_ignored_imports(
     graph: ImportGraph,
-    ignore_imports: Optional[Sequence[ImportExpression]],
+    ignore_imports: Sequence[ImportExpression] | None,
     unmatched_alerting: AlertLevel,
-) -> List[str]:
+) -> list[str]:
     """
     Remove any ignored imports from the graph.
 
@@ -70,8 +70,8 @@ def remove_ignored_imports(
 
 
 def _handle_unresolved_import_expressions(
-    expressions: Set[ImportExpression], alert_level: AlertLevel
-) -> List[str]:
+    expressions: set[ImportExpression], alert_level: AlertLevel
+) -> list[str]:
     """
     Handle any unresolved import expressions based on the supplied alert level.
 

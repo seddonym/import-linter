@@ -1,5 +1,3 @@
-from typing import Optional
-
 from importlinter.domain.contract import Contract, ContractCheck
 
 from . import output
@@ -48,7 +46,7 @@ def render_report(report: Report) -> None:
 
 
 def render_contract_result_line(
-    contract: Contract, contract_check: ContractCheck, duration: Optional[int]
+    contract: Contract, contract_check: ContractCheck, duration: int | None
 ) -> None:
     """
     Render the one-line contract check result.
