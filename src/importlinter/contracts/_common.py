@@ -220,7 +220,7 @@ def build_detailed_chain_from_route(route: grimp.Route, graph: grimp.ImportGraph
             "imported": imported,
             "line_numbers": get_line_numbers(importer=importer, imported=imported, graph=graph),
         }
-        for importer, imported in pairwise(chain_as_strings)
+        for importer, imported in itertools.pairwise(chain_as_strings)
     ]
     return {
         "chain": chain_as_links,
@@ -235,15 +235,3 @@ def get_line_numbers(
     details = graph.get_import_details(importer=importer, imported=imported)
     line_numbers = tuple(i["line_number"] for i in details) if details else (None,)
     return line_numbers
-
-
-def pairwise(iterable):
-    """
-    Return successive overlapping pairs taken from the input iterable.
-    pairwise('ABCDEFG') --> AB BC CD DE EF FG
-
-    TODO: Replace with itertools.pairwise once on Python 3.10.
-    """
-    a, b = itertools.tee(iterable)
-    next(b, None)
-    return zip(a, b)
