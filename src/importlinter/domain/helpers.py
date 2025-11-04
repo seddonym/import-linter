@@ -1,5 +1,5 @@
 import itertools
-from typing import Iterable, List, Set, Tuple
+from collections.abc import Iterable
 
 from grimp import DetailedImport, ImportGraph
 
@@ -15,7 +15,7 @@ class MissingImport(Exception):
     pass
 
 
-def pop_imports(graph: ImportGraph, imports: Iterable[DirectImport]) -> List[DetailedImport]:
+def pop_imports(graph: ImportGraph, imports: Iterable[DirectImport]) -> list[DetailedImport]:
     """
     Removes the supplied direct imports from the graph.
 
@@ -25,7 +25,7 @@ def pop_imports(graph: ImportGraph, imports: Iterable[DirectImport]) -> List[Det
     Raises:
         MissingImport if an import is not present in the graph.
     """
-    removed_imports: List[DetailedImport] = []
+    removed_imports: list[DetailedImport] = []
 
     imports_to_remove = _dedupe_imports(imports)
 
@@ -49,7 +49,7 @@ def pop_imports(graph: ImportGraph, imports: Iterable[DirectImport]) -> List[Det
 
 def import_expression_to_imports(
     graph: ImportGraph, expression: ImportExpression
-) -> List[DirectImport]:
+) -> list[DirectImport]:
     """
     Returns a list of imports in a graph, given some import expression.
 
@@ -64,7 +64,7 @@ def import_expression_to_imports(
             f"Ignored import expression {expression} didn't match anything in the graph."
         )
 
-    detailed_imports: Set[DirectImport] = set()
+    detailed_imports: set[DirectImport] = set()
     for matching_import in matching_imports:
         import_details = graph.get_import_details(
             importer=matching_import["importer"],
@@ -89,7 +89,7 @@ def module_expressions_to_modules(
     graph: ImportGraph,
     expressions: Iterable[ModuleExpression],
     as_packages: bool = False,
-) -> Set[Module]:
+) -> set[Module]:
     modules = set()
     for expression in expressions:
         modules |= module_expression_to_modules(graph, expression, as_packages)
@@ -98,7 +98,7 @@ def module_expressions_to_modules(
 
 def module_expression_to_modules(
     graph: ImportGraph, expression: ModuleExpression, as_packages: bool = False
-) -> Set[Module]:
+) -> set[Module]:
     if expression.has_wildcard_expression():
         matching_modules = graph.find_matching_modules(expression.expression)
     else:
@@ -118,7 +118,7 @@ def module_expression_to_modules(
 
 def import_expressions_to_imports(
     graph: ImportGraph, expressions: Iterable[ImportExpression]
-) -> List[DirectImport]:
+) -> list[DirectImport]:
     """
     Returns a list of imports in a graph, given some import expressions.
 
@@ -137,7 +137,7 @@ def import_expressions_to_imports(
 
 def resolve_import_expressions(
     graph: ImportGraph, expressions: Iterable[ImportExpression]
-) -> Tuple[Set[DirectImport], Set[ImportExpression]]:
+) -> tuple[set[DirectImport], set[ImportExpression]]:
     """
     Find any imports in the graph that match the supplied import expressions.
 
@@ -159,7 +159,7 @@ def resolve_import_expressions(
 
 def pop_import_expressions(
     graph: ImportGraph, expressions: Iterable[ImportExpression]
-) -> List[DetailedImport]:
+) -> list[DetailedImport]:
     """
     Removes any imports matching the supplied import expressions from the graph.
 
@@ -173,7 +173,7 @@ def pop_import_expressions(
     return pop_imports(graph, imports)
 
 
-def add_imports(graph: ImportGraph, import_details: List[DetailedImport]) -> None:
+def add_imports(graph: ImportGraph, import_details: list[DetailedImport]) -> None:
     """
     Adds the supplied import details to the graph.
 

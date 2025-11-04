@@ -1,9 +1,9 @@
-from typing import Any, Optional
+from typing import Any
 
 
 class ValueObject:
     def __repr__(self) -> str:
-        return "<{}: {}>".format(self.__class__.__name__, self)
+        return f"<{self.__class__.__name__}: {self}>"
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, self.__class__):
@@ -65,8 +65,8 @@ class DirectImport(ValueObject):
         *,
         importer: Module,
         imported: Module,
-        line_number: Optional[int] = None,
-        line_contents: Optional[str] = None,
+        line_number: int | None = None,
+        line_contents: str | None = None,
     ) -> None:
         self.importer = importer
         self.imported = imported
@@ -75,9 +75,9 @@ class DirectImport(ValueObject):
 
     def __str__(self) -> str:
         if self.line_number:
-            return "{} -> {} (l. {})".format(self.importer, self.imported, self.line_number)
+            return f"{self.importer} -> {self.imported} (l. {self.line_number})"
         else:
-            return "{} -> {}".format(self.importer, self.imported)
+            return f"{self.importer} -> {self.imported}"
 
     def __hash__(self) -> int:
         return hash((str(self), self.line_contents))
@@ -123,4 +123,4 @@ class ImportExpression(ValueObject):
         return self.imported.has_wildcard_expression() or self.importer.has_wildcard_expression()
 
     def __str__(self) -> str:
-        return "{} -> {}".format(self.importer.expression, self.imported.expression)
+        return f"{self.importer.expression} -> {self.imported.expression}"

@@ -4,7 +4,6 @@ from importlinter.application import contract_utils
 from ._common import Link
 from importlinter.domain import helpers, imports
 from importlinter import Contract, ContractCheck, fields, output
-from typing import Optional
 
 
 class ProtectedContract(Contract):
@@ -154,4 +153,4 @@ class ProtectedContract(Contract):
 class BrokenContractMetadata:
     top_level_module: str
     illegal_links: list[Link]
-    original_expression: Optional[str]
+    original_expression: str | None

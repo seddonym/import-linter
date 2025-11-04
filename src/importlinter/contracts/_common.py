@@ -9,7 +9,7 @@ without warning.
 from __future__ import annotations
 
 import itertools
-from typing import List, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
 
 import grimp
 from grimp import ImportGraph
@@ -23,16 +23,16 @@ class Link(TypedDict):
     importer: str
     imported: str
     # If the graph has been built manually, we may not know the line number.
-    line_numbers: Tuple[Optional[int], ...]
+    line_numbers: tuple[int | None, ...]
 
 
-Chain = List[Link]
+Chain = list[Link]
 
 
 class DetailedChain(TypedDict):
     chain: Chain
-    extra_firsts: List[Link]
-    extra_lasts: List[Link]
+    extra_firsts: list[Link]
+    extra_lasts: list[Link]
 
 
 def render_chain_data(chain_data: DetailedChain) -> None:
@@ -48,7 +48,7 @@ def render_chain_data(chain_data: DetailedChain) -> None:
 
 def find_segments(
     graph: ImportGraph, reference_graph: ImportGraph, importer: Module, imported: Module
-) -> List[Chain]:
+) -> list[Chain]:
     """
     Return list of headless and tailless chains.
 
@@ -59,14 +59,14 @@ def find_segments(
     for chain in _pop_shortest_chains(graph, importer=importer.name, imported=imported.name):
         if len(chain) == 2:
             raise ValueError("Direct chain found - these should have been removed.")
-        segment: List[Link] = []
+        segment: list[Link] = []
         for importer_in_chain, imported_in_chain in [
             (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
         ]:
             import_details = reference_graph.get_import_details(
                 importer=importer_in_chain, imported=imported_in_chain
             )
-            line_numbers = tuple(sorted(set(j["line_number"] for j in import_details)))
+            line_numbers = tuple(sorted({j["line_number"] for j in import_details}))
             segment.append(
                 {
                     "importer": importer_in_chain,
@@ -79,11 +79,11 @@ def find_segments(
 
 
 def segments_to_collapsed_chains(
-    graph: ImportGraph, segments: List[Chain], importer: Module, imported: Module
-) -> List[DetailedChain]:
-    collapsed_chains: List[DetailedChain] = []
+    graph: ImportGraph, segments: list[Chain], importer: Module, imported: Module
+) -> list[DetailedChain]:
+    collapsed_chains: list[DetailedChain] = []
     for segment in segments:
-        head_imports: List[Link] = []
+        head_imports: list[Link] = []
         imported_module = segment[0]["imported"]
         candidate_modules = sorted(graph.find_modules_that_directly_import(imported_module))
         for module in [
@@ -94,7 +94,7 @@ def segments_to_collapsed_chains(
             import_details_list = graph.get_import_details(
                 importer=module, imported=imported_module
             )
-            line_numbers = tuple(sorted(set(j["line_number"] for j in import_details_list)))
+            line_numbers = tuple(sorted({j["line_number"] for j in import_details_list}))
             head_imports.append(
                 {
                     "importer": module,
@@ -103,7 +103,7 @@ def segments_to_collapsed_chains(
                 }
             )
 
-        tail_imports: List[Link] = []
+        tail_imports: list[Link] = []
         importer_module = segment[-1]["importer"]
         candidate_modules = sorted(graph.find_modules_directly_imported_by(importer_module))
         for module in [
@@ -114,7 +114,7 @@ def segments_to_collapsed_chains(
             import_details_list = graph.get_import_details(
                 importer=importer_module, imported=module
             )
-            line_numbers = tuple(sorted(set(j["line_number"] for j in import_details_list)))
+            line_numbers = tuple(sorted({j["line_number"] for j in import_details_list}))
             tail_imports.append(
                 {
                     "importer": importer_module,
@@ -135,7 +135,7 @@ def segments_to_collapsed_chains(
 
 
 def _pop_shortest_chains(graph: ImportGraph, importer: str, imported: str):
-    chain: Union[Optional[Tuple[str, ...]], bool] = True
+    chain: tuple[str, ...] | None | bool = True
     while chain:
         chain = graph.find_shortest_chain(importer, imported)
         if chain:
@@ -145,7 +145,7 @@ def _pop_shortest_chains(graph: ImportGraph, importer: str, imported: str):
             yield chain
 
 
-def format_line_numbers(line_numbers: Sequence[Optional[int]]) -> str:
+def format_line_numbers(line_numbers: Sequence[int | None]) -> str:
     """
     Return a human-readable string of the supplied line numbers.
 
@@ -160,8 +160,8 @@ def format_line_numbers(line_numbers: Sequence[Optional[int]]) -> str:
 def _render_direct_import(
     direct_import,
     first_line: bool = False,
-    extra_firsts: Optional[List] = None,
-    extra_lasts: Optional[List] = None,
+    extra_firsts: list | None = None,
+    extra_lasts: list | None = None,
 ) -> None:
     import_strings = []
     if extra_firsts:

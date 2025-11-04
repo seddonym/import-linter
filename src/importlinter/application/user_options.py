@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any
 
 
 class InvalidUserOptions(Exception):
@@ -15,7 +15,7 @@ class UserOptions:
     """
 
     def __init__(
-        self, session_options: Dict[str, Any], contracts_options: List[Dict[str, Any]]
+        self, session_options: dict[str, Any], contracts_options: list[dict[str, Any]]
     ) -> None:
         self.session_options = session_options
         self.contracts_options = contracts_options

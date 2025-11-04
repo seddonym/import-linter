@@ -1,5 +1,5 @@
 import configparser
-from typing import Any, Dict, Optional, List
+from typing import Any
 import abc
 import sys
 
@@ -15,9 +15,9 @@ from importlinter.application.user_options import UserOptions
 
 
 class AbstractUserOptionReader(ports.UserOptionReader):
-    potential_config_filenames: List[str]
+    potential_config_filenames: list[str]
 
-    def read_options(self, config_filename: Optional[str] = None) -> Optional[UserOptions]:
+    def read_options(self, config_filename: str | None = None) -> UserOptions | None:
         if config_filename:
             config_filenames = file_finding.find_any(config_filename)
             if not config_filenames:
@@ -36,7 +36,7 @@ class AbstractUserOptionReader(ports.UserOptionReader):
         return None
 
     @abc.abstractmethod
-    def _read_config_filename(self, config_filename: str) -> Optional[UserOptions]:
+    def _read_config_filename(self, config_filename: str) -> UserOptions | None:
         raise NotImplementedError
 
 
@@ -48,7 +48,7 @@ class IniFileUserOptionReader(AbstractUserOptionReader):
     potential_config_filenames = ["setup.cfg", ".importlinter"]
     section_name = "importlinter"
 
-    def _read_config_filename(self, config_filename: str) -> Optional[UserOptions]:
+    def _read_config_filename(self, config_filename: str) -> UserOptions | None:
         config = configparser.ConfigParser()
         file_contents = settings.FILE_SYSTEM.read(config_filename)
         config.read_string(file_contents)
@@ -67,8 +67,8 @@ class IniFileUserOptionReader(AbstractUserOptionReader):
         return UserOptions(session_options=session_options, contracts_options=contract_options)
 
     @staticmethod
-    def _clean_section_config(section_config: Dict[str, Any]) -> Dict[str, Any]:
-        section_dict: Dict[str, Any] = {}
+    def _clean_section_config(section_config: dict[str, Any]) -> dict[str, Any]:
+        section_dict: dict[str, Any] = {}
         for key, value in section_config.items():
             if "\n" not in value:
                 section_dict[key] = value
@@ -85,7 +85,7 @@ class TomlFileUserOptionReader(AbstractUserOptionReader):
     section_name = "importlinter"
     potential_config_filenames = ["pyproject.toml"]
 
-    def _read_config_filename(self, config_filename: str) -> Optional[UserOptions]:
+    def _read_config_filename(self, config_filename: str) -> UserOptions | None:
         file_contents = settings.FILE_SYSTEM.read(config_filename, encoding="utf-8")
         data = tomllib.loads(file_contents)
 

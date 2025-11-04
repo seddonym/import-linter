@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Iterable, List, cast
+from typing import cast
+from collections.abc import Iterable
 
 from grimp import ImportGraph
 
@@ -145,7 +146,7 @@ class ForbiddenContract(Contract):
             metadata={"invalid_chains": sorted(invalid_chains, key=chain_sort_key)},
         )
 
-    def render_broken_contract(self, check: "ContractCheck") -> None:
+    def render_broken_contract(self, check: ContractCheck) -> None:
         count = 0
         for chains_data in check.metadata["invalid_chains"]:
             downstream, upstream = (
@@ -201,7 +202,7 @@ class ForbiddenContract(Contract):
         root_packages = [Module(name) for name in self.session_options["root_packages"]]
         return {
             forbidden_module
-            for forbidden_module in cast(List[Module], forbidden_modules)
+            for forbidden_module in cast(list[Module], forbidden_modules)
             if not any(
                 forbidden_module.is_in_package(root_package) for root_package in root_packages
             )

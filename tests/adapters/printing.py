@@ -1,5 +1,4 @@
 import textwrap
-from typing import Optional
 
 from importlinter.application.ports.printing import Printer
 
@@ -12,7 +11,7 @@ class FakePrinter(Printer):
         self,
         text: str = "",
         bold: bool = False,
-        color: Optional[str] = None,
+        color: str | None = None,
         newline: bool = True,
     ) -> None:
         """

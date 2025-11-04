@@ -1,5 +1,3 @@
-from typing import Optional
-
 from .app_config import settings
 from .ports.printing import Printer
 
@@ -34,7 +32,7 @@ class Output:
         self,
         text: str = "",
         bold: bool = False,
-        color: Optional[str] = None,
+        color: str | None = None,
         newline: bool = True,
     ) -> None:
         """
@@ -62,7 +60,7 @@ class Output:
         """
         self.printer.print()
 
-    def print_heading(self, text: str, level: int, style: Optional[str] = None) -> None:
+    def print_heading(self, text: str, level: int, style: str | None = None) -> None:
         """
         Prints the supplied text to the console, formatted as a heading.
 
@@ -127,7 +125,7 @@ def verbose_print(
     verbose: bool,
     text: str = "",
     bold: bool = False,
-    color: Optional[str] = None,
+    color: str | None = None,
     newline: bool = True,
 ) -> None:
     """

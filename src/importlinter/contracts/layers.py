@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Sequence, cast
+from typing import cast
+from collections.abc import Sequence
 
 import grimp
 from typing_extensions import TypedDict
@@ -181,7 +182,7 @@ class LayersContract(Contract):
         return flattened
 
     def render_broken_contract(self, check: ContractCheck) -> None:
-        for chains_data in cast(List[_LayerChainData], check.metadata["invalid_dependencies"]):
+        for chains_data in cast(list[_LayerChainData], check.metadata["invalid_dependencies"]):
             higher_layer, lower_layer = (
                 chains_data["imported"],
                 chains_data["importer"],

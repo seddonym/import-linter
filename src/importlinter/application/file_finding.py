@@ -1,9 +1,9 @@
-from typing import Iterable, List
+from collections.abc import Iterable
 
 from importlinter.application.app_config import settings
 
 
-def find_any(*filenames: Iterable[str]) -> List[str]:
+def find_any(*filenames: Iterable[str]) -> list[str]:
     """
     Return a list of names of any potential files that contain config.
 
@@ -13,7 +13,7 @@ def find_any(*filenames: Iterable[str]) -> List[str]:
     Returns:
         List of absolute filenames that could be found.
     """
-    found_files: List[str] = []
+    found_files: list[str] = []
 
     filesystem = settings.FILE_SYSTEM
     current_working_directory = filesystem.getcwd()

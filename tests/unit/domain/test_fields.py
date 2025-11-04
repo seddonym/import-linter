@@ -1,6 +1,6 @@
 import enum
 import re
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any
 
 import pytest
 
@@ -20,7 +20,7 @@ from importlinter.domain.imports import ImportExpression, Module, ModuleExpressi
 
 def test_field_cannot_be_instantiated_with_default_and_required():
     class SomeField(Field):
-        def parse(self, raw_data: Union[str, List]) -> str:
+        def parse(self, raw_data: str | list) -> str:
             raise NotImplementedError
 
     with pytest.raises(ValueError, match="A required field cannot also provide a default value."):
@@ -28,8 +28,8 @@ def test_field_cannot_be_instantiated_with_default_and_required():
 
 
 class BaseFieldTest:
-    field_class: Optional[Type[Field]] = None
-    field_kwargs: Dict[str, Any] = {}
+    field_class: type[Field] | None = None
+    field_kwargs: dict[str, Any] = {}
 
     def test_field(self, raw_data, expected_value):
         field = self.field_class(**self.field_kwargs)

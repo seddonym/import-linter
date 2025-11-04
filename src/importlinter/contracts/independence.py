@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, cast
+from typing import cast
 
 import grimp
 from grimp import ImportGraph
@@ -24,7 +24,7 @@ from ._common import (
 class _SubpackageChainData(TypedDict):
     upstream_module: str
     downstream_module: str
-    chains: List[DetailedChain]
+    chains: list[DetailedChain]
 
 
 class IndependenceContract(Contract):
@@ -73,8 +73,8 @@ class IndependenceContract(Contract):
             metadata={"invalid_chains": invalid_chains},
         )
 
-    def render_broken_contract(self, check: "ContractCheck") -> None:
-        for chains_data in cast(List[_SubpackageChainData], check.metadata["invalid_chains"]):
+    def render_broken_contract(self, check: ContractCheck) -> None:
+        for chains_data in cast(list[_SubpackageChainData], check.metadata["invalid_chains"]):
             downstream, upstream = (
                 chains_data["downstream_module"],
                 chains_data["upstream_module"],
@@ -122,7 +122,7 @@ class IndependenceContract(Contract):
         )
         if chains:
             for chain in chains:
-                chain_data: List[Link] = []
+                chain_data: list[Link] = []
                 for importer, imported in [
                     (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
                 ]:

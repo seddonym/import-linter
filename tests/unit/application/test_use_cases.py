@@ -1,6 +1,6 @@
 import re
 import string
-from typing import Any, Dict, List, Optional
+from typing import Any
 from unittest.mock import sentinel
 
 import pytest
@@ -509,12 +509,12 @@ class TestCheckContractsAndPrintReport:
 
     def _configure(
         self,
-        contracts_options: List[Dict[str, Any]],
-        session_options: Optional[Dict[str, Any]] = None,
-        contract_types: Optional[List[str]] = None,
-        graph: Optional[ImportGraph] = None,
-        graph_builder: Optional[GraphBuilder] = None,
-        timer: Optional[FakeTimer] = None,
+        contracts_options: list[dict[str, Any]],
+        session_options: dict[str, Any] | None = None,
+        contract_types: list[str] | None = None,
+        graph: ImportGraph | None = None,
+        graph_builder: GraphBuilder | None = None,
+        timer: FakeTimer | None = None,
     ):
         session_options = session_options or {"root_package": "mypackage"}
         if not contract_types:

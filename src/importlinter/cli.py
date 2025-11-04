@@ -1,7 +1,6 @@
 import os
 import sys
 from logging import config as logging_config
-from typing import Optional, Tuple, Type, Union
 
 import click
 
@@ -38,9 +37,9 @@ EXIT_STATUS_ERROR = 1
     help="Noisily output progress as we go along.",
 )
 def lint_imports_command(
-    config: Optional[str],
-    contract: Tuple[str, ...],
-    cache_dir: Optional[str],
+    config: str | None,
+    contract: tuple[str, ...],
+    cache_dir: str | None,
     no_cache: bool,
     debug: bool,
     show_timings: bool,
@@ -62,9 +61,9 @@ def lint_imports_command(
 
 
 def lint_imports(
-    config_filename: Optional[str] = None,
-    limit_to_contracts: Tuple[str, ...] = (),
-    cache_dir: Optional[str] = None,
+    config_filename: str | None = None,
+    limit_to_contracts: tuple[str, ...] = (),
+    cache_dir: str | None = None,
     no_cache: bool = False,
     is_debug_mode: bool = False,
     show_timings: bool = False,
@@ -112,8 +111,8 @@ def lint_imports(
 
 
 def _combine_caching_arguments(
-    cache_dir: Optional[str], no_cache: bool
-) -> Union[str, None, Type[NotSupplied]]:
+    cache_dir: str | None, no_cache: bool
+) -> str | None | type[NotSupplied]:
     if no_cache:
         return None
     if cache_dir is None:
