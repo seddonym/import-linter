@@ -58,6 +58,10 @@ lint:
     @echo
     @echo '👍 {{GREEN}} Linting all good.{{NORMAL}}'
 
+# Fix any ruff errors
+autofix:
+    @uv run ruff check --fix
+
 # Build docs.
 build-docs:
     @uv run --group=docs sphinx-build -b html docs dist/docs --fail-on-warning --fresh-env --quiet
@@ -74,3 +78,9 @@ check:
     @just build-docs
     @just test-all
     @echo '👍 {{GREEN}} Linting, docs and tests all good.{{NORMAL}}'
+
+# Upgrade Python code to the supplied version. (E.g. just upgrade 310)
+upgrade-python MIN_VERSION:
+    @find {docs,src,tests} -name "*.py" -not -path "tests/assets/*" -exec uv run pyupgrade --py{{MIN_VERSION}}-plus --exit-zero-even-if-changed {} +
+    @just autofix
+    @just format
