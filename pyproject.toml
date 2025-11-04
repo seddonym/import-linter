@@ -6,7 +6,7 @@ description = "Enforces rules for the imports within and between Python packages
 authors = [
     {name = "David Seddon", email = "david@seddonym.me"},
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "click>=6",
     "grimp>=3.12",
@@ -21,7 +21,6 @@ classifiers = [
     "Operating System :: POSIX",
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
