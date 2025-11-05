@@ -4,7 +4,7 @@ from typing import Any
 from unittest.mock import sentinel
 
 import pytest
-from grimp.adaptors.graph import ImportGraph
+from grimp import ImportGraph
 
 from importlinter.application.app_config import settings
 from importlinter.application.ports.building import GraphBuilder

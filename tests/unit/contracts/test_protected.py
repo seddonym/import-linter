@@ -2,7 +2,7 @@ import pytest
 from importlinter.contracts.protected import ProtectedContract
 from importlinter.application.app_config import settings
 from tests.adapters.printing import FakePrinter
-from grimp.adaptors.graph import ImportGraph
+from grimp import ImportGraph
 
 
 class TestProtectedContract:

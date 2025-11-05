@@ -1,5 +1,5 @@
 import pytest
-from grimp.adaptors.graph import ImportGraph
+from grimp import ImportGraph
 
 from importlinter.application.contract_utils import AlertLevel, remove_ignored_imports
 from importlinter.domain.helpers import MissingImport

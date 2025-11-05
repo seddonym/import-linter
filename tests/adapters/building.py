@@ -1,4 +1,4 @@
-from grimp.adaptors.graph import ImportGraph
+from grimp import ImportGraph
 
 from importlinter.application.ports.building import GraphBuilder
 
