@@ -95,10 +95,20 @@ class IntegerField(Field[int]):
     A field for single values of integers.
     """
 
+    def __init__(self, *args, minimum: int | None = None, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.minimum = minimum
+
     def parse(self, raw_data: str | list[str]) -> int:
         if isinstance(raw_data, list):
             raise ValidationError("Expected a single value, got multiple values.")
-        return int(raw_data)
+        try:
+            integer = int(raw_data)
+        except ValueError:
+            raise ValidationError(f"'{raw_data}' is not an integer.")
+        if self.minimum is not None and integer < self.minimum:
+            raise ValidationError(f"Must be >= {self.minimum}.")
+        return integer
 
 
 class BaseMultipleValueField(Field):
