@@ -89,18 +89,24 @@ def module_expressions_to_modules(
     graph: ImportGraph,
     expressions: Iterable[ModuleExpression],
     as_packages: bool = False,
+    raise_if_unmatched: bool = False,
 ) -> set[Module]:
     modules = set()
     for expression in expressions:
-        modules |= module_expression_to_modules(graph, expression, as_packages)
+        modules |= module_expression_to_modules(graph, expression, as_packages, raise_if_unmatched)
     return modules
 
 
 def module_expression_to_modules(
-    graph: ImportGraph, expression: ModuleExpression, as_packages: bool = False
+    graph: ImportGraph,
+    expression: ModuleExpression,
+    as_packages: bool = False,
+    raise_if_unmatched: bool = False,
 ) -> set[Module]:
     if expression.has_wildcard_expression():
         matching_modules = graph.find_matching_modules(expression.expression)
+        if raise_if_unmatched and not matching_modules:
+            raise ValueError(f"The expression '{expression}' did not match any modules.")
     else:
         matching_modules = {expression.expression}
 
