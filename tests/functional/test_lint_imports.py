@@ -13,6 +13,7 @@ testpackage_directory = assets_directory / "testpackage"
 multipleroots_directory = assets_directory / "multipleroots"
 unmatched_ignore_imports_directory = testpackage_directory / "unmatched_ignore_imports_alerting"
 namespace_packages_directory = assets_directory / "namespacepackages"
+cyclicpackage_directory = assets_directory / "cycles"
 
 # Add namespace packages to Python path
 sys.path.extend(
@@ -70,6 +71,9 @@ sys.path.extend(
         # Type checking imports
         (testpackage_directory, ".typecheckkeptcontract.ini", cli.EXIT_STATUS_SUCCESS),
         (testpackage_directory, ".typecheckbrokencontract.ini", cli.EXIT_STATUS_ERROR),
+        # Acyclic siblings
+        (cyclicpackage_directory, ".keptcontract.ini", cli.EXIT_STATUS_SUCCESS),
+        (cyclicpackage_directory, ".brokencontract.ini", cli.EXIT_STATUS_ERROR),
     ),
 )
 def test_lint_imports(working_directory, config_filename, expected_result):
