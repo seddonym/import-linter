@@ -2,7 +2,7 @@ import re
 
 import pytest
 from grimp import DetailedImport
-from grimp.adaptors.graph import ImportGraph
+from grimp import ImportGraph
 
 from importlinter.domain.helpers import (
     MissingImport,

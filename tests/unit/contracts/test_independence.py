@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from grimp.adaptors.graph import ImportGraph
+from grimp import ImportGraph
 
 from importlinter.application.app_config import settings
 from importlinter.contracts.independence import (
