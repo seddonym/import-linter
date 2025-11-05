@@ -1,4 +1,5 @@
 import enum
+
 import re
 from typing import Any
 
@@ -6,6 +7,7 @@ import pytest
 
 from importlinter.domain.fields import (
     BooleanField,
+    IntegerField,
     EnumField,
     Field,
     ImportExpressionField,
@@ -69,6 +71,38 @@ class TestStringField(BaseFieldTest):
 )
 class TestBooleanField(BaseFieldTest):
     field_class = BooleanField
+
+
+class TestIntegerField(BaseFieldTest):
+    @pytest.mark.parametrize(
+        "raw_data, minimum, expected_value",
+        (
+            ("1", None, 1),
+            ("0", None, 0),
+            ("-1", None, -1),
+            ("44", 45, ValidationError("Must be >= 45.")),
+            ("45", 45, 45),
+            ("46", 45, 46),
+            ("3.141", None, ValidationError("'3.141' is not an integer.")),
+            ("bananas", None, ValidationError("'bananas' is not an integer.")),
+            (
+                ["1", "2", "3"],
+                None,
+                ValidationError("Expected a single value, got multiple values."),
+            ),
+        ),
+    )
+    def test_field(self, raw_data, minimum, expected_value):
+        if minimum is None:
+            field = IntegerField()
+        else:
+            field = IntegerField(minimum=minimum)
+
+        if isinstance(expected_value, Exception):
+            with pytest.raises(expected_value.__class__, match=re.escape(expected_value.message)):
+                field.parse(raw_data)
+        else:
+            assert field.parse(raw_data) == expected_value
 
 
 @pytest.mark.parametrize(
