@@ -14,12 +14,12 @@ class RichPrinter(Printer):
         bold: bool = False,
         color: str | None = None,
         newline: bool = True,
+        as_log: bool = False,
     ) -> None:
+        print_ = output.console.log if as_log else output.console.print
         styles = []
         if bold:
             styles.append("bold")
         if color:
             styles.append(color)
-        output.console.print(
-            rtext.Text(text, style=" ".join(styles)), end=("\n" if newline else "")
-        )
+        print_(rtext.Text(text, style=" ".join(styles)), end=("\n" if newline else ""))
