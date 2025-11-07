@@ -161,7 +161,7 @@ def _build_graph(
     else:
         output.verbose_print(verbose, "Building import graph (with caching disabled)...")
 
-    with console.status(":brick: Building graph...", spinner="growVertical"):
+    with console.status(":brick: Building graph...", spinner="layer"):
         graph = settings.GRAPH_BUILDER.build(
             root_package_names=root_package_names,
             include_external_packages=include_external_packages,
@@ -187,28 +187,29 @@ def _build_report(
     contracts_options = _filter_contract_options(
         user_options.contracts_options, limit_to_contracts
     )
-    for contract_options in contracts_options:
-        contract_class = registry.get_contract_class(contract_options["type"])
-        try:
-            contract = contract_class(
-                name=contract_options["name"],
-                session_options=user_options.session_options,
-                contract_options=contract_options,
-            )
-        except InvalidContractOptions as e:
-            report.add_invalid_contract_options(contract_options["name"], e)
-            return report
-
-        output.verbose_print(verbose, f"Checking {contract.name}...")
-        with settings.TIMER as timer:
-            # Make a copy so that contracts can mutate the graph without affecting
-            # other contract checks.
-            copy_of_graph = deepcopy(graph)
-            check = contract.check(copy_of_graph, verbose=verbose)
-        duration_ms = timer.duration_in_ms
-        report.add_contract_check(contract, check, duration=duration_ms)
-        if verbose:
-            rendering.render_contract_result_line(contract, check, duration=duration_ms)
+    with console.status(":face_with_monocle: Checking contracts...", spinner="aesthetic"):
+        for contract_options in contracts_options:
+            contract_class = registry.get_contract_class(contract_options["type"])
+            try:
+                contract = contract_class(
+                    name=contract_options["name"],
+                    session_options=user_options.session_options,
+                    contract_options=contract_options,
+                )
+            except InvalidContractOptions as e:
+                report.add_invalid_contract_options(contract_options["name"], e)
+                return report
+            console.print(f"Checking {contract.name}...")
+            output.verbose_print(verbose, f"Checking {contract.name}...")
+            with settings.TIMER as timer:
+                # Make a copy so that contracts can mutate the graph without affecting
+                # other contract checks.
+                copy_of_graph = deepcopy(graph)
+                check = contract.check(copy_of_graph, verbose=verbose)
+            duration_ms = timer.duration_in_ms
+            report.add_contract_check(contract, check, duration=duration_ms)
+            if verbose:
+                rendering.render_contract_result_line(contract, check, duration=duration_ms)
 
     output.verbose_print(verbose, newline=True)
     return report
