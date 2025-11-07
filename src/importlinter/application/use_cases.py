@@ -20,8 +20,9 @@ SUCCESS = True
 FAILURE = False
 
 from rich.console import Console
-from rich.panel import Panel
 from rich.align import Align
+
+console = Console(log_path=False, style="dim")
 
 
 def lint_imports(
@@ -61,10 +62,50 @@ def lint_imports(
   │   ║║◀───────────────┘                
   └──▶╚╝
     """,
-        align="center",
+        align="left",
     )
-    console = Console()
-    console.print(Panel(heading), style="medium_orchid")
+
+    console.print(heading, style="medium_orchid")
+
+    from time import sleep
+
+    with console.status(":brick: Building graph...", spinner="growVertical") as status:
+        console.log("Found cache in .import_linter_cache/")
+        sleep(1)
+        console.log("Analyzed 38 files, 80 dependencies.")
+        status.update(status="[bold blue] Checking contracts", spinner="bounce")
+        console.log("[green][italic]Sample contract three[/italic] KEPT")
+        sleep(0.3)
+        console.log("[red][italic]Sample contract two[/italic] BROKEN")
+        sleep(0.2)
+        console.log("[green][italic]Sample contract three[/italic] KEPT")
+        sleep(0.1)
+        console.log("[bold] :checkered_flag: Check complete.")
+
+        # for i in track(range(5), description="[medium_orchid] :brick: Building graph..."):
+        #     time.sleep(0.1)  # Simulate work being done
+
+        # contracts = ["Contract one", "Contract two", "Contract three"]
+        # with Progress() as progress:
+        #     tasks = []
+        #     for contract in contracts:
+        #         tasks.append(
+        #             progress.add_task(
+        #                 f"[medium_orchid] :face_with_monocle: Checking [italic]{contract}[/italic]...",
+        #                 total=10,
+        #             )
+        #         )
+        #
+        # task1 = progress.add_task("[red]Linting...", total=1000)
+        # task2 = progress.add_task("[green]Processing...", total=1000)
+        # task3 = progress.add_task("[cyan]Cooking...", total=1000)
+
+        # while not progress.finished:
+        #     for task in tasks:
+        #         for _ in range(10):
+        #             progress.update(task, advance=1)
+        #             time.sleep(0.2)
+
     # output.print_heading("Import Linter", output.HEADING_LEVEL_ONE)
     output.verbose_print(verbose, "Verbose mode.")
     try:
@@ -126,7 +167,11 @@ def create_report(
     """
     include_external_packages = _get_include_external_packages(user_options)
     exclude_type_checking_imports = _get_exclude_type_checking_imports(user_options)
+    from rich.status import Status
 
+    status = Status("Building import graph...")
+    status.start()
+    # print(status)
     with settings.TIMER as timer:
         graph = _build_graph(
             root_package_names=user_options.session_options["root_packages"],
@@ -135,6 +180,16 @@ def create_report(
             exclude_type_checking_imports=exclude_type_checking_imports,
             verbose=verbose,
         )
+        # import time
+        #
+        # time.sleep(1)
+    status.stop()
+
+    # while not progress.finished:
+    #     progress.update(task1, advance=0.5)
+    #     progress.update(task2, advance=0.3)
+    #     progress.update(task3, advance=0.9)
+    #     time.sleep(0.02)
     graph_building_duration = timer.duration_in_ms
 
     output.verbose_print(verbose, f"Built graph in {format_duration(graph_building_duration)}.")

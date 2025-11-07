@@ -122,14 +122,18 @@ def _combine_caching_arguments(
 
 def _configure_logging(verbose: bool) -> None:
     logger_names = ("importlinter", "grimp", "_rustgrimp")
+
     logging_config.dictConfig(
         {
             "version": 1,
             "handlers": {
                 "console": {
-                    "class": "logging.StreamHandler",
+                    "class": "rich.logging.RichHandler",
                     "level": "INFO" if verbose else "WARNING",
-                    "stream": "ext://sys.stdout",
+                    # RichHandler arguments.
+                    "omit_repeated_times": False,
+                    "show_level": False,
+                    "show_path": False,
                 },
             },
             "loggers": {
