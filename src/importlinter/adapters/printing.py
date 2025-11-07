@@ -1,11 +1,11 @@
-import click
-
 from importlinter.application.ports.printing import Printer
+from rich import text as rtext
+from importlinter.application import output
 
 
-class ClickPrinter(Printer):
+class RichPrinter(Printer):
     """
-    Console printer that uses Click's formatting helpers.
+    Console printer that uses Rich.
     """
 
     def print(
@@ -15,7 +15,11 @@ class ClickPrinter(Printer):
         color: str | None = None,
         newline: bool = True,
     ) -> None:
-        # click.secho(text, bold=bold, fg=color, nl=newline)
-        # A tricky solution to gh-267
-        # Remove when click reaches v9.0.0
-        print(click.style(text, bold=bold, fg=color), end=("\n" if newline else ""))
+        styles = []
+        if bold:
+            styles.append("bold")
+        if color:
+            styles.append(color)
+        output.console.print(
+            rtext.Text(text, style=" ".join(styles)), end=("\n" if newline else "")
+        )

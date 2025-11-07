@@ -1,5 +1,6 @@
 from .app_config import settings
 from .ports.printing import Printer
+from rich.console import Console
 
 ERROR = "error"
 SUCCESS = "success"
@@ -134,3 +135,6 @@ def verbose_print(
     if verbose:
         printer: Printer = settings.PRINTER
         printer.print(text, bold, color, newline)
+
+
+console = Console()
