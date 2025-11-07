@@ -3,6 +3,17 @@ from importlinter.domain.contract import Contract, ContractCheck
 from . import output
 from .ports.reporting import Report
 
+TEXT_LOGO = """
+╔══╗─────────▶╔╗ ╔╗      ╔╗
+╚╣╠╝◀─────┐  ╔╝╚╗║║────▶╔╝╚╗
+ ║║   ╔══╦══╦╩╗╔╝║║  ╔╦═╩╗╔╬══╦══╗
+ ║║╔══╣╔╗║╔╗║╔╣║ ║║ ╔╬╣╔╗║║║ ═╣╔═╝
+╔╣╠╣║║║╚╝║╚╝║║║╚╗║╚═╝║║║║║╚╣ ═╣║
+╚══╩╩╩╣╔═╩══╩╝╚═╝╚═══╩╩╝╚╩═╩══╩╝
+  │   ║║◀───────────────┘                
+  └──▶╚╝
+"""
+
 # Public functions
 # ----------------
 
