@@ -13,6 +13,7 @@ TEXT_LOGO = """
   │   ║║◀───────────────┘                
   └──▶╚╝
 """
+BRAND_COLOR = "pale_turquoise1"
 
 # Public functions
 # ----------------
