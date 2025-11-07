@@ -71,13 +71,13 @@ def lint_imports(
 
     with console.status(":brick: Building graph...", spinner="growVertical") as status:
         console.log("Found cache in .import_linter_cache/")
-        sleep(1)
+        sleep(0.1)
         console.log("Analyzed 38 files, 80 dependencies.")
         status.update(status="[bold blue] Checking contracts", spinner="bounce")
         console.log("[green][italic]Sample contract three[/italic] KEPT")
-        sleep(0.3)
+        sleep(0.1)
         console.log("[red][italic]Sample contract two[/italic] BROKEN")
-        sleep(0.2)
+        sleep(0.1)
         console.log("[green][italic]Sample contract three[/italic] KEPT")
         sleep(0.1)
         console.log("[bold] :checkered_flag: Check complete.")

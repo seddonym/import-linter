@@ -5,12 +5,14 @@ from .ports.reporting import Report
 
 # Public functions
 # ----------------
+from rich.panel import Panel
 
 
 def render_report(report: Report) -> None:
     """
     Output the supplied report to the console.
     """
+
     if report.could_not_run:
         _render_could_not_run(report)
         return
@@ -19,21 +21,47 @@ def render_report(report: Report) -> None:
         output.print(f"Building graph took {format_duration(report.graph_building_duration)}.")
         output.new_line()
 
-    output.print_heading("Contracts", output.HEADING_LEVEL_TWO)
+    # output.print_heading("Contracts", output.HEADING_LEVEL_TWO)
     file_count = report.module_count
     dependency_count = report.import_count
-    output.print_heading(
-        f"Analyzed {file_count} files, {dependency_count} dependencies.",
-        output.HEADING_LEVEL_THREE,
+    report_text = (
+        f"Analyzed {file_count} files, {dependency_count} dependencies.\n"
+        f"Contracts: {report.kept_count} kept, {report.broken_count} broken.\n"
     )
 
-    for contract, contract_check in report.get_contracts_and_checks():
-        duration = report.get_duration(contract) if report.show_timings else None
-        render_contract_result_line(contract, contract_check, duration=duration)
+    # output.print_heading(
+    #     f"Analyzed {file_count} files, {dependency_count} dependencies.",
+    #     output.HEADING_LEVEL_THREE,
+    # )
+    from rich import print as rprint
+    from rich.console import Group
+
+    # tree = Tree("[bold]Contracts[/bold]")
+    # tree.add("[italic]Contract one[/italic] [green]KEPT")
+    # tree.add("[italic]Contract two[/italic] [red]BROKEN")
+    # tree.add("[italic]Contract three[/italic] [green]KEPT")
+
+    tree = """
+[bold]Contracts[/bold]
+
+:play_button: [italic]Contract one[/italic] [green]KEPT[/green]
+:play_button: [italic]Contract two[/italic] [red]BROKEN[/red]
+:play_button: [italic]Contract three[/italic] [green]KEPT[/green]
+"""
+
+    group = Group(report_text, tree)
+    report_panel = Panel(group, title="Summary")
+
+    for contract_name, error_report in _fake_error_reports():
+        broken_panel = Panel(error_report, title=contract_name, style="red bold")
+        rprint(broken_panel)
+    # for contract, contract_check in report.get_contracts_and_checks():
+    #     duration = report.get_duration(contract) if report.show_timings else None
+    #     render_contract_result_line(contract, contract_check, duration=duration)
 
     output.new_line()
 
-    output.print(f"Contracts: {report.kept_count} kept, {report.broken_count} broken.")
+    # output.print(f"[bold]Contracts[/bold] {report.kept_count} kept, {report.broken_count} broken.")
 
     if report.warnings_count:
         output.new_line()
@@ -43,6 +71,72 @@ def render_report(report: Report) -> None:
         output.new_line()
         output.new_line()
         _render_broken_contracts_details(report)
+    rprint(report_panel)
+
+
+def _fake_error_reports():
+    yield (
+        "Layered contract",
+        """
+mypackage.low is not allowed to import mypackage.high:
+
+- mypackage.low.blue -> mypackage.high.yellow (l.6)
+
+- mypackage.low.green -> mypackage.high.blue (l.12)
+
+- mypackage.low.blue (l.8, l.16)
+  & mypackage.low.purple (l.11)
+  & mypackage.low.white -> mypackage.utils.red (l.1)
+  mypackage.utils.red -> mypackage.utils.yellow (l.2)
+  mypackage.utils.yellow -> mypackage.utils.brown (l.?)
+  mypackage.utils.brown -> mypackage.high.green (l.3)
+                           & mypackage.high.black (l.11)
+                           & mypackage.high.white (l.8, l.16)
+
+- mypackage.low.purple -> mypackage.utils.yellow (l.9)
+  mypackage.utils.yellow -> mypackage.utils.brown (l.?)
+
+
+mypackage.low is not allowed to import mypackage.medium:
+
+- mypackage.low.blue -> mypackage.medium.yellow (l.6)
+
+
+mypackage.medium is not allowed to import mypackage.high:
+
+- mypackage.medium.blue (l.8)
+  & mypackage.medium.white -> mypackage.utils.yellow (l.1, l.10)
+  mypackage.utils.yellow -> mypackage.utils.brown (l.?)
+  mypackage.utils.brown -> mypackage.high.green (l.3)
+                           & mypackage.high.black (l.11)
+
+
+The following modules are not listed as layers:
+
+- mypackage.brown
+- mypackage.green
+- mypackage.purple
+
+(Since this contract is marked as 'exhaustive', every child of every container
+must be declared as a layer.)
+    """,
+    )
+    yield (
+        "Forbidden contract",
+        """
+mypackage.two is not allowed to import mypackage.purple:
+
+-   mypackage.two -> mypackage.utils (l.9)
+    mypackage.utils -> mypackage.purple (l.1)
+
+
+mypackage.three is not allowed to import mypackage.green:
+
+-   mypackage.three -> mypackage.green (l.4)
+
+
+        """,
+    )
 
 
 def render_contract_result_line(
