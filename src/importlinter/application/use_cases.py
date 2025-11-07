@@ -19,6 +19,10 @@ from .user_options import UserOptions
 SUCCESS = True
 FAILURE = False
 
+from rich.console import Console
+from rich.panel import Panel
+from rich.align import Align
+
 
 def lint_imports(
     config_filename: str | None = None,
@@ -46,7 +50,22 @@ def lint_imports(
     Returns:
         True if the linting passed, False if it didn't.
     """
-    output.print_heading("Import Linter", output.HEADING_LEVEL_ONE)
+    heading = Align(
+        """
+╔══╗─────────▶╔╗ ╔╗      ╔╗
+╚╣╠╝◀─────┐  ╔╝╚╗║║────▶╔╝╚╗
+ ║║   ╔══╦══╦╩╗╔╝║║  ╔╦═╩╗╔╬══╦══╗
+ ║║╔══╣╔╗║╔╗║╔╣║ ║║ ╔╬╣╔╗║║║ ═╣╔═╝
+╔╣╠╣║║║╚╝║╚╝║║║╚╗║╚═╝║║║║║╚╣ ═╣║
+╚══╩╩╩╣╔═╩══╩╝╚═╝╚═══╩╩╝╚╩═╩══╩╝
+  │   ║║◀───────────────┘                
+  └──▶╚╝
+    """,
+        align="center",
+    )
+    console = Console()
+    console.print(Panel(heading), style="medium_orchid")
+    # output.print_heading("Import Linter", output.HEADING_LEVEL_ONE)
     output.verbose_print(verbose, "Verbose mode.")
     try:
         user_options = read_user_options(config_filename=config_filename)
