@@ -137,4 +137,4 @@ def verbose_print(
         printer.print(text, bold, color, newline)
 
 
-console = Console()
+console = Console(log_path=False)
