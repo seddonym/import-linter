@@ -134,7 +134,7 @@ def verbose_print(
     """
     if verbose:
         printer: Printer = settings.PRINTER
-        printer.print(text, bold, color, newline)
+        printer.print(text, bold, color, newline, as_log=True)
 
 
 console = Console(log_path=False)
