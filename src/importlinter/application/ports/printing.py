@@ -9,6 +9,7 @@ class Printer(abc.ABC):
         bold: bool = False,
         color: str | None = None,
         newline: bool = True,
+        as_log: bool = False,
     ) -> None:
         """
         Prints a line.

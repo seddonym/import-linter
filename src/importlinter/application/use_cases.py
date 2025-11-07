@@ -2,6 +2,7 @@ import importlib
 from copy import copy, deepcopy
 from typing import Any
 
+from ..application.output import console
 from grimp import ImportGraph
 
 from ..application import rendering
@@ -46,7 +47,7 @@ def lint_imports(
     Returns:
         True if the linting passed, False if it didn't.
     """
-    output.print(rendering.TEXT_LOGO)
+    output.print(rendering.TEXT_LOGO, color=rendering.BRAND_COLOR)
     output.verbose_print(verbose, "Verbose mode.")
     try:
         user_options = read_user_options(config_filename=config_filename)
@@ -145,6 +146,10 @@ def _normalize_user_options(user_options: UserOptions) -> UserOptions:
     return normalized_options
 
 
+# spinner = "hamburger"
+spinner = "point"
+
+
 def _build_graph(
     root_package_names: list[str],
     include_external_packages: bool | None,
@@ -160,12 +165,17 @@ def _build_graph(
     else:
         output.verbose_print(verbose, "Building import graph (with caching disabled)...")
 
-    return settings.GRAPH_BUILDER.build(
-        root_package_names=root_package_names,
-        include_external_packages=include_external_packages,
-        exclude_type_checking_imports=exclude_type_checking_imports,
-        cache_dir=cache_dir,
-    )
+    with console.status(
+        ":brick: Building graph...",
+        spinner=spinner,
+    ):
+        graph = settings.GRAPH_BUILDER.build(
+            root_package_names=root_package_names,
+            include_external_packages=include_external_packages,
+            exclude_type_checking_imports=exclude_type_checking_imports,
+            cache_dir=cache_dir,
+        )
+    return graph
 
 
 def _build_report(
@@ -184,28 +194,33 @@ def _build_report(
     contracts_options = _filter_contract_options(
         user_options.contracts_options, limit_to_contracts
     )
-    for contract_options in contracts_options:
-        contract_class = registry.get_contract_class(contract_options["type"])
-        try:
-            contract = contract_class(
-                name=contract_options["name"],
-                session_options=user_options.session_options,
-                contract_options=contract_options,
-            )
-        except InvalidContractOptions as e:
-            report.add_invalid_contract_options(contract_options["name"], e)
-            return report
 
-        output.verbose_print(verbose, f"Checking {contract.name}...")
-        with settings.TIMER as timer:
-            # Make a copy so that contracts can mutate the graph without affecting
-            # other contract checks.
-            copy_of_graph = deepcopy(graph)
-            check = contract.check(copy_of_graph, verbose=verbose)
-        duration_ms = timer.duration_in_ms
-        report.add_contract_check(contract, check, duration=duration_ms)
-        if verbose:
-            rendering.render_contract_result_line(contract, check, duration=duration_ms)
+    with console.status(
+        ":face_with_monocle: Checking contracts...",
+        spinner=spinner,
+    ):
+        for contract_options in contracts_options[:10]:
+            contract_class = registry.get_contract_class(contract_options["type"])
+            try:
+                contract = contract_class(
+                    name=contract_options["name"],
+                    session_options=user_options.session_options,
+                    contract_options=contract_options,
+                )
+            except InvalidContractOptions as e:
+                report.add_invalid_contract_options(contract_options["name"], e)
+                return report
+            console.print(f"[dim]Checking {contract.name}...")
+            output.verbose_print(verbose, f"Checking {contract.name}...")
+            with settings.TIMER as timer:
+                # Make a copy so that contracts can mutate the graph without affecting
+                # other contract checks.
+                copy_of_graph = deepcopy(graph)
+                check = contract.check(copy_of_graph, verbose=verbose)
+            duration_ms = timer.duration_in_ms
+            report.add_contract_check(contract, check, duration=duration_ms)
+            if verbose:
+                rendering.render_contract_result_line(contract, check, duration=duration_ms)
 
     output.verbose_print(verbose, newline=True)
     return report
