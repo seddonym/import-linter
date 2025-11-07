@@ -2,6 +2,7 @@ import importlib
 from copy import copy, deepcopy
 from typing import Any
 
+from ..application.output import console
 from grimp import ImportGraph
 
 from ..application import rendering
@@ -160,12 +161,14 @@ def _build_graph(
     else:
         output.verbose_print(verbose, "Building import graph (with caching disabled)...")
 
-    return settings.GRAPH_BUILDER.build(
-        root_package_names=root_package_names,
-        include_external_packages=include_external_packages,
-        exclude_type_checking_imports=exclude_type_checking_imports,
-        cache_dir=cache_dir,
-    )
+    with console.status(":brick: Building graph...", spinner="growVertical"):
+        graph = settings.GRAPH_BUILDER.build(
+            root_package_names=root_package_names,
+            include_external_packages=include_external_packages,
+            exclude_type_checking_imports=exclude_type_checking_imports,
+            cache_dir=cache_dir,
+        )
+    return graph
 
 
 def _build_report(
