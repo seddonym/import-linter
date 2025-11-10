@@ -1,8 +1,8 @@
 Changelog
 =========
 
-latest
-------
+2.6 (2025-11-10)
+----------------
 
 * Add `acyclic_siblings` contract type.
 * Add contract field `IntegerField`.
