@@ -1,7 +1,7 @@
 [importlinter]
 root_package = importlinter
 
-[importlinter:contract:1]
+[importlinter:contract:layers]
 name=Layered architecture
 type=layers
 containers =
@@ -15,3 +15,8 @@ layers=
     application
     domain
 exhaustive = true
+
+[importlinter:contract:acyclic]
+name=All packages are acyclic
+type=acyclic_siblings
+ancestors = importlinter
