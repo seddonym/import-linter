@@ -1556,8 +1556,8 @@ def test_render_broken_contract():
         - mypackage.green
         - mypackage.purple
 
-        (Since this contract is marked as 'exhaustive', every child of every container """
-        """must be declared as a layer.)
+        (Since this contract is marked as 'exhaustive', every child of every container 
+        must be declared as a layer.)
 
         """
     )

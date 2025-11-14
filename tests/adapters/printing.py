@@ -1,25 +1,16 @@
 import textwrap
 
-from importlinter.application.ports.printing import Printer
+from importlinter.adapters.printing import RichPrinter, console
 
 
-class FakePrinter(Printer):
+class FakePrinter(RichPrinter):
     def __init__(self) -> None:
         self._buffer = ""
 
-    def print(
-        self,
-        text: str = "",
-        bold: bool = False,
-        color: str | None = None,
-        newline: bool = True,
-    ) -> None:
-        """
-        Prints a line.
-        """
-        self._buffer += text
-        if newline:
-            self._buffer += "\n"
+    def print(self, *args, **kwargs) -> None:
+        with console.capture() as capture:
+            super().print(*args, **kwargs)
+        self._buffer += capture.get()
 
     def pop_and_assert(self, expected_string):
         """
