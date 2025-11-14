@@ -1,6 +1,11 @@
 Changelog
 =========
 
+latest
+------
+
+* Print using rich instead of click.
+
 2.6 (2025-11-10)
 ----------------
 

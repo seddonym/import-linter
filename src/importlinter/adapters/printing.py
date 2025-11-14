@@ -1,13 +1,8 @@
-import click
-
 from importlinter.application.ports.printing import Printer
+from rich.console import Console
 
 
-class ClickPrinter(Printer):
-    """
-    Console printer that uses Click's formatting helpers.
-    """
-
+class RichPrinter(Printer):
     def print(
         self,
         text: str = "",
@@ -15,7 +10,13 @@ class ClickPrinter(Printer):
         color: str | None = None,
         newline: bool = True,
     ) -> None:
-        # click.secho(text, bold=bold, fg=color, nl=newline)
-        # A tricky solution to gh-267
-        # Remove when click reaches v9.0.0
-        print(click.style(text, bold=bold, fg=color), end=("\n" if newline else ""))
+        adjusted_text = text
+        if color:
+            adjusted_text = f"[{color}]{text}[/{color}]"
+        if bold:
+            adjusted_text = f"[bold]{text}[/bold]"
+        end = "\n" if newline else ""
+        console.print(adjusted_text, end=end)
+
+
+console = Console(highlight=False)
