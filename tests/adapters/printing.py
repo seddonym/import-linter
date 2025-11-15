@@ -13,6 +13,7 @@ class FakePrinter(Printer):
         bold: bool = False,
         color: str | None = None,
         newline: bool = True,
+        as_log: bool = False,
     ) -> None:
         """
         Prints a line.

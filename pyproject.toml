@@ -10,6 +10,7 @@ requires-python = ">=3.10"
 dependencies = [
     "click>=6",
     "grimp==3.13",
+    "rich>=14.2.0",
     "tomli>=1.2.1; python_version < '3.11'",
     "typing-extensions>=3.10.0.0",
 ]
