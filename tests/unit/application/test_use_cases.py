@@ -2,8 +2,9 @@ import re
 import string
 from typing import Any
 from unittest.mock import sentinel
-
+from textwrap import dedent
 import pytest
+from importlinter.adapters.printing import console, RichPrinter
 from grimp import ImportGraph
 
 from importlinter.application.app_config import settings
@@ -16,7 +17,6 @@ from importlinter.application.use_cases import (
 )
 from importlinter.application.user_options import UserOptions
 from tests.adapters.building import FakeGraphBuilder
-from tests.adapters.printing import FakePrinter
 from tests.adapters.timing import FakeTimer
 from tests.adapters.user_options import (
     ExceptionRaisingUserOptionReader,
@@ -35,12 +35,12 @@ class TestCheckContractsAndPrintReport:
             ]
         )
 
-        result = lint_imports()
+        with console.capture() as capture:
+            result = lint_imports()
 
         assert result == SUCCESS
-
-        settings.PRINTER.pop_and_assert(
-            """
+        assert capture.get() == dedent(
+            """\
             =============
             Import Linter
             =============
@@ -73,12 +73,12 @@ class TestCheckContractsAndPrintReport:
             ]
         )
 
-        result = lint_imports()
+        with console.capture() as capture:
+            result = lint_imports()
 
         assert result == FAILURE
-
-        settings.PRINTER.pop_and_assert(
-            """
+        assert capture.get() == dedent(
+            """\
             =============
             Import Linter
             =============
@@ -98,12 +98,12 @@ class TestCheckContractsAndPrintReport:
             ]
         )
 
-        result = lint_imports()
+        with console.capture() as capture:
+            result = lint_imports()
 
         assert result == FAILURE
-
-        settings.PRINTER.pop_and_assert(
-            """
+        assert capture.get() == dedent(
+            """\
             =============
             Import Linter
             =============
@@ -142,11 +142,12 @@ class TestCheckContractsAndPrintReport:
             ]
         )
 
-        result = lint_imports(limit_to_contracts=("green", "purple"))
+        with console.capture() as capture:
+            result = lint_imports(limit_to_contracts=("green", "purple"))
 
         assert result == SUCCESS
-        settings.PRINTER.pop_and_assert(
-            """
+        assert capture.get() == dedent(
+            """\
             =============
             Import Linter
             =============
@@ -181,12 +182,12 @@ class TestCheckContractsAndPrintReport:
             ]
         )
 
-        result = lint_imports()
+        with console.capture() as capture:
+            result = lint_imports()
 
         assert result == FAILURE
-
-        settings.PRINTER.pop_and_assert(
-            """
+        assert capture.get() == dedent(
+            """\
             =============
             Import Linter
             =============
@@ -248,10 +249,11 @@ class TestCheckContractsAndPrintReport:
             timer=timer,
         )
 
-        lint_imports(show_timings=True)
+        with console.capture() as capture:
+            lint_imports(show_timings=True)
 
-        settings.PRINTER.pop_and_assert(
-            """
+        assert capture.get() == dedent(
+            """\
             =============
             Import Linter
             =============
@@ -300,7 +302,7 @@ class TestCheckContractsAndPrintReport:
         [
             (
                 True,
-                """
+                """\
                 =============
                 Import Linter
                 =============
@@ -329,7 +331,7 @@ class TestCheckContractsAndPrintReport:
             ),
             (
                 False,
-                """
+                """\
             =============
             Import Linter
             =============
@@ -370,12 +372,13 @@ class TestCheckContractsAndPrintReport:
         if cache_dir is not sentinel.not_supplied:
             kwargs["cache_dir"] = cache_dir
 
-        lint_imports(**kwargs)
+        with console.capture() as capture:
+            lint_imports(**kwargs)
 
         expected_output = expected_output_template.replace(
             "{{ graph building output }}", expected_graph_building_output
         )
-        settings.PRINTER.pop_and_assert(expected_output)
+        assert capture.get() == dedent(expected_output)
 
     @pytest.mark.parametrize(
         "passed_arg, expected_cache_dir",
@@ -433,15 +436,16 @@ class TestCheckContractsAndPrintReport:
             graph=graph,
         )
 
-        result = lint_imports()
+        with console.capture() as capture:
+            result = lint_imports()
 
         assert result == FAILURE
 
         # Expecting 28 files (default graph has 26 modules, we add 2).
         # Expecting 11 dependencies (default graph has 10 imports, we add 2,
         # but it counts as 1 as it's between the same modules).
-        settings.PRINTER.pop_and_assert(
-            """
+        assert capture.get() == dedent(
+            """\
             =============
             Import Linter
             =============
@@ -480,7 +484,6 @@ class TestCheckContractsAndPrintReport:
         settings.configure(
             USER_OPTION_READERS={"foo": reader},
             GRAPH_BUILDER=FakeGraphBuilder(),
-            PRINTER=FakePrinter(),
         )
 
         with pytest.raises(some_exception.__class__, match=str(some_exception)):
@@ -492,13 +495,13 @@ class TestCheckContractsAndPrintReport:
         settings.configure(
             USER_OPTION_READERS={"foo": reader},
             GRAPH_BUILDER=FakeGraphBuilder(),
-            PRINTER=FakePrinter(),
         )
 
-        lint_imports(is_debug_mode=False)
+        with console.capture() as capture:
+            lint_imports(is_debug_mode=False)
 
-        settings.PRINTER.pop_and_assert(
-            """
+        assert capture.get() == dedent(
+            """\
             =============
             Import Linter
             =============
@@ -533,7 +536,7 @@ class TestCheckContractsAndPrintReport:
         settings.configure(
             USER_OPTION_READERS={"foo": reader},
             GRAPH_BUILDER=graph_builder or FakeGraphBuilder(),
-            PRINTER=FakePrinter(),
+            PRINTER=RichPrinter(),
             TIMER=timer or FakeTimer(),
             DEFAULT_CACHE_DIR=SOME_CACHE_DIR,
         )
@@ -563,7 +566,7 @@ class TestMultipleRootPackages:
     def test_builder_is_called_with_root_packages(self):
         builder = FakeGraphBuilder()
         root_package_names = ["mypackageone", "mypackagetwo"]
-        settings.configure(GRAPH_BUILDER=builder, PRINTER=FakePrinter())
+        settings.configure(GRAPH_BUILDER=builder)
 
         create_report(
             UserOptions(
@@ -607,7 +610,6 @@ class TestGraphCopying:
         settings.configure(
             USER_OPTION_READERS={"foo": reader},
             GRAPH_BUILDER=FakeGraphBuilder(),
-            PRINTER=FakePrinter(),
         )
 
         graph = ImportGraph()
@@ -650,7 +652,7 @@ class TestCreateReport:
     def test_raises_exception_if_limited_to_nonexistent_contract(
         self, limit_to_contracts, expected_message
     ):
-        settings.configure(GRAPH_BUILDER=FakeGraphBuilder(), PRINTER=FakePrinter())
+        settings.configure(GRAPH_BUILDER=FakeGraphBuilder())
 
         with pytest.raises(
             ValueError,
