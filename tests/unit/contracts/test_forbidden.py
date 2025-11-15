@@ -2,7 +2,7 @@ import pytest
 from grimp import ImportGraph
 
 from textwrap import dedent
-from importlinter.adapters.printing import console, RichPrinter
+from importlinter.application.output import RichPrinter, console
 from importlinter.configuration import settings
 from importlinter.contracts.forbidden import ForbiddenContract
 from importlinter.domain.contract import ContractCheck

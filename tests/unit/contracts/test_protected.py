@@ -1,6 +1,6 @@
 import pytest
 from textwrap import dedent
-from importlinter.adapters.printing import console, RichPrinter
+from importlinter.application.output import RichPrinter, console
 from importlinter.contracts.protected import ProtectedContract
 from importlinter.application.app_config import settings
 from grimp import ImportGraph

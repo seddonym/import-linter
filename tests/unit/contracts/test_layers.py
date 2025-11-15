@@ -1,7 +1,7 @@
 import pytest
 from textwrap import dedent
 from grimp import ImportGraph
-from importlinter.adapters.printing import console, RichPrinter
+from importlinter.application.output import RichPrinter, console
 from importlinter.application.app_config import settings
 from importlinter.contracts.layers import Layer, LayerField, LayersContract, ModuleTail
 from importlinter.domain.contract import ContractCheck, InvalidContractOptions
