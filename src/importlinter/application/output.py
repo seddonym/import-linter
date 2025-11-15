@@ -19,9 +19,17 @@ HEADING_MAP = {
 INDENT_SIZE = 4
 
 
+console = Console(highlight=False)
+
+
 class Output:
     """
     A class for writing output to the console.
+
+    Output provides a few convenience methods for printing.
+
+    For finer-grained control or more advanced user interface features,
+    use the Rich Console object instantiated in this module (importlinter.application.output.console).
     """
 
     def print(
@@ -42,19 +50,25 @@ class Output:
             newline (bool, optional): Whether to include a new line after the text.
                                       (Default True.)
         """
-        printer.print(text, bold, color, newline)
+        adjusted_text = text
+        if color:
+            adjusted_text = f"[{color}]{text}[/{color}]"
+        if bold:
+            adjusted_text = f"[bold]{text}[/bold]"
+        end = "\n" if newline else ""
+        console.print(adjusted_text, end=end)
 
     def indent_cursor(self) -> None:
         """
         Indents the cursor ready to print a line.
         """
-        printer.print(" " * INDENT_SIZE, newline=False)
+        console.print(" " * INDENT_SIZE, end="")
 
     def new_line(self) -> None:
         """
         Print a blank line.
         """
-        printer.print()
+        console.print()
 
     def print_heading(self, text: str, level: int, style: str | None = None) -> None:
         """
@@ -67,7 +81,7 @@ class Output:
             style (str, optional): ERROR or SUCCESS style to apply (default None).
         Usage:
 
-            ClickPrinter.print_heading('Foo', ClickPrinter.HEADING_LEVEL_ONE)
+            output.print_heading('Foo', output.HEADING_LEVEL_ONE)
         """
         # Setup styling variables.
         is_bold = True
@@ -77,28 +91,28 @@ class Output:
 
         # Print lines.
         if show_line_above:
-            printer.print(heading_line, bold=is_bold, color=color)
-        printer.print(text, bold=is_bold, color=color)
-        printer.print(heading_line, bold=is_bold, color=color)
-        printer.print()
+            self.print(heading_line, bold=is_bold, color=color)
+        self.print(text, bold=is_bold, color=color)
+        self.print(heading_line, bold=is_bold, color=color)
+        self.print()
 
     def print_success(self, text: str, bold: bool = True) -> None:
         """
         Prints a line to the console, formatted as a success.
         """
-        printer.print(text, color=COLORS[SUCCESS], bold=bold)
+        self.print(text, color=COLORS[SUCCESS], bold=bold)
 
     def print_error(self, text: str, bold: bool = True) -> None:
         """
         Prints a line to the console, formatted as an error.
         """
-        printer.print(text, color=COLORS[ERROR], bold=bold)
+        self.print(text, color=COLORS[ERROR], bold=bold)
 
     def print_warning(self, text: str) -> None:
         """
         Prints a line to the console, formatted as a warning.
         """
-        printer.print(text, color=COLORS[WARNING])
+        self.print(text, color=COLORS[WARNING])
 
 
 # Use prebound method pattern to provide a simple API.
@@ -124,25 +138,4 @@ def verbose_print(
     Print a message, but only if we're in verbose mode.
     """
     if verbose:
-        printer.print(text, bold, color, newline)
-
-
-class RichPrinter:
-    def print(
-        self,
-        text: str = "",
-        bold: bool = False,
-        color: str | None = None,
-        newline: bool = True,
-    ) -> None:
-        adjusted_text = text
-        if color:
-            adjusted_text = f"[{color}]{text}[/{color}]"
-        if bold:
-            adjusted_text = f"[bold]{text}[/bold]"
-        end = "\n" if newline else ""
-        console.print(adjusted_text, end=end)
-
-
-printer = RichPrinter()
-console = Console(highlight=False)
+        print(text, bold, color, newline)

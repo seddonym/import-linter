@@ -5,6 +5,7 @@ latest
 ------
 
 * Print using rich instead of click.
+* Remove pluggable Printer class.
 
 2.6 (2025-11-10)
 ----------------
