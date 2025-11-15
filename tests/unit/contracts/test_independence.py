@@ -2,7 +2,7 @@ from __future__ import annotations
 from textwrap import dedent
 import pytest
 from grimp import ImportGraph
-from importlinter.application.output import RichPrinter, console
+from importlinter.application.output import console
 from importlinter.application.app_config import settings
 from importlinter.contracts.independence import (
     IndependenceContract,
@@ -529,7 +529,6 @@ def test_ignore_imports_adds_warnings():
 
 
 def test_render_broken_contract():
-    settings.configure(PRINTER=RichPrinter())
     contract = IndependenceContract(
         name="Independence contract",
         session_options={"root_packages": ["mypackage"]},

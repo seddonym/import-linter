@@ -5,7 +5,7 @@ from importlinter.domain.contract import InvalidContractOptions, ContractCheck
 import grimp
 import pytest
 from textwrap import dedent
-from importlinter.application.output import RichPrinter, console
+from importlinter.application.output import console
 
 from tests.adapters.timing import FakeTimer
 from importlinter.application.app_config import settings
@@ -14,7 +14,7 @@ from importlinter.contracts.acyclic_siblings import PackageSummary, Dependency
 
 @pytest.fixture(scope="module", autouse=True)
 def configure():
-    settings.configure(TIMER=FakeTimer(), PRINTER=RichPrinter())
+    settings.configure(TIMER=FakeTimer())
 
 
 class TestAcyclicSiblingsContractCheck:

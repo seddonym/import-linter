@@ -1,8 +1,7 @@
 import pytest
 from textwrap import dedent
-from importlinter.application.output import RichPrinter, console
+from importlinter.application.output import console
 from importlinter.contracts.protected import ProtectedContract
-from importlinter.application.app_config import settings
 from grimp import ImportGraph
 
 
@@ -466,8 +465,6 @@ class TestProtectedContract:
         assert contract_check.kept == contract_kept, description
 
     def test_render_broken_contract_simple_with_package(self):
-        settings.configure(PRINTER=RichPrinter())
-
         graph = self._build_default_graph()
 
         graph.add_import(
@@ -504,7 +501,6 @@ class TestProtectedContract:
         )
 
     def test_render_broken_contract_full_with_package(self):
-        settings.configure(PRINTER=RichPrinter())
         graph = ImportGraph()
         for module in (
             "mypackage",
