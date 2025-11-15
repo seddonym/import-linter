@@ -5,7 +5,12 @@ from typing import Any
 from grimp import ImportGraph
 
 from ..application import rendering
-from ..domain.contract import Contract, InvalidContractOptions, registry
+from ..domain.contract import (
+    Contract,
+    InvalidContractOptions,
+    NoSuchContractType,
+    registry,
+)
 from . import output
 from .app_config import settings
 from .ports.reporting import Report
@@ -185,15 +190,16 @@ def _build_report(
         user_options.contracts_options, limit_to_contracts
     )
     for contract_options in contracts_options:
-        contract_class = registry.get_contract_class(contract_options["type"])
+        contract_name = contract_options.get("name", contract_options['id'])
         try:
+            contract_class = _get_contract_class(contract_options)
             contract = contract_class(
-                name=contract_options["name"],
+                name=contract_name,
                 session_options=user_options.session_options,
                 contract_options=contract_options,
             )
         except InvalidContractOptions as e:
-            report.add_invalid_contract_options(contract_options["name"], e)
+            report.add_invalid_contract_options(contract_name, e)
             return report
 
         output.verbose_print(verbose, f"Checking {contract.name}...")
@@ -209,6 +215,17 @@ def _build_report(
 
     output.verbose_print(verbose, newline=True)
     return report
+
+
+def _get_contract_class(contract_options: Dict[str, Any]) -> Type[Contract]:
+    if "type" not in contract_options:
+        raise InvalidContractOptions(
+            {"type": "Unable to find the 'type' key in the contract options."}
+        )
+    try:
+        return registry.get_contract_class(contract_options["type"])
+    except NoSuchContractType:
+        raise InvalidContractOptions({"type": f"Unknown contract type '{contract_options['type']}'."})
 
 
 def _filter_contract_options(
