@@ -2,7 +2,7 @@ import pytest
 from grimp import ImportGraph
 
 from textwrap import dedent
-from importlinter.application.output import RichPrinter, console
+from importlinter.application.output import console
 from importlinter.configuration import settings
 from importlinter.contracts.forbidden import ForbiddenContract
 from importlinter.domain.contract import ContractCheck
@@ -820,7 +820,6 @@ class TestForbiddenContractForNamespacePackages:
 
 
 def test_render_broken_contract():
-    settings.configure(PRINTER=RichPrinter())
     contract = ForbiddenContract(
         name="Forbid contract",
         session_options={"root_packages": ["mypackage"]},
@@ -897,7 +896,7 @@ class TestVerbosePrint:
     def test_verbose(self):
         timer = FakeTimer()
         timer.setup(tick_duration=10, increment=0)
-        settings.configure(PRINTER=RichPrinter(), TIMER=timer)
+        settings.configure(TIMER=timer)
 
         graph = ImportGraph()
         for module in (

@@ -1,7 +1,7 @@
 import pytest
 from textwrap import dedent
 from grimp import ImportGraph
-from importlinter.application.output import RichPrinter, console
+from importlinter.application.output import console
 from importlinter.application.app_config import settings
 from importlinter.contracts.layers import Layer, LayerField, LayersContract, ModuleTail
 from importlinter.domain.contract import ContractCheck, InvalidContractOptions
@@ -1343,7 +1343,6 @@ def test_missing_containerless_layers_raise_value_error():
 
 
 def test_render_broken_contract():
-    settings.configure(PRINTER=RichPrinter())
     contract = LayersContract(
         name="Layers contract",
         session_options={"root_packages": ["mypackage"]},

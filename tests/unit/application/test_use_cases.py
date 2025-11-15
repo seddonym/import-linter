@@ -4,7 +4,7 @@ from typing import Any
 from unittest.mock import sentinel
 from textwrap import dedent
 import pytest
-from importlinter.application.output import RichPrinter, console
+from importlinter.application.output import console
 from grimp import ImportGraph
 
 from importlinter.application.app_config import settings
@@ -536,7 +536,6 @@ class TestCheckContractsAndPrintReport:
         settings.configure(
             USER_OPTION_READERS={"foo": reader},
             GRAPH_BUILDER=graph_builder or FakeGraphBuilder(),
-            PRINTER=RichPrinter(),
             TIMER=timer or FakeTimer(),
             DEFAULT_CACHE_DIR=SOME_CACHE_DIR,
         )

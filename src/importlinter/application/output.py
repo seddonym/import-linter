@@ -1,7 +1,5 @@
 from rich.console import Console
 
-from .app_config import settings
-from .ports.printing import Printer
 
 ERROR = "error"
 SUCCESS = "success"
@@ -24,10 +22,6 @@ INDENT_SIZE = 4
 class Output:
     """
     A class for writing output to the console.
-
-    This should always be used instead of the built in print function, as it uses the Printer
-    port. This makes it easier for tests to swap in a different Printer so we can more easily
-    assert what would be written to the console.
     """
 
     def print(
@@ -48,19 +42,19 @@ class Output:
             newline (bool, optional): Whether to include a new line after the text.
                                       (Default True.)
         """
-        self.printer.print(text, bold, color, newline)
+        printer.print(text, bold, color, newline)
 
     def indent_cursor(self) -> None:
         """
         Indents the cursor ready to print a line.
         """
-        self.printer.print(" " * INDENT_SIZE, newline=False)
+        printer.print(" " * INDENT_SIZE, newline=False)
 
     def new_line(self) -> None:
         """
         Print a blank line.
         """
-        self.printer.print()
+        printer.print()
 
     def print_heading(self, text: str, level: int, style: str | None = None) -> None:
         """
@@ -83,32 +77,28 @@ class Output:
 
         # Print lines.
         if show_line_above:
-            self.printer.print(heading_line, bold=is_bold, color=color)
-        self.printer.print(text, bold=is_bold, color=color)
-        self.printer.print(heading_line, bold=is_bold, color=color)
-        self.printer.print()
+            printer.print(heading_line, bold=is_bold, color=color)
+        printer.print(text, bold=is_bold, color=color)
+        printer.print(heading_line, bold=is_bold, color=color)
+        printer.print()
 
     def print_success(self, text: str, bold: bool = True) -> None:
         """
         Prints a line to the console, formatted as a success.
         """
-        self.printer.print(text, color=COLORS[SUCCESS], bold=bold)
+        printer.print(text, color=COLORS[SUCCESS], bold=bold)
 
     def print_error(self, text: str, bold: bool = True) -> None:
         """
         Prints a line to the console, formatted as an error.
         """
-        self.printer.print(text, color=COLORS[ERROR], bold=bold)
+        printer.print(text, color=COLORS[ERROR], bold=bold)
 
     def print_warning(self, text: str) -> None:
         """
         Prints a line to the console, formatted as a warning.
         """
-        self.printer.print(text, color=COLORS[WARNING])
-
-    @property
-    def printer(self) -> Printer:
-        return settings.PRINTER
+        printer.print(text, color=COLORS[WARNING])
 
 
 # Use prebound method pattern to provide a simple API.
@@ -134,11 +124,10 @@ def verbose_print(
     Print a message, but only if we're in verbose mode.
     """
     if verbose:
-        printer: Printer = settings.PRINTER
         printer.print(text, bold, color, newline)
 
 
-class RichPrinter(Printer):
+class RichPrinter:
     def print(
         self,
         text: str = "",
@@ -155,4 +144,5 @@ class RichPrinter(Printer):
         console.print(adjusted_text, end=end)
 
 
+printer = RichPrinter()
 console = Console(highlight=False)
