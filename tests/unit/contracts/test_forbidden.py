@@ -1,10 +1,11 @@
 import pytest
 from grimp import ImportGraph
 
+from textwrap import dedent
+from importlinter.adapters.printing import console, RichPrinter
 from importlinter.configuration import settings
 from importlinter.contracts.forbidden import ForbiddenContract
 from importlinter.domain.contract import ContractCheck
-from tests.adapters.printing import FakePrinter
 from tests.adapters.timing import FakeTimer
 
 
@@ -819,7 +820,7 @@ class TestForbiddenContractForNamespacePackages:
 
 
 def test_render_broken_contract():
-    settings.configure(PRINTER=FakePrinter())
+    settings.configure(PRINTER=RichPrinter())
     contract = ForbiddenContract(
         name="Forbid contract",
         session_options={"root_packages": ["mypackage"]},
@@ -872,10 +873,11 @@ def test_render_broken_contract():
         },
     )
 
-    contract.render_broken_contract(check)
+    with console.capture() as capture:
+        contract.render_broken_contract(check)
 
-    settings.PRINTER.pop_and_assert(
-        """
+    assert capture.get() == dedent(
+        """\
         mypackage.two is not allowed to import mypackage.purple:
 
         -   mypackage.two -> mypackage.utils (l.9)
@@ -895,7 +897,7 @@ class TestVerbosePrint:
     def test_verbose(self):
         timer = FakeTimer()
         timer.setup(tick_duration=10, increment=0)
-        settings.configure(PRINTER=FakePrinter(), TIMER=timer)
+        settings.configure(PRINTER=RichPrinter(), TIMER=timer)
 
         graph = ImportGraph()
         for module in (
@@ -957,10 +959,11 @@ class TestVerbosePrint:
             },
         )
 
-        contract.check(graph=graph, verbose=True)
+        with console.capture() as capture:
+            contract.check(graph=graph, verbose=True)
 
-        settings.PRINTER.pop_and_assert(
-            """
+        assert capture.get() == dedent(
+            """\
             Searching for import chains from mypackage.one to mypackage.blue...
             Found 0 illegal chains in 10s.
             Searching for import chains from mypackage.one to mypackage.green...

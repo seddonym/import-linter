@@ -1,7 +1,8 @@
 import pytest
+from textwrap import dedent
+from importlinter.adapters.printing import console, RichPrinter
 from importlinter.contracts.protected import ProtectedContract
 from importlinter.application.app_config import settings
-from tests.adapters.printing import FakePrinter
 from grimp import ImportGraph
 
 
@@ -465,7 +466,7 @@ class TestProtectedContract:
         assert contract_check.kept == contract_kept, description
 
     def test_render_broken_contract_simple_with_package(self):
-        settings.configure(PRINTER=FakePrinter())
+        settings.configure(PRINTER=RichPrinter())
 
         graph = self._build_default_graph()
 
@@ -488,10 +489,12 @@ class TestProtectedContract:
             },
         )
         contract_check = contract.check(graph=graph, verbose=False)
-        contract.render_broken_contract(contract_check)
+
+        with console.capture() as capture:
+            contract.render_broken_contract(contract_check)
 
         assert not contract_check.kept
-        settings.PRINTER.pop_and_assert(
+        assert capture.get() == dedent(
             """Illegal imports of protected package mypackage.foo.protected:
 
 - mypackage.foo.sibling -> mypackage.foo.protected.models (l.6)
@@ -501,7 +504,7 @@ class TestProtectedContract:
         )
 
     def test_render_broken_contract_full_with_package(self):
-        settings.configure(PRINTER=FakePrinter())
+        settings.configure(PRINTER=RichPrinter())
         graph = ImportGraph()
         for module in (
             "mypackage",
@@ -595,9 +598,11 @@ class TestProtectedContract:
             },
         )
         contract_check = contract.check(graph=graph, verbose=False)
-        contract.render_broken_contract(contract_check)
 
-        settings.PRINTER.pop_and_assert(
+        with console.capture() as capture:
+            contract.render_broken_contract(contract_check)
+
+        assert capture.get() == dedent(
             """Illegal imports of protected package mypackage.blue.models
 (via mypackage.**.models expression):
 

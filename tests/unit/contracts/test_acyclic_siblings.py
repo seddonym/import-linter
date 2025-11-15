@@ -1,9 +1,12 @@
 from importlinter.contracts.acyclic_siblings import AcyclicSiblingsContract
 import string
+
 from importlinter.domain.contract import InvalidContractOptions, ContractCheck
 import grimp
 import pytest
-from tests.adapters.printing import FakePrinter
+from textwrap import dedent
+from importlinter.adapters.printing import console, RichPrinter
+
 from tests.adapters.timing import FakeTimer
 from importlinter.application.app_config import settings
 from importlinter.contracts.acyclic_siblings import PackageSummary, Dependency
@@ -11,7 +14,7 @@ from importlinter.contracts.acyclic_siblings import PackageSummary, Dependency
 
 @pytest.fixture(scope="module", autouse=True)
 def configure():
-    settings.configure(TIMER=FakeTimer())
+    settings.configure(TIMER=FakeTimer(), PRINTER=RichPrinter())
 
 
 class TestAcyclicSiblingsContractCheck:
@@ -338,7 +341,7 @@ class TestVerbosePrint:
     def test_verbose(self):
         timer = FakeTimer()
         timer.setup(tick_duration=10, increment=0)
-        settings.configure(PRINTER=FakePrinter(), TIMER=timer)
+        settings.configure(TIMER=timer)
         graph = _build_acyclic_graph()
         # Add cycles.
         for importer, imported in (
@@ -352,10 +355,11 @@ class TestVerbosePrint:
             graph.add_import(importer=importer, imported=imported)
         contract = _build_contract()
 
-        contract.check(graph=graph, verbose=True)
+        with console.capture() as capture:
+            contract.check(graph=graph, verbose=True)
 
-        settings.PRINTER.pop_and_assert(
-            """
+        assert capture.get() == dedent(
+            """\
             Searching for cycles between children of pkg...
             No cycles found (10s).
             Searching for cycles between children of pkg.bar...
@@ -378,7 +382,6 @@ class TestVerbosePrint:
 
 class TestRenderBrokenContract:
     def test_render(self):
-        settings.configure(PRINTER=FakePrinter())
         contract = _build_contract()
         check = ContractCheck(
             kept=False,
@@ -430,10 +433,11 @@ class TestRenderBrokenContract:
             },
         )
 
-        contract.render_broken_contract(check)
+        with console.capture() as capture:
+            contract.render_broken_contract(check)
 
-        settings.PRINTER.pop_and_assert(
-            """
+        assert capture.get() == dedent(
+            """\
             No cycles are allowed in pkg.
             It could be made acyclic by removing 1 dependency:
             
