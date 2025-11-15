@@ -4,7 +4,7 @@ from typing import Any
 from unittest.mock import sentinel
 from textwrap import dedent
 import pytest
-from importlinter.adapters.printing import console, RichPrinter
+from importlinter.application.output import RichPrinter, console
 from grimp import ImportGraph
 
 from importlinter.application.app_config import settings

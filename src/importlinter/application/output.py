@@ -1,3 +1,5 @@
+from rich.console import Console
+
 from .app_config import settings
 from .ports.printing import Printer
 
@@ -134,3 +136,23 @@ def verbose_print(
     if verbose:
         printer: Printer = settings.PRINTER
         printer.print(text, bold, color, newline)
+
+
+class RichPrinter(Printer):
+    def print(
+        self,
+        text: str = "",
+        bold: bool = False,
+        color: str | None = None,
+        newline: bool = True,
+    ) -> None:
+        adjusted_text = text
+        if color:
+            adjusted_text = f"[{color}]{text}[/{color}]"
+        if bold:
+            adjusted_text = f"[bold]{text}[/bold]"
+        end = "\n" if newline else ""
+        console.print(adjusted_text, end=end)
+
+
+console = Console(highlight=False)

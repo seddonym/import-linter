@@ -2,8 +2,7 @@ from __future__ import annotations
 from textwrap import dedent
 import pytest
 from grimp import ImportGraph
-from importlinter.adapters.printing import console
-from importlinter.adapters.printing import RichPrinter
+from importlinter.application.output import RichPrinter, console
 from importlinter.application.app_config import settings
 from importlinter.contracts.independence import (
     IndependenceContract,

@@ -5,7 +5,7 @@ from importlinter.domain.contract import InvalidContractOptions, ContractCheck
 import grimp
 import pytest
 from textwrap import dedent
-from importlinter.adapters.printing import console, RichPrinter
+from importlinter.application.output import RichPrinter, console
 
 from tests.adapters.timing import FakeTimer
 from importlinter.application.app_config import settings
