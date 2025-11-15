@@ -3,6 +3,7 @@ import string
 from typing import Any
 from unittest.mock import sentinel
 from textwrap import dedent
+from textwrap import indent
 import pytest
 from importlinter.application.output import console
 from grimp import ImportGraph
@@ -22,8 +23,11 @@ from tests.adapters.user_options import (
     ExceptionRaisingUserOptionReader,
     FakeUserOptionReader,
 )
+from importlinter.application import rendering
 
 SOME_CACHE_DIR = "/path/to/some/cache/dir"
+
+INDENTED_LOGO = indent(rendering.TEXT_LOGO, " " * 12)
 
 
 class TestCheckContractsAndPrintReport:
@@ -40,11 +44,8 @@ class TestCheckContractsAndPrintReport:
 
         assert result == SUCCESS
         assert capture.get() == dedent(
-            """\
-            =============
-            Import Linter
-            =============
-
+            f"""\
+            {INDENTED_LOGO}
             ---------
             Contracts
             ---------
@@ -78,11 +79,8 @@ class TestCheckContractsAndPrintReport:
 
         assert result == FAILURE
         assert capture.get() == dedent(
-            """\
-            =============
-            Import Linter
-            =============
-
+            f"""\
+            {INDENTED_LOGO}
             Contract "Contract foo" is not configured correctly:
                 single_field: Expected a single value, got multiple values.
                 import_field: Must be in the form "package.importer -> package.imported".
@@ -103,11 +101,8 @@ class TestCheckContractsAndPrintReport:
 
         assert result == FAILURE
         assert capture.get() == dedent(
-            """\
-            =============
-            Import Linter
-            =============
-
+            f"""\
+            {INDENTED_LOGO}
             ---------
             Contracts
             ---------
@@ -147,11 +142,8 @@ class TestCheckContractsAndPrintReport:
 
         assert result == SUCCESS
         assert capture.get() == dedent(
-            """\
-            =============
-            Import Linter
-            =============
-
+            f"""\
+            {INDENTED_LOGO}
             ---------
             Contracts
             ---------
@@ -187,11 +179,8 @@ class TestCheckContractsAndPrintReport:
 
         assert result == FAILURE
         assert capture.get() == dedent(
-            """\
-            =============
-            Import Linter
-            =============
-
+            f"""\
+            {INDENTED_LOGO}
             ---------
             Contracts
             ---------
@@ -253,11 +242,8 @@ class TestCheckContractsAndPrintReport:
             lint_imports(show_timings=True)
 
         assert capture.get() == dedent(
-            """\
-            =============
-            Import Linter
-            =============
-
+            f"""\
+            {INDENTED_LOGO}
             Building graph took 5.0s.
 
             ---------
@@ -302,39 +288,16 @@ class TestCheckContractsAndPrintReport:
         [
             (
                 True,
-                """\
-                =============
-                Import Linter
-                =============
-
-                Verbose mode.
-                {{ graph building output }}
-                Built graph in 5.0s.
-                Checking Contract foo...
-                Hello from the noisy contract!
-                Contract foo KEPT [15s]
-                Checking Contract bar...
-                Contract bar KEPT [25s]
-
-                ---------
-                Contracts
-                ---------
-
-                Analyzed 26 files, 10 dependencies.
-                -----------------------------------
-
-                Contract foo KEPT
-                Contract bar KEPT
-
-                Contracts: 2 kept, 0 broken.
-                """,
-            ),
-            (
-                False,
-                """\
-            =============
-            Import Linter
-            =============
+                f"""\
+            {INDENTED_LOGO}
+            Verbose mode.
+            << graph building output >>
+            Built graph in 5.0s.
+            Checking Contract foo...
+            Hello from the noisy contract!
+            Contract foo KEPT [15s]
+            Checking Contract bar...
+            Contract bar KEPT [25s]
 
             ---------
             Contracts
@@ -347,7 +310,24 @@ class TestCheckContractsAndPrintReport:
             Contract bar KEPT
 
             Contracts: 2 kept, 0 broken.
-            """,
+                """,
+            ),
+            (
+                False,
+                f"""\
+            {INDENTED_LOGO}
+            ---------
+            Contracts
+            ---------
+
+            Analyzed 26 files, 10 dependencies.
+            -----------------------------------
+
+            Contract foo KEPT
+            Contract bar KEPT
+
+            Contracts: 2 kept, 0 broken.
+                """,
             ),
         ],
     )
@@ -376,7 +356,7 @@ class TestCheckContractsAndPrintReport:
             lint_imports(**kwargs)
 
         expected_output = expected_output_template.replace(
-            "{{ graph building output }}", expected_graph_building_output
+            "<< graph building output >>", expected_graph_building_output
         )
         assert capture.get() == dedent(expected_output)
 
@@ -445,11 +425,8 @@ class TestCheckContractsAndPrintReport:
         # Expecting 11 dependencies (default graph has 10 imports, we add 2,
         # but it counts as 1 as it's between the same modules).
         assert capture.get() == dedent(
-            """\
-            =============
-            Import Linter
-            =============
-
+            f"""\
+            {INDENTED_LOGO}
             ---------
             Contracts
             ---------
@@ -501,11 +478,8 @@ class TestCheckContractsAndPrintReport:
             lint_imports(is_debug_mode=False)
 
         assert capture.get() == dedent(
-            """\
-            =============
-            Import Linter
-            =============
-
+            f"""\
+            {INDENTED_LOGO}
             There was some sort of exception.
             """
         )
