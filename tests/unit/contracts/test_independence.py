@@ -1,15 +1,16 @@
 from __future__ import annotations
-
+from textwrap import dedent
 import pytest
 from grimp import ImportGraph
-
+from importlinter.adapters.printing import console
+from importlinter.adapters.printing import RichPrinter
 from importlinter.application.app_config import settings
 from importlinter.contracts.independence import (
     IndependenceContract,
     _SubpackageChainData,
 )
 from importlinter.domain.contract import ContractCheck
-from tests.adapters.printing import FakePrinter
+
 from tests.adapters.timing import FakeTimer
 
 
@@ -529,7 +530,7 @@ def test_ignore_imports_adds_warnings():
 
 
 def test_render_broken_contract():
-    settings.configure(PRINTER=FakePrinter())
+    settings.configure(PRINTER=RichPrinter())
     contract = IndependenceContract(
         name="Independence contract",
         session_options={"root_packages": ["mypackage"]},
@@ -647,10 +648,11 @@ def test_render_broken_contract():
         },
     )
 
-    contract.render_broken_contract(check)
+    with console.capture() as capture:
+        contract.render_broken_contract(check)
 
-    settings.PRINTER.pop_and_assert(
-        """
+    assert capture.get() == dedent(
+        """\
         mypackage.blue is not allowed to import mypackage.yellow:
 
         - mypackage.blue.foo -> mypackage.utils.red (l.16, l.102)

@@ -1,12 +1,12 @@
 import pytest
+from textwrap import dedent
 from grimp import ImportGraph
-
+from importlinter.adapters.printing import console, RichPrinter
 from importlinter.application.app_config import settings
 from importlinter.contracts.layers import Layer, LayerField, LayersContract, ModuleTail
 from importlinter.domain.contract import ContractCheck, InvalidContractOptions
 from importlinter.domain.helpers import MissingImport
 from importlinter.domain import fields
-from tests.adapters.printing import FakePrinter
 from tests.adapters.timing import FakeTimer
 
 
@@ -1343,7 +1343,7 @@ def test_missing_containerless_layers_raise_value_error():
 
 
 def test_render_broken_contract():
-    settings.configure(PRINTER=FakePrinter())
+    settings.configure(PRINTER=RichPrinter())
     contract = LayersContract(
         name="Layers contract",
         session_options={"root_packages": ["mypackage"]},
@@ -1513,10 +1513,11 @@ def test_render_broken_contract():
         },
     )
 
-    contract.render_broken_contract(check)
+    with console.capture() as capture:
+        contract.render_broken_contract(check)
 
-    settings.PRINTER.pop_and_assert(
-        """
+    assert capture.get() == dedent(
+        """\
         mypackage.low is not allowed to import mypackage.high:
 
         - mypackage.low.blue -> mypackage.high.yellow (l.6)
