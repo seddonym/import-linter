@@ -1,11 +1,12 @@
 import importlib
 from copy import copy, deepcopy
 from typing import Any
-
+import contextlib
 from grimp import ImportGraph
 
 from ..application import rendering
 from ..domain.contract import Contract, InvalidContractOptions, registry
+from .output import console
 from . import output
 from .app_config import settings
 from .ports.reporting import Report
@@ -108,14 +109,15 @@ def create_report(
     include_external_packages = _get_include_external_packages(user_options)
     exclude_type_checking_imports = _get_exclude_type_checking_imports(user_options)
 
-    with settings.TIMER as timer:
-        graph = _build_graph(
-            root_package_names=user_options.session_options["root_packages"],
-            cache_dir=cache_dir,
-            include_external_packages=include_external_packages,
-            exclude_type_checking_imports=exclude_type_checking_imports,
-            verbose=verbose,
-        )
+    with _get_spinner(":brick: Building graph...", verbose):
+        with settings.TIMER as timer:
+            graph = _build_graph(
+                root_package_names=user_options.session_options["root_packages"],
+                cache_dir=cache_dir,
+                include_external_packages=include_external_packages,
+                exclude_type_checking_imports=exclude_type_checking_imports,
+                verbose=verbose,
+            )
     graph_building_duration = timer.duration_in_ms
 
     output.verbose_print(verbose, f"Built graph in {format_duration(graph_building_duration)}.")
@@ -143,6 +145,14 @@ def _normalize_user_options(user_options: UserOptions) -> UserOptions:
     if "root_package" in normalized_options.session_options:
         del normalized_options.session_options["root_package"]
     return normalized_options
+
+
+def _get_spinner(message: str, verbose: bool) -> contextlib.AbstractContextManager:
+    if verbose:
+        # The output in verbose mode interferes with the spinner so we disable it.
+        return contextlib.nullcontext()
+    else:
+        return console.status(":brick: Building graph...", spinner="point")
 
 
 def _build_graph(
