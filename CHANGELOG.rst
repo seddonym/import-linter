@@ -7,6 +7,7 @@ latest
 * Print using rich instead of click.
 * Remove pluggable Printer class.
 * Add ascii art logo.
+* Add progress animation when building graph.
 
 2.6 (2025-11-10)
 ----------------
