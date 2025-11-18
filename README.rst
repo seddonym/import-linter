@@ -1,17 +1,23 @@
-=============
-Import Linter
-=============
+.. image:: https://raw.githubusercontent.com/seddonym/import-linter/refs/heads/main/docs/_static/images/import-linter-logo.png
+  :align: center
+  :alt: Import Linter
+
+\
 
 .. image:: https://img.shields.io/pypi/v/import-linter.svg
     :target: https://pypi.org/project/import-linter
+
 
 .. image:: https://img.shields.io/pypi/pyversions/import-linter.svg
     :alt: Python versions
     :target: https://pypi.org/project/import-linter/
 
+
 .. image:: https://github.com/seddonym/import-linter/workflows/CI/badge.svg?branch=main
      :target: https://github.com/seddonym/import-linter/actions?workflow=CI
      :alt: CI Status
+
+\
 
 Import Linter allows you to define and enforce rules for the imports within and between Python packages.
 
