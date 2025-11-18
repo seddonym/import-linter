@@ -17,11 +17,14 @@
      :target: https://github.com/seddonym/import-linter/actions/workflows/main.yml
      :alt: CI Status
 
+.. image:: https://img.shields.io/badge/License-BSD_2--Clause-orange.svg
+     :target: https://opensource.org/licenses/BSD-2-Clause
+     :alt: BSD license
+
 \
 
 Import Linter allows you to define and enforce rules for the imports within and between Python packages.
 
-* Free software: BSD license
 * Documentation: https://import-linter.readthedocs.io.
 
 Overview
