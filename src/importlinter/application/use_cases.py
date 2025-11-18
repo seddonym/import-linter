@@ -3,6 +3,7 @@ from copy import copy, deepcopy
 from typing import Any
 import contextlib
 from grimp import ImportGraph
+from rich.live import Live
 from rich.progress import (
     Progress,
     BarColumn,
@@ -202,30 +203,32 @@ def _build_report(
     )
 
     contract_checking_progress = _get_contract_checking_progress(verbose)
-
     with contract_checking_progress:
-        for contract_options in contract_checking_progress.track(contracts_options):
-            contract_class = registry.get_contract_class(contract_options["type"])
-            try:
-                contract = contract_class(
-                    name=contract_options["name"],
-                    session_options=user_options.session_options,
-                    contract_options=contract_options,
-                )
-            except InvalidContractOptions as e:
-                report.add_invalid_contract_options(contract_options["name"], e)
-                return report
+        with Live(transient=True) as live:
+            for contract_options in contract_checking_progress.track(contracts_options):
+                contract_class = registry.get_contract_class(contract_options["type"])
+                try:
+                    contract = contract_class(
+                        name=contract_options["name"],
+                        session_options=user_options.session_options,
+                        contract_options=contract_options,
+                    )
+                except InvalidContractOptions as e:
+                    report.add_invalid_contract_options(contract_options["name"], e)
+                    return report
 
-            output.verbose_print(verbose, f"Checking {contract.name}...")
-            with settings.TIMER as timer:
-                # Make a copy so that contracts can mutate the graph without affecting
-                # other contract checks.
-                copy_of_graph = deepcopy(graph)
-                check = contract.check(copy_of_graph, verbose=verbose)
-            duration_ms = timer.duration_in_ms
-            report.add_contract_check(contract, check, duration=duration_ms)
-            if verbose:
-                rendering.render_contract_result_line(contract, check, duration=duration_ms)
+                live.update(f"[dim]Checking {contract_options['name']}")
+                output.verbose_print(verbose, f"Checking {contract.name}...")
+
+                with settings.TIMER as timer:
+                    # Make a copy so that contracts can mutate the graph without affecting
+                    # other contract checks.
+                    copy_of_graph = deepcopy(graph)
+                    check = contract.check(copy_of_graph, verbose=verbose)
+                duration_ms = timer.duration_in_ms
+                report.add_contract_check(contract, check, duration=duration_ms)
+                if verbose:
+                    rendering.render_contract_result_line(contract, check, duration=duration_ms)
 
     output.verbose_print(verbose, newline=True)
     return report
