@@ -13,8 +13,8 @@
     :target: https://pypi.org/project/import-linter/
 
 
-.. image:: https://github.com/seddonym/import-linter/workflows/CI/badge.svg?branch=main
-     :target: https://github.com/seddonym/import-linter/actions?workflow=CI
+.. image:: https://github.com/seddonym/import-linter/actions/workflows/main.yml/badge.svg
+     :target: https://github.com/seddonym/import-linter/actions/workflows/main.yml
      :alt: CI Status
 
 \
