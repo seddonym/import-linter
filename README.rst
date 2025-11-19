@@ -50,7 +50,7 @@ a custom one.
 Quick start
 -----------
 
-Install Import Linter::
+Install ``import-linter`` using your favorite package manager, e.g.::
 
     pip install import-linter
 
@@ -80,33 +80,8 @@ Now, from your project root, run::
 
 If your code violates the contract, you will see an error message something like this:
 
-.. code-block:: text
+.. image:: https://raw.githubusercontent.com/seddonym/import-linter/refs/heads/main/docs/_static/images/screenshot.png
+  :align: center
+  :alt: Screenshot of Import Linter output
 
-    =============
-    Import Linter
-    =============
-
-    ---------
-    Contracts
-    ---------
-
-    Analyzed 23 files, 44 dependencies.
-    -----------------------------------
-
-    Foo doesn't import bar or baz BROKEN
-
-    Contracts: 1 broken.
-
-
-    ----------------
-    Broken contracts
-    ----------------
-
-    Foo doesn't import bar or baz
-    -----------------------------
-
-    myproject.foo is not allowed to import myproject.bar:
-
-    -   myproject.foo.blue -> myproject.utils.red (l.16)
-        myproject.utils.red -> myproject.utils.green (l.1)
-        myproject.utils.green -> myproject.bar.yellow (l.3)
+\
