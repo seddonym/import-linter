@@ -1,8 +1,8 @@
 Changelog
 =========
 
-latest
-------
+2.7 (2025-11-19)
+----------------
 
 * Print using rich instead of click.
 * Remove pluggable Printer class.
