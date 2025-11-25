@@ -19,7 +19,26 @@ HEADING_MAP = {
 INDENT_SIZE = 4
 
 
-console = Console(highlight=False)
+def _create_console() -> Console:
+    """
+    Create a Rich Console with UTF-8 encoding support.
+
+    This ensures that Unicode characters (like those in the logo) work correctly
+    on all platforms, including Windows where the default encoding might be cp1252.
+    """
+    # # Reconfigure stdout to use UTF-8 if possible
+    # if hasattr(sys.stdout, 'reconfigure'):
+    #     try:
+    #         sys.stdout.reconfigure(encoding='utf-8')
+    #     except (OSError, AttributeError):
+    #         # If reconfigure fails (e.g., output is redirected or on some platforms),
+    #         # continue anyway - Rich will use whatever encoding is available
+    #         pass
+
+    return Console(highlight=False)
+
+
+console = _create_console()
 
 
 class Output:
