@@ -31,8 +31,9 @@ def _create_console() -> Console:
     if hasattr(sys.stdout, 'reconfigure'):
         try:
             sys.stdout.reconfigure(encoding='utf-8')
-        except Exception:
-            # If reconfigure fails (e.g., output is redirected), continue anyway
+        except (OSError, AttributeError):
+            # If reconfigure fails (e.g., output is redirected or on some platforms), 
+            # continue anyway - Rich will use whatever encoding is available
             pass
     
     return Console(highlight=False)
