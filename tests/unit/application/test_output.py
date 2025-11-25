@@ -1,6 +1,10 @@
 """Tests for the output module."""
+import io
 import sys
-from importlinter.application import output
+
+from rich.console import Console
+
+from importlinter.application import output, rendering
 
 
 def test_console_uses_utf8_encoding():
@@ -23,14 +27,9 @@ def test_console_can_print_unicode_characters():
     This test ensures that Unicode characters (like those in the logo)
     can be printed without raising a UnicodeEncodeError.
     """
-    from importlinter.application import rendering
-    
     # This should not raise a UnicodeEncodeError
     try:
         # Print to a null device to avoid cluttering test output
-        import io
-        from rich.console import Console
-        
         # Create a console that writes to a string buffer
         string_buffer = io.StringIO()
         test_console = Console(file=string_buffer, highlight=False)
