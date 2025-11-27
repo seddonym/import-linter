@@ -58,6 +58,24 @@ jobs:
       - name: Lint
         run: just lint
 
+  smoke_test:
+    name: Smoke test lint-imports on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        # We run this already for ubuntu-latest in the lint action.
+        os: [ macos-latest, windows-latest ]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv and set the Python version
+        uses: astral-sh/setup-uv@v6
+
+      - name: Smoke test
+        run: uv run lint-imports
+
   docs:
     name: Build docs
     runs-on: ubuntu-latest
