@@ -1,10 +1,13 @@
 import os
+
 import sys
 from pathlib import Path
-
+from unittest.mock import patch
 import pytest
 
 from importlinter import cli
+from importlinter.application import output
+import io
 
 this_directory = Path(__file__).parent
 assets_directory = this_directory / ".." / "assets"
@@ -114,3 +117,17 @@ def test_logging_configuration_respects_verbose_flag(verbose, capsys):
 
     # N.B. "Wrote data cache file" is logged by Grimp.
     assert ("Wrote data cache file" in captured.out) == verbose
+
+
+def test_windows_terminal_encoding_smoke_test():
+    default_windows_terminal_encoding = "cp1252"
+    console = output.Console(
+        file=io.TextIOWrapper(
+            io.BytesIO(),
+            encoding=default_windows_terminal_encoding,
+        )
+    )
+    os.chdir(testpackage_directory)
+
+    with patch.object(output, "console", console):
+        cli.lint_imports()
