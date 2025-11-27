@@ -54,7 +54,8 @@ def lint_imports(
     Returns:
         True if the linting passed, False if it didn't.
     """
-    output.print(rendering.TEXT_LOGO, color=rendering.BRAND_COLOR)
+    rendering.print_title()
+
     output.verbose_print(verbose, "Verbose mode.")
     try:
         user_options = read_user_options(config_filename=config_filename)

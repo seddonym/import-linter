@@ -1,6 +1,12 @@
 Changelog
 =========
 
+latest
+------
+
+* Fix logo display bug on Windows (fall back to simpler heading)
+  https://github.com/seddonym/import-linter/issues/309
+
 2.7 (2025-11-19)
 ----------------
 

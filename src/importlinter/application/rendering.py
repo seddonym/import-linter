@@ -19,6 +19,15 @@ BRAND_COLOR = "pale_turquoise1"
 # ----------------
 
 
+def print_title() -> None:
+    if output.console.encoding.startswith("utf"):
+        output.print(TEXT_LOGO, color=BRAND_COLOR)
+    else:
+        # The logo contains characters that can't be encoded in some encodings (e.g. cp1252).
+        # Fall back to a simpler heading.
+        output.print_heading("Import Linter", output.HEADING_LEVEL_ONE)
+
+
 def render_report(report: Report) -> None:
     """
     Output the supplied report to the console.
