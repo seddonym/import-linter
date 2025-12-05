@@ -1,0 +1,54 @@
+site_name: Import Linter
+site_description: Lint your Python architecture.
+site_url: https://import-linter.readthedocs.io/
+repo_name: seddonym/import-linter
+repo_url: https://github.com/seddonym/import-linter
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search
+
+theme:
+  name: material
+  logo: img/import-linter-logo-square.svg
+  favicon: img/import-linter-logo-square.svg
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/lightbulb-auto
+        name: Switch to light mode
+    - media: '(prefers-color-scheme: light)'
+      toggle:
+        icon: material/lightbulb
+        name: Switch to dark mode
+      scheme: default
+      primary: black
+      accent: custom
+    - media: '(prefers-color-scheme: dark)'
+      scheme: slate
+      primary: black
+      accent: custom
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to system preference
+  features:
+    - navigation.footer
+
+nav:
+   - index.md
+   - installation.md
+   - usage.md
+   - api.md
+   - contract_types.md
+   - custom_contract_types.md
+   - caching.md
+   - toml.md
+   - contributing.md
+   - authors.md
+   - changelog.md
+
+markdown_extensions:
+  - attr_list
+  - pymdownx.blocks.caption
