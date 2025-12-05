@@ -1,12 +1,8 @@
-
-Authors
-=======
+# Authors
 
 * David Seddon - https://seddonym.me
 
-
-Contributors
-============
+## Contributors
 
 * Anthony Sottile - https://github.com/asottile
 * Łukasz Skarżyński - https://github.com/skarzi
