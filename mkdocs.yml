@@ -1,0 +1,75 @@
+site_name: Import Linter
+site_description: Lint your Python architecture.
+site_url: https://import-linter.readthedocs.io/
+repo_name: seddonym/import-linter
+repo_url: https://github.com/seddonym/import-linter
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search
+
+theme:
+  name: material
+  logo: img/import-linter-logo-square.svg
+  favicon: img/import-linter-logo-square.svg
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/lightbulb-auto
+        name: Switch to light mode
+    - media: '(prefers-color-scheme: light)'
+      toggle:
+        icon: material/lightbulb
+        name: Switch to dark mode
+      scheme: default
+      primary: black
+      accent: custom
+    - media: '(prefers-color-scheme: dark)'
+      scheme: slate
+      primary: black
+      accent: custom
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to system preference
+  features:
+    - navigation.tabs
+    - navigation.footer
+    - navigation.path
+    - navigation.indexes
+
+nav:
+   - index.md
+   - Get Started:
+      - get_started/install.md
+      - get_started/configure.md
+      - get_started/run.md
+   - Contract types:
+       - contract_types/index.md
+       - contract_types/forbidden.md
+       - contract_types/protected.md
+       - contract_types/layers.md
+       - contract_types/independence.md
+       - contract_types/acyclic_siblings.md
+   - Advanced:
+      - api.md
+      - custom_contract_types.md
+      - caching.md
+   - Get involved:
+      - contributing.md
+      - authors.md
+   - release_notes.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.blocks.caption
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight  # Required for advanced highlighting features
+  - pymdownx.superfences # **Critical for nested fenced code blocks**

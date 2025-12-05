@@ -1,0 +1,21 @@
+[data-md-color-scheme="default"] {
+  --md-typeset-a-color: #00a3a3;
+  --md-accent-fg-color: #007575;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-typeset-a-color: #bbffff !important;
+  --md-accent-fg-color: #5cffff;
+}
+
+.md-header__title { color: #bbffff; }
+
+
+.flowcard {
+    border: .05rem solid var(--md-default-fg-color--lightest);
+    border-radius: .1rem;
+    display: block;
+    margin: 0 0 1em;
+    padding: .8rem;
+    transition: border .25s, box-shadow .25s;
+ }

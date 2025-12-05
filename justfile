@@ -64,12 +64,11 @@ autofix:
 
 # Build docs.
 build-docs:
-    @uv run --group=docs sphinx-build -b html docs dist/docs --fail-on-warning --fresh-env --quiet
+    @uv run --group=docs mkdocs build --site-dir dist/docs
 
-# Build docs and open in browser.
-build-and-open-docs:
-    @just build-docs
-    @open dist/docs/index.html
+# Serve docs in a browser.
+serve-docs:
+    @uv run --group=docs mkdocs serve --open
 
 # Run all linters, build docs and tests.
 check:
