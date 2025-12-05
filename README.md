@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-    Lint your Python architecture.
+    <strong>Lint your Python architecture.</strong>
 </p>
 
 <p align="center">
@@ -28,7 +28,7 @@
 
 Install `import-linter` using your favorite Python package manager (e.g. `pip install import-linter`).
 
-## 2. Write a contract
+## 2. Configure
 
 Create a file called `.importlinter`, describing your contracts. For example:
 
@@ -37,11 +37,11 @@ Create a file called `.importlinter`, describing your contracts. For example:
 root_package = myproject
 
 [importlinter:contract:mycontract]
-name=Foo doesn't import bar or baz
-type=forbidden
-source_modules=
+name = Foo doesn't import bar or baz
+type = forbidden
+source_modules =
     myproject.foo
-forbidden_modules=
+forbidden_modules =
     myproject.bar
     myproject.baz
 ```

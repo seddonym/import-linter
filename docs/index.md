@@ -24,58 +24,37 @@ Lint your Python architecture.
 
 ---
 
-Import Linter is a command line tool to check that you are following a self-imposed
-architecture within your Python project. It does this by analysing the imports between all the modules in one
-or more Python packages, and compares this against a set of rules that you provide in a configuration file.
+**Import Linter** is a command-line tool for imposing constraints on the imports between your Python modules.
 
-The configuration file contains one or more 'contracts'. Each contract has a specific
-type, which determines the sort of rules it will apply. For example, the `forbidden`
-contract type allows you to check that certain modules or packages are not imported by
-parts of your project.
+## 1. Install
 
-Import Linter is particularly useful if you are working on a complex codebase within a team,
-when you want to enforce a particular architectural style. In this case you can add
-Import Linter to your deployment pipeline, so that any code that does not follow
-the architecture will fail tests.
+Install `import-linter` using your favorite Python package manager (e.g. `pip install import-linter`).
 
-If there isn't a built-in contract type that fits your desired architecture, you can define
-a custom one.
+## 2. Configure
 
-## Quick start
-
-Install `import-linter` using your favorite package manager, e.g.:
-
-```console
-pip install import-linter
-```
-
-Decide on the dependency flows you wish to check. In this example, we have
-decided to make sure that `myproject.foo` has dependencies on neither
-`myproject.bar` nor `myproject.baz`, so we will use the `forbidden` contract type.
-
-Create an `.importlinter` file in the root of your project to define your contract(s). In this case:
+Create a file called `.importlinter`, describing your contracts. For example:
 
 ```ini
 [importlinter]
 root_package = myproject
 
-[importlinter:contract:1]
-name=Foo doesn't import bar or baz
-type=forbidden
-source_modules=
+[importlinter:contract:mycontract]
+name = Foo doesn't import bar or baz
+type = forbidden
+source_modules =
     myproject.foo
-forbidden_modules=
+forbidden_modules =
     myproject.bar
     myproject.baz
 ```
 
-Now, from your project root, run::
+## 3. Run the linter
 
 ```console
 lint-imports
 ```
-    
 
 If your code violates the contract, you will see an error message that looks something like this:
+
 
 ![Screenshot of Import Linter output](img/screenshot.png)

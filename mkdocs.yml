@@ -34,20 +34,31 @@ theme:
         icon: material/lightbulb-outline
         name: Switch to system preference
   features:
+    - navigation.tabs
     - navigation.footer
 
 nav:
    - index.md
-   - installation.md
-   - usage.md
-   - api.md
-   - contract_types.md
-   - custom_contract_types.md
-   - caching.md
-   - toml.md
-   - contributing.md
-   - authors.md
-   - changelog.md
+   - Get Started:
+      - get_started/install.md
+      - get_started/configure.md
+      - get_started/run.md
+   - Contract types:
+       - contract_types/index.md
+       - contract_types/forbidden.md
+       - contract_types/protected.md
+       - contract_types/acyclic_siblings.md
+       - contract_types/independence.md
+       - contract_types/layers.md
+   - Advanced:
+      - api.md
+      - custom_contract_types.md
+      - caching.md
+      - toml.md
+   - Get involved:
+      - contributing.md
+      - authors.md
+   - Change log: changelog.md
 
 markdown_extensions:
   - attr_list
