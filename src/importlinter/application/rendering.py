@@ -14,6 +14,7 @@ TEXT_LOGO = """
       ╚╝────────────────────┘
 """
 BRAND_COLOR = "pale_turquoise1"
+BRAND_COLOR = "#007575"
 
 # Public functions
 # ----------------

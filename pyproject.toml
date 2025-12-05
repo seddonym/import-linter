@@ -30,7 +30,7 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Utilities",
 ]
-readme = "README.rst"
+readme = "README.md"
 
 [build-system]
 requires = ["hatchling"]
@@ -52,7 +52,7 @@ include-package-data = true
 zip-safe = false
 
 [tool.setuptools.dynamic]
-readme = {file = "README.rst"}
+readme = {file = "README.md"}
 
 [tool.setuptools.package-data]
 importlinter = ["py.typed"]
@@ -97,6 +97,8 @@ dev = [
     "types-pyyaml>=6.0.12.20250915",
 ]
 docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.0",
     "sphinx>=7.4.7",
     "sphinx-rtd-theme>=3.0.2",
 ]
