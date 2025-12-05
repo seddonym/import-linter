@@ -12,12 +12,12 @@ way around.
   *relative to the container*. The order is from higher to lower level layers. Layers wrapped in parentheses
   (e.g. `(foo)`) will be ignored if they are not present in the file system; otherwise, the contract will fail.
   It's also possible to include multiple layer modules on the same line, separated by either exclusively pipes
-  (`|`) or exclusively colons (`:`) - see [Multi-item layers](#multi-item-layers). Does not support [wildcards](#wildcards).
+  (`|`) or exclusively colons (`:`) - see [Multi-item layers](#multi-item-layers). Does not support [wildcards](index.md#wildcards).
 - `containers`:
   List of the parent modules of the layers, as *absolute names* that you could import, such as
-  `mypackage.foo`. See [Containers](#containers). Supports [wildcards](#wildcards). (Optional.)
-- `ignore_imports`: See [Shared options](#options-used-by-multiple-contracts).
-- `unmatched_ignore_imports_alerting`: See [Shared options](#options-used-by-multiple-contracts).
+  `mypackage.foo`. See [Containers](#containers). Supports [wildcards](index.md#wildcards). (Optional.)
+- `ignore_imports`: See [shared options](index.md#options-used-by-multiple-contracts).
+- `unmatched_ignore_imports_alerting`: See [shared options](index.md#options-used-by-multiple-contracts).
 - `exhaustive`. If true, check that the contract declares every possible layer in its list of layers to check.
   See [Exhaustive contracts](#exhaustive-contracts). (Optional, default False.)
 - `exhaustive_ignores`. A list of layers to ignore in exhaustiveness checks. (Optional.)
@@ -27,7 +27,7 @@ way around.
 'Layers' is a software architecture pattern in which a list of modules/packages have a dependency direction
 from high to low.
 
-![Layered architecture](img/layers.png)
+![Layered architecture](../img/layers.png)
 
 In this diagram, the Python package `mypackage` has a layered architecture in which its subpackage `high` is the
 highest layer and its subpackage `low` is the lowest layer. `low` is not allowed to import from any of the layers
@@ -157,7 +157,7 @@ Import Linter supports the presence of multiple sibling modules or packages with
 the modules `blue`, `green` and `yellow` are 'independent' in the same layer. This means that, in addition to not
 being allowed to import from layers above them, they are not allowed to import from each other.
 
-![Architecture with a layer containing independent siblings](img/layers-independent.png)
+![Architecture with a layer containing independent siblings](../img/layers-independent.png)
 
 An architecture like this can be checked by listing the siblings on the same line, separated by pipe characters:
 
@@ -174,7 +174,7 @@ layers =
 For a more relaxed architecture siblings can be designated as non-independent, meaning that they are allowed to import
 from each other, as shown:
 
-![Architecture with a layer containing non-independent siblings](img/layers-non-independent.png)
+![Architecture with a layer containing non-independent siblings](../img/layers-non-independent.png)
 
 To allow siblings to depend on each other, use colons instead of pipes to separate them:
 

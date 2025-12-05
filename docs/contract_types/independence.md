@@ -23,6 +23,6 @@ ignore_imports =
 
 **Configuration options**
 
-- `modules`: A list of modules/subpackages that should be independent of each other. Supports [wildcards](#wildcards).
-- `ignore_imports`: See [Shared options](#options-used-by-multiple-contracts).
-- `unmatched_ignore_imports_alerting`: See [Shared options](#options-used-by-multiple-contracts).
+- `modules`: A list of modules/subpackages that should be independent of each other. Supports [wildcards](index.md#wildcards).
+- `ignore_imports`: See [shared options](index.md#options-used-by-multiple-contracts).
+- `unmatched_ignore_imports_alerting`: See [shared options](index.md#options-used-by-multiple-contracts).

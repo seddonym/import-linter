@@ -19,7 +19,7 @@ following methods:
 
     - `graph`: a Grimp `ImportGraph` of your project, which can be used to inspect / analyse any dependencies.
       For full details of how to use this, see the [Grimp documentation](https://grimp.readthedocs.io).
-    - `verbose`: Whether we're in [verbose mode](usage.md#verbose-mode). You can use this flag to determine whether to output text
+    - `verbose`: Whether we're in [verbose mode](get_started/run.md#verbose-mode). You can use this flag to determine whether to output text
       during the check, using `output.verbose_print`, as in the example below.
 
     Returns:

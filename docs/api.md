@@ -32,7 +32,7 @@ While it is usually run via the command line, Import Linter offers a Python API 
 
 Return a dictionary containing configuration from the supplied file.
 
-If no filename is supplied, look in the default location (see [Usage](usage.md)).
+If no filename is supplied, look in the default location (see [Usage](get_started/configure.md#configuration-file-location)).
 
 This function is designed for use by external projects wishing to
 analyse the contracts themselves, e.g. to track the number of

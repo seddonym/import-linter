@@ -58,7 +58,7 @@ exclude_type_checking_imports = True
 
 ## Contracts
 
-Additionally, you will want to define one or more [contracts](contract_types/index.md). These take the following form:
+Additionally, you will want to define one or more [contracts](../contract_types/index.md). These take the following form:
 
 ```ini
 [importlinter:contract:one]
@@ -79,6 +79,6 @@ to select individual contracts when running the linter (see below).
 Every contract will always have the following key/value pairs:
 
 - `name`: A human-readable name for the contract.
-- `type`: The type of contract to use (see [Contract Types](contract_types/index.md).)
+- `type`: The type of contract to use (see [Contract Types](../contract_types/index.md).)
 
 Each contract type defines additional options that you supply here.

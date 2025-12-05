@@ -9,7 +9,7 @@ drilling into each subpackage and checking those children for cycles.
 
 This is easier to understand with a diagram. Take this package (the arrows represent imports):
 
-![Diagram showing cycles between siblings](img/acyclic-siblings.svg)
+![Diagram showing cycles between siblings](../img/acyclic-siblings.svg)
 
 While no direct cycles exist between individual Python modules, an `acyclic_siblings` contract running on
 `mypackage` will detect a cycle between the children of `mypackage`: `blue` depends on `green`, which depends
@@ -56,15 +56,15 @@ ignore_imports =
 **Configuration options**
 
 - `ancestors`: The packages whose descendants should be checked for cycles.
-  Supports [wildcards](#wildcards).
+  Supports [wildcards](index.md#wildcards).
 - `depth`: How many generations of siblings to check, relative to the ancestors. A depth of 0 will only check the
   children, depth 1 will check grandchildren (as sets of siblings), etc. Can be an integer >=0. Default 10.
   (Optional.)
 - `skip_descendants`: The ancestors of children that shouldn't be checked. For example, if
   `mypackage.foo.purple` is a skipped descendant, then the children of that package won't be checked for cycles,
-  nor will their descendants. Supports [wildcards](#wildcards). (Optional.)
-- `ignore_imports`: See [Shared options](#options-used-by-multiple-contracts). (Optional.)
-- `unmatched_ignore_imports_alerting`: See [Shared options](#options-used-by-multiple-contracts). (Optional.)
+  nor will their descendants. Supports [wildcards](index.md#wildcards). (Optional.)
+- `ignore_imports`: See [shared options](index.md#options-used-by-multiple-contracts). (Optional.)
+- `unmatched_ignore_imports_alerting`: See [shared options](index.md#options-used-by-multiple-contracts). (Optional.)
 
 **Sample output**
 

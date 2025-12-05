@@ -48,10 +48,10 @@ as_packages = False
   If `as_packages` is `True`, descendants of a protected module are also allowed to import each other.
   For example, in the *Simple protected contract* above, `mypackage.protected.green` is allowed to import
   `mypackage.protected.blue`, but `mypackage.red` and `mypackage.also_protected.yellow` are not.
-  Supports [wildcards](#wildcards).
-- `allowed_importers`: The only modules allowed to import the target modules. Supports [wildcards](#wildcards).
-- `ignore_imports`: See [Shared options](#options-used-by-multiple-contracts).
-- `unmatched_ignore_imports_alerting`: See [Shared options](#options-used-by-multiple-contracts).
+  Supports [wildcards](index.md#wildcards).
+- `allowed_importers`: The only modules allowed to import the target modules. Supports [wildcards](index.md#wildcards).
+- `ignore_imports`: See [shared options](index.md#options-used-by-multiple-contracts).
+- `unmatched_ignore_imports_alerting`: See [shared options](index.md#options-used-by-multiple-contracts).
 - `as_packages`: Whether to treat the source and forbidden modules as packages. If `False`, each of the modules
   passed in will be treated as a module rather than a package. Default behaviour is `True` (treat modules as
   packages).

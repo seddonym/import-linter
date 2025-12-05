@@ -1,4 +1,4 @@
-# Changelog
+# Release notes
 
 ## latest
 

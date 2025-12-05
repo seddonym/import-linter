@@ -1,4 +1,4 @@
-# Forbidden modules
+# Forbidden
 
 *Type name:* `forbidden`
 
@@ -53,12 +53,12 @@ ignore_imports =
 
 **Configuration options**
 
-- `source_modules`: A list of modules that should not import the forbidden modules. Supports [wildcards](#wildcards).
+- `source_modules`: A list of modules that should not import the forbidden modules. Supports [wildcards](index.md#wildcards).
 - `forbidden_modules`: A list of modules that should not be imported by the source modules. These may include
   root level external packages (i.e. `django`, but not `django.db.models`). If external packages are included,
-  the top level configuration must have `include_external_packages = True`. Supports [wildcards](#wildcards).
-- `ignore_imports`: See [Shared options](#options-used-by-multiple-contracts).
-- `unmatched_ignore_imports_alerting`: See [Shared options](#options-used-by-multiple-contracts).
+  the top level configuration must have `include_external_packages = True`. Supports [wildcards](index.md#wildcards).
+- `ignore_imports`: See [shared options](index.md#options-used-by-multiple-contracts).
+- `unmatched_ignore_imports_alerting`: See [shared options](index.md#options-used-by-multiple-contracts).
 - `allow_indirect_imports`: If `True`, allow indirect imports to forbidden modules without interpreting them
   as a reason to mark the contract broken. (Optional.)
 - `as_packages`: Whether to treat the source and forbidden modules as packages. If `False`, each of the modules

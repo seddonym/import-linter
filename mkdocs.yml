@@ -47,9 +47,10 @@ nav:
        - contract_types/index.md
        - contract_types/forbidden.md
        - contract_types/protected.md
-       - contract_types/acyclic_siblings.md
-       - contract_types/independence.md
        - contract_types/layers.md
+       - contract_types/independence.md
+       - contract_types/acyclic_siblings.md
+
    - Advanced:
       - api.md
       - custom_contract_types.md
@@ -58,8 +59,12 @@ nav:
    - Get involved:
       - contributing.md
       - authors.md
-   - Change log: changelog.md
+   - release_notes.md
 
 markdown_extensions:
   - attr_list
+  - md_in_html
   - pymdownx.blocks.caption
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg

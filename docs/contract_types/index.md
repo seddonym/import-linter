@@ -1,17 +1,61 @@
 # Contract types
 
-TODO Introduce contract types.
+Import Linter provides several contract types:
+
+<div class="grid cards" markdown>
+
+-   :material-block-helper:{ .lg .middle } __Forbidden__
+
+    ---
+
+    Check that one set of modules are not imported by another set of modules.
+
+    [:octicons-arrow-right-24: Read more](forbidden.md)
+
+-   :material-folder-arrow-left:{ .lg .middle } __Protected__
+
+    ---
+
+    Prevent certain modules from being directly imported, except by modules in an allow-list.
+
+    [:octicons-arrow-right-24: Read more](protected.md)
+
+-   :material-layers-triple:{ .lg .middle } __Layers__
+
+    ---
+
+    Enforce a 'layered architecture'.
+
+    [:octicons-arrow-right-24: Read more](layers.md)
+  
+- :fontawesome-solid-grid-horizontal:{ .lg .middle } __Independence__
+
+    ---
+
+    Check that a set of modules do not depend on each other.
+
+    [:octicons-arrow-right-24: Read more](independence.md)  
+
+- :material-graph-outline:{ .lg .middle } __Acyclic siblings__
+
+    ---
+
+    Forbids dependency cycles between siblings, all the way down.
+
+    [:octicons-arrow-right-24: Read more](acyclic_siblings.md)
+
+</div>
 
 ## Custom contract types
 
 If none of the built in contract types meets your needs, you can define a custom contract type: see
-[Custom Contract Types](custom_contract_types.md).
+[Custom Contract Types](../custom_contract_types.md).
 
 ## Options used by multiple contracts
 
 - `ignore_imports`: Optional list of imports, each in the form `mypackage.foo.importer -> mypackage.bar.imported`.
   These imports will be ignored: if the import would cause a contract to be broken, adding it to the list will cause the
-  contract be kept instead. Supports [wildcards](#wildcards).
+  contract be kept instead. Supports [wildcards](index.md#wildcards).
 
 - `unmatched_ignore_imports_alerting`: The alerting level for handling expressions supplied in `ignore_imports`
   that do not match any imports in the graph. Choices are:

@@ -1,4 +1,4 @@
-# Running the linter
+# Run the linter
 
 Import Linter provides a single command: `lint-imports`.
 
@@ -17,9 +17,9 @@ Running this will check that your project adheres to the contracts you've define
   explicitly with an `id` key. This option may be provided multiple
   times to check more than one contract. (Optional.)
 - `--cache-dir`:
-  The directory to use for caching. Defaults to `.import_linter_cache`. See [Caching](caching.md). (Optional.)
+  The directory to use for caching. Defaults to `.import_linter_cache`. See [Caching](../caching.md). (Optional.)
 - `--no-cache`:
-  Disable caching. See [Caching](caching.md). (Optional.)
+  Disable caching. See [Caching](../caching.md). (Optional.)
 - `--show-timings`:
   Display the times taken to build the graph and check each contract. (Optional.)
 - `--verbose`:

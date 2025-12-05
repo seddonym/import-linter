@@ -43,4 +43,4 @@ layers = [
 ## Contract ids
 
 You can optionally provide an `id` key for each contract. This allows
-you to make use of the `--contract` parameter when [running the linter](usage.md#running-the-linter).
+you to make use of the `--contract` parameter when [running the linter](get_started/run.md).
