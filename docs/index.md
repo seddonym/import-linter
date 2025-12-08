@@ -1,7 +1,7 @@
 <style>
     .md-content .md-typeset h1 { display: none; }
-    .md-nav--secondary { display: none; }
-    .md-sidebar--primary { display: none; }
+    .md-sidebar--primary,
+    .md-sidebar--secondary { display: none !important; }
     h2.slogan { text-align: center; font-size: 2em; margin-bottom: 2em; }
     .logo-wrapper { text-align: center; }
 </style>
