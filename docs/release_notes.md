@@ -1,5 +1,10 @@
 # Release notes
 
+## latest
+
+* Support passing namespaces as root packages, not just portions.
+* Bugfix: support Python 3.14 syntax.
+
 ## 2.8 (2025-12-08)
 
 * Fix logo display bug on Windows (fall back to simpler heading)

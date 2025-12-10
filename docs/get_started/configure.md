@@ -56,10 +56,12 @@ Or, with multiple root packages:
 
 - `root_package`:
   The name of the Python package to validate. For regular packages, this must be the top level package (i.e. one with no
-  dots in its name). However, in the special case of [namespace packages](https://docs.python.org/3/glossary.html#term-namespace-package), the name of the [portion](https://docs.python.org/3/glossary.html#term-portion) should be
-  supplied, for example `'mynamespace.foo'`.
-  This package must be importable: usually this means it is has been installed using pip, or it's in the current
-  directory. (Either this or `root_packages` is required.)
+  dots in its name). In the special case of
+  [namespace packages](https://docs.python.org/3/glossary.html#term-namespace-package), the name of the
+  [portion](https://docs.python.org/3/glossary.html#term-portion) may be supplied instead, for example
+  `mynamespace.foo`. If the portion is supplied, its ancestor packages will not be included in the graph.
+  The `root_package` _must be importable_: usually this means it has been installed using a Python package manager,
+  or it's in the current directory. (Either this or `root_packages` is required.)
 - `root_packages`:
   The names of the Python packages to validate. This should be used in place of `root_package` if you want
   to analyse the imports of multiple packages, and is subject to the same requirements. (Either this or
