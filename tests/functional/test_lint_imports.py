@@ -69,8 +69,10 @@ sys.path.extend(
             cli.EXIT_STATUS_SUCCESS,
         ),
         # Namespace packages
-        (namespace_packages_directory, "keptcontract.ini", cli.EXIT_STATUS_SUCCESS),
-        (namespace_packages_directory, "brokencontract.ini", cli.EXIT_STATUS_ERROR),
+        (namespace_packages_directory, "keptcontract_portion.ini", cli.EXIT_STATUS_SUCCESS),
+        (namespace_packages_directory, "keptcontract_namespace.ini", cli.EXIT_STATUS_SUCCESS),
+        (namespace_packages_directory, "brokencontract_portion.ini", cli.EXIT_STATUS_ERROR),
+        (namespace_packages_directory, "brokencontract_namespace.ini", cli.EXIT_STATUS_ERROR),
         # Type checking imports
         (testpackage_directory, ".typecheckkeptcontract.ini", cli.EXIT_STATUS_SUCCESS),
         (testpackage_directory, ".typecheckbrokencontract.ini", cli.EXIT_STATUS_ERROR),
