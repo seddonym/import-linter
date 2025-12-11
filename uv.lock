@@ -355,7 +355,7 @@ wheels = [
 
 [[package]]
 name = "import-linter"
-version = "2.8"
+version = "2.9"
 source = { editable = "." }
 dependencies = [
     { name = "click" },

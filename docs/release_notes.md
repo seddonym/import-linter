@@ -1,6 +1,6 @@
 # Release notes
 
-## latest
+## 2.9 (2025-12-11)
 
 * Support passing namespaces as root packages, not just portions.
 * Bugfix: support Python 3.14 syntax.

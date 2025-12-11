@@ -1,6 +1,6 @@
 [project]
 name = "import-linter"
-version = "2.8"
+version = "2.9"
 license = {text = "BSD 2-Clause License"}
 description = "Enforces rules for the imports within and between Python packages."
 authors = [
