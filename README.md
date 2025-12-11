@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="docs/img/import-linter-logo-text.png" alt="Import Linter">
+    <img src="https://import-linter.readthedocs.io/en/stable/img/import-linter-logo-text-white.png" alt="Import Linter">
 </p>
 
 <p align="center">
