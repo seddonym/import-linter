@@ -46,6 +46,7 @@ Source-code = "https://github.com/seddonym/import-linter/"
 
 [project.scripts]
 lint-imports = "importlinter.cli:lint_imports_command"
+show-import-layers = "importlinter.cli:show_layers_command"
 
 [tool.setuptools]
 include-package-data = true

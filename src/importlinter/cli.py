@@ -60,6 +60,19 @@ def lint_imports_command(
     sys.exit(exit_code)
 
 
+@click.command()
+@click.option("--config", default=None, help="The config file to use.")
+def show_layers_command(config: str | None) -> int:
+    """
+    Display an ASCII diagram of the layered architecture contracts.
+
+    This command visualizes the layer hierarchy defined in your import-linter
+    configuration, showing which layers can import from which.
+    """
+    exit_code = use_cases.show_layers(config_filename=config)
+    sys.exit(exit_code)
+
+
 def lint_imports(
     config_filename: str | None = None,
     limit_to_contracts: tuple[str, ...] = (),
