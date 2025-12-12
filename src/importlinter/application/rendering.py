@@ -161,3 +161,99 @@ def format_duration(milliseconds: int) -> str:
     if s < 10:
         return f"{s:.1f}s"
     return f"{int(round(s))}s"
+
+
+def render_layers_diagram(layers: list[str], contract_name: str = "Layers") -> None:
+    """
+    Render an ASCII diagram of the layered architecture.
+
+    Args:
+        layers: List of layer names from highest to lowest.
+        contract_name: Name of the contract to display.
+    """
+    if not layers:
+        output.new_line()
+        output.print("📭 No layers defined in this contract.", bold=True)
+        output.new_line()
+        output.print("To define layers, add a layers contract to your config:", color="#888888")
+        output.new_line()
+        output.console.print("  [#a7d8de]\\[importlinter:contract:my_layers][/#a7d8de]")
+        output.print("  name = My Layered Architecture", color="#a7d8de")
+        output.print("  type = layers", color="#a7d8de")
+        output.print("  layers =", color="#a7d8de")
+        output.print("      high_level", color="#a7d8de")
+        output.print("      mid_level", color="#a7d8de")
+        output.print("      low_level", color="#a7d8de")
+        output.new_line()
+        output.print(
+            "See: https://import-linter.readthedocs.io/en/stable/contract_types/layers/",
+            color="#888888",
+        )
+        output.new_line()
+        return
+
+    # Track if we have multi-module layers for the legend
+    has_independent = any(" | " in layer for layer in layers)
+    has_non_independent = any(" : " in layer for layer in layers)
+
+    # Calculate box width based on longest layer name
+    max_len = max(len(layer) for layer in layers)
+    box_width = max(max_len + 8, 30)
+    inner_width = box_width - 2
+
+    output.new_line()
+    output.print_heading(contract_name, output.HEADING_LEVEL_TWO)
+
+    # Top of diagram with arrow
+    output.print("        ▲ higher level (can import from layers below)")
+    output.print("        │", color="#555555")
+
+    # Top border
+    output.print(f"   ┌{'─' * inner_width}┐")
+
+    # Layers
+    for i, layer in enumerate(layers):
+        color = output.LAYER_COLORS[i % len(output.LAYER_COLORS)]
+
+        # Style the separators differently
+        if " | " in layer:
+            # Independent: use ║ double line
+            styled_layer = layer.replace(" | ", "  ║  ")
+        elif " : " in layer:
+            # Non-independent: use ⋮ dots
+            styled_layer = layer.replace(" : ", "  ⋮  ")
+        else:
+            styled_layer = layer
+
+        padded_layer = styled_layer.center(inner_width)
+
+        # Add arrow on left side
+        if i == 0:
+            output.print("   │", newline=False)
+        else:
+            output.print("  ↓│", newline=False, color="#555555")
+
+        output.print(padded_layer, color=color, newline=False)
+        output.print("│")
+
+        # Separator between layers (except after last)
+        if i < len(layers) - 1:
+            output.print(f"   ├{'─' * inner_width}┤", color="#555555")
+
+    # Bottom border
+    output.print(f"   └{'─' * inner_width}┘")
+    output.print("        │", color="#555555")
+    output.print("        ▼ lower level (cannot import layers above)")
+
+    output.new_line()
+
+    # Legend for multi-module layers
+    if has_independent or has_non_independent:
+        output.print("  ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈", color="#555555")
+        output.print("  Legend:", bold=True)
+        if has_independent:
+            output.print("    ║  independent modules (cannot import each other)", color="#888888")
+        if has_non_independent:
+            output.print("    ⋮  grouped modules (can import each other)", color="#888888")
+
+    output.new_line()
