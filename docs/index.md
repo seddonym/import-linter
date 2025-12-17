@@ -4,6 +4,7 @@
     .md-sidebar--secondary { display: none !important; }
     h2.slogan { text-align: center; font-size: 2em; margin-bottom: 2em; }
     .logo-wrapper { text-align: center; }
+    .centered { text-align: center; }
 </style>
 
 <div class="logo-wrapper" markdown>
@@ -30,8 +31,11 @@
 
 ---
 
+<div class="centered" markdown>
 **Import Linter** is a command-line tool for imposing constraints on the imports between your Python modules.
 
+[Get started](get_started/configure.md){ .md-button .button-center }
+</div>
 
 ## Contract types
 
@@ -85,6 +89,3 @@ Forbid dependency cycles between siblings.
 [:octicons-arrow-right-24: Read more](contract_types/acyclic_siblings.md)
 </div>
 
----
-
-[Get started](get_started/configure.md){ .md-button .button-center }
