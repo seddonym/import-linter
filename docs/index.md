@@ -37,6 +37,38 @@
 [Get started](get_started/configure.md){ .md-button .button-center }
 </div>
 
+---
+
+## How it works
+
+Let's say your Python project looks like this:
+
+```text
+myproject
+├── __init__.py
+├── blue/
+└── green/
+```
+
+After [installation](get_started/install.md), create a file called `.importlinter`:
+
+```ini
+# .importlinter
+
+[importlinter]
+root_package = myproject
+
+[importlinter:contract:one]
+name = Green must not import blue
+type = forbidden
+source_modules = myproject.green
+forbidden_modules = myproject.blue
+```
+
+Then, running `lint-imports` will error if any modules in `myproject.green` import from `myproject.blue`.
+
+That's just a simple example: Import Linter supports lots of different contract types, and you can even create your own!
+
 ## Contract types
 
 <div class="flowcard" markdown>
