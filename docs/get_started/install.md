@@ -1,7 +1,18 @@
 # Install
 
-Install `import-linter` using your favorite Python package manager, e.g.:
+Install `import-linter` using your favorite Python package manager. (You probably only want it as a dev dependency.)
 
-```console
-pip install import-linter
-```
+=== "pip"
+    ```console
+    pip install import-linter
+    ```
+
+=== "uv"
+    ```console
+    uv add --dev import-linter
+    ```
+
+=== "poetry"
+    ```console
+    poetry add import-linter --group dev
+    ```
