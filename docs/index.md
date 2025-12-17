@@ -89,3 +89,12 @@ Forbid dependency cycles between siblings.
 [:octicons-arrow-right-24: Read more](contract_types/acyclic_siblings.md)
 </div>
 
+<div class="flowcard" markdown>
+:material-set-square:{ .lg .middle } __Custom contract types__
+
+---
+
+Design your own architecture.
+
+[:octicons-arrow-right-24: Read more](custom_contract_types.md)
+</div>
