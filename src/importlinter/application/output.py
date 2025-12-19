@@ -6,6 +6,17 @@ SUCCESS = "success"
 WARNING = "warning"
 COLORS = {ERROR: "red", SUCCESS: "green", WARNING: "yellow"}
 
+# Pastel colors for layer visualization
+LAYER_COLORS = [
+    "#f4a4a4",  # soft rose
+    "#f9d5a7",  # peach
+    "#a7d8de",  # mint
+    "#e4c1f9",  # lavender
+    "#a2d2ff",  # sky blue
+    "#b8c0ff",  # periwinkle
+    "#bde0c0",  # sage green
+]
+
 HEADING_LEVEL_ONE = 1
 HEADING_LEVEL_TWO = 2
 HEADING_LEVEL_THREE = 3
