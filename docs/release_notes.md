@@ -1,5 +1,9 @@
 # Release notes
 
+## 2.10 (2025-12-20)
+
+* Add support for `source_roots` configuration option.
+
 ## 2.9 (2025-12-11)
 
 * Support passing namespaces as root packages, not just portions.

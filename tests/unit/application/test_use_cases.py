@@ -1,5 +1,7 @@
+import os
 import re
 import string
+import sys
 from typing import Any
 from unittest.mock import sentinel
 from textwrap import dedent
@@ -15,6 +17,7 @@ from importlinter.application.use_cases import (
     SUCCESS,
     create_report,
     lint_imports,
+    _modify_path,
 )
 from importlinter.application.user_options import UserOptions
 from tests.adapters.building import FakeGraphBuilder
@@ -682,3 +685,27 @@ class TestReadUserOptions:
         )
         with pytest.raises(RuntimeError, match="expected"):
             lint_imports(filename, is_debug_mode=True)
+
+
+@pytest.mark.parametrize(
+    "source_roots",
+    [
+        [],
+        ["src"],
+        ["src", "packages/package-a/src"],
+        ["src", *[f"packages/package-{i}/src" for i in range(100)]],
+    ],
+)
+def test_modify_path(source_roots: list[str]) -> None:
+    user_options = UserOptions(
+        session_options={"source_roots": source_roots}, contracts_options=[{}]
+    )
+    original_path = sys.path.copy()
+
+    _modify_path(user_options)
+
+    assert len(original_path) < len(sys.path)
+    assert sys.path[0] == os.getcwd()
+    # +1 because we always append the current working directory
+    assert len(sys.path) == len(original_path) + len(source_roots) + 1
+    assert sys.path[1 : len(source_roots) + 1] == source_roots

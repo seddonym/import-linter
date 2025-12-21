@@ -18,6 +18,7 @@
 * [Jan Bielecki](https://github.com/K4liber)
 * [Kai Mueller](https://github.com/kasium)
 * [Łukasz Skarżyński](https://github.com/skarzi)
+* [Mark Todisco](https://github.com/marktodisco)
 * [Matthew Gamble](https://github.com/mwgamble)
 * [Neil Williams](https://github.com/spladug)
 * [Nicholas Bunn](https://github.com/NicholasBunn)
