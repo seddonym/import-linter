@@ -13,7 +13,7 @@ plugins:
 theme:
   name: material
   logo: img/import-linter-logo-square.svg
-  favicon: img/import-linter-logo-square.svg
+  favicon: img/favicon.svg
   palette:
     - media: "(prefers-color-scheme)"
       toggle:
