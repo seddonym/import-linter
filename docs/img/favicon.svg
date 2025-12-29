@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="150mm"
+   height="150mm"
+   viewBox="0 0 150 150"
+   version="1.1"
+   id="svg1"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1">
+    <color-profile
+       name="SMPTE-RP-431-2-2007-DCI-P3"
+       xlink:href="file:///System/Library/ColorSync/Profiles/DCI(P3)%20RGB.icc"
+       id="color-profile1" />
+  </defs>
+  <g
+     id="layer2"
+     style="display:inline">
+    <rect
+       style="fill:#333333;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:4.53529;stroke-dasharray:none;stroke-opacity:1"
+       id="rect7"
+       width="150"
+       height="150"
+       x="7.1054274e-15"
+       y="-1.2434498e-14" />
+  </g>
+  <g
+     id="layer1"
+     transform="matrix(0.91852304,0,0,0.91852304,-17.770591,-33.598644)"
+     style="display:inline">
+    <path
+       id="rect1"
+       style="fill:none;fill-rule:evenodd;stroke:#bbffff;stroke-width:8"
+       d="M 34.752674,70.002022 H 68.214516 V 142.70553 H 34.752674 Z" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#bbffff;stroke-width:10;stroke-dasharray:none;stroke-opacity:1"
+       d="m 85.098212,69.157418 h 31.539798 l 1.05833,80.827662 h 44.7105 V 182.7963 H 85.098212 Z"
+       id="path2" />
+    <g
+       id="path3"
+       style="opacity:1">
+      <path
+         style="baseline-shift:baseline;display:inline;overflow:visible;vector-effect:none;fill:#bbffff;fill-rule:evenodd;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
+         d="m 65.144531,164.47656 -23.443359,0.22071 0.09375,9.99804 23.443359,-0.21875 z"
+         id="path12" />
+      <g
+         id="g9">
+        <g
+           id="path9"
+           style="opacity:1">
+          <path
+             style="baseline-shift:baseline;display:inline;overflow:visible;vector-effect:none;fill:#bbffff;fill-rule:evenodd;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
+             d="M 76.730335,169.36736 59.525132,179.52959 59.337067,159.53047 Z"
+             id="path10" />
+          <path
+             style="baseline-shift:baseline;display:inline;overflow:visible;vector-effect:none;fill:#bbffff;fill-rule:evenodd;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
+             d="m 57.982422,157.23242 0.230469,24.6211 21.18164,-12.51172 z m 2.708984,4.5957 13.375,7.56446 -13.228515,7.8125 z"
+             id="path11" />
+        </g>
+      </g>
+    </g>
+    <g
+       id="path3-8"
+       style="opacity:1">
+      <path
+         style="baseline-shift:baseline;display:inline;overflow:visible;vector-effect:none;fill:#bbffff;fill-rule:evenodd;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
+         d="m 136.98828,104.65234 -0.0312,10.08594 25.01953,0.0801 0.0332,-10.08594 z"
+         id="path8" />
+      <g
+         id="g2">
+        <g
+           id="path4"
+           style="opacity:1">
+          <path
+             style="baseline-shift:baseline;display:inline;overflow:visible;vector-effect:none;fill:#bbffff;fill-rule:evenodd;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
+             d="m 125.33231,109.65845 17.4825,-10.031052 -0.0645,20.173692 z"
+             id="path5" />
+          <path
+             style="baseline-shift:baseline;display:inline;overflow:visible;vector-effect:none;fill:#bbffff;fill-rule:evenodd;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
+             d="m 144.16797,97.300781 -21.52344,12.349609 21.44336,12.48633 z m -2.70508,4.652349 -0.0488,15.51367 -13.39453,-7.80078 z"
+             id="path6" />
+        </g>
+      </g>
+    </g>
+    <path
+       style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#bbffff;stroke-width:9.34609;stroke-linecap:square;stroke-dasharray:none;stroke-opacity:1"
+       d="M 43.603818,169.94345 V 146.29112"
+       id="path7" />
+    <path
+       style="display:inline;fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#bbffff;stroke-width:10;stroke-linecap:square;stroke-dasharray:none;stroke-opacity:1"
+       d="M 162.26188,109.75431 V 51.330956"
+       id="path7-4" />
+    <path
+       style="display:inline;fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#bbffff;stroke-width:10;stroke-linecap:square;stroke-dasharray:none;stroke-opacity:1"
+       d="M 52.037849,66.177024 V 51.678807"
+       id="path7-4-6" />
+    <path
+       style="display:inline;fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#bbffff;stroke-width:10;stroke-linecap:square;stroke-dasharray:none;stroke-opacity:1"
+       d="M 161.95997,51.310584 H 52.037849"
+       id="path7-4-5" />
+  </g>
+</svg>
