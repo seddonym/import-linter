@@ -1,4 +1,3 @@
-import os
 import sys
 from logging import config as logging_config
 
@@ -88,9 +87,6 @@ def lint_imports(
     Returns:
         EXIT_STATUS_SUCCESS or EXIT_STATUS_ERROR.
     """
-    # Add current directory to the path, as this doesn't happen automatically.
-    sys.path.insert(0, os.getcwd())
-
     _configure_logging(verbose)
 
     combined_cache_dir = _combine_caching_arguments(cache_dir, no_cache)

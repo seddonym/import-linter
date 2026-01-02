@@ -1,5 +1,7 @@
 import importlib
 from copy import copy, deepcopy
+import os
+import sys
 from typing import Any
 import contextlib
 from grimp import ImportGraph
@@ -59,6 +61,7 @@ def lint_imports(
     output.verbose_print(verbose, "Verbose mode.")
     try:
         user_options = read_user_options(config_filename=config_filename)
+        _modify_path(user_options)
         _register_contract_types(user_options)
         report = create_report(user_options, limit_to_contracts, cache_dir, show_timings, verbose)
     except Exception as e:
@@ -233,6 +236,13 @@ def _build_report(
 
     output.verbose_print(verbose, newline=True)
     return report
+
+
+def _modify_path(user_options: UserOptions) -> None:
+    source_roots = user_options.session_options.get("source_roots", [])
+    # Add current directory to the path, as this doesn't happen automatically.
+    # Place the source roots after the current directory.
+    sys.path = [os.getcwd(), *source_roots, *sys.path]
 
 
 def _get_contract_checking_progress(verbose: bool) -> Progress:
