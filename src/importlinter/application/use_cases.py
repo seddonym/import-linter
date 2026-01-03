@@ -17,7 +17,7 @@ from .output import console
 from . import output
 from .app_config import settings
 from .ports.reporting import Report
-from .rendering import render_exception, render_report, format_duration
+from .rendering import render_exception, render_report, format_duration, render_layers_diagram
 from .sentinels import NotSupplied
 from .user_options import UserOptions
 
@@ -73,6 +73,73 @@ def lint_imports(
         return FAILURE
     else:
         return SUCCESS
+
+
+def show_layers(config_filename: str | None = None, is_debug_mode: bool = False) -> bool:
+    """
+    Display ASCII diagrams of all layer contracts defined in the configuration.
+
+    Args:
+        config_filename: the filename to use to parse user options.
+
+    Returns:
+        True if the user options were passed and layers are displayed, False if it didn't.
+    """
+    rendering.print_title()
+
+    try:
+        user_options = read_user_options(config_filename=config_filename)
+    except Exception as e:
+        if is_debug_mode:
+            raise e
+        render_exception(e)
+        return FAILURE
+
+    layers_found = False
+    for contract_options in user_options.contracts_options:
+        if contract_options.get("type") == "layers":
+            layers_found = True
+            contract_name = contract_options.get("name", "Layers")
+
+            # Extract layer names from the 'layers' field
+            layers_raw = contract_options.get("layers", [])
+            layer_names = []
+            for layer in layers_raw:
+                # Handle both simple strings and complex layer definitions
+                if isinstance(layer, str):
+                    # Remove optional markers (parentheses) for display
+                    clean_name = layer.strip("()")
+                    # Handle independent (|) and non-independent (:) delimiters
+                    if "|" in clean_name:
+                        layer_names.append(" | ".join(clean_name.split("|")))
+                    elif ":" in clean_name:
+                        layer_names.append(" : ".join(clean_name.split(":")))
+                    else:
+                        layer_names.append(clean_name)
+
+            render_layers_diagram(layer_names, contract_name)
+
+    if not layers_found:
+        output.new_line()
+        output.print("📭 No layer contracts found in configuration.", bold=True)
+        output.new_line()
+        output.print("To visualize layers, add a contract with type = layers:", color="#888888")
+        output.new_line()
+        output.console.print("  [#a7d8de]\\[importlinter:contract:my_layers][/#a7d8de]")
+        output.print("  name = My Layered Architecture", color="#a7d8de")
+        output.print("  type = layers", color="#a7d8de")
+        output.print("  layers =", color="#a7d8de")
+        output.print("      presentation", color="#a7d8de")
+        output.print("      business", color="#a7d8de")
+        output.print("      data", color="#a7d8de")
+        output.new_line()
+        output.print(
+            "See: https://import-linter.readthedocs.io/en/stable/contract_types/layers/",
+            color="#888888",
+        )
+        output.new_line()
+
+    return SUCCESS
 
 
 def read_user_options(config_filename: str | None = None) -> UserOptions:

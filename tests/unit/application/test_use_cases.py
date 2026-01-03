@@ -15,6 +15,7 @@ from importlinter.application.use_cases import (
     SUCCESS,
     create_report,
     lint_imports,
+    show_layers,
 )
 from importlinter.application.user_options import UserOptions
 from tests.adapters.building import FakeGraphBuilder
@@ -682,3 +683,155 @@ class TestReadUserOptions:
         )
         with pytest.raises(RuntimeError, match="expected"):
             lint_imports(filename, is_debug_mode=True)
+
+
+class TestShowLayers:
+    def test_displays_layers_contract(self):
+        self._configure(
+            contracts_options=[
+                {
+                    "type": "layers",
+                    "name": "My Layered Architecture",
+                    "layers": ["api", "domain", "data"],
+                },
+            ]
+        )
+
+        with console.capture() as capture:
+            result = show_layers()
+
+        assert result == SUCCESS
+        output = capture.get()
+        assert "My Layered Architecture" in output
+        assert "api" in output
+        assert "domain" in output
+        assert "data" in output
+        assert "higher level" in output
+        assert "lower level" in output
+
+    def test_displays_multiple_layers_contracts(self):
+        self._configure(
+            contracts_options=[
+                {
+                    "type": "layers",
+                    "name": "First Layers",
+                    "layers": ["cli", "api"],
+                },
+                {
+                    "type": "layers",
+                    "name": "Second Layers",
+                    "layers": ["service", "repository"],
+                },
+            ]
+        )
+
+        with console.capture() as capture:
+            result = show_layers()
+
+        assert result == SUCCESS
+        output = capture.get()
+        assert "First Layers" in output
+        assert "cli" in output
+        assert "api" in output
+        assert "Second Layers" in output
+        assert "service" in output
+        assert "repository" in output
+
+    def test_shows_helpful_message_when_no_layers_contracts(self):
+        self._configure(
+            contracts_options=[
+                {"type": "always_passes", "name": "Non-layers Contract"},
+            ]
+        )
+
+        with console.capture() as capture:
+            result = show_layers()
+
+        assert result == SUCCESS
+        output = capture.get()
+        assert "No layer contracts found".lower() in output.lower()
+
+    def test_displays_independent_modules_with_legend(self):
+        self._configure(
+            contracts_options=[
+                {
+                    "type": "layers",
+                    "name": "Architecture",
+                    "layers": ["presentation", "business | service", "data"],
+                },
+            ]
+        )
+
+        with console.capture() as capture:
+            result = show_layers()
+
+        assert result == SUCCESS
+        output = capture.get()
+        assert "business".lower() in output.lower()
+        assert "service".lower() in output.lower()
+        assert "Legend".lower() in output.lower()
+        assert "independent modules".lower() in output.lower()
+
+    def test_displays_grouped_modules_with_legend(self):
+        self._configure(
+            contracts_options=[
+                {
+                    "type": "layers",
+                    "name": "Architecture",
+                    "layers": ["presentation", "business : service", "data"],
+                },
+            ]
+        )
+
+        with console.capture() as capture:
+            result = show_layers()
+
+        assert result == SUCCESS
+        output = capture.get()
+        assert "business" in output
+        assert "service" in output
+        assert "Legend:" in output
+        assert "grouped modules" in output
+
+    def test_ignores_non_layers_contracts(self):
+        self._configure(
+            contracts_options=[
+                {"type": "always_passes", "name": "Non-layers Contract"},
+                {
+                    "type": "layers",
+                    "name": "Layers Contract",
+                    "layers": ["high", "low"],
+                },
+            ]
+        )
+
+        with console.capture() as capture:
+            result = show_layers()
+
+        assert result == SUCCESS
+        output = capture.get()
+        # Should show the layers contract but not the non-layers one
+        assert "Layers Contract" in output
+        assert "high" in output
+        assert "low" in output
+
+    def _configure(
+        self,
+        contracts_options: list[dict[str, Any]],
+        session_options: dict[str, Any] | None = None,
+    ):
+        session_options = session_options or {"root_package": "mypackage"}
+        contract_types = [
+            "always_passes: tests.helpers.contracts.AlwaysPassesContract",
+            "layers: importlinter.contracts.layers.LayersContract",
+        ]
+        session_options["contract_types"] = contract_types
+
+        reader = FakeUserOptionReader(
+            UserOptions(session_options=session_options, contracts_options=contracts_options)
+        )
+        settings.configure(
+            USER_OPTION_READERS={"foo": reader},
+            GRAPH_BUILDER=FakeGraphBuilder(),
+            TIMER=FakeTimer(),
+        )
