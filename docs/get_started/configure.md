@@ -9,6 +9,8 @@ If not specified over the command line, Import Linter will look in the current d
 - `setup.cfg` (INI format)
 - `.importlinter` (INI format)
 - `pyproject.toml` (TOML format)
+- `.importlinter.toml` (TOML format)
+- `importlinter.toml` (TOML format)
 
 ## Top level configuration
 

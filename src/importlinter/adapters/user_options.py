@@ -83,14 +83,23 @@ class TomlFileUserOptionReader(AbstractUserOptionReader):
     """
 
     section_name = "importlinter"
-    potential_config_filenames = ["pyproject.toml"]
+    potential_config_filenames = [
+        "pyproject.toml",
+        "importlinter.toml",
+        ".importlinter.toml",
+    ]
 
     def _read_config_filename(self, config_filename: str) -> UserOptions | None:
         file_contents = settings.FILE_SYSTEM.read(config_filename, encoding="utf-8")
         data = tomllib.loads(file_contents)
 
-        tool_data = data.get("tool", {})
-        session_options = tool_data.get("importlinter", {})
+        if config_filename == "pyproject.toml":
+            tool_data = data.get("tool", {})
+            session_options = tool_data.get("importlinter", {})
+        else:
+            # `importlinter.toml` / `.importlinter.toml`
+            session_options = data.get("importlinter", {})
+
         if not session_options:
             return None
 
