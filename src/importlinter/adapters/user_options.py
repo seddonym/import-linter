@@ -1,4 +1,5 @@
 import configparser
+import os
 from typing import Any
 import abc
 import sys
@@ -99,6 +100,10 @@ class TomlFileUserOptionReader(AbstractUserOptionReader):
         else:
             # `importlinter.toml` / `.importlinter.toml`
             session_options = data.get("importlinter", {})
+            if not session_options:
+                # try [tool.importlinter] as fallback for compatibility
+                tool_data = data.get("tool", {})
+                session_options = tool_data.get("importlinter", {})
 
         if not session_options:
             return None
