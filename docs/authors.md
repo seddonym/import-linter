@@ -19,6 +19,7 @@
 * [Kai Mueller](https://github.com/kasium)
 * [Lincoln Puzey](https://github.com/LincolnPuzey)
 * [Łukasz Skarżyński](https://github.com/skarzi)
+* [Mark Todisco](https://github.com/marktodisco)
 * [Matthew Gamble](https://github.com/mwgamble)
 * [Neil Williams](https://github.com/spladug)
 * [Nicholas Bunn](https://github.com/NicholasBunn)

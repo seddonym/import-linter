@@ -19,6 +19,8 @@ If not specified over the command line, Import Linter will look in the current d
     # Optional:
     include_external_packages = True
     exclude_type_checking_imports = True
+    source_roots=
+        src
     ```
 
 === "TOML"
@@ -28,6 +30,7 @@ If not specified over the command line, Import Linter will look in the current d
     # Optional:
     include_external_packages = true
     exclude_type_checking_imports = true
+    source_roots = [ "src" ]
     ```
 
 Or, with multiple root packages:
@@ -41,6 +44,9 @@ Or, with multiple root packages:
     # Optional:
     include_external_packages = True
     exclude_type_checking_imports = True
+    source_roots=
+        packages/package-one/src
+        packages/package-two/src
     ```
 
 === "TOML"
@@ -50,6 +56,7 @@ Or, with multiple root packages:
     # Optional:
     include_external_packages = true
     exclude_type_checking_imports = true
+    source_roots = [ "packages/package-one/src", "packages/package-two/src" ]
     ```
 
 **Options:**
@@ -75,6 +82,12 @@ Or, with multiple root packages:
   Whether to exclude imports made in type checking guards. If this is `True`, any import made under an
   `if TYPE_CHECKING:` statement will not be added to the graph.
   For more information, see [the Grimp build_graph documentation](https://grimp.readthedocs.io/en/latest/usage.html#grimp.build_graph). (Optional.)
+- `source_roots`:
+  One or more directories added to the Python import search path when building the
+  import graph. Use this when your `root_packages` live in a non-root location (e.g., a
+  src/ layout or a multi-package monorepo). Paths can be absolute or relative to the
+  config file directory. Relative paths are resolved before being added to the path.
+  (Optional.)
 
 ## Contracts
 
