@@ -1,5 +1,4 @@
 import configparser
-import os
 from typing import Any
 import abc
 import sys
@@ -94,16 +93,10 @@ class TomlFileUserOptionReader(AbstractUserOptionReader):
         file_contents = settings.FILE_SYSTEM.read(config_filename, encoding="utf-8")
         data = tomllib.loads(file_contents)
 
-        if config_filename == "pyproject.toml":
-            tool_data = data.get("tool", {})
-            session_options = tool_data.get("importlinter", {})
-        else:
-            # `importlinter.toml` / `.importlinter.toml`
-            session_options = data.get("importlinter", {})
-            if not session_options:
-                # try [tool.importlinter] as fallback for compatibility
-                tool_data = data.get("tool", {})
-                session_options = tool_data.get("importlinter", {})
+        session_options = (
+            data.get("importlinter", {}) or
+            data.get("tool", {}).get("importlinter", {})
+        )
 
         if not session_options:
             return None
