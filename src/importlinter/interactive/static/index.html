@@ -1,0 +1,2563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Linter</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #1a1a1a;
+            color: #eee;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: #222;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        #logo {
+            height: 32px;
+            width: 32px;
+        }
+
+        header h1 {
+            font-size: 1.25rem;
+            font-weight: 500;
+        }
+
+        /* Main app layout with vertical tabs */
+        #app-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Vertical tab navigation */
+        #tab-bar {
+            display: flex;
+            flex-direction: column;
+            background: #222;
+            border-right: 1px solid #333;
+            width: 140px;
+            flex-shrink: 0;
+        }
+
+        .tab {
+            padding: 0.875rem 1rem;
+            color: #888;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: color 0.15s, border-color 0.15s, background 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab:hover {
+            color: #ccc;
+            background: #282828;
+        }
+
+        .tab.active {
+            color: #eee;
+            border-left-color: #888;
+            background: #1a1a1a;
+        }
+
+        .tab-icon {
+            font-size: 1.1rem;
+            width: 1.25rem;
+            text-align: center;
+        }
+
+        /* Views */
+        .view {
+            display: none;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .view.active {
+            display: flex;
+        }
+
+        #explorer-view {
+            flex-direction: column;
+        }
+
+        #explorer-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.95rem;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+        }
+
+        #breadcrumb .prefix {
+            color: #888;
+        }
+
+        #breadcrumb .crumb {
+            color: #aaa;
+            cursor: pointer;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+        }
+
+        #breadcrumb .crumb:hover {
+            text-decoration: underline;
+        }
+
+        #breadcrumb .separator {
+            color: #666;
+        }
+
+        #breadcrumb .current {
+            color: #eee;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+        }
+
+        #main-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        #graph-container {
+            flex: 1;
+            overflow: hidden;
+            cursor: grab;
+            position: relative;
+        }
+
+        #graph-container:active {
+            cursor: grabbing;
+        }
+
+
+        #graph-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        #graph-svg svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Style the rendered SVG graph */
+        #graph-svg .node ellipse {
+            fill: #e8e8e8;
+            stroke: #555;
+            stroke-width: 1.5px;
+            cursor: default;
+        }
+
+        /* Packages are clickable */
+        #graph-svg .node.package ellipse {
+            cursor: pointer;
+            transition: fill 0.15s, stroke 0.15s;
+        }
+
+        #graph-svg .node.package:hover ellipse {
+            fill: #d0d0d0;
+            stroke: #333;
+        }
+
+        #graph-svg .node text {
+            fill: #555;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+            font-size: 14px;
+        }
+
+        /* Underline effect on package hover */
+        #graph-svg .node.package:hover text {
+            text-decoration: underline;
+        }
+
+        #graph-svg .edge path {
+            stroke: #555;
+            stroke-width: 1.5px;
+        }
+
+        #graph-svg .edge polygon {
+            fill: #555;
+            stroke: #555;
+        }
+
+        #graph-svg .edge text {
+            fill: #666;
+            font-size: 12px;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+        }
+
+        #sidebar {
+            width: 220px;
+            background: #222;
+            border-left: 1px solid #333;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .sidebar-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        #sidebar h2 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 0;
+        }
+
+        .sidebar-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .sidebar-buttons button {
+            background: #333;
+            border: 1px solid #444;
+            color: #eee;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar-buttons button .icon {
+            font-size: 1rem;
+            width: 1.2rem;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .sidebar-buttons button:hover:not(:disabled) {
+            background: #444;
+        }
+
+        .sidebar-buttons button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .sidebar-buttons button code {
+            color: #ccc;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+        }
+
+        .toggle-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .toggle-item {
+            background: #2a2a2a;
+            border-radius: 6px;
+            padding: 0.75rem;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #444;
+            transition: 0.2s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #888;
+            transition: 0.2s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #888;
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+            background-color: #eee;
+        }
+
+        .toggle-label {
+            font-size: 0.9rem;
+            color: #ccc;
+            cursor: pointer;
+        }
+
+        .toggle-help {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 0.5rem;
+            line-height: 1.4;
+        }
+
+        #loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            color: #888;
+            background: #1a1a1a;
+            z-index: 50;
+        }
+
+        #loading .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #333;
+            border-top-color: #888;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        #loading .text {
+            font-size: 1rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #error-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.1rem;
+            color: #e74c3c;
+            text-align: center;
+            display: none;
+        }
+
+        #tooltip {
+            position: absolute;
+            background: #333;
+            border: 1px solid #666;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            pointer-events: none;
+            display: none;
+            z-index: 100;
+        }
+
+        /* Contracts view */
+        #contracts-view {
+            flex-direction: column;
+            background: #1a1a1a;
+            overflow: hidden;
+        }
+
+        .contracts-main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .contracts-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .contracts-header p {
+            color: #888;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .contracts-header code {
+            color: #aaa;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+            background: #333;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .contracts-header .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .contracts-header .btn i {
+            font-size: 0.85rem;
+        }
+
+        .contracts-list {
+            width: 280px;
+            flex-shrink: 0;
+            overflow-y: auto;
+            padding: 1rem;
+            border-right: 1px solid #333;
+        }
+
+        .contract-card {
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+        }
+
+        .contract-card:hover {
+            border-color: #555;
+            background: #282828;
+        }
+
+        .contract-card-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .contract-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1rem;
+        }
+
+        .contract-icon.not-run {
+            background: #333;
+            color: #888;
+        }
+
+        .contract-icon.passed {
+            background: rgba(68, 170, 153, 0.15);
+            color: #4a9;
+        }
+
+        .contract-icon.failed {
+            background: rgba(231, 76, 60, 0.15);
+            color: #e74c3c;
+        }
+
+        .contract-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            min-width: 0;
+        }
+
+        .contract-name {
+            font-weight: 500;
+            color: #eee;
+        }
+
+        .contract-description {
+            font-size: 0.8rem;
+            color: #888;
+            line-height: 1.3;
+        }
+
+        /* Contract detail panel */
+        .contract-detail {
+            flex: 1;
+            background: #1a1a1a;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .contract-detail h3 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .contract-detail-name {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 1rem;
+        }
+
+        .contract-detail-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .contract-detail-section h4 {
+            font-size: 0.85rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .contract-config {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 0.75rem;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+            font-size: 0.8rem;
+            color: #aaa;
+            white-space: pre-wrap;
+        }
+
+        .contract-result {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 0.75rem;
+        }
+
+        .contract-result-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+        }
+
+        .contract-result-status.passed {
+            color: #4a9;
+        }
+
+        .contract-result-status.failed {
+            color: #e74c3c;
+        }
+
+        .violation-list {
+            font-size: 0.85rem;
+        }
+
+        .violation-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+        }
+
+        .violation-item:last-child {
+            border-bottom: none;
+        }
+
+        .violation-item:hover {
+            background: #282828;
+        }
+
+        .violation-path {
+            color: #e74c3c;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+        }
+
+        .violation-count {
+            color: #888;
+            font-size: 0.8rem;
+        }
+
+        .contract-not-run {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .contract-not-run p {
+            color: #888;
+            margin-bottom: 1rem;
+        }
+
+        .contract-running {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            color: #888;
+        }
+
+        .contract-running .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #333;
+            border-top-color: #888;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .contract-error {
+            background: #2a1a1a;
+            border: 1px solid #4a2a2a;
+            border-radius: 4px;
+            padding: 1rem;
+            color: #e88;
+        }
+
+        .contract-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .run-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        .run-btn i {
+            font-size: 0.85rem;
+        }
+
+        .ignored-imports {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 0.5rem;
+        }
+
+        .ignored-import-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem;
+            border-radius: 4px;
+            background: #252525;
+            margin-bottom: 0.5rem;
+        }
+
+        .ignored-import-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .ignored-import-path {
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .ignored-import-remove {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 0.25rem;
+            font-size: 0.8rem;
+            line-height: 1;
+            border-radius: 3px;
+        }
+
+        .ignored-import-remove:hover {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        /* Layers visualization */
+        .layers-visualization {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .layer-box {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 0.5rem 1rem;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+            font-size: 0.85rem;
+            color: #ccc;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .layer-box.has-violation {
+            border-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .layer-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            max-width: 100%;
+        }
+
+        .layer-separator {
+            color: #666;
+            font-weight: 300;
+            font-size: 1.1rem;
+        }
+
+        .layer-arrow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #555;
+            font-size: 0.7rem;
+            gap: 0.1rem;
+        }
+
+        .layer-arrow i {
+            font-size: 0.9rem;
+        }
+
+        .layer-arrow .arrow-label {
+            color: #666;
+        }
+
+        .layers-legend {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #333;
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .layers-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .layers-legend-item .arrow-down {
+            color: #4a9;
+        }
+
+        .layers-legend-item .arrow-up {
+            color: #e74c3c;
+        }
+
+        /* Independence visualization */
+        .independence-visualization {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 1.5rem;
+        }
+
+        .independence-modules {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .independence-module {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 0.6rem 1rem;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+            font-size: 0.85rem;
+            color: #ccc;
+            text-align: center;
+        }
+
+        .independence-module.has-violation {
+            border-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .independence-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e74c3c;
+            font-size: 0.9rem;
+        }
+
+        .independence-explanation {
+            text-align: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #333;
+            font-size: 0.8rem;
+            color: #888;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .independence-explanation i {
+            color: #e74c3c;
+        }
+
+        /* Forbidden visualization */
+        .forbidden-visualization {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 1.5rem;
+        }
+
+        .forbidden-layout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .forbidden-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .forbidden-group-label {
+            font-size: 0.75rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .forbidden-modules {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .forbidden-module {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 0.4rem 0.75rem;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+            font-size: 0.8rem;
+            color: #ccc;
+            text-align: center;
+        }
+
+        .forbidden-module.has-violation {
+            border-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .forbidden-arrow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            color: #e74c3c;
+        }
+
+        .forbidden-arrow i {
+            font-size: 1.5rem;
+        }
+
+        .forbidden-arrow-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+
+        .forbidden-explanation {
+            text-align: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #333;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .contract-card.selected {
+            border-color: #666;
+            background: #2a2a2a;
+        }
+
+        .no-selection {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Add contract section */
+        .contract-type-select select {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            background: #333;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #eee;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .contract-type-select select:hover {
+            border-color: #555;
+        }
+
+        .contract-type-select select:focus {
+            outline: none;
+            border-color: #666;
+        }
+
+        /* Add Contract Form Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            width: 500px;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #333;
+        }
+
+        .modal-header h3 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: #eee;
+        }
+
+        .modal-body {
+            padding: 1.25rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: #aaa;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #eee;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #666;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+        }
+
+        .form-group .help-text {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 0.4rem;
+            line-height: 1.4;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            padding-top: 1rem;
+            border-top: 1px solid #333;
+        }
+
+        .btn {
+            padding: 0.6rem 1.25rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .btn-primary {
+            background: #555;
+            color: #eee;
+            border-color: #666;
+        }
+
+        .btn-primary:hover {
+            background: #666;
+        }
+
+        .btn-secondary {
+            background: #333;
+            color: #ccc;
+            border-color: #444;
+        }
+
+        .btn-secondary:hover {
+            background: #3a3a3a;
+        }
+
+        .add-contract-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            background: #333;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #eee;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .add-contract-btn:hover {
+            background: #444;
+        }
+
+        .add-contract-btn i {
+            font-size: 0.85rem;
+        }
+
+        .type-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .type-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+        }
+
+        .type-card:hover {
+            border-color: #555;
+            background: #252525;
+        }
+
+        .type-card.selected {
+            border-color: #888;
+            background: #2a2a2a;
+        }
+
+        .type-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .type-card-radio {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #555;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .type-card.selected .type-card-radio {
+            border-color: #888;
+        }
+
+        .type-card.selected .type-card-radio::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #888;
+            border-radius: 50%;
+        }
+
+        .type-card-name {
+            font-weight: 500;
+            color: #eee;
+        }
+
+        .type-card-description {
+            font-size: 0.85rem;
+            color: #888;
+            margin-left: 1.75rem;
+            line-height: 1.4;
+        }
+
+        /* Dynamic form fields for each contract type */
+        .dynamic-fields {
+            margin-top: 1.25rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid #333;
+        }
+
+        .dynamic-fields.hidden {
+            display: none;
+        }
+
+        .contract-type-fields.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="/logo.svg" alt="Import Linter" id="logo">
+        <h1>Import Linter</h1>
+    </header>
+
+    <div id="app-container">
+        <div id="tab-bar">
+            <div class="tab active" data-view="contracts" onclick="switchView('contracts')">
+                <span class="tab-icon"><i class="fas fa-scroll"></i></span>
+                <span>Contracts</span>
+            </div>
+            <div class="tab" data-view="explorer" onclick="switchView('explorer')">
+                <span class="tab-icon"><i class="fas fa-diagram-project"></i></span>
+                <span>Explorer</span>
+            </div>
+        </div>
+
+        <!-- Explorer View -->
+        <div id="explorer-view" class="view">
+        <div id="explorer-content">
+            <div id="breadcrumb"></div>
+            <div id="main-content">
+                <div id="graph-container">
+                    <div id="loading"><div class="spinner"></div><div class="text">Loading graph...</div></div>
+                    <div id="error-message"></div>
+                    <div id="graph-svg"></div>
+                    <div id="tooltip"></div>
+                </div>
+
+                <div id="sidebar">
+                    <div id="nav-section" class="sidebar-section">
+                        <h2>Navigation</h2>
+                        <div class="sidebar-buttons">
+                            <button id="up-btn" onclick="goUp()"><span class="icon">↑</span>Up to parent</button>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h2>View</h2>
+                        <div class="sidebar-buttons zoom-buttons">
+                            <button onclick="zoomIn()"><span class="icon">+</span>Zoom In</button>
+                            <button onclick="zoomOut()"><span class="icon">−</span>Zoom Out</button>
+                            <button onclick="resetView()"><span class="icon">⟲</span>Reset View</button>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h2>Options</h2>
+                        <div class="toggle-group">
+                            <div class="toggle-item">
+                                <div class="toggle-row">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="toggle-import-totals" onchange="onSettingsChange()">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <label class="toggle-label" for="toggle-import-totals">Import totals</label>
+                                </div>
+                                <div class="toggle-help">Display the total number of imports between each module.</div>
+                            </div>
+                            <div class="toggle-item">
+                                <div class="toggle-row">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="toggle-cycle-breakers" onchange="onSettingsChange()">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <label class="toggle-label" for="toggle-cycle-breakers">Cycle breakers</label>
+                                </div>
+                                <div class="toggle-help">
+                                    Nominate a minimal set of dependencies which, if removed, would make the import graph acyclic.
+                                    These dependencies are shown as dashed lines.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h2>Contract</h2>
+                        <button class="add-contract-btn" onclick="openAddContractModal()">
+                            <i class="fas fa-plus"></i>
+                            <span>Add Contract</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <!-- Contracts View -->
+        <div id="contracts-view" class="view active">
+            <div class="contracts-header">
+                <p><span id="contracts-count">3</span> contracts defined in <code>.importlinter</code></p>
+                <button class="btn btn-secondary" onclick="openAddContractModal()">
+                    <i class="fas fa-plus"></i> Add Contract
+                </button>
+            </div>
+            <div class="contracts-main">
+                <div class="contracts-list" id="contracts-list">
+                    <!-- Contract cards will be rendered here -->
+                </div>
+                <div class="contract-detail" id="contract-detail">
+                    <div class="no-selection">Select a contract to view details</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Contract Modal -->
+    <div id="add-contract-modal" class="modal-overlay" onclick="closeAddContractModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Add Contract</h3>
+                <button class="modal-close" onclick="closeAddContractModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Contract Type</label>
+                    <div class="type-cards" id="type-cards">
+                        <div class="type-card" data-type="layers" onclick="selectContractType('layers')">
+                            <div class="type-card-header">
+                                <div class="type-card-radio"></div>
+                                <span class="type-card-name">Layers</span>
+                            </div>
+                            <div class="type-card-description">Enforce a layered architecture where higher layers may import from lower layers, but not vice versa.</div>
+                        </div>
+                        <div class="type-card" data-type="independence" onclick="selectContractType('independence')">
+                            <div class="type-card-header">
+                                <div class="type-card-radio"></div>
+                                <span class="type-card-name">Independence</span>
+                            </div>
+                            <div class="type-card-description">Ensure that specified modules do not import from each other.</div>
+                        </div>
+                        <div class="type-card" data-type="forbidden" onclick="selectContractType('forbidden')">
+                            <div class="type-card-header">
+                                <div class="type-card-radio"></div>
+                                <span class="type-card-name">Forbidden</span>
+                            </div>
+                            <div class="type-card-description">Forbid specific modules from importing from other specified modules.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic fields that change based on contract type -->
+                <div id="dynamic-fields" class="dynamic-fields hidden">
+                    <div class="form-group">
+                        <label for="contract-name">Name</label>
+                        <input type="text" id="contract-name" placeholder="e.g., my_layers_contract">
+                        <div class="help-text">A unique identifier for this contract.</div>
+                    </div>
+
+                    <!-- Layers-specific fields -->
+                    <div id="layers-fields" class="contract-type-fields hidden">
+                        <div class="form-group">
+                            <label for="layers-list">Layers (one per line, top to bottom)</label>
+                            <textarea id="layers-list" placeholder="api
+domain
+infrastructure"></textarea>
+                            <div class="help-text">List your layers from highest to lowest. Higher layers can import from lower layers.</div>
+                        </div>
+                    </div>
+
+                    <!-- Independence-specific fields -->
+                    <div id="independence-fields" class="contract-type-fields hidden">
+                        <div class="form-group">
+                            <label for="independence-modules">Independent Modules (one per line)</label>
+                            <textarea id="independence-modules" placeholder="mypackage.module_a
+mypackage.module_b
+mypackage.module_c"></textarea>
+                            <div class="help-text">These modules should not import from each other.</div>
+                        </div>
+                    </div>
+
+                    <!-- Forbidden-specific fields -->
+                    <div id="forbidden-fields" class="contract-type-fields hidden">
+                        <div class="form-group">
+                            <label for="forbidden-source">Source Modules (one per line)</label>
+                            <textarea id="forbidden-source" placeholder="mypackage.domain"></textarea>
+                            <div class="help-text">The modules that should not import the forbidden modules.</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="forbidden-modules">Forbidden Modules (one per line)</label>
+                            <textarea id="forbidden-modules" placeholder="django
+flask"></textarea>
+                            <div class="help-text">The modules that source modules should not import.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-secondary" onclick="closeAddContractModal()">Cancel</button>
+                    <button class="btn btn-primary" id="add-contract-submit" onclick="submitNewContract()" disabled>Add Contract</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@viz-js/viz@3.2.4/lib/viz-standalone.js"></script>
+    <script>
+        let svg = null;
+        let viewBox = { x: 0, y: 0, width: 0, height: 0 };
+        let originalViewBox = null;
+        let isPanning = false;
+        let startPoint = { x: 0, y: 0 };
+        let scale = 1;
+
+        // Navigation state
+        let currentModule = null;
+        let navigationHistory = [];
+        let vizInstance = null;
+        let currentPackages = [];  // List of nodes that are packages (have children)
+
+        // Settings state
+        let showImportTotals = false;
+        let showCycleBreakers = false;
+
+        // Client-side cache for rendered graphs
+        // Key: API URL, Value: { module, packages, svgElement, viewBox }
+        const graphCache = new Map();
+
+        // Contract data (fetched from API)
+        // Results are stored separately and populated when contracts are run
+        let contracts = [];
+        let configFilename = null;
+
+        // Fetch contracts from the API
+        async function fetchContracts() {
+            try {
+                const response = await fetch('/api/contracts');
+                const data = await response.json();
+                if (data.error) {
+                    console.error('Error fetching contracts:', data.error);
+                    return { contracts: [], configFilename: data.config_filename };
+                }
+                return { contracts: data.contracts || [], configFilename: data.config_filename };
+            } catch (error) {
+                console.error('Failed to fetch contracts:', error);
+                return { contracts: [], configFilename: null };
+            }
+        }
+
+
+
+        // In-memory results storage (populated when contracts are run)
+        const contractResults = {};
+
+        // In-memory ignored imports storage
+        const ignoredImports = {};
+
+        let selectedContract = null;
+
+        // View switching
+        function switchView(viewName) {
+            // Update tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.view === viewName);
+            });
+
+            // Update views
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.toggle('active', view.id === `${viewName}-view`);
+            });
+        }
+
+        // Contract type icons mapping
+        const contractTypeIcons = {
+            layers: 'fa-layer-group',
+            independence: 'fa-grip',
+            forbidden: 'fa-ban',
+            protected: 'fa-shield-halved',
+            private_imports: 'fa-lock'
+        };
+
+        // Contracts rendering
+        function renderContracts() {
+            const list = document.getElementById('contracts-list');
+            list.innerHTML = contracts.map(contract => {
+                const result = contractResults[contract.id];
+                let statusClass = 'not-run';
+                if (result) {
+                    statusClass = result.passed ? 'passed' : 'failed';
+                }
+                const icon = contractTypeIcons[contract.type] || 'fa-file-contract';
+                return `
+                <div class="contract-card ${selectedContract?.id === contract.id ? 'selected' : ''}" onclick="selectContract('${contract.id}')">
+                    <div class="contract-card-header">
+                        <div class="contract-icon ${statusClass}">
+                            <i class="fas ${icon}"></i>
+                        </div>
+                        <div class="contract-info">
+                            <span class="contract-name">${contract.id}</span>
+                            <span class="contract-description">${contract.name}</span>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+
+            // Update count
+            document.getElementById('contracts-count').textContent = contracts.length;
+        }
+
+        function selectContract(id) {
+            selectedContract = contracts.find(c => c.id === id);
+            renderContracts();  // Re-render to update selected state
+            renderContractDetail();
+        }
+
+        function renderContractDetail() {
+            const detail = document.getElementById('contract-detail');
+
+            if (!selectedContract) {
+                detail.innerHTML = '<div class="no-selection">Select a contract to view details</div>';
+                return;
+            }
+
+            const c = selectedContract;
+            const result = contractResults[c.id];
+
+            let resultHtml = '';
+            if (result) {
+                const statusIcon = result.passed ? '✓' : '✗';
+                const statusClass = result.passed ? 'passed' : 'failed';
+                const statusText = result.passed ? 'Passed' : `Failed (${result.violations.length} violations)`;
+
+                let violationsHtml = '';
+                if (!result.passed && result.violations.length > 0) {
+                    violationsHtml = `
+                        <div class="violation-list">
+                            ${result.violations.map(v => `
+                                <div class="violation-item">
+                                    <div class="violation-path">${v.from} → ${v.to}</div>
+                                    <div class="violation-count">${v.count} import${v.count > 1 ? 's' : ''}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                const ignoreBtn = !result.passed && result.violations.length > 0 ? `
+                    <button class="btn btn-secondary run-btn" onclick="addIgnoreImports('${c.id}')">
+                        <i class="fas fa-eye-slash"></i> Ignore These Imports
+                    </button>
+                ` : '';
+
+                resultHtml = `
+                    <div class="contract-result">
+                        <div class="contract-result-status ${statusClass}">
+                            <span>${statusIcon}</span>
+                            <span>${statusText}</span>
+                        </div>
+                        ${violationsHtml}
+                    </div>
+                    <div class="contract-actions">
+                        <button class="btn btn-secondary run-btn" onclick="checkContract('${c.id}')">
+                            <i class="fas fa-redo"></i> Check Again
+                        </button>
+                        ${ignoreBtn}
+                    </div>
+                `;
+            } else {
+                resultHtml = `
+                    <div class="contract-not-run">
+                        <p>This contract has not been checked yet.</p>
+                        <button class="btn btn-primary run-btn" onclick="checkContract('${c.id}')">
+                            <i class="fas fa-play"></i> Check Contract
+                        </button>
+                    </div>
+                `;
+            }
+
+            // Show ignored imports if any
+            const ignored = ignoredImports[c.id] || [];
+            let ignoredHtml = '';
+            if (ignored.length > 0) {
+                ignoredHtml = `
+                    <div class="contract-detail-section">
+                        <h4>Ignored Imports</h4>
+                        <div class="ignored-imports">
+                            ${ignored.map(imp => `
+                                <div class="ignored-import-item">
+                                    <span class="ignored-import-path">${imp.from} → ${imp.to}</span>
+                                    <button class="ignored-import-remove" onclick="removeIgnoredImport('${c.id}', '${imp.from}', '${imp.to}')" title="Remove">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Add visualization for specific contract types
+            let visualizationHtml = '';
+            if (c.type === 'layers') {
+                visualizationHtml = `
+                    <div class="contract-detail-section">
+                        <h4>Layers</h4>
+                        ${renderLayersVisualization(c, result)}
+                    </div>
+                `;
+            } else if (c.type === 'independence') {
+                visualizationHtml = `
+                    <div class="contract-detail-section">
+                        <h4>Independent Modules</h4>
+                        ${renderIndependenceVisualization(c, result)}
+                    </div>
+                `;
+            } else if (c.type === 'forbidden') {
+                visualizationHtml = `
+                    <div class="contract-detail-section">
+                        <h4>Forbidden Imports</h4>
+                        ${renderForbiddenVisualization(c, result)}
+                    </div>
+                `;
+            }
+
+            detail.innerHTML = `
+                <h3>${c.id}</h3>
+                <p class="contract-detail-name">${c.name}</p>
+
+                <div class="contract-detail-section">
+                    <h4>Type</h4>
+                    <div>${c.type}</div>
+                </div>
+
+                ${visualizationHtml}
+
+                <div class="contract-detail-section">
+                    <h4>Configuration</h4>
+                    <div class="contract-config">${c.config}</div>
+                </div>
+
+                ${ignoredHtml}
+
+                <div class="contract-detail-section">
+                    <h4>Result</h4>
+                    ${resultHtml}
+                </div>
+            `;
+        }
+
+        function renderLayersVisualization(contract, result) {
+            // Parse layers from config
+            const configLines = contract.config.split('\n');
+            const layers = [];
+            let inLayers = false;
+            for (const line of configLines) {
+                if (line.trim().startsWith('layers')) {
+                    inLayers = true;
+                    continue;
+                }
+                if (inLayers) {
+                    const trimmed = line.trim();
+                    if (trimmed && !trimmed.includes('=')) {
+                        // Handle "layer1 | layer2" or "layer1 : layer2" syntax (same-level layers)
+                        // Split by both | and : as they both indicate same-level
+                        if (trimmed.includes('|') || trimmed.includes(':')) {
+                            const parts = trimmed.split(/[|:]/).map(l => l.trim()).filter(l => l);
+                            layers.push(parts);
+                        } else {
+                            layers.push(trimmed);
+                        }
+                    } else if (trimmed.includes('=')) {
+                        break;
+                    }
+                }
+            }
+
+            if (layers.length === 0) return '';
+
+            // Find which layers have violations
+            const violatingLayers = new Set();
+            if (result && !result.passed) {
+                for (const v of result.violations) {
+                    // Extract layer name from module path
+                    for (const layer of layers) {
+                        const layerNames = Array.isArray(layer) ? layer : [layer];
+                        for (const name of layerNames) {
+                            if (v.from.includes(name) || v.to.includes(name)) {
+                                violatingLayers.add(name);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Build visualization HTML
+            let html = '<div class="layers-visualization">';
+
+            for (let i = 0; i < layers.length; i++) {
+                const layer = layers[i];
+
+                if (Array.isArray(layer)) {
+                    // Same-level layers (shown side by side)
+                    html += '<div class="layer-group">';
+                    for (let j = 0; j < layer.length; j++) {
+                        const hasViolation = violatingLayers.has(layer[j]);
+                        html += `<div class="layer-box ${hasViolation ? 'has-violation' : ''}">${layer[j]}</div>`;
+                        if (j < layer.length - 1) {
+                            html += '<span class="layer-separator">|</span>';
+                        }
+                    }
+                    html += '</div>';
+                } else {
+                    const hasViolation = violatingLayers.has(layer);
+                    html += `<div class="layer-box ${hasViolation ? 'has-violation' : ''}">${layer}</div>`;
+                }
+
+                // Add arrow between layers (not after the last one)
+                if (i < layers.length - 1) {
+                    html += `
+                        <div class="layer-arrow">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                    `;
+                }
+            }
+
+            html += `
+                <div class="layers-legend">
+                    <div class="layers-legend-item">
+                        <i class="fas fa-arrow-down arrow-down"></i>
+                        <span>Allowed imports</span>
+                    </div>
+                    <div class="layers-legend-item">
+                        <i class="fas fa-arrow-up arrow-up"></i>
+                        <span>Forbidden imports</span>
+                    </div>
+                </div>
+            `;
+            html += '</div>';
+
+            return html;
+        }
+
+        function renderIndependenceVisualization(contract, result) {
+            // Parse modules from config
+            const configLines = contract.config.split('\n');
+            const modules = [];
+            let inModules = false;
+            for (const line of configLines) {
+                if (line.trim().startsWith('modules')) {
+                    inModules = true;
+                    continue;
+                }
+                if (inModules) {
+                    const trimmed = line.trim();
+                    if (trimmed && !trimmed.includes('=')) {
+                        modules.push(trimmed);
+                    } else if (trimmed.includes('=')) {
+                        break;
+                    }
+                }
+            }
+
+            if (modules.length === 0) return '';
+
+            // Find which modules have violations
+            const violatingModules = new Set();
+            if (result && !result.passed) {
+                for (const v of result.violations) {
+                    for (const mod of modules) {
+                        if (v.from.startsWith(mod) || v.to.startsWith(mod)) {
+                            violatingModules.add(mod);
+                        }
+                    }
+                }
+            }
+
+            // Build visualization HTML
+            let html = '<div class="independence-visualization">';
+            html += '<div class="independence-modules">';
+
+            for (let i = 0; i < modules.length; i++) {
+                const mod = modules[i];
+                const hasViolation = violatingModules.has(mod);
+
+                html += `<div class="independence-module ${hasViolation ? 'has-violation' : ''}">${mod}</div>`;
+
+                // Add divider between modules (not after the last one)
+                if (i < modules.length - 1) {
+                    html += `<div class="independence-divider"><i class="fas fa-ban"></i></div>`;
+                }
+            }
+
+            html += '</div>';
+            html += `
+                <div class="independence-explanation">
+                    <i class="fas fa-ban"></i>
+                    <span>These modules must not import from each other</span>
+                </div>
+            `;
+            html += '</div>';
+
+            return html;
+        }
+
+        function renderForbiddenVisualization(contract, result) {
+            // Parse source_modules and forbidden_modules from config
+            const configLines = contract.config.split('\n');
+            const sourceModules = [];
+            const forbiddenModules = [];
+            let currentSection = null;
+
+            for (const line of configLines) {
+                const trimmed = line.trim();
+                if (trimmed.startsWith('source_modules')) {
+                    currentSection = 'source';
+                    continue;
+                }
+                if (trimmed.startsWith('forbidden_modules')) {
+                    currentSection = 'forbidden';
+                    continue;
+                }
+                if (trimmed.includes('=') && !trimmed.startsWith('allow')) {
+                    currentSection = null;
+                    continue;
+                }
+                if (currentSection && trimmed && !trimmed.includes('=')) {
+                    if (currentSection === 'source') {
+                        sourceModules.push(trimmed);
+                    } else if (currentSection === 'forbidden') {
+                        forbiddenModules.push(trimmed);
+                    }
+                }
+            }
+
+            if (sourceModules.length === 0 && forbiddenModules.length === 0) return '';
+
+            // Find which modules have violations
+            const violatingModules = new Set();
+            if (result && !result.passed) {
+                for (const v of result.violations) {
+                    for (const mod of [...sourceModules, ...forbiddenModules]) {
+                        if (v.from.startsWith(mod) || v.to.startsWith(mod)) {
+                            violatingModules.add(mod);
+                        }
+                    }
+                }
+            }
+
+            // Build visualization HTML
+            let html = '<div class="forbidden-visualization">';
+            html += '<div class="forbidden-layout">';
+
+            // Source modules group
+            html += '<div class="forbidden-group">';
+            html += '<div class="forbidden-group-label">Source</div>';
+            html += '<div class="forbidden-modules">';
+            for (const mod of sourceModules) {
+                const hasViolation = violatingModules.has(mod);
+                html += `<div class="forbidden-module ${hasViolation ? 'has-violation' : ''}">${mod}</div>`;
+            }
+            html += '</div>';
+            html += '</div>';
+
+            // Forbidden arrow
+            html += `
+                <div class="forbidden-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                    <span class="forbidden-arrow-label">forbidden</span>
+                </div>
+            `;
+
+            // Forbidden modules group
+            html += '<div class="forbidden-group">';
+            html += '<div class="forbidden-group-label">Forbidden</div>';
+            html += '<div class="forbidden-modules">';
+            for (const mod of forbiddenModules) {
+                const hasViolation = violatingModules.has(mod);
+                html += `<div class="forbidden-module ${hasViolation ? 'has-violation' : ''}">${mod}</div>`;
+            }
+            html += '</div>';
+            html += '</div>';
+
+            html += '</div>'; // .forbidden-layout
+
+            html += `
+                <div class="forbidden-explanation">
+                    Source modules must not import from forbidden modules
+                </div>
+            `;
+            html += '</div>'; // .forbidden-visualization
+
+            return html;
+        }
+
+        function addIgnoreImports(id) {
+            const result = contractResults[id];
+            if (!result || result.passed || !result.violations.length) return;
+
+            // Add all current violations to ignored imports
+            if (!ignoredImports[id]) {
+                ignoredImports[id] = [];
+            }
+
+            for (const v of result.violations) {
+                // Check if already ignored
+                const exists = ignoredImports[id].some(
+                    imp => imp.from === v.from && imp.to === v.to
+                );
+                if (!exists) {
+                    ignoredImports[id].push({ from: v.from, to: v.to });
+                }
+            }
+
+            // Re-check the contract to update results
+            checkContract(id);
+        }
+
+        function removeIgnoredImport(contractId, from, to) {
+            if (!ignoredImports[contractId]) return;
+
+            ignoredImports[contractId] = ignoredImports[contractId].filter(
+                imp => !(imp.from === from && imp.to === to)
+            );
+
+            // Re-check the contract to update results
+            checkContract(contractId);
+        }
+
+        async function checkContract(id) {
+            const contract = contracts.find(c => c.id === id);
+            if (!contract) return;
+
+            // Show running state
+            const detail = document.getElementById('contract-detail');
+            const resultSection = detail.querySelector('.contract-detail-section:last-child');
+            resultSection.innerHTML = `
+                <h4>Result</h4>
+                <div class="contract-running">
+                    <div class="spinner"></div>
+                    <span>Checking contract...</span>
+                </div>
+            `;
+
+            try {
+                // Call the API to check the contract
+                const response = await fetch(`/api/contracts/${encodeURIComponent(id)}/check`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.error) {
+                    // Show error
+                    resultSection.innerHTML = `
+                        <h4>Result</h4>
+                        <div class="contract-error">
+                            <span>Error: ${data.error}</span>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Transform violations to the format expected by the UI
+                const violations = (data.violations || []).map(v => ({
+                    from: v.importer,
+                    to: v.imported,
+                    count: v.count,
+                    chains: v.chains
+                }));
+
+                // Filter out ignored imports
+                const ignored = ignoredImports[id] || [];
+                const filteredViolations = violations.filter(v =>
+                    !ignored.some(imp => imp.from === v.from && imp.to === v.to)
+                );
+
+                const result = {
+                    passed: data.kept && filteredViolations.length === 0,
+                    violations: filteredViolations,
+                    warnings: data.warnings || [],
+                    duration: data.duration
+                };
+
+                // Store result and re-render
+                contractResults[id] = result;
+                renderContracts();
+                renderContractDetail();
+
+            } catch (error) {
+                console.error('Failed to check contract:', error);
+                resultSection.innerHTML = `
+                    <h4>Result</h4>
+                    <div class="contract-error">
+                        <span>Error: ${error.message}</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize contracts view
+        async function initContractsView() {
+            const result = await fetchContracts();
+            contracts = result.contracts;
+            configFilename = result.configFilename;
+            renderContracts();
+            updateConfigFilenameDisplay();
+        }
+
+        // Update the config filename display in the UI
+        function updateConfigFilenameDisplay() {
+            const displayName = configFilename || '(default)';
+            // Update the contracts header
+            const contractsHeader = document.querySelector('.contracts-header code');
+            if (contractsHeader) {
+                contractsHeader.textContent = displayName;
+            }
+        }
+
+        // Add Contract Modal state
+        let selectedContractType = null;
+
+        function openAddContractModal() {
+            const modal = document.getElementById('add-contract-modal');
+            modal.classList.add('active');
+            resetAddContractForm();
+        }
+
+        function closeAddContractModal(event) {
+            // If called from overlay click, only close if clicking the overlay itself
+            if (event && event.target !== event.currentTarget) return;
+            const modal = document.getElementById('add-contract-modal');
+            modal.classList.remove('active');
+            resetAddContractForm();
+        }
+
+        function resetAddContractForm() {
+            selectedContractType = null;
+
+            // Reset type card selection
+            document.querySelectorAll('.type-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Hide dynamic fields
+            document.getElementById('dynamic-fields').classList.add('hidden');
+            document.querySelectorAll('.contract-type-fields').forEach(el => {
+                el.classList.add('hidden');
+            });
+
+            // Clear form inputs
+            document.getElementById('contract-name').value = '';
+            document.getElementById('layers-list').value = '';
+            document.getElementById('independence-modules').value = '';
+            document.getElementById('forbidden-source').value = '';
+            document.getElementById('forbidden-modules').value = '';
+
+            // Disable submit button
+            document.getElementById('add-contract-submit').disabled = true;
+        }
+
+        function selectContractType(type) {
+            selectedContractType = type;
+
+            // Update type card selection
+            document.querySelectorAll('.type-card').forEach(card => {
+                card.classList.toggle('selected', card.dataset.type === type);
+            });
+
+            // Show dynamic fields
+            document.getElementById('dynamic-fields').classList.remove('hidden');
+
+            // Show/hide type-specific fields
+            document.querySelectorAll('.contract-type-fields').forEach(el => {
+                el.classList.add('hidden');
+            });
+            document.getElementById(`${type}-fields`).classList.remove('hidden');
+
+            // Enable submit button
+            document.getElementById('add-contract-submit').disabled = false;
+        }
+
+        function submitNewContract() {
+            if (!selectedContractType) return;
+
+            const name = document.getElementById('contract-name').value.trim();
+            if (!name) {
+                alert('Please enter a contract name.');
+                return;
+            }
+
+            // Build contract config based on type
+            let config = {};
+            config.name = name;
+            config.type = selectedContractType;
+
+            switch (selectedContractType) {
+                case 'layers':
+                    const layers = document.getElementById('layers-list').value.trim().split('\n').filter(l => l.trim());
+                    if (layers.length < 2) {
+                        alert('Please enter at least two layers.');
+                        return;
+                    }
+                    config.layers = layers;
+                    break;
+                case 'independence':
+                    const modules = document.getElementById('independence-modules').value.trim().split('\n').filter(l => l.trim());
+                    if (modules.length < 2) {
+                        alert('Please enter at least two modules.');
+                        return;
+                    }
+                    config.modules = modules;
+                    break;
+                case 'forbidden':
+                    const source = document.getElementById('forbidden-source').value.trim().split('\n').filter(l => l.trim());
+                    const forbidden = document.getElementById('forbidden-modules').value.trim().split('\n').filter(l => l.trim());
+                    if (source.length === 0) {
+                        alert('Please enter at least one source module.');
+                        return;
+                    }
+                    if (forbidden.length === 0) {
+                        alert('Please enter at least one forbidden module.');
+                        return;
+                    }
+                    config.source_modules = source;
+                    config.forbidden_modules = forbidden;
+                    break;
+            }
+
+            console.log('New contract config:', config);
+            // In a real implementation, this would save the contract
+            alert(`Contract "${name}" would be added. (Not yet implemented)`);
+            closeAddContractModal();
+        }
+
+        // Initialize viz.js once
+        async function initViz() {
+            vizInstance = await Viz.instance();
+        }
+
+        function buildApiUrl(moduleName) {
+            let url = moduleName ? `/api/graph?module=${encodeURIComponent(moduleName)}` : '/api/graph';
+            if (showImportTotals) {
+                url += `${url.includes('?') ? '&' : '?'}show_import_totals=true`;
+            }
+            if (showCycleBreakers) {
+                url += `${url.includes('?') ? '&' : '?'}show_cycle_breakers=true`;
+            }
+            return url;
+        }
+
+        function buildCacheKey(moduleName) {
+            // Build a consistent cache key based on module name and options
+            return `${moduleName}|${showImportTotals}|${showCycleBreakers}`;
+        }
+
+        function onSettingsChange() {
+            showImportTotals = document.getElementById('toggle-import-totals').checked;
+            showCycleBreakers = document.getElementById('toggle-cycle-breakers').checked;
+            loadGraph(currentModule, false);  // Don't add history entry for settings changes
+        }
+
+        async function loadGraph(moduleName = null, updateHistory = true) {
+            const loading = document.getElementById('loading');
+            const errorMsg = document.getElementById('error-message');
+
+            // Check cache first (only if we have a module name)
+            if (moduleName) {
+                const cacheKey = buildCacheKey(moduleName);
+                if (graphCache.has(cacheKey)) {
+                    console.log(`Cache hit for: ${cacheKey}`);
+                    const cached = graphCache.get(cacheKey);
+                    restoreFromCache(cached, updateHistory);
+                    return;
+                }
+                console.log(`Cache miss for: ${cacheKey}`);
+            }
+
+            loading.style.display = 'flex';
+            errorMsg.style.display = 'none';
+
+            try {
+                const url = buildApiUrl(moduleName);
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                currentModule = data.module;
+                currentPackages = data.packages || [];
+                console.log(`Loaded module: ${currentModule}, packages:`, currentPackages);
+                updateBreadcrumb();
+
+                // Update URL for bookmarking
+                if (updateHistory) {
+                    updateUrl(currentModule);
+                }
+
+                // Modify DOT to add trailing slash to package labels
+                let dot = data.dot;
+
+                // Packages get a trailing slash in their label to indicate they can be drilled into
+                // Match node declarations (start of line + optional whitespace + "nodename" + newline)
+                // but not edge targets (which have -> before them)
+                const nodeMatches = dot.matchAll(/^(\s*)"([^"]+)"\n/gm);
+                for (const match of nodeMatches) {
+                    const whitespace = match[1];
+                    const nodeName = match[2];
+                    if (currentPackages.includes(nodeName)) {
+                        // This is a package, add trailing slash to label
+                        dot = dot.replace(`${whitespace}"${nodeName}"\n`, `${whitespace}"${nodeName}" [label="${nodeName}/"]\n`);
+                    }
+                }
+
+                // Render DOT to SVG using viz.js
+                if (!vizInstance) {
+                    await initViz();
+                }
+                const svgElement = vizInstance.renderSVGElement(dot);
+
+                // Insert SVG into container
+                const container = document.getElementById('graph-svg');
+                container.innerHTML = '';
+                container.appendChild(svgElement);
+
+                svg = container.querySelector('svg');
+                loading.style.display = 'none';
+
+                // Setup viewBox for pan/zoom
+                const bbox = svg.getBBox();
+                // Add padding as a percentage of the graph size for better fit
+                const paddingX = Math.max(100, bbox.width * 0.15);
+                const paddingY = Math.max(100, bbox.height * 0.15);
+                viewBox = {
+                    x: bbox.x - paddingX,
+                    y: bbox.y - paddingY,
+                    width: bbox.width + paddingX * 2,
+                    height: bbox.height + paddingY * 2
+                };
+                originalViewBox = { ...viewBox };
+                updateViewBox();
+
+                // Setup event handlers
+                setupPanZoom();
+                setupNodeClicks();
+
+                // Cache the rendered graph using the actual module name from the response
+                const cacheKey = buildCacheKey(currentModule);
+                graphCache.set(cacheKey, {
+                    module: currentModule,
+                    packages: currentPackages,
+                    svgElement: svgElement.cloneNode(true),
+                    viewBox: { ...originalViewBox }
+                });
+
+            } catch (error) {
+                console.error('Failed to load graph:', error);
+                loading.style.display = 'none';
+                errorMsg.textContent = `Failed to load graph: ${error.message}`;
+                errorMsg.style.display = 'block';
+            }
+        }
+
+        function restoreFromCache(cached, updateHistory) {
+            currentModule = cached.module;
+            currentPackages = [...cached.packages];  // Copy array to avoid reference issues
+            console.log(`Restoring from cache: ${currentModule}, packages:`, currentPackages);
+            updateBreadcrumb();
+
+            if (updateHistory) {
+                updateUrl(currentModule);
+            }
+
+            // Restore SVG
+            const container = document.getElementById('graph-svg');
+            container.innerHTML = '';
+            container.appendChild(cached.svgElement.cloneNode(true));
+
+            svg = container.querySelector('svg');
+
+            // Restore viewBox
+            viewBox = { ...cached.viewBox };
+            originalViewBox = { ...cached.viewBox };
+            updateViewBox();
+
+            // Setup event handlers
+            setupPanZoom();
+            setupNodeClicks();
+        }
+
+        function updateBreadcrumb() {
+            const breadcrumb = document.getElementById('breadcrumb');
+            const parts = currentModule.split('.');
+            let html = '<span class="prefix">Import graph for</span>';
+
+            for (let i = 0; i < parts.length; i++) {
+                const fullPath = parts.slice(0, i + 1).join('.');
+                if (i < parts.length - 1) {
+                    html += `<span class="crumb" onclick="navigateTo('${fullPath}')">${parts[i]}</span>`;
+                    html += '<span class="separator">/</span>';
+                } else {
+                    html += `<span class="current">${parts[i]}</span>`;
+                }
+            }
+
+            breadcrumb.innerHTML = html;
+
+            // Update navigation section (hidden at root level)
+            const navSection = document.getElementById('nav-section');
+            if (parts.length <= 1) {
+                navSection.style.display = 'none';
+            } else {
+                navSection.style.display = 'flex';
+            }
+        }
+
+        function goUp() {
+            const parts = currentModule.split('.');
+            if (parts.length <= 1) return;
+
+            const parentModule = parts.slice(0, -1).join('.');
+            console.log(`goUp: ${currentModule} -> ${parentModule}`);
+            navigationHistory.push(currentModule);
+            loadGraph(parentModule);
+        }
+
+        function navigateTo(moduleName) {
+            console.log(`navigateTo: ${moduleName} (current: ${currentModule})`);
+            if (moduleName === currentModule) return;
+
+            // Add current to history before navigating
+            navigationHistory.push(currentModule);
+            loadGraph(moduleName);
+        }
+
+        function drillDown(relativeNodeName) {
+            // Convert relative name (e.g., ".adapters") to full module path
+            const childName = relativeNodeName.startsWith('.') ? relativeNodeName.slice(1) : relativeNodeName;
+            const fullModuleName = `${currentModule}.${childName}`;
+            console.log(`drillDown: ${relativeNodeName} -> ${fullModuleName} (current: ${currentModule})`);
+
+            navigationHistory.push(currentModule);
+            loadGraph(fullModuleName);
+        }
+
+        function goBack() {
+            if (navigationHistory.length === 0) return;
+
+            const previousModule = navigationHistory.pop();
+            loadGraph(previousModule);
+        }
+
+        function updateViewBox() {
+            if (svg) {
+                svg.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`);
+            }
+        }
+
+        function setupPanZoom() {
+            const container = document.getElementById('graph-container');
+
+            // Remove existing listeners by cloning
+            const newContainer = container.cloneNode(true);
+            container.parentNode.replaceChild(newContainer, container);
+
+            // Re-get references after clone
+            svg = document.querySelector('#graph-svg svg');
+
+            const graphContainer = document.getElementById('graph-container');
+
+            graphContainer.addEventListener('mousedown', (e) => {
+                if (e.button === 0 && e.target.closest('#graph-svg')) {
+                    isPanning = true;
+                    startPoint = { x: e.clientX, y: e.clientY };
+                    graphContainer.style.cursor = 'grabbing';
+                }
+            });
+
+            graphContainer.addEventListener('mousemove', (e) => {
+                if (!isPanning) return;
+
+                const dx = (e.clientX - startPoint.x) * (viewBox.width / graphContainer.clientWidth);
+                const dy = (e.clientY - startPoint.y) * (viewBox.height / graphContainer.clientHeight);
+
+                viewBox.x -= dx;
+                viewBox.y -= dy;
+
+                startPoint = { x: e.clientX, y: e.clientY };
+                updateViewBox();
+            });
+
+            graphContainer.addEventListener('mouseup', () => {
+                isPanning = false;
+                graphContainer.style.cursor = 'grab';
+            });
+
+            graphContainer.addEventListener('mouseleave', () => {
+                isPanning = false;
+                graphContainer.style.cursor = 'grab';
+            });
+
+            graphContainer.addEventListener('wheel', (e) => {
+                if (!e.target.closest('#graph-svg')) return;
+                e.preventDefault();
+
+                const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
+                zoom(zoomFactor, e.clientX, e.clientY);
+            }, { passive: false });
+
+        }
+
+        function zoom(factor, clientX, clientY) {
+            const container = document.getElementById('graph-container');
+            const rect = container.getBoundingClientRect();
+
+            // Calculate mouse position in viewBox coordinates
+            const mouseX = viewBox.x + (clientX - rect.left) / rect.width * viewBox.width;
+            const mouseY = viewBox.y + (clientY - rect.top) / rect.height * viewBox.height;
+
+            // Apply zoom
+            const newWidth = viewBox.width * factor;
+            const newHeight = viewBox.height * factor;
+
+            // Adjust position to zoom toward mouse
+            viewBox.x = mouseX - (mouseX - viewBox.x) * factor;
+            viewBox.y = mouseY - (mouseY - viewBox.y) * factor;
+            viewBox.width = newWidth;
+            viewBox.height = newHeight;
+
+            scale /= factor;
+            updateViewBox();
+        }
+
+        function zoomIn() {
+            const container = document.getElementById('graph-container');
+            const rect = container.getBoundingClientRect();
+            zoom(0.8, rect.left + rect.width / 2, rect.top + rect.height / 2);
+        }
+
+        function zoomOut() {
+            const container = document.getElementById('graph-container');
+            const rect = container.getBoundingClientRect();
+            zoom(1.25, rect.left + rect.width / 2, rect.top + rect.height / 2);
+        }
+
+        function resetView() {
+            if (originalViewBox) {
+                viewBox = { ...originalViewBox };
+                scale = 1;
+                updateViewBox();
+            }
+        }
+
+        function setupNodeClicks() {
+            if (!svg) return;
+
+            const tooltip = document.getElementById('tooltip');
+            const nodes = svg.querySelectorAll('.node');
+            console.log(`Setting up clicks for ${currentModule}. Packages:`, currentPackages, `Nodes:`, Array.from(nodes).map(n => n.querySelector('title')?.textContent));
+
+            nodes.forEach(node => {
+                const title = node.querySelector('title');
+                const nodeName = title ? title.textContent : 'Unknown';
+                const isPackage = currentPackages.includes(nodeName);
+
+                if (isPackage) {
+                    // Add package class for styling
+                    node.classList.add('package');
+
+                    // Single click to drill down
+                    node.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        e.preventDefault();
+                        // Guard against rapid double-clicks
+                        if (node.dataset.clicking) return;
+                        node.dataset.clicking = 'true';
+                        setTimeout(() => delete node.dataset.clicking, 500);
+                        tooltip.style.display = 'none';
+                        drillDown(nodeName);
+                    });
+
+                    // Hover to show tooltip
+                    node.addEventListener('mouseenter', (e) => {
+                        const childName = nodeName.startsWith('.') ? nodeName.slice(1) : nodeName;
+                        tooltip.textContent = `Explore ${currentModule}.${childName}`;
+                        tooltip.style.display = 'block';
+                    });
+
+                    node.addEventListener('mousemove', (e) => {
+                        tooltip.style.left = (e.clientX + 10) + 'px';
+                        tooltip.style.top = (e.clientY + 10) + 'px';
+                    });
+
+                    node.addEventListener('mouseleave', () => {
+                        tooltip.style.display = 'none';
+                    });
+                }
+            });
+        }
+
+        function updateUrl(moduleName) {
+            const url = new URL(window.location);
+            if (moduleName) {
+                url.searchParams.set('module', moduleName);
+            } else {
+                url.searchParams.delete('module');
+            }
+            history.pushState({ module: moduleName }, '', url);
+        }
+
+        function getModuleFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('module');
+        }
+
+        // Handle browser back/forward
+        window.addEventListener('popstate', (event) => {
+            const module = event.state?.module || getModuleFromUrl();
+            loadGraph(module, false);  // Don't push to history on popstate
+        });
+
+        // Load graph on page load
+        initViz().then(() => {
+            const moduleFromUrl = getModuleFromUrl();
+            loadGraph(moduleFromUrl, false);  // Don't push initial load to history
+        });
+
+        // Initialize contracts view
+        initContractsView();
+    </script>
+</body>
+</html>
