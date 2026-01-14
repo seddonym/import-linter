@@ -2259,8 +2259,8 @@ flask"></textarea>
                 // Setup viewBox for pan/zoom
                 const bbox = svg.getBBox();
                 // Add padding as a percentage of the graph size for better fit
-                const paddingX = Math.max(100, bbox.width * 0.15);
-                const paddingY = Math.max(100, bbox.height * 0.15);
+                const paddingX = Math.max(40, bbox.width * 0.05);
+                const paddingY = Math.max(40, bbox.height * 0.05);
                 viewBox = {
                     x: bbox.x - paddingX,
                     y: bbox.y - paddingY,
