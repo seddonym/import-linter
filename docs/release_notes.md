@@ -1,5 +1,11 @@
 # Release notes
 
+## latest
+
+* Add `import-linter` group command, with `import-linter lint` alias.
+* Add `import-linter explore` command.
+* Add `import-linter drawgraph` command.
+
 ## 2.9 (2025-12-11)
 
 * Support passing namespaces as root packages, not just portions.

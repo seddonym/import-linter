@@ -1,10 +1,14 @@
 # Run the linter
 
-Import Linter provides a single command: `lint-imports`.
+To check that your project adheres to the contracts you've defined, run:
 
-Running this will check that your project adheres to the contracts you've defined.
+```console
+lint-imports
+```
 
-**Arguments:**
+(Or you can use the alias `import-linter lint` if you prefer.)
+
+**Options:**
 
 - `--config`:
   The configuration file to use. This overrides the default file search strategy.

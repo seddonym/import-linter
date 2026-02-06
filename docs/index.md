@@ -32,9 +32,12 @@
 ---
 
 <div class="centered" markdown>
-**Import Linter** is a command-line tool for imposing constraints on the imports between your Python modules.
+**Import Linter** allows you to impose constraints on the imports between your Python modules.
+
+It also provides a browser-based user interface for exploring the architecture of any Python package.
 
 [Get started](get_started/install.md){ .md-button .button-center }
+[Try the Interactive UI](ui.md){ .md-button .button-center }
 </div>
 
 ---
