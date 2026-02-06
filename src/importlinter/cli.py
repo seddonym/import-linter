@@ -1,6 +1,8 @@
 import os
 import sys
 from logging import config as logging_config
+import grimp
+
 
 import click
 
@@ -8,6 +10,8 @@ from importlinter.application.sentinels import NotSupplied
 
 from . import configuration
 from .application import use_cases
+from .application import rendering
+from importlinter.ui import server
 
 configuration.configure()
 
@@ -15,28 +19,32 @@ EXIT_STATUS_SUCCESS = 0
 EXIT_STATUS_ERROR = 1
 
 
-@click.command()
-@click.option("--config", default=None, help="The config file to use.")
-@click.option(
-    "--contract",
-    default=list,
-    multiple=True,
-    help="Limit the check to the supplied contract identifier. May be passed multiple times.",
-)
-@click.option("--cache-dir", default=None, help="The directory to use for caching.")
-@click.option("--no-cache", is_flag=True, help="Disable caching.")
-@click.option("--debug", is_flag=True, help="Run in debug mode.")
-@click.option(
-    "--show-timings",
-    is_flag=True,
-    help="Show times taken to build the graph and to check each contract.",
-)
-@click.option(
-    "--verbose",
-    is_flag=True,
-    help="Noisily output progress as we go along.",
-)
-def lint_imports_command(
+def check_options(f):
+    """Decorator that applies all check command options."""
+    f = click.option(
+        "--verbose",
+        is_flag=True,
+        help="Noisily output progress as we go along.",
+    )(f)
+    f = click.option(
+        "--show-timings",
+        is_flag=True,
+        help="Show times taken to build the graph and to check each contract.",
+    )(f)
+    f = click.option("--debug", is_flag=True, help="Run in debug mode.")(f)
+    f = click.option("--no-cache", is_flag=True, help="Disable caching.")(f)
+    f = click.option("--cache-dir", default=None, help="The directory to use for caching.")(f)
+    f = click.option(
+        "--contract",
+        default=list,
+        multiple=True,
+        help="Limit the check to the supplied contract identifier. May be passed multiple times.",
+    )(f)
+    f = click.option("--config", default=None, help="The config file to use.")(f)
+    return f
+
+
+def _run_check(
     config: str | None,
     contract: tuple[str, ...],
     cache_dir: str | None,
@@ -44,10 +52,7 @@ def lint_imports_command(
     debug: bool,
     show_timings: bool,
     verbose: bool,
-) -> int:
-    """
-    Check that a project adheres to a set of contracts.
-    """
+) -> None:
     exit_code = lint_imports(
         config_filename=config,
         limit_to_contracts=contract,
@@ -58,6 +63,74 @@ def lint_imports_command(
         verbose=verbose,
     )
     sys.exit(exit_code)
+
+
+@click.command()
+@check_options
+def lint_imports_command(**kwargs) -> None:
+    """Check that a project adheres to a set of contracts."""
+    _run_check(**kwargs)
+
+
+@click.group(invoke_without_command=True)
+@click.pass_context
+def import_linter(ctx: click.Context) -> None:
+    if ctx.invoked_subcommand is None:
+        rendering.print_title()
+        click.echo(ctx.get_help())
+
+
+@import_linter.command("lint")
+@check_options
+def lint_command(**kwargs) -> None:
+    """Check that a project adheres to a set of contracts."""
+    _run_check(**kwargs)
+
+
+@import_linter.command()
+@click.argument("module_name")
+def explore(module_name: str) -> None:
+    """Launch the interactive UI in a local browser.
+
+    MODULE_NAME is the importable Python module to explore (e.g. 'django.db.models').
+    """
+    rendering.print_title()
+    server.launch(module_name)
+
+
+@import_linter.command()
+@click.argument("module_name")
+@click.option("--show-import-totals", is_flag=True, help="Label arrows with import counts.")
+@click.option(
+    "--show-cycle-breakers",
+    is_flag=True,
+    help="Mark dependencies that, if removed, would make the graph acyclic.",
+)
+def drawgraph(module_name: str, show_import_totals: bool, show_cycle_breakers: bool) -> None:
+    """Output a DOT format graph of a module's dependencies to stdout.
+
+    MODULE_NAME is the importable Python module to graph (e.g. 'django.db.models').
+    """
+    cwd = os.getcwd()
+    if cwd not in sys.path:
+        sys.path.insert(0, cwd)
+
+    top_level_package = module_name.split(".")[0]
+    try:
+        __import__(top_level_package)
+    except ImportError:
+        click.echo(
+            f"Could not import '{top_level_package}'. "
+            f"Make sure the package is installed or the current directory contains it.",
+            err=True,
+        )
+        sys.exit(1)
+
+    grimp_graph = grimp.build_graph(top_level_package)
+    dot = use_cases.build_dot_graph(
+        grimp_graph, module_name, show_import_totals, show_cycle_breakers
+    )
+    click.echo(dot.render(), nl=False)
 
 
 def lint_imports(
