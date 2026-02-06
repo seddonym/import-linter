@@ -1,4 +1,4 @@
-__version__ = "2.9"
+__version__ = "2.10"
 
 from .application import output  # noqa
 from .domain import fields  # noqa

@@ -1,6 +1,6 @@
 # Release notes
 
-## latest
+## 2.10 (2026-02-06)
 
 * Add `import-linter` group command, with `import-linter lint` alias.
 * Add `import-linter explore` command.
