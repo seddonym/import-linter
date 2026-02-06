@@ -82,15 +82,39 @@ class TomlFileUserOptionReader(AbstractUserOptionReader):
     Reader that looks for and parses the contents of TOML files.
     """
 
-    section_name = "importlinter"
-    potential_config_filenames = ["pyproject.toml"]
+    potential_config_filenames = [
+        "pyproject.toml",
+        "importlinter.toml",
+        ".importlinter.toml",
+    ]
 
     def _read_config_filename(self, config_filename: str) -> UserOptions | None:
         file_contents = settings.FILE_SYSTEM.read(config_filename, encoding="utf-8")
         data = tomllib.loads(file_contents)
 
-        tool_data = data.get("tool", {})
-        session_options = tool_data.get("importlinter", {})
+        if config_filename == "pyproject.toml":
+            tool_data = data.get("tool", {})
+            session_options = tool_data.get("importlinter")
+        else:
+            tool_data = data.get("tool", {})
+            if "importlinter" in tool_data:
+                session_options = tool_data["importlinter"]
+            elif "contracts" in data:
+                session_options = data
+            else:
+                options = {
+                    "root_package",
+                    "session",
+                    "include_external_packages",
+                    "exclude_type_checking_imports",
+                    "unmatched_ignore_imports_alerting",
+                    "contract_types",
+                }
+                if any(key in options for key in data):
+                    session_options = data
+                else:
+                    session_options = data.get("importlinter")
+
         if not session_options:
             return None
 
