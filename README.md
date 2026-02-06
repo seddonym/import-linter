@@ -12,7 +12,9 @@
 </div>
 
 
-**Import Linter** is a command-line tool for imposing constraints on the imports between your Python modules.
+**Import Linter** allows you to impose constraints on the imports between your Python modules.
+
+It also provides a browser-based user interface for exploring the architecture of any Python package.
 
 <p align="center">
     <a href="https://import-linter.readthedocs.io/">Get started</a>.
