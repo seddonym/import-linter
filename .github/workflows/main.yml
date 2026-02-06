@@ -58,8 +58,11 @@ jobs:
       - name: Lint
         run: just lint
 
+      - name: Drawgraph smoke test
+        run: uv run import-linter drawgraph importlib
+
   smoke_test:
-    name: Smoke test lint-imports on ${{ matrix.os }}
+    name: Smoke test on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -73,8 +76,14 @@ jobs:
       - name: Install uv and set the Python version
         uses: astral-sh/setup-uv@v6
 
-      - name: Smoke test
+      - name: Smoke test lint-imports
         run: uv run lint-imports
+
+      - name: Smoke test import-linter alias
+        run: uv run import-linter lint
+
+      - name: Smoke test import-linter drawgraph
+        run: uv run import-linter drawgraph importlib
 
   docs:
     name: Build docs
