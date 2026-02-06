@@ -13,9 +13,11 @@ from importlinter.application.ports.building import GraphBuilder
 from importlinter.application.use_cases import (
     FAILURE,
     SUCCESS,
+    build_dot_graph,
     create_report,
     lint_imports,
 )
+from importlinter.domain.dotfile import DotGraph, Edge
 from importlinter.application.user_options import UserOptions
 from tests.adapters.building import FakeGraphBuilder
 from tests.adapters.timing import FakeTimer
@@ -682,3 +684,136 @@ class TestReadUserOptions:
         )
         with pytest.raises(RuntimeError, match="expected"):
             lint_imports(filename, is_debug_mode=True)
+
+
+# Dot graph generation tests
+# --------------------------
+
+SOME_ROOT_PACKAGE = "mypackage"
+SOME_MODULE = f"{SOME_ROOT_PACKAGE}.foo"
+
+
+def _build_fake_graph(package_name: str) -> ImportGraph:
+    graph = ImportGraph()
+    graph.add_module(package_name)
+
+    graph.add_module(SOME_MODULE)
+
+    for child in ("blue", "green", "yellow", "red"):
+        graph.add_module(f"{SOME_MODULE}.{child}")
+
+    graph.add_import(
+        importer=f"{SOME_MODULE}.blue.alpha",
+        imported=f"{SOME_MODULE}.green",
+    )
+    graph.add_import(
+        importer=f"{SOME_MODULE}.green",
+        imported=f"{SOME_MODULE}.yellow.beta",
+    )
+    # Add 4 imports between blue and red in different permutations of root and descendants.
+    graph.add_import(
+        importer=f"{SOME_MODULE}.blue",
+        imported=f"{SOME_MODULE}.red",
+    )
+    graph.add_import(
+        importer=f"{SOME_MODULE}.blue",
+        imported=f"{SOME_MODULE}.red.gamma",
+    )
+    graph.add_import(
+        importer=f"{SOME_MODULE}.blue.alpha",
+        imported=f"{SOME_MODULE}.red",
+    )
+    graph.add_import(
+        importer=f"{SOME_MODULE}.blue.delta",
+        imported=f"{SOME_MODULE}.red.epsilon",
+    )
+    # Add a cycle.
+    graph.add_import(
+        importer=f"{SOME_MODULE}.red.epsilon",
+        imported=f"{SOME_MODULE}.blue.alpha",
+    )
+
+    return graph
+
+
+class TestBuildDotGraph:
+    def test_builds_graph_with_correct_nodes_and_edges(self):
+        grimp_graph = _build_fake_graph(SOME_ROOT_PACKAGE)
+
+        dot = build_dot_graph(
+            grimp_graph,
+            SOME_MODULE,
+            show_import_totals=False,
+            show_cycle_breakers=False,
+        )
+
+        assert dot == DotGraph(
+            title=SOME_MODULE,
+            concentrate=True,
+            nodes={
+                "mypackage.foo.green",
+                "mypackage.foo.blue",
+                "mypackage.foo.yellow",
+                "mypackage.foo.red",
+            },
+            edges={
+                Edge("mypackage.foo.blue", "mypackage.foo.green"),
+                Edge("mypackage.foo.green", "mypackage.foo.yellow"),
+                Edge("mypackage.foo.blue", "mypackage.foo.red"),
+                Edge("mypackage.foo.red", "mypackage.foo.blue"),
+            },
+        )
+
+    def test_shows_import_totals(self):
+        grimp_graph = _build_fake_graph(SOME_ROOT_PACKAGE)
+
+        dot = build_dot_graph(
+            grimp_graph,
+            SOME_MODULE,
+            show_import_totals=True,
+            show_cycle_breakers=False,
+        )
+
+        assert dot == DotGraph(
+            title=SOME_MODULE,
+            concentrate=False,
+            nodes={
+                "mypackage.foo.green",
+                "mypackage.foo.blue",
+                "mypackage.foo.yellow",
+                "mypackage.foo.red",
+            },
+            edges={
+                Edge("mypackage.foo.blue", "mypackage.foo.green", label="1"),
+                Edge("mypackage.foo.green", "mypackage.foo.yellow", label="1"),
+                Edge("mypackage.foo.blue", "mypackage.foo.red", label="4"),
+                Edge("mypackage.foo.red", "mypackage.foo.blue", label="1"),
+            },
+        )
+
+    def test_shows_cycle_breakers(self):
+        grimp_graph = _build_fake_graph(SOME_ROOT_PACKAGE)
+
+        dot = build_dot_graph(
+            grimp_graph,
+            SOME_MODULE,
+            show_import_totals=False,
+            show_cycle_breakers=True,
+        )
+
+        assert dot == DotGraph(
+            title=SOME_MODULE,
+            concentrate=False,
+            nodes={
+                "mypackage.foo.green",
+                "mypackage.foo.blue",
+                "mypackage.foo.yellow",
+                "mypackage.foo.red",
+            },
+            edges={
+                Edge("mypackage.foo.blue", "mypackage.foo.green"),
+                Edge("mypackage.foo.green", "mypackage.foo.yellow"),
+                Edge("mypackage.foo.blue", "mypackage.foo.red"),
+                Edge("mypackage.foo.red", "mypackage.foo.blue", emphasized=True),
+            },
+        )
