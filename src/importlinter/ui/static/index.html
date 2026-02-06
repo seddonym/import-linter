@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Linter</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header>
+        <img src="/static/logo.png" alt="Import Linter" id="logo">
+        <h1>Import Linter</h1>
+    </header>
+    <div id="breadcrumb">
+        <span class="prefix">Import graph for</span>
+        <span class="current">{{module_name}}</span>
+    </div>
+    <main>
+        <div id="graph-container">
+            <div id="loading"><div class="spinner"></div><div class="text">Loading graph...</div></div>
+            <div id="error-message"></div>
+            <div id="graph-svg"></div>
+            <div id="tooltip"></div>
+        </div>
+        <div id="sidebar">
+            <div id="nav-section" class="sidebar-section">
+                <h2>Navigation</h2>
+                <div class="sidebar-buttons">
+                    <button id="up-btn" onclick="goUp()"><span class="icon">&uarr;</span>Up to parent</button>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <h2>View</h2>
+                <div class="sidebar-buttons">
+                    <button onclick="zoomIn()"><span class="icon">+</span>Zoom In</button>
+                    <button onclick="zoomOut()"><span class="icon">&minus;</span>Zoom Out</button>
+                    <button onclick="resetView()"><span class="icon">&#x27F2;</span>Reset View</button>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <h2>Options</h2>
+                <div class="toggle-group">
+                    <div class="toggle-item">
+                        <div class="toggle-row">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="toggle-import-totals" onchange="onSettingsChange()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <label class="toggle-label" for="toggle-import-totals">Import totals</label>
+                        </div>
+                        <div class="toggle-help">Display the total number of imports between each module.</div>
+                    </div>
+                    <div class="toggle-item">
+                        <div class="toggle-row">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="toggle-cycle-breakers" onchange="onSettingsChange()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <label class="toggle-label" for="toggle-cycle-breakers">Cycle breakers</label>
+                        </div>
+                        <div class="toggle-help">Nominate a minimal set of dependencies which, if removed, would make the import graph acyclic. These dependencies are shown as dashed lines.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="/static/viz-standalone.js"></script>
+    <script src="/static/explorer.js"></script>
+</body>
+</html>
