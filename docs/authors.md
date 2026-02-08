@@ -20,6 +20,7 @@
 * [Lincoln Puzey](https://github.com/LincolnPuzey)
 * [Łukasz Skarżyński](https://github.com/skarzi)
 * [Matthew Gamble](https://github.com/mwgamble)
+* [Nazli Ander](https://github.com/nazliander)
 * [Neil Williams](https://github.com/spladug)
 * [Nicholas Bunn](https://github.com/NicholasBunn)
 * [Nick Pope](https://github.com/ngnpope)
@@ -27,4 +28,3 @@
 * [Petter Friberg](https://github.com/flaeppe)
 * [piglei](https://github.com/piglei)
 * [Uberto Barbini](https://github.com/uberto)
-

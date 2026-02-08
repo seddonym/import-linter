@@ -370,4 +370,5 @@ initViz().then(() => {
     const moduleFromUrl = getModuleFromUrl();
     const initialModule = moduleFromUrl || document.querySelector('#breadcrumb .current')?.textContent;
     loadGraph(initialModule, false);
+    history.replaceState({ module: initialModule }, '');
 });

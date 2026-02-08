@@ -1,5 +1,9 @@
 # Release notes
 
+## latest
+
+* Bugfix: fix back button navigation in explore command. 
+
 ## 2.10 (2026-02-06)
 
 * Add `import-linter` group command, with `import-linter lint` alias.
