@@ -103,10 +103,15 @@ def create_app(
         module: str,
         show_import_totals: bool = False,
         show_cycle_breakers: bool = False,
+        depth: int = 1,
     ) -> GraphResponse | ErrorResponse:
         try:
             graph_data = generate_dot(
-                request.app.state.grimp_cache, module, show_import_totals, show_cycle_breakers
+                request.app.state.grimp_cache,
+                module,
+                show_import_totals,
+                show_cycle_breakers,
+                depth=depth,
             )
             return cast(GraphResponse, dataclasses.asdict(graph_data))
         except Exception as e:

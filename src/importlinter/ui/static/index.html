@@ -61,6 +61,13 @@
                         </div>
                         <div class="toggle-help">Nominate a minimal set of dependencies which, if removed, would make the import graph acyclic. These dependencies are shown as dashed lines.</div>
                     </div>
+                    <div class="toggle-item">
+                        <div class="toggle-row">
+                            <label class="toggle-label" for="depth-input">Depth</label>
+                            <input type="number" id="depth-input" min="1" max="5" value="1" onchange="onSettingsChange()" style="width: 3.5em; margin-left: auto; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); font-size: 0.9em;">
+                        </div>
+                        <div class="toggle-help">Number of submodule levels to include in the graph (1 = direct children only).</div>
+                    </div>
                 </div>
             </div>
         </div>

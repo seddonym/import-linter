@@ -7,6 +7,7 @@ import grimp
 from collections.abc import Set
 
 from importlinter.application.use_cases import build_dot_graph
+from importlinter.domain.dotfile import DotGraph
 
 logger = logging.getLogger(__name__)
 
@@ -36,26 +37,30 @@ def generate_dot(
     module: str,
     show_import_totals: bool,
     show_cycle_breakers: bool,
+    depth: int = 1,
 ) -> ModuleDot:
     logger.info(f"Building graph for module '{module}'...")
     top_level_package = module.split(".")[0]
     grimp_graph = _get_grimp_graph(cache, top_level_package)
 
-    dot_graph = build_dot_graph(grimp_graph, module, show_import_totals, show_cycle_breakers)
+    dot_graph = build_dot_graph(
+        grimp_graph, module, show_import_totals, show_cycle_breakers, depth=depth
+    )
     dot_string = dot_graph.render()
 
-    child_packages = _get_child_packages(grimp_graph, module)
+    child_packages = _get_child_packages(grimp_graph, module, dot_graph.nodes)
 
     logger.info(f"Graph for '{module}' built ({len(child_packages)} packages).")
     return ModuleDot(dot_string=dot_string, module=module, child_packages=child_packages)
 
 
-def _get_child_packages(grimp_graph: grimp.ImportGraph, module: str) -> set[str]:
-    children = grimp_graph.find_children(module)
+def _get_child_packages(
+    grimp_graph: grimp.ImportGraph, module: str, graph_nodes: set[str]
+) -> set[str]:
     child_packages = set()
-    for child in children:
-        grandchildren = grimp_graph.find_children(child)
-        if grandchildren:
-            relative_name = "." + child.split(".")[-1]
+    for node in graph_nodes:
+        if grimp_graph.find_children(node):
+            # Use the same rendering as DotGraph so names match the SVG node titles.
+            relative_name = DotGraph.render_module(node, module)
             child_packages.add(relative_name)
     return child_packages
