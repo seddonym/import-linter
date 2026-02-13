@@ -817,3 +817,55 @@ class TestBuildDotGraph:
                 Edge("mypackage.foo.red", "mypackage.foo.blue", emphasized=True),
             },
         )
+
+    def test_builds_graph_with_depth_2(self):
+        """Test that depth=2 shows children AND grandchildren of the module."""
+        graph = ImportGraph()
+        graph.add_module(SOME_ROOT_PACKAGE)
+        graph.add_module(SOME_MODULE)
+
+        # Create a hierarchy: foo.blue, foo.green, foo.blue.alpha,
+        # foo.blue.beta, foo.green.gamma
+        for child in ("blue", "green"):
+            graph.add_module(f"{SOME_MODULE}.{child}")
+        for grandchild in ("alpha", "beta"):
+            graph.add_module(f"{SOME_MODULE}.blue.{grandchild}")
+        graph.add_module(f"{SOME_MODULE}.green.gamma")
+
+        # Add imports at the grandchild level
+        graph.add_import(
+            importer=f"{SOME_MODULE}.blue.alpha",
+            imported=f"{SOME_MODULE}.green.gamma",
+        )
+        graph.add_import(
+            importer=f"{SOME_MODULE}.blue.beta",
+            imported=f"{SOME_MODULE}.green.gamma",
+        )
+        # Add import at the child level
+        graph.add_import(
+            importer=f"{SOME_MODULE}.blue",
+            imported=f"{SOME_MODULE}.green",
+        )
+
+        dot = build_dot_graph(
+            graph,
+            SOME_MODULE,
+            show_import_totals=False,
+            show_cycle_breakers=False,
+            depth=2,
+        )
+
+        assert dot.depth == 2
+        # depth=2 includes both children (depth 1) AND grandchildren (depth 2)
+        assert dot.nodes == {
+            "mypackage.foo.blue",
+            "mypackage.foo.green",
+            "mypackage.foo.blue.alpha",
+            "mypackage.foo.blue.beta",
+            "mypackage.foo.green.gamma",
+        }
+        assert dot.edges == {
+            Edge("mypackage.foo.blue", "mypackage.foo.green"),
+            Edge("mypackage.foo.blue.alpha", "mypackage.foo.green.gamma"),
+            Edge("mypackage.foo.blue.beta", "mypackage.foo.green.gamma"),
+        }

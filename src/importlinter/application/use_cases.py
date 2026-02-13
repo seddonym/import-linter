@@ -148,6 +148,7 @@ def build_dot_graph(
     module_name: str,
     show_import_totals: bool,
     show_cycle_breakers: bool,
+    depth: int = 1,
 ) -> DotGraph:
     """
     Build a DotGraph visualizing the architecture of the supplied module.
@@ -159,25 +160,27 @@ def build_dot_graph(
         module_name: the module to visualize, e.g. 'mypackage.foo'.
         show_import_totals: whether to label the edges with the total amount of imports.
         show_cycle_breakers: whether to emphasize cycle-breaker edges.
-        See https://grimp.readthedocs.io/en/stable/usage.html#ImportGraph.nominate_cycle_breakers
+            See https://grimp.readthedocs.io/en/stable/usage.html#ImportGraph.nominate_cycle_breakers
+        depth: the depth of submodules to include in the graph (default: 1 for direct children).
     """
-    children = grimp_graph.find_children(module_name)
+    modules = _find_modules_up_to_depth(grimp_graph, module_name, depth)
     concentrate = not (show_import_totals or show_cycle_breakers)
 
     cycle_breakers: set[tuple[str, str]] | None = None
     if show_cycle_breakers:
-        cycle_breakers = _get_coarse_grained_cycle_breakers(grimp_graph, module_name, children)
+        cycle_breakers = _get_coarse_grained_cycle_breakers(grimp_graph, module_name, modules)
 
-    dot = DotGraph(title=module_name, concentrate=concentrate)
-    for child in children:
-        dot.add_node(child)
-    for upstream, downstream in itertools.permutations(children, r=2):
+    dot = DotGraph(title=module_name, concentrate=concentrate, depth=depth)
+    for mod in modules:
+        dot.add_node(mod)
+    for upstream, downstream in itertools.permutations(modules, r=2):
         edge = _build_dot_edge(
             grimp_graph,
             upstream,
             downstream,
             show_import_totals=show_import_totals,
             cycle_breakers=cycle_breakers,
+            depth=depth,
         )
         if edge:
             dot.add_edge(edge)
@@ -187,6 +190,30 @@ def build_dot_graph(
 
 # Private functions
 # -----------------
+
+
+def _find_modules_up_to_depth(grimp_graph: ImportGraph, module_name: str, depth: int) -> set[str]:
+    """
+    Find all modules up to and including the specified depth below the given module.
+
+    For depth=1, returns direct children.
+    For depth=2, returns direct children AND grandchildren.
+    And so on.
+    """
+    if depth < 1:
+        raise ValueError("Depth must be at least 1")
+
+    all_modules: set[str] = set()
+    current_level = {module_name}
+
+    for _ in range(depth):
+        next_level: set[str] = set()
+        for mod in current_level:
+            next_level.update(grimp_graph.find_children(mod))
+        all_modules.update(next_level)
+        current_level = next_level
+
+    return all_modules
 
 
 def _normalize_user_options(user_options: UserOptions) -> UserOptions:
@@ -424,10 +451,20 @@ def _build_dot_edge(
     downstream: str,
     show_import_totals: bool,
     cycle_breakers: set[tuple[str, str]] | None,
+    depth: int = 1,
 ) -> Edge | None:
-    if not grimp_graph.direct_import_exists(
-        importer=downstream, imported=upstream, as_packages=True
-    ):
+    # For depth > 1, we can't use as_packages=True because modules may share
+    # descendants (e.g., foo.blue and foo.blue.alpha are both in our set).
+    # In that case, only check for direct imports between exact modules.
+    if depth > 1:
+        import_exists = grimp_graph.direct_import_exists(
+            importer=downstream, imported=upstream, as_packages=False
+        )
+    else:
+        import_exists = grimp_graph.direct_import_exists(
+            importer=downstream, imported=upstream, as_packages=True
+        )
+    if not import_exists:
         return None
 
     if show_import_totals:
