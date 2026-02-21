@@ -2,6 +2,7 @@
 
 ## latest
 
+* Make `fastapi` and `uvicorn` optional via the `ui` extra (`pip install import-linter[ui]`).
 * Bugfix: fix back button navigation in explore command. 
 
 ## 2.10 (2026-02-06)

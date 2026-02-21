@@ -1,17 +1,15 @@
 import os
 import sys
 from logging import config as logging_config
-import grimp
-
 
 import click
+import grimp
 
 from importlinter.application.sentinels import NotSupplied
 
 from . import configuration
-from .application import use_cases
-from .application import rendering
-from importlinter.ui import server
+from .application import rendering, use_cases
+from .application.output import console
 
 configuration.configure()
 
@@ -94,6 +92,15 @@ def explore(module_name: str) -> None:
 
     MODULE_NAME is the importable Python module to explore (e.g. 'django.db.models').
     """
+    try:
+        from importlinter.ui import server
+    except ImportError:
+        console.print("[red]This command requires the [bold]ui[/bold] extra to be installed.")
+        console.print(
+            "[dim]:point_right: Install it by using [bold]import-linter\\[ui][/bold] during installation,\n"
+            "e.g. [bold]pip install import-linter\\[ui][/bold]."
+        )
+        sys.exit(1)
     rendering.print_title()
     server.launch(module_name)
 

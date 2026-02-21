@@ -9,6 +9,7 @@
 * [Anthony Sottile](https://github.com/asottile)
 * [Anton Gruebel](https://github.com/gruebel)
 * [Ben Warren](https://github.com/bwarren)
+* [Christoph Gietl](https://github.com/christophgietl)
 * [Daniel Jurczak](https://github.com/danieljurczak)
 * [Daniele Esposti](https://github.com/expobrain)
 * [Fabian Binz](https://github.com/fbinz)

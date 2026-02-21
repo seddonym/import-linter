@@ -7,6 +7,10 @@ of any installed Python package. This is what it looks like when visualizing the
 
 ## Launching the UI
 
+!!! warning "Don't forget to install `ui` dependencies"
+
+    The interactive UI requires [extra dependencies to be installed](get_started/install.md#ui-dependencies).
+
 Run `import-linter explore`, passing the name of the module you want to explore:
 
 ```console

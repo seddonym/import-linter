@@ -4,9 +4,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from fastapi.testclient import TestClient
 
-from importlinter.ui.server import create_app
 
 this_directory = Path(__file__).parent
 assets_directory = this_directory / ".." / "assets"
@@ -70,6 +68,9 @@ class TestGraphApi:
 
     @pytest.fixture
     def client(self):
+        from fastapi.testclient import TestClient
+        from importlinter.ui.server import create_app
+
         return TestClient(create_app(module_name="testpackage"))
 
     def test_returns_graph_for_top_level_module(self, client):

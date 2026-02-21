@@ -8,7 +8,11 @@ install-precommit:
 
 # Runs tests under the latest supported Python version.
 test:
-    @uv run pytest
+    # Run all tests except the ones that are marked with no_ui_deps_installed:
+    @uv run pytest -m "not no_ui_deps_installed"
+    # Run the no_ui_deps_installed tests under a different dependency group:
+    @uv run --exact --group dev-no-ui --no-group dev pytest -m "no_ui_deps_installed"
+
 
 # Runs tests under all supported Python versions, in parallel.
 [parallel]

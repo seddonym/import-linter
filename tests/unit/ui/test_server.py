@@ -1,13 +1,14 @@
 import pytest
-from fastapi.testclient import TestClient
 
-from importlinter.ui.server import create_app
 
 MODULE_NAME = "mypackage"
 
 
 @pytest.fixture
-def client() -> TestClient:
+def client():
+    from fastapi.testclient import TestClient
+    from importlinter.ui.server import create_app
+
     app = create_app(module_name=MODULE_NAME)
     return TestClient(app)
 
