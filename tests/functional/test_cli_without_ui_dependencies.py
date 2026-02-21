@@ -26,9 +26,7 @@ class TestCliWithoutUiDependencies:
                 importlinter.ui.server = server_module
 
     def test_drawgraph_exits_successfully(self):
-        result = CliRunner().invoke(
-            importlinter.cli.import_linter, ["drawgraph", "importlinter"]
-        )
+        result = CliRunner().invoke(importlinter.cli.import_linter, ["drawgraph", "importlinter"])
         assert result.exit_code == 0
 
     def test_explore_exits_with_error_and_helpful_message(self):
