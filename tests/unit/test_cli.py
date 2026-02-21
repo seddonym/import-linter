@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from click.testing import CliRunner, Result
 
-import importlinter.cli as cli_module
+import importlinter.cli
 from importlinter.cli import import_linter
 
 _NOT_CACHED = object()
@@ -44,9 +44,9 @@ class TestLintWithoutUiDependencies:
         saved = sys.modules.pop("importlinter.ui.server", _NOT_CACHED)
         try:
             with patch.dict(sys.modules, {"fastapi": None, "uvicorn": None}):
-                importlib.reload(cli_module)
+                importlib.reload(importlinter.cli)
         finally:
             if saved is not _NOT_CACHED:
                 sys.modules["importlinter.ui.server"] = saved
             # Restore cli module to its original state for subsequent tests.
-            importlib.reload(cli_module)
+            importlib.reload(importlinter.cli)
