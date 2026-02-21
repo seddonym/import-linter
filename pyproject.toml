@@ -9,13 +9,12 @@ authors = [
 requires-python = ">=3.10"
 dependencies = [
     "click>=6",
-    "fastapi",
     "grimp>=3.14",
     "rich>=14.2.0",
     "tomli>=1.2.1; python_version < '3.11'",
     "typing-extensions>=3.10.0.0",
-    "uvicorn",
 ]
+
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -33,6 +32,12 @@ classifiers = [
     "Topic :: Utilities",
 ]
 readme = "README.md"
+
+[project.optional-dependencies]
+ui = [
+    "fastapi",
+    "uvicorn",
+]
 
 [build-system]
 requires = ["hatchling"]
