@@ -7,29 +7,29 @@ from click.testing import CliRunner, Result
 
 import importlinter.cli
 
-_NOT_CACHED = object()
+_SERVER_MODULE_ABSENT = object()
 
 
-class TestCliWithOptionalUiDependencies:
-    """CLI behaviour when [ui] extra is (not) installed."""
+class TestCliWithoutUiDependencies:
+    """CLI behaviour when [ui] extra is not installed."""
 
     def _invoke_explore_without_ui(self) -> Result:
         runner = CliRunner()
         # Remove the cached server module so it is freshly imported (and fails).
         # Also clear the attribute on the importlinter.ui package so that
         # `from importlinter.ui import server` doesn't find an already-bound reference.
-        saved = sys.modules.pop("importlinter.ui.server", _NOT_CACHED)
+        server_module_before = sys.modules.pop("importlinter.ui.server", _SERVER_MODULE_ABSENT)
         import importlinter.ui
-        had_attr = hasattr(importlinter.ui, "server")
-        if had_attr:
+        server_bound_on_ui_package = hasattr(importlinter.ui, "server")
+        if server_bound_on_ui_package:
             delattr(importlinter.ui, "server")
         try:
             with patch.dict(sys.modules, {"fastapi": None, "uvicorn": None}):
                 return runner.invoke(importlinter.cli.import_linter, ["explore", "somepackage"])
         finally:
-            if saved is not _NOT_CACHED:
-                sys.modules["importlinter.ui.server"] = saved
-            if had_attr:
+            if server_module_before is not _SERVER_MODULE_ABSENT:
+                sys.modules["importlinter.ui.server"] = server_module_before
+            if server_bound_on_ui_package:
                 importlinter.ui.server = sys.modules.get("importlinter.ui.server")
 
     def test_explore_without_ui_exits_with_error_and_helpful_message(self):
@@ -41,12 +41,12 @@ class TestCliWithOptionalUiDependencies:
         """Importing the CLI entry point must not fail when UI deps are absent."""
         # Remove the cached server module and mark fastapi/uvicorn as absent to
         # simulate an environment where only the base package is installed.
-        saved = sys.modules.pop("importlinter.ui.server", _NOT_CACHED)
+        server_module_before = sys.modules.pop("importlinter.ui.server", _SERVER_MODULE_ABSENT)
         try:
             with patch.dict(sys.modules, {"fastapi": None, "uvicorn": None}):
                 importlib.reload(importlinter.cli)
         finally:
-            if saved is not _NOT_CACHED:
-                sys.modules["importlinter.ui.server"] = saved
+            if server_module_before is not _SERVER_MODULE_ABSENT:
+                sys.modules["importlinter.ui.server"] = server_module_before
             # Restore cli module to its original state for subsequent tests.
             importlib.reload(importlinter.cli)
