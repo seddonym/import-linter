@@ -1,15 +1,9 @@
 """Tests for CLI behaviour when UI dependencies (fastapi, uvicorn) are optional."""
-from __future__ import annotations
-
 import importlib
 import sys
-from typing import TYPE_CHECKING
 from unittest.mock import patch
 
-from click.testing import CliRunner
-
-if TYPE_CHECKING:
-    from click.testing import Result
+from click.testing import CliRunner, Result
 
 import importlinter.cli
 from importlinter.cli import import_linter
