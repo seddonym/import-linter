@@ -1,4 +1,3 @@
-import importlib
 import os
 import sys
 from logging import config as logging_config
@@ -95,14 +94,12 @@ def explore(module_name: str) -> None:
     MODULE_NAME is the importable Python module to explore (e.g. 'django.db.models').
     """
     try:
-        server = importlib.import_module("importlinter.ui.server")
-    except ImportError:
-        click.echo(
+        from importlinter.ui import server
+    except ImportError as e:
+        raise click.ClickException(
             "The 'explore' command requires additional dependencies. "
-            "Install them with: pip install import-linter[ui]",
-            err=True,
-        )
-        sys.exit(1)
+            "Install them with: pip install import-linter[ui]"
+        ) from e
     rendering.print_title()
     server.launch(module_name)
 
