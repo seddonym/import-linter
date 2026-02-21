@@ -32,16 +32,12 @@ def ui_dependencies_absent():
 
 
 class TestCliWithoutUiDependencies:
-    """CLI behaviour when [ui] extra is not installed."""
-
-    def test_explore_without_ui_exits_with_error_and_helpful_message(
-        self, ui_dependencies_absent
-    ):
+    def test_explore_exits_with_error_and_helpful_message(self, ui_dependencies_absent):
         result = CliRunner().invoke(importlinter.cli.import_linter, ["explore", "somepackage"])
         assert result.exit_code == 1
         assert "pip install import-linter[ui]" in result.output
 
-    def test_drawgraph_without_ui_exits_successfully(self, ui_dependencies_absent):
+    def test_drawgraph_exits_successfully(self, ui_dependencies_absent):
         result = CliRunner().invoke(
             importlinter.cli.import_linter, ["drawgraph", "importlinter"]
         )
