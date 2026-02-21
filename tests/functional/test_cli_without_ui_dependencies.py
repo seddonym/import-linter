@@ -22,8 +22,9 @@ class TestCliWithoutUiDependencies:
 
         if server_module is not None:
             sys.modules["importlinter.ui.server"] = server_module
-        if server_module_is_bound_on_ui_package and server_module is not None:
-            importlinter.ui.server = server_module
+        if server_module_is_bound_on_ui_package:
+            if server_module is not None:
+                importlinter.ui.server = server_module
 
     def test_explore_exits_with_error_and_helpful_message(self):
         result = CliRunner().invoke(importlinter.cli.import_linter, ["explore", "somepackage"])
