@@ -458,9 +458,8 @@ ui = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "fastapi" },
     { name = "httpx" },
-    { name = "import-linter" },
+    { name = "import-linter", extra = ["ui"] },
     { name = "mypy" },
     { name = "pre-commit" },
     { name = "pytest" },
@@ -469,7 +468,6 @@ dev = [
     { name = "ruff" },
     { name = "tox" },
     { name = "types-pyyaml" },
-    { name = "uvicorn" },
 ]
 docs = [
     { name = "mkdocs" },
@@ -493,9 +491,8 @@ provides-extras = ["ui"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "fastapi" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "import-linter", editable = "." },
+    { name = "import-linter", extras = ["ui"], editable = "." },
     { name = "mypy", specifier = ">=1.18.2" },
     { name = "pre-commit", specifier = ">=4.3.0" },
     { name = "pytest", specifier = ">=8.4.2" },
@@ -504,7 +501,6 @@ dev = [
     { name = "ruff", specifier = ">=0.13.2" },
     { name = "tox", specifier = ">=4.30.2" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20250915" },
-    { name = "uvicorn" },
 ]
 docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },

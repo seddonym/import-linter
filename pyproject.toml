@@ -94,9 +94,8 @@ import-linter = { workspace = true }
 
 [dependency-groups]
 dev = [
-    "fastapi",
     "httpx>=0.28.1",
-    "import-linter",
+    "import-linter[ui]",
     "mypy>=1.18.2",
     "pre-commit>=4.3.0",
     "pytest>=8.4.2",
@@ -105,7 +104,6 @@ dev = [
     "ruff>=0.13.2",
     "tox>=4.30.2",
     "types-pyyaml>=6.0.12.20250915",
-    "uvicorn",
 ]
 docs = [
     "mkdocs>=1.6.1",
