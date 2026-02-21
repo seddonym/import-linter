@@ -1,7 +1,7 @@
 """Tests for CLI behaviour when UI dependencies (fastapi, uvicorn) are optional."""
 import importlib
 import sys
-from collections.abc import Generator
+from collections.abc import Iterator
 from unittest.mock import patch
 
 import pytest
@@ -10,11 +10,9 @@ from click.testing import CliRunner, Result
 import importlinter.cli
 import importlinter.ui
 
-_SERVER_MODULE_ABSENT = object()
-
 
 @pytest.fixture
-def ui_dependencies_absent() -> Generator[None, None, None]:
+def ui_dependencies_absent() -> Iterator[None]:
     """Simulate an environment where the [ui] extra is not installed.
 
     Removes the cached server module from sys.modules and clears the bound
@@ -22,13 +20,16 @@ def ui_dependencies_absent() -> Generator[None, None, None]:
     of ``from importlinter.ui import server`` will fail due to missing
     fastapi/uvicorn.
     """
-    server_module_before = sys.modules.pop("importlinter.ui.server", _SERVER_MODULE_ABSENT)
+    server_module_absent = object()
+    server_module_before = sys.modules.pop("importlinter.ui.server", server_module_absent)
     server_module_bound_on_ui_package = hasattr(importlinter.ui, "server")
     if server_module_bound_on_ui_package:
         delattr(importlinter.ui, "server")
+
     with patch.dict(sys.modules, {"fastapi": None, "uvicorn": None}):
         yield
-    if server_module_before is not _SERVER_MODULE_ABSENT:
+
+    if server_module_before is not server_module_absent:
         sys.modules["importlinter.ui.server"] = server_module_before
     if server_module_bound_on_ui_package:
         importlinter.ui.server = sys.modules.get("importlinter.ui.server")
