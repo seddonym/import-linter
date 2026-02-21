@@ -25,16 +25,16 @@ class TestCliWithoutUiDependencies:
             if server_module_is_bound_on_ui_package:
                 importlinter.ui.server = server_module
 
-    def test_explore_exits_with_error_and_helpful_message(self):
-        result = CliRunner().invoke(importlinter.cli.import_linter, ["explore", "somepackage"])
-        assert result.exit_code == 1
-        assert "pip install import-linter[ui]" in result.output
-
     def test_drawgraph_exits_successfully(self):
         result = CliRunner().invoke(
             importlinter.cli.import_linter, ["drawgraph", "importlinter"]
         )
         assert result.exit_code == 0
+
+    def test_explore_exits_with_error_and_helpful_message(self):
+        result = CliRunner().invoke(importlinter.cli.import_linter, ["explore", "somepackage"])
+        assert result.exit_code == 1
+        assert "pip install import-linter[ui]" in result.output
 
     def test_lint_help_exits_successfully(self):
         result = CliRunner().invoke(importlinter.cli.import_linter, ["lint", "--help"])
