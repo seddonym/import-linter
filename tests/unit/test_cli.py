@@ -3,7 +3,7 @@ import importlib
 import sys
 from unittest.mock import patch
 
-from click.testing import CliRunner
+from click.testing import CliRunner, Result
 
 import importlinter.cli as cli_module
 from importlinter.cli import import_linter
@@ -14,7 +14,7 @@ _NOT_CACHED = object()
 class TestExploreWithoutUiDependencies:
     """explore should fail gracefully when the [ui] extra is not installed."""
 
-    def _invoke_explore_without_ui(self):
+    def _invoke_explore_without_ui(self) -> Result:
         runner = CliRunner()
         # Remove the cached server module so it is freshly imported (and fails).
         saved = sys.modules.pop("importlinter.ui.server", _NOT_CACHED)
