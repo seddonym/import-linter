@@ -6,7 +6,6 @@ from unittest.mock import patch
 from click.testing import CliRunner, Result
 
 import importlinter.cli
-from importlinter.cli import import_linter
 
 _NOT_CACHED = object()
 
@@ -20,17 +19,14 @@ class TestExploreWithoutUiDependencies:
         saved = sys.modules.pop("importlinter.ui.server", _NOT_CACHED)
         try:
             with patch.dict(sys.modules, {"fastapi": None, "uvicorn": None}):
-                return runner.invoke(import_linter, ["explore", "somepackage"])
+                return runner.invoke(importlinter.cli.import_linter, ["explore", "somepackage"])
         finally:
             if saved is not _NOT_CACHED:
                 sys.modules["importlinter.ui.server"] = saved
 
-    def test_exits_with_error_code(self):
+    def test_exits_with_error_and_helpful_message(self):
         result = self._invoke_explore_without_ui()
         assert result.exit_code == 1
-
-    def test_prints_helpful_message(self):
-        result = self._invoke_explore_without_ui()
         assert "pip install import-linter[ui]" in result.output
 
 
