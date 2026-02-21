@@ -11,7 +11,6 @@ from importlinter.application.sentinels import NotSupplied
 from . import configuration
 from .application import use_cases
 from .application import rendering
-from importlinter.ui import server
 
 configuration.configure()
 
@@ -94,6 +93,13 @@ def explore(module_name: str) -> None:
 
     MODULE_NAME is the importable Python module to explore (e.g. 'django.db.models').
     """
+    try:
+        from importlinter.ui import server
+    except ImportError as e:
+        raise click.ClickException(
+            "The 'explore' command requires additional dependencies. "
+            "Install them with: pip install import-linter[ui]"
+        ) from e
     rendering.print_title()
     server.launch(module_name)
 

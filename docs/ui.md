@@ -5,6 +5,25 @@ of any installed Python package. This is what it looks like when visualizing the
 
 ![Screenshot of the Import Linter UI](img/ui-screenshot.png)
 
+## Installation
+
+The UI requires the `ui` extra. Install it alongside `import-linter`:
+
+=== "pip"
+    ```console
+    pip install import-linter[ui]
+    ```
+
+=== "uv"
+    ```console
+    uv add --dev import-linter[ui]
+    ```
+
+=== "poetry"
+    ```console
+    poetry add import-linter[ui] --group dev
+    ```
+
 ## Launching the UI
 
 Run `import-linter explore`, passing the name of the module you want to explore:

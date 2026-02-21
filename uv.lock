@@ -444,18 +444,22 @@ version = "2.10"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
-    { name = "fastapi" },
     { name = "grimp" },
     { name = "rich" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "typing-extensions" },
+]
+
+[package.optional-dependencies]
+ui = [
+    { name = "fastapi" },
     { name = "uvicorn" },
 ]
 
 [package.dev-dependencies]
 dev = [
     { name = "httpx" },
-    { name = "import-linter" },
+    { name = "import-linter", extra = ["ui"] },
     { name = "mypy" },
     { name = "pre-commit" },
     { name = "pytest" },
@@ -476,18 +480,19 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=6" },
-    { name = "fastapi" },
+    { name = "fastapi", marker = "extra == 'ui'" },
     { name = "grimp", specifier = ">=3.14" },
     { name = "rich", specifier = ">=14.2.0" },
     { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=1.2.1" },
     { name = "typing-extensions", specifier = ">=3.10.0.0" },
-    { name = "uvicorn" },
+    { name = "uvicorn", marker = "extra == 'ui'" },
 ]
+provides-extras = ["ui"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "import-linter", editable = "." },
+    { name = "import-linter", extras = ["ui"], editable = "." },
     { name = "mypy", specifier = ">=1.18.2" },
     { name = "pre-commit", specifier = ">=4.3.0" },
     { name = "pytest", specifier = ">=8.4.2" },
