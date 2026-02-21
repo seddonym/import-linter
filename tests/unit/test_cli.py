@@ -8,6 +8,8 @@ from click.testing import CliRunner
 import importlinter.cli as cli_module
 from importlinter.cli import import_linter
 
+_NOT_CACHED = object()
+
 
 class TestExploreWithoutUiDependencies:
     """explore should fail gracefully when the [ui] extra is not installed."""
@@ -15,12 +17,12 @@ class TestExploreWithoutUiDependencies:
     def _invoke_explore_without_ui(self):
         runner = CliRunner()
         # Remove the cached server module so it is freshly imported (and fails).
-        saved = sys.modules.pop("importlinter.ui.server", ...)
+        saved = sys.modules.pop("importlinter.ui.server", _NOT_CACHED)
         try:
             with patch.dict(sys.modules, {"fastapi": None, "uvicorn": None}):
                 return runner.invoke(import_linter, ["explore", "somepackage"])
         finally:
-            if saved is not ...:
+            if saved is not _NOT_CACHED:
                 sys.modules["importlinter.ui.server"] = saved
 
     def test_exits_with_error_code(self):
@@ -39,12 +41,12 @@ class TestLintWithoutUiDependencies:
         """Importing the CLI entry point must not fail when UI deps are absent."""
         # Remove the cached server module and mark fastapi/uvicorn as absent to
         # simulate an environment where only the base package is installed.
-        saved = sys.modules.pop("importlinter.ui.server", ...)
+        saved = sys.modules.pop("importlinter.ui.server", _NOT_CACHED)
         try:
             with patch.dict(sys.modules, {"fastapi": None, "uvicorn": None}):
                 importlib.reload(cli_module)
         finally:
-            if saved is not ...:
+            if saved is not _NOT_CACHED:
                 sys.modules["importlinter.ui.server"] = saved
             # Restore cli module to its original state for subsequent tests.
             importlib.reload(cli_module)
