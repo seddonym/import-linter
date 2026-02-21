@@ -36,3 +36,7 @@ class TestCliWithoutUiDependencies:
             importlinter.cli.import_linter, ["drawgraph", "importlinter"]
         )
         assert result.exit_code == 0
+
+    def test_lint_help_exits_successfully(self):
+        result = CliRunner().invoke(importlinter.cli.import_linter, ["lint", "--help"])
+        assert result.exit_code == 0
