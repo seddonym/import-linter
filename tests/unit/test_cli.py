@@ -5,6 +5,8 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
+import importlinter.cli
+
 
 @pytest.fixture
 def ui_dependencies_absent() -> Iterator[None]:
@@ -37,15 +39,11 @@ class TestCliWithoutUiDependencies:
     def test_explore_without_ui_exits_with_error_and_helpful_message(
         self, ui_dependencies_absent: None
     ) -> None:
-        import importlinter.cli
-
         result = CliRunner().invoke(importlinter.cli.import_linter, ["explore", "somepackage"])
         assert result.exit_code == 1
         assert "pip install import-linter[ui]" in result.output
 
     def test_drawgraph_without_ui_exits_successfully(self, ui_dependencies_absent: None) -> None:
-        import importlinter.cli
-
         result = CliRunner().invoke(
             importlinter.cli.import_linter, ["drawgraph", "importlinter"]
         )
