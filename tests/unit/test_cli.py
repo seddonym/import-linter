@@ -50,5 +50,3 @@ class TestCliWithoutUiDependencies:
         import importlinter.cli
 
         importlib.reload(importlinter.cli)
-        # Restore cli module to its original state for subsequent tests.
-        importlib.reload(importlinter.cli)
