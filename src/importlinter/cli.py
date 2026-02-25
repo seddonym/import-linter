@@ -97,8 +97,8 @@ def explore(module_name: str) -> None:
     except ImportError:
         console.print("[red]This command requires the [bold]ui[/bold] extra to be installed.")
         console.print(
-            "[dim]:point_right: Install it by using [bold]import-linter\\[ui][/bold] during installation,\n"
-            "e.g. [bold]pip install import-linter\\[ui][/bold]."
+            "[dim]:point_right: Install it by using [cyan1]import-linter\\[ui][/cyan1] during installation,\n"
+            "e.g. [bold cyan1]pip install 'import-linter\\[ui]'[/bold cyan1]."
         )
         sys.exit(1)
     rendering.print_title()
