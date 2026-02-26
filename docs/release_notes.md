@@ -2,6 +2,7 @@
 
 ## latest
 
+* Add `--version` flag to `lint-imports` and `import-linter` commands.
 * Make `fastapi` and `uvicorn` optional via the `ui` extra (`pip install import-linter[ui]`).
 * Bugfix: fix back button navigation in explore command. 
 

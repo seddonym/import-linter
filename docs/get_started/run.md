@@ -28,6 +28,8 @@ lint-imports
   Display the times taken to build the graph and check each contract. (Optional.)
 - `--verbose`:
   Noisily output progress as it goes along. (Optional.)
+- `--version`:
+  Display the version of Import Linter and exit. (Optional.)
 
 #### Default usage
 

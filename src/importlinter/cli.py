@@ -5,6 +5,7 @@ from logging import config as logging_config
 import click
 import grimp
 
+from importlinter import __version__
 from importlinter.application.sentinels import NotSupplied
 
 from . import configuration
@@ -64,6 +65,7 @@ def _run_check(
 
 
 @click.command()
+@click.version_option(version=__version__)
 @check_options
 def lint_imports_command(**kwargs) -> None:
     """Check that a project adheres to a set of contracts."""
@@ -71,6 +73,7 @@ def lint_imports_command(**kwargs) -> None:
 
 
 @click.group(invoke_without_command=True)
+@click.version_option(version=__version__)
 @click.pass_context
 def import_linter(ctx: click.Context) -> None:
     if ctx.invoked_subcommand is None:
