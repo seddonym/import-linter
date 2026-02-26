@@ -20,6 +20,7 @@
 * [Kai Mueller](https://github.com/kasium)
 * [Lincoln Puzey](https://github.com/LincolnPuzey)
 * [Łukasz Skarżyński](https://github.com/skarzi)
+* [Matt Wang](https://github.com/mattwang44)
 * [Matthew Gamble](https://github.com/mwgamble)
 * [Nazli Ander](https://github.com/nazliander)
 * [Neil Williams](https://github.com/spladug)
