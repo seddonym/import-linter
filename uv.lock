@@ -469,7 +469,7 @@ dev = [
     { name = "tox" },
     { name = "types-pyyaml" },
 ]
-dev-no-ui = [
+dev-minimal = [
     { name = "httpx" },
     { name = "mypy" },
     { name = "pre-commit" },
@@ -513,7 +513,7 @@ dev = [
     { name = "tox", specifier = ">=4.30.2" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20250915" },
 ]
-dev-no-ui = [
+dev-minimal = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "mypy", specifier = ">=1.18.2" },
     { name = "pre-commit", specifier = ">=4.3.0" },
