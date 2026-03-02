@@ -99,10 +99,10 @@ import-linter = { workspace = true }
 
 [dependency-groups]
 dev = [
-    {include-group = "dev-no-ui"},
+    {include-group = "dev-minimal"},
     "import-linter[ui]",
 ]
-dev-no-ui = [
+dev-minimal = [
     "httpx>=0.28.1",
     "mypy>=1.18.2",
     "pre-commit>=4.3.0",
