@@ -16,13 +16,9 @@ test:
 
 # Runs tests under all supported Python versions, in parallel.
 [parallel]
-test-all: test-3-9 test-3-10 test-3-11 test-3-12 test-3-13 test-3-14
+test-all: test-3-10 test-3-11 test-3-12 test-3-13 test-3-14
 # Note that all recipes called from this must use UV_LINK_MODE=copy,
 # otherwise the parallelism can corrupt the virtual environments.
-
-# Runs tests under Python 3.9.
-test-3-9:
-    @UV_LINK_MODE=copy UV_PYTHON=3.9 just test
 
 # Runs tests under Python 3.10.
 test-3-10:
