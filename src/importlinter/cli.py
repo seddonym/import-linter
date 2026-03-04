@@ -65,7 +65,7 @@ def _run_check(
 
 
 @click.command()
-@click.version_option(version=__version__)
+@click.version_option(version=__version__, message="import-linter %(version)s")
 @check_options
 def lint_imports_command(**kwargs) -> None:
     """Check that a project adheres to a set of contracts."""
@@ -73,7 +73,7 @@ def lint_imports_command(**kwargs) -> None:
 
 
 @click.group(invoke_without_command=True)
-@click.version_option(version=__version__)
+@click.version_option(version=__version__, message="import-linter %(version)s")
 @click.pass_context
 def import_linter(ctx: click.Context) -> None:
     if ctx.invoked_subcommand is None:
