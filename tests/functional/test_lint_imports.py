@@ -4,8 +4,9 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 import pytest
+from click.testing import CliRunner
 
-from importlinter import cli
+from importlinter import __version__, cli
 from importlinter.application import output
 import io
 
@@ -119,6 +120,14 @@ def test_logging_configuration_respects_verbose_flag(verbose, capsys):
 
     # N.B. "Wrote data cache file" is logged by Grimp.
     assert ("Wrote data cache file" in captured.out) == verbose
+
+
+@pytest.mark.parametrize("command", (cli.lint_imports_command, cli.import_linter))
+def test_versions(command):
+    runner = CliRunner()
+    result = runner.invoke(command, ["--version"])
+
+    assert result.output == f"import-linter {__version__}\n"
 
 
 def test_windows_terminal_encoding_smoke_test():
