@@ -10,16 +10,8 @@ on:
 
 jobs:
   test:
-    name: Test under ${{ matrix.python-version }}
+    name: Test under supported Python versions
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version:  # All Python versions supported by Import Linter.
-          - "3.10"
-          - "3.11"
-          - "3.12"
-          - "3.13"
-          - "3.14"
 
     steps:
       - uses: actions/checkout@v5
@@ -33,7 +25,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Test
-        run: just test
+        run: just test-all
 
   lint:
     name: Lint under ${{ matrix.python-version }}
