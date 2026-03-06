@@ -490,12 +490,12 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=6" },
-    { name = "fastapi", marker = "extra == 'ui'", specifier = ">=0.115" },
+    { name = "fastapi", marker = "extra == 'ui'", specifier = ">=0.113" },
     { name = "grimp", specifier = ">=3.14" },
     { name = "rich", specifier = ">=14.2.0" },
     { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=1.2.1" },
     { name = "typing-extensions", specifier = ">=3.10.0.0" },
-    { name = "uvicorn", marker = "extra == 'ui'", specifier = ">=0.11" },
+    { name = "uvicorn", marker = "extra == 'ui'", specifier = ">=0.17.1" },
 ]
 provides-extras = ["ui"]
 
