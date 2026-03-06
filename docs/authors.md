@@ -12,6 +12,7 @@
 * [Christoph Gietl](https://github.com/christophgietl)
 * [Daniel Jurczak](https://github.com/danieljurczak)
 * [Daniele Esposti](https://github.com/expobrain)
+* [Ederson Lima](https://github.com/Edim)
 * [Fabian Binz](https://github.com/fbinz)
 * [Felix Uhl](https://github.com/iFreilicht)
 * [Ilya S. (Tapeline)](https://github.com/Tapeline)

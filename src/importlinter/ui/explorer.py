@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import ast
+import importlib.util
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 
 import grimp
 from collections.abc import Set
@@ -19,6 +22,8 @@ class ModuleDot:
     module: str
     # Any children that are packages, and therefore can be drilled down into.
     child_packages: Set[str]
+    description: str | None
+    child_descriptions: dict[str, str | None]
 
 
 def _get_grimp_graph(
@@ -45,9 +50,21 @@ def generate_dot(
     dot_string = dot_graph.render()
 
     child_packages = _get_child_packages(grimp_graph, module)
+    description = _get_module_description(module)
+
+    children = grimp_graph.find_children(module)
+    child_descriptions = {
+        "." + child.split(".")[-1]: _get_module_description(child) for child in children
+    }
 
     logger.info(f"Graph for '{module}' built ({len(child_packages)} packages).")
-    return ModuleDot(dot_string=dot_string, module=module, child_packages=child_packages)
+    return ModuleDot(
+        dot_string=dot_string,
+        module=module,
+        child_packages=child_packages,
+        description=description,
+        child_descriptions=child_descriptions,
+    )
 
 
 def _get_child_packages(grimp_graph: grimp.ImportGraph, module: str) -> set[str]:
@@ -59,3 +76,17 @@ def _get_child_packages(grimp_graph: grimp.ImportGraph, module: str) -> set[str]
             relative_name = "." + child.split(".")[-1]
             child_packages.add(relative_name)
     return child_packages
+
+
+def _get_module_description(module: str) -> str | None:
+    spec = importlib.util.find_spec(module)
+    if spec is None or spec.origin is None:
+        return None
+    if not spec.origin.endswith("__init__.py"):
+        return None
+    try:
+        source = Path(spec.origin).read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        return ast.get_docstring(tree)
+    except Exception:
+        return None

@@ -31,6 +31,8 @@ class GraphResponse(TypedDict):
     dot_string: str
     module: str
     child_packages: list[str]
+    description: str | None
+    child_descriptions: dict[str, str | None]
 
 
 class ErrorResponse(TypedDict):

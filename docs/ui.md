@@ -42,6 +42,14 @@ An arrow can be read as saying "depends on". If package `one` points to `two`, t
 Click on any package node in the graph to drill down into it and see its children.
 Only packages (modules that contain submodules) are clickable.
 
+Hovering over a node shows a tooltip. For packages, the tooltip shows the name of the
+module you'll navigate to; if the module has a docstring, its description is also shown.
+
+### Module descriptions
+
+When a package has a docstring in its `__init__.py`, a brief description is shown below
+the breadcrumb bar. This can help you understand the purpose of a package at a glance.
+
 ## Options
 
 The right sidebar provides options to customize the visualization.

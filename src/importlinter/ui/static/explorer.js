@@ -10,6 +10,8 @@ let currentModule = null;
 let navigationHistory = [];
 let vizInstance = null;
 let currentPackages = [];
+let currentDescription = null;
+let currentChildDescriptions = {};
 
 // Settings state
 let showImportTotals = false;
@@ -75,7 +77,10 @@ async function loadGraph(moduleName = null, updateHistory = true) {
 
         currentModule = data.module;
         currentPackages = data.child_packages || [];
+        currentDescription = data.description || null;
+        currentChildDescriptions = data.child_descriptions || {};
         updateBreadcrumb();
+        updateDescription(currentDescription);
 
         if (updateHistory) {
             updateUrl(currentModule);
@@ -127,6 +132,8 @@ async function loadGraph(moduleName = null, updateHistory = true) {
         graphCache.set(cacheKey, {
             module: currentModule,
             packages: currentPackages,
+            description: currentDescription,
+            childDescriptions: currentChildDescriptions,
             svgElement: svgElement.cloneNode(true),
             viewBox: { ...originalViewBox }
         });
@@ -141,7 +148,10 @@ async function loadGraph(moduleName = null, updateHistory = true) {
 function restoreFromCache(cached, updateHistory) {
     currentModule = cached.module;
     currentPackages = [...cached.packages];
+    currentDescription = cached.description || null;
+    currentChildDescriptions = cached.childDescriptions || {};
     updateBreadcrumb();
+    updateDescription(currentDescription);
 
     if (updateHistory) {
         updateUrl(currentModule);
@@ -159,6 +169,16 @@ function restoreFromCache(cached, updateHistory) {
 
     setupPanZoom();
     setupNodeClicks();
+}
+
+function updateDescription(description) {
+    const el = document.getElementById('module-description');
+    if (description) {
+        el.textContent = description;
+        el.style.display = 'block';
+    } else {
+        el.style.display = 'none';
+    }
 }
 
 function updateBreadcrumb() {
@@ -301,6 +321,30 @@ function resetView() {
     }
 }
 
+function showNodeTooltip(tooltip, nodeName, isPackage) {
+    tooltip.innerHTML = '';
+    const childName = nodeName.startsWith('.') ? nodeName.slice(1) : nodeName;
+
+    if (isPackage) {
+        const titleEl = document.createElement('div');
+        titleEl.className = 'tooltip-title';
+        titleEl.textContent = `Explore ${currentModule}.${childName}`;
+        tooltip.appendChild(titleEl);
+    }
+
+    const description = currentChildDescriptions[nodeName];
+    if (description) {
+        const descEl = document.createElement('div');
+        descEl.className = 'tooltip-desc';
+        descEl.textContent = description;
+        tooltip.appendChild(descEl);
+    }
+
+    if (tooltip.children.length > 0) {
+        tooltip.style.display = 'block';
+    }
+}
+
 function setupNodeClicks() {
     if (!svg) return;
 
@@ -311,6 +355,7 @@ function setupNodeClicks() {
         const title = node.querySelector('title');
         const nodeName = title ? title.textContent : 'Unknown';
         const isPackage = currentPackages.includes(nodeName);
+        const hasDescription = Boolean(currentChildDescriptions[nodeName]);
 
         if (isPackage) {
             node.classList.add('package');
@@ -325,11 +370,11 @@ function setupNodeClicks() {
                 tooltip.style.display = 'none';
                 drillDown(nodeName);
             });
+        }
 
-            node.addEventListener('mouseenter', (e) => {
-                const childName = nodeName.startsWith('.') ? nodeName.slice(1) : nodeName;
-                tooltip.textContent = `Explore ${currentModule}.${childName}`;
-                tooltip.style.display = 'block';
+        if (isPackage || hasDescription) {
+            node.addEventListener('mouseenter', () => {
+                showNodeTooltip(tooltip, nodeName, isPackage);
             });
 
             node.addEventListener('mousemove', (e) => {

@@ -1,5 +1,11 @@
 # Release notes
 
+## latest
+
+* Show module docstring below the breadcrumb bar when exploring a package.
+* Show module docstring in a tooltip when hovering over graph nodes.
+
+
 ## 2.11 (2026-03-06)
 
 * Add `--version` flag to `lint-imports` and `import-linter` commands.
