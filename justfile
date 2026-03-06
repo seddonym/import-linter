@@ -10,39 +10,13 @@ install-precommit:
 nox *args:
     @uv run --group nox nox {{args}}
 
-# Runs tests under the latest supported Python version.
-test:
-    # Run all tests except the ones that are marked with no_ui_deps_installed:
-    @uv run pytest -m "not no_ui_deps_installed"
-    # Run the no_ui_deps_installed tests under a different dependency group:
-    @uv run --exact --group dev-minimal --no-dev pytest -m "no_ui_deps_installed"
+# Runs tests under the supplied Python version.
+test python="3.14":
+    @just nox --python {{python}}
 
-
-# Runs tests under all supported Python versions, in parallel.
-[parallel]
-test-all: test-3-10 test-3-11 test-3-12 test-3-13 test-3-14
-# Note that all recipes called from this must use UV_LINK_MODE=copy,
-# otherwise the parallelism can corrupt the virtual environments.
-
-# Runs tests under Python 3.10.
-test-3-10:
-    @UV_LINK_MODE=copy UV_PYTHON=3.10 just test
-
-# Runs tests under Python 3.11.
-test-3-11:
-    @UV_LINK_MODE=copy UV_PYTHON=3.11 just test
-
-# Runs tests under Python 3.12.
-test-3-12:
-    @UV_LINK_MODE=copy UV_PYTHON=3.12 just test
-
-# Runs tests under Python 3.13.
-test-3-13:
-    @UV_LINK_MODE=copy UV_PYTHON=3.13 just test
-
-# Runs tests under Python 3.14.
-test-3-14:
-    @UV_LINK_MODE=copy UV_PYTHON=3.14 just test
+# Runs tests under all supported Python versions.
+test-all:
+    @uv run --group nox nox
 
 
 # Format the code.
