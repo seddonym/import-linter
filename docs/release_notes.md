@@ -6,6 +6,7 @@
 * Make `fastapi` and `uvicorn` optional via the `ui` extra (`pip install import-linter[ui]`).
 * Bugfix: fix back button navigation in explore command.
 * Provide lower limits for `fastapi` and `uvicorn` in `pyproject.toml`.
+* Switch to nox for testing.  
 
 ## 2.10 (2026-02-06)
 

@@ -92,10 +92,17 @@ When you're developing a feature, you'll probably want to run tests quickly, usi
 just test
 ```
 
-There are also version-specific test commands (e.g. `just test-3-13`) - run `just help` to see which ones.
+You can also pass a specific Python version, e.g. `just test --python=3.13`.
 
-Finally, you can run all of the tests in parallel with `just test-all`. This gives a more complete picture of whether
-the changes are compatible with all supported versions, but any failure output may be difficult to read.
+If you want to invoke pytest directly, e.g. to run a specific test, just use `uv run pytest`, e.g.:
+
+```console
+uv run pytest tests/unit/contracts
+```
+
+Finally, you can run all the tests under all supported Python versions with `just test-all`. This gives a more complete
+picture of whether the changes are compatible with all supported versions. Additionally, it will run tests under the
+*lowest* versions of dependencies specified in `pyproject.toml`, with the lowest supported Python version. 
 
 ### Before you push
 
