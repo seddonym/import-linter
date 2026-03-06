@@ -119,3 +119,6 @@ docs = [
     "sphinx>=7.4.7",
     "sphinx-rtd-theme>=3.0.2",
 ]
+nox = [
+    "nox-uv>=0.7.1",
+]

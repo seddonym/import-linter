@@ -6,6 +6,10 @@ help:
 install-precommit:
     @uv run pre-commit install
 
+# Run nox.
+nox *args:
+    @uv run --group nox nox {{args}}
+
 # Runs tests under the latest supported Python version.
 test:
     # Run all tests except the ones that are marked with no_ui_deps_installed:
