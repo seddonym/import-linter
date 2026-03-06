@@ -1,6 +1,6 @@
 # Release notes
 
-## latest
+## 2.11 (2026-03-06)
 
 * Add `--version` flag to `lint-imports` and `import-linter` commands.
 * Make `fastapi` and `uvicorn` optional via the `ui` extra (`pip install import-linter[ui]`).

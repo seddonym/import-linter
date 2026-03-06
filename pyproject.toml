@@ -1,6 +1,6 @@
 [project]
 name = "import-linter"
-version = "2.10"
+version = "2.11"
 license = {text = "BSD 2-Clause License"}
 description = "Lint your Python architecture"
 authors = [
