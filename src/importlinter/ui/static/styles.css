@@ -65,13 +65,41 @@ header h1 {
     font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
 
-#module-description {
-    padding: 0.4rem 1rem;
+.docstring-header {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.docstring-toggle-icon {
+    font-size: 0.7rem;
+    transition: transform 0.2s;
     color: #888;
-    font-style: italic;
-    font-size: 0.9rem;
-    background: #1a1a1a;
-    display: none;
+}
+
+.docstring-toggle-icon.collapsed {
+    transform: rotate(-90deg);
+}
+
+.docstring-body {
+    font-size: 0.85rem;
+    color: #ccc;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.docstring-toggle-link {
+    display: inline-block;
+    margin-top: 0.3rem;
+    color: #6af;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.docstring-toggle-link:hover {
+    text-decoration: underline;
 }
 
 main {

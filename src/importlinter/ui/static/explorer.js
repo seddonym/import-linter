@@ -171,14 +171,60 @@ function restoreFromCache(cached, updateHistory) {
     setupNodeClicks();
 }
 
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+const DOCSTRING_MAX_LEN = 120;
+let fullDocstringHtml = '';
+
 function updateDescription(description) {
-    const el = document.getElementById('module-description');
+    const section = document.getElementById('docstring-section');
+    const textEl = document.getElementById('docstring-text');
+    const showMore = document.getElementById('docstring-show-more');
+    const showLess = document.getElementById('docstring-show-less');
+    const toggle = document.getElementById('docstring-toggle');
+    const content = document.getElementById('docstring-content');
     if (description) {
-        el.textContent = description;
-        el.style.display = 'block';
+        fullDocstringHtml = escapeHtml(description).replace(/\n/g, '<br>');
+        const needsTruncation = description.length > DOCSTRING_MAX_LEN;
+        if (needsTruncation) {
+            textEl.innerHTML = escapeHtml(description.slice(0, DOCSTRING_MAX_LEN)).replace(/\n/g, '<br>') + '...';
+            showMore.style.display = 'inline-block';
+        } else {
+            textEl.innerHTML = fullDocstringHtml;
+            showMore.style.display = 'none';
+        }
+        showLess.style.display = 'none';
+        section.style.display = 'flex';
+        content.style.display = 'block';
+        toggle.classList.remove('collapsed');
     } else {
-        el.style.display = 'none';
+        section.style.display = 'none';
     }
+}
+
+function expandDocstring() {
+    document.getElementById('docstring-text').innerHTML = fullDocstringHtml;
+    document.getElementById('docstring-show-more').style.display = 'none';
+    document.getElementById('docstring-show-less').style.display = 'inline-block';
+}
+
+function collapseDocstring() {
+    const textEl = document.getElementById('docstring-text');
+    textEl.innerHTML = escapeHtml(currentDescription.slice(0, DOCSTRING_MAX_LEN)).replace(/\n/g, '<br>') + '...';
+    document.getElementById('docstring-show-more').style.display = 'inline-block';
+    document.getElementById('docstring-show-less').style.display = 'none';
+}
+
+function toggleDocstring() {
+    const content = document.getElementById('docstring-content');
+    const toggle = document.getElementById('docstring-toggle');
+    const isVisible = content.style.display !== 'none';
+    content.style.display = isVisible ? 'none' : 'block';
+    toggle.classList.toggle('collapsed', isVisible);
 }
 
 function updateBreadcrumb() {
@@ -336,7 +382,9 @@ function showNodeTooltip(tooltip, nodeName, isPackage) {
     if (description) {
         const descEl = document.createElement('div');
         descEl.className = 'tooltip-desc';
-        descEl.textContent = description;
+        const maxLen = 120;
+        const text = description.replace(/\n/g, ' ');
+        descEl.textContent = text.length > maxLen ? text.slice(0, maxLen) + '...' : text;
         tooltip.appendChild(descEl);
     }
 
