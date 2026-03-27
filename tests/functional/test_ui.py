@@ -106,3 +106,35 @@ class TestGraphApi:
         r2 = client.get("/api/graph/testpackage.high")
         assert r1.status_code == 200
         assert r2.status_code == 200
+
+    def test_returns_description_when_docstring_present(self, client):
+        response = client.get("/api/graph/testpackage")
+        data = response.json()
+        assert data["description"] == "A test package for use in import-linter's test suite."
+
+    def test_returns_none_description_for_module_without_docstring(self, client):
+        # testpackage.low/__init__.py has no docstring
+        response = client.get("/api/graph/testpackage.low")
+        data = response.json()
+        assert data["description"] is None
+
+    def test_returns_child_descriptions(self, client):
+        response = client.get("/api/graph/testpackage")
+        data = response.json()
+        assert "child_descriptions" in data
+        assert isinstance(data["child_descriptions"], dict)
+        # testpackage.low has no docstring
+        assert data["child_descriptions"].get(".low") is None
+        # testpackage.high has a docstring
+        assert (
+            data["child_descriptions"].get(".high")
+            == "High-level modules that other packages depend on."
+        )
+
+    def test_returns_child_descriptions_when_drilled_down(self, client):
+        # Drilling into testpackage.high should also expose child descriptions
+        response = client.get("/api/graph/testpackage.high")
+        data = response.json()
+        assert "child_descriptions" in data
+        # testpackage.high.blue has a docstring
+        assert data["child_descriptions"].get(".blue") == "Blue component of the high layer."

@@ -65,6 +65,43 @@ header h1 {
     font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
 
+.docstring-header {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.docstring-toggle-icon {
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+    color: #888;
+}
+
+.docstring-toggle-icon.collapsed {
+    transform: rotate(-90deg);
+}
+
+.docstring-body {
+    font-size: 0.85rem;
+    color: #ccc;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.docstring-toggle-link {
+    display: inline-block;
+    margin-top: 0.3rem;
+    color: #6af;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.docstring-toggle-link:hover {
+    text-decoration: underline;
+}
+
 main {
     flex: 1;
     display: flex;
@@ -150,6 +187,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    overflow-y: auto;
 }
 
 .sidebar-section {
@@ -324,6 +362,20 @@ main {
     color: #e74c3c;
     text-align: center;
     display: none;
+}
+
+.tooltip-title {
+    font-weight: 500;
+}
+
+.tooltip-desc {
+    font-style: italic;
+    color: #aaa;
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+    max-width: 280px;
+    line-height: 1.4;
+    white-space: normal;
 }
 
 #tooltip {

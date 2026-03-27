@@ -24,6 +24,16 @@
             <div id="tooltip"></div>
         </div>
         <div id="sidebar">
+            <div id="docstring-section" class="sidebar-section" style="display: none;">
+                <h2 class="docstring-header" onclick="toggleDocstring()">
+                    Module docstring <span id="docstring-toggle" class="docstring-toggle-icon">&#x25BC;</span>
+                </h2>
+                <div id="docstring-content" class="docstring-body">
+                    <span id="docstring-text"></span>
+                    <a id="docstring-show-more" class="docstring-toggle-link" onclick="expandDocstring()">Show more</a>
+                    <a id="docstring-show-less" class="docstring-toggle-link" onclick="collapseDocstring()" style="display: none;">Show less</a>
+                </div>
+            </div>
             <div id="nav-section" class="sidebar-section">
                 <h2>Navigation</h2>
                 <div class="sidebar-buttons">

@@ -10,6 +10,8 @@ let currentModule = null;
 let navigationHistory = [];
 let vizInstance = null;
 let currentPackages = [];
+let currentDescription = null;
+let currentChildDescriptions = {};
 
 // Settings state
 let showImportTotals = false;
@@ -75,7 +77,10 @@ async function loadGraph(moduleName = null, updateHistory = true) {
 
         currentModule = data.module;
         currentPackages = data.child_packages || [];
+        currentDescription = data.description || null;
+        currentChildDescriptions = data.child_descriptions || {};
         updateBreadcrumb();
+        updateDescription(currentDescription);
 
         if (updateHistory) {
             updateUrl(currentModule);
@@ -127,6 +132,8 @@ async function loadGraph(moduleName = null, updateHistory = true) {
         graphCache.set(cacheKey, {
             module: currentModule,
             packages: currentPackages,
+            description: currentDescription,
+            childDescriptions: currentChildDescriptions,
             svgElement: svgElement.cloneNode(true),
             viewBox: { ...originalViewBox }
         });
@@ -141,7 +148,10 @@ async function loadGraph(moduleName = null, updateHistory = true) {
 function restoreFromCache(cached, updateHistory) {
     currentModule = cached.module;
     currentPackages = [...cached.packages];
+    currentDescription = cached.description || null;
+    currentChildDescriptions = cached.childDescriptions || {};
     updateBreadcrumb();
+    updateDescription(currentDescription);
 
     if (updateHistory) {
         updateUrl(currentModule);
@@ -159,6 +169,62 @@ function restoreFromCache(cached, updateHistory) {
 
     setupPanZoom();
     setupNodeClicks();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+const DOCSTRING_MAX_LEN = 120;
+let fullDocstringHtml = '';
+
+function updateDescription(description) {
+    const section = document.getElementById('docstring-section');
+    const textEl = document.getElementById('docstring-text');
+    const showMore = document.getElementById('docstring-show-more');
+    const showLess = document.getElementById('docstring-show-less');
+    const toggle = document.getElementById('docstring-toggle');
+    const content = document.getElementById('docstring-content');
+    if (description) {
+        fullDocstringHtml = escapeHtml(description).replace(/\n/g, '<br>');
+        const needsTruncation = description.length > DOCSTRING_MAX_LEN;
+        if (needsTruncation) {
+            textEl.innerHTML = escapeHtml(description.slice(0, DOCSTRING_MAX_LEN)).replace(/\n/g, '<br>') + '...';
+            showMore.style.display = 'inline-block';
+        } else {
+            textEl.innerHTML = fullDocstringHtml;
+            showMore.style.display = 'none';
+        }
+        showLess.style.display = 'none';
+        section.style.display = 'flex';
+        content.style.display = 'block';
+        toggle.classList.remove('collapsed');
+    } else {
+        section.style.display = 'none';
+    }
+}
+
+function expandDocstring() {
+    document.getElementById('docstring-text').innerHTML = fullDocstringHtml;
+    document.getElementById('docstring-show-more').style.display = 'none';
+    document.getElementById('docstring-show-less').style.display = 'inline-block';
+}
+
+function collapseDocstring() {
+    const textEl = document.getElementById('docstring-text');
+    textEl.innerHTML = escapeHtml(currentDescription.slice(0, DOCSTRING_MAX_LEN)).replace(/\n/g, '<br>') + '...';
+    document.getElementById('docstring-show-more').style.display = 'inline-block';
+    document.getElementById('docstring-show-less').style.display = 'none';
+}
+
+function toggleDocstring() {
+    const content = document.getElementById('docstring-content');
+    const toggle = document.getElementById('docstring-toggle');
+    const isVisible = content.style.display !== 'none';
+    content.style.display = isVisible ? 'none' : 'block';
+    toggle.classList.toggle('collapsed', isVisible);
 }
 
 function updateBreadcrumb() {
@@ -301,6 +367,32 @@ function resetView() {
     }
 }
 
+function showNodeTooltip(tooltip, nodeName, isPackage) {
+    tooltip.innerHTML = '';
+    const childName = nodeName.startsWith('.') ? nodeName.slice(1) : nodeName;
+
+    if (isPackage) {
+        const titleEl = document.createElement('div');
+        titleEl.className = 'tooltip-title';
+        titleEl.textContent = `Explore ${currentModule}.${childName}`;
+        tooltip.appendChild(titleEl);
+    }
+
+    const description = currentChildDescriptions[nodeName];
+    if (description) {
+        const descEl = document.createElement('div');
+        descEl.className = 'tooltip-desc';
+        const maxLen = 120;
+        const text = description.replace(/\n/g, ' ');
+        descEl.textContent = text.length > maxLen ? text.slice(0, maxLen) + '...' : text;
+        tooltip.appendChild(descEl);
+    }
+
+    if (tooltip.children.length > 0) {
+        tooltip.style.display = 'block';
+    }
+}
+
 function setupNodeClicks() {
     if (!svg) return;
 
@@ -311,6 +403,7 @@ function setupNodeClicks() {
         const title = node.querySelector('title');
         const nodeName = title ? title.textContent : 'Unknown';
         const isPackage = currentPackages.includes(nodeName);
+        const hasDescription = Boolean(currentChildDescriptions[nodeName]);
 
         if (isPackage) {
             node.classList.add('package');
@@ -325,11 +418,11 @@ function setupNodeClicks() {
                 tooltip.style.display = 'none';
                 drillDown(nodeName);
             });
+        }
 
-            node.addEventListener('mouseenter', (e) => {
-                const childName = nodeName.startsWith('.') ? nodeName.slice(1) : nodeName;
-                tooltip.textContent = `Explore ${currentModule}.${childName}`;
-                tooltip.style.display = 'block';
+        if (isPackage || hasDescription) {
+            node.addEventListener('mouseenter', () => {
+                showNodeTooltip(tooltip, nodeName, isPackage);
             });
 
             node.addEventListener('mousemove', (e) => {
