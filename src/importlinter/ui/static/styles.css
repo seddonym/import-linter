@@ -187,6 +187,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    overflow-y: auto;
 }
 
 .sidebar-section {
