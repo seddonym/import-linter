@@ -75,7 +75,8 @@ class TestRemoveIgnoredImports:
             (
                 AlertLevel.ERROR,
                 MissingImport(
-                    "No matches for ignored import mypackage.* -> mypackage.nonexistent."
+                    "No matches for ignored import mypackage.* -> mypackage.nonexistent.\n"
+                    "No matches for ignored import mypackage.nonexistent -> mypackage.blue."
                 ),
             ),
         ],
