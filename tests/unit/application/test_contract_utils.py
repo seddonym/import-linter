@@ -116,7 +116,7 @@ class TestRemoveIgnoredImports:
                 unmatched_alerting=alert_level,
             )
             assert graph.count_imports() == 1  # The three matching imports have been removed.
-            assert set(warnings) == set(expected_result)
+            assert warnings == expected_result
 
     def _build_graph(self, direct_imports):
         graph = ImportGraph()

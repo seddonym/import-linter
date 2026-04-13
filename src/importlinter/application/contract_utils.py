@@ -33,7 +33,7 @@ def remove_ignored_imports(
         A list of any warnings to be surfaced to the user.
     """
     imports_to_remove = set()
-    unresolved_expressions = set()
+    unresolved_expressions = []
     for import_expression in ignore_imports or []:
         matched_imports = graph.find_matching_direct_imports(
             import_expression=str(import_expression)
@@ -49,7 +49,8 @@ def remove_ignored_imports(
                 }
             )
         else:
-            unresolved_expressions.add(import_expression)
+            if import_expression not in unresolved_expressions:
+                unresolved_expressions.append(import_expression)
 
     warnings = _handle_unresolved_import_expressions(
         unresolved_expressions,
@@ -70,7 +71,7 @@ def remove_ignored_imports(
 
 
 def _handle_unresolved_import_expressions(
-    expressions: set[ImportExpression], alert_level: AlertLevel
+    expressions: list[ImportExpression], alert_level: AlertLevel
 ) -> list[str]:
     """
     Handle any unresolved import expressions based on the supplied alert level.
