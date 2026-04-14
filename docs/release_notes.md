@@ -1,5 +1,9 @@
 # Release notes
 
+## latest
+
+* Improve error message when root package is a single-file module.
+
 ## 2.11 (2026-03-06)
 
 * Add `--version` flag to `lint-imports` and `import-linter` commands.

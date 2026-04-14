@@ -93,6 +93,16 @@ def test_lint_imports(working_directory, config_filename, expected_result):
     assert expected_result == result
 
 
+def test_lint_imports_raises_clear_error_when_root_package_is_single_file(capsys):
+    os.chdir(testpackage_directory)
+
+    result = cli.lint_imports(config_filename=".singlefilemodulecontract.ini")
+
+    assert cli.EXIT_STATUS_ERROR == result
+    captured = capsys.readouterr()
+    assert "'single_file_module' is a module, not a package" in captured.out
+
+
 @pytest.mark.parametrize("is_debug_mode", (True, False))
 def test_lint_imports_debug_mode(is_debug_mode):
     os.chdir(testpackage_directory)

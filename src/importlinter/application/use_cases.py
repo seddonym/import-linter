@@ -1,4 +1,5 @@
 import importlib
+import importlib.util
 import itertools
 from collections.abc import Set
 from copy import copy, deepcopy
@@ -208,15 +209,7 @@ def _get_spinner(message: str, verbose: bool) -> contextlib.AbstractContextManag
         return console.status(":brick: Building graph...", spinner="point")
 
 
-def _build_graph(
-    root_package_names: list[str],
-    include_external_packages: bool | None,
-    exclude_type_checking_imports: bool,
-    verbose: bool,
-    cache_dir: str | None | type[NotSupplied] = NotSupplied,
-) -> ImportGraph:
-    import importlib.util
-
+def _validate_root_package_names(root_package_names: list[str]) -> None:
     for name in root_package_names:
         spec = importlib.util.find_spec(name)
         if spec is not None and spec.submodule_search_locations is None:
@@ -225,6 +218,16 @@ def _build_graph(
                 f"root_packages should only contain packages (directories with __init__.py), "
                 f"not individual .py files."
             )
+
+
+def _build_graph(
+    root_package_names: list[str],
+    include_external_packages: bool | None,
+    exclude_type_checking_imports: bool,
+    verbose: bool,
+    cache_dir: str | None | type[NotSupplied] = NotSupplied,
+) -> ImportGraph:
+    _validate_root_package_names(root_package_names)
 
     if cache_dir == NotSupplied:
         cache_dir = settings.DEFAULT_CACHE_DIR
