@@ -72,15 +72,11 @@ class TestRemoveIgnoredImports:
                     "No matches for ignored import mypackage.nonexistent -> mypackage.blue.",
                 ],
             ),
-            (
-                AlertLevel.ERROR,
-                MissingImport(
-                    "No matches for ignored import mypackage.* -> mypackage.nonexistent."
-                ),
-            ),
         ],
     )
-    def test_unresolved_import_expressions(self, alert_level, expected_result):
+    def test_unresolved_import_expressions_with_non_error_level_alerting(
+        self, alert_level, expected_result
+    ):
         graph = self._build_graph(self.DIRECT_IMPORTS)
         ignore_imports = [
             ImportExpression(
@@ -101,21 +97,47 @@ class TestRemoveIgnoredImports:
             ),
         ]
 
-        if isinstance(expected_result, Exception):
-            with pytest.raises(type(expected_result), match=str(expected_result)):
-                remove_ignored_imports(
-                    graph=graph,
-                    ignore_imports=ignore_imports,
-                    unmatched_alerting=alert_level,
-                )
-        else:
-            warnings = remove_ignored_imports(
+        warnings = remove_ignored_imports(
+            graph=graph,
+            ignore_imports=ignore_imports,
+            unmatched_alerting=alert_level,
+        )
+        assert graph.count_imports() == 1  # The three matching imports have been removed.
+        assert warnings == expected_result
+
+    def test_unresolved_import_expressions_with_error_level_alerting(self):
+        graph = self._build_graph(self.DIRECT_IMPORTS)
+
+        expected_result = MissingImport(
+            "No matches for ignored import mypackage.* -> mypackage.nonexistent.\n"
+            "No matches for ignored import mypackage.nonexistent -> mypackage.blue."
+        )
+
+        ignore_imports = [
+            ImportExpression(
+                importer=ModuleExpression("mypackage.green"),
+                imported=ModuleExpression("mypackage.blue"),
+            ),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.*"),
+                imported=ModuleExpression("mypackage.nonexistent"),
+            ),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.green"),
+                imported=ModuleExpression("mypackage.purple"),
+            ),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.nonexistent"),
+                imported=ModuleExpression("mypackage.blue"),
+            ),
+        ]
+
+        with pytest.raises(MissingImport, match=str(expected_result)):
+            remove_ignored_imports(
                 graph=graph,
                 ignore_imports=ignore_imports,
-                unmatched_alerting=alert_level,
+                unmatched_alerting=AlertLevel.ERROR,
             )
-            assert graph.count_imports() == 1  # The three matching imports have been removed.
-            assert set(warnings) == set(expected_result)
 
     def _build_graph(self, direct_imports):
         graph = ImportGraph()

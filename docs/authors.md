@@ -6,6 +6,7 @@
 
 * [Aaron Gokaslan](https://github.com/Skylion007)
 * [Alexandre Beaufays](https://github.com/abeaufays)
+* [Amrou Bellalouna](https://github.com/shtlrs)
 * [Anthony Sottile](https://github.com/asottile)
 * [Anton Gruebel](https://github.com/gruebel)
 * [Ben Warren](https://github.com/bwarren)
