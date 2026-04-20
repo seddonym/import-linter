@@ -308,8 +308,11 @@ def _filter_contract_options(
     contracts_options: list[dict[str, Any]], limit_to_contracts: tuple[str, ...]
 ) -> list[dict[str, Any]]:
     if limit_to_contracts:
-        # Validate the supplied contract ids.
-        registered_contract_ids = {option["id"] for option in contracts_options}
+        # Validate the supplied contract ids. Contracts without an "id" key can't be
+        # matched by name (this happens with toml configs, where ids are optional), so
+        # they fall through to the "Could not find contract" error below instead of
+        # raising KeyError.
+        registered_contract_ids = {option["id"] for option in contracts_options if "id" in option}
         missing_contract_ids = set(limit_to_contracts) - registered_contract_ids
         if missing_contract_ids:
             if len(missing_contract_ids) == 1:
@@ -326,7 +329,7 @@ def _filter_contract_options(
                     "contracts with those ids."
                 )
         else:
-            return [o for o in contracts_options if o["id"] in limit_to_contracts]
+            return [o for o in contracts_options if o.get("id") in limit_to_contracts]
     else:
         return contracts_options
 

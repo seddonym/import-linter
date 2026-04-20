@@ -647,6 +647,27 @@ class TestCreateReport:
                 limit_to_contracts=limit_to_contracts,
             )
 
+    def test_raises_could_not_find_error_when_contracts_lack_id(self):
+        # Toml configs don't require contract ids. If `--contract` is passed and some
+        # contracts lack an id, we should fall through to the normal "Could not find
+        # contract" error instead of raising KeyError. Regression test for #314.
+        settings.configure(GRAPH_BUILDER=FakeGraphBuilder())
+
+        with pytest.raises(
+            ValueError,
+            match=re.escape("Could not find contract 'foo'."),
+        ):
+            create_report(
+                user_options=UserOptions(
+                    session_options={"root_packages": ["mypackage"]},
+                    contracts_options=[
+                        {"type": "always_passes", "name": "Contract one"},
+                        {"type": "always_passes", "name": "Contract two"},
+                    ],
+                ),
+                limit_to_contracts=("foo",),
+            )
+
 
 class TestReadUserOptions:
     @pytest.mark.parametrize("filename", [".importlinter", "setup.cfg", "foo", "foo.bar"])
