@@ -14,6 +14,7 @@ let currentPackages = [];
 // Settings state
 let showImportTotals = false;
 let showCycleBreakers = false;
+let depth = 1;
 
 // Client-side cache for rendered graphs
 const graphCache = new Map();
@@ -31,6 +32,9 @@ function buildApiUrl(moduleName) {
     if (showCycleBreakers) {
         params.push('show_cycle_breakers=true');
     }
+    if (depth !== 1) {
+        params.push(`depth=${depth}`);
+    }
     if (params.length) {
         url += '?' + params.join('&');
     }
@@ -38,12 +42,13 @@ function buildApiUrl(moduleName) {
 }
 
 function buildCacheKey(moduleName) {
-    return `${moduleName}|${showImportTotals}|${showCycleBreakers}`;
+    return `${moduleName}|${showImportTotals}|${showCycleBreakers}|${depth}`;
 }
 
 function onSettingsChange() {
     showImportTotals = document.getElementById('toggle-import-totals').checked;
     showCycleBreakers = document.getElementById('toggle-cycle-breakers').checked;
+    depth = parseInt(document.getElementById('depth-input').value, 10) || 1;
     loadGraph(currentModule, false);
 }
 
