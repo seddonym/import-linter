@@ -11,6 +11,15 @@ checked, not their descendants.
 
 External packages may also be forbidden.
 
+If a source module and a forbidden module refer to the same module (or, when treated as packages,
+one contains the other), that pair is skipped rather than reported, since a module cannot be
+forbidden from importing itself. This means a wildcard such as `mypackage.*` can be used as a
+forbidden module even when a source module is one of the modules it matches. For example, to
+enforce that `mypackage.core` may import only itself and external packages, set
+`source_modules = mypackage.core` and `forbidden_modules = mypackage.*`: the `mypackage.core` ->
+`mypackage.core` pair is skipped, and any newly added sibling package is covered automatically
+without editing the contract.
+
 **Examples:**
 
 === "INI"

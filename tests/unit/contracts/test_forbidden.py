@@ -409,6 +409,46 @@ class TestForbiddenContract:
             ],
         }
 
+    @pytest.mark.parametrize("as_packages", ("False", "True"))
+    def test_source_module_equal_to_forbidden_module_is_skipped(self, as_packages: bool):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            source_modules=("mypackage.one",),
+            forbidden_modules=("mypackage.one",),
+            as_packages=as_packages,
+        )
+
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        assert contract_check.kept
+
+    def test_wildcard_forbidding_source_module_skips_self_and_keeps_unrelated_source(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            source_modules=("mypackage.blue",),
+            forbidden_modules=("mypackage.*",),
+        )
+
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        assert contract_check.kept
+
+    def test_wildcard_forbidding_source_module_still_detects_sibling_imports(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            source_modules=("mypackage.one",),
+            forbidden_modules=("mypackage.*",),
+        )
+
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        assert not contract_check.kept
+        forbidden = {
+            chain["upstream_module"] for chain in contract_check.metadata["invalid_chains"]
+        }
+        assert "mypackage.green" in forbidden
+        assert "mypackage.one" not in forbidden
+
     @pytest.mark.parametrize(
         "as_packages, forbidden_modules, expected_invalid_chains",
         [

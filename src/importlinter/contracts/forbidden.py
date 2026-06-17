@@ -22,6 +22,11 @@ class ForbiddenContract(Contract):
     Forbidden contracts check that one set of modules are not imported by another set of modules.
     Indirect imports will also be checked.
 
+    Any pair where the source and forbidden module are the same (or, when treated as packages, one
+    contains the other) is skipped rather than treated as a violation, since a module cannot be
+    forbidden from importing itself. This means a wildcard such as ``mypackage.*`` can be used as a
+    forbidden module even when a source module is one of the modules it matches.
+
     Configuration options:
         - source_modules:    A set of Modules that should not import the forbidden modules.
         - forbidden_modules: A set of Modules that should not be imported by the source modules.
@@ -82,6 +87,13 @@ class ForbiddenContract(Contract):
 
         for source_module in sorted(source_modules, key=sort_key):
             for forbidden_module in sorted(forbidden_modules_in_graph, key=sort_key):
+                if self._modules_overlap(source_module, forbidden_module):
+                    output.verbose_print(
+                        verbose,
+                        f"Skipping {source_module} -> {forbidden_module} "
+                        "(a module cannot be forbidden from importing itself).",
+                    )
+                    continue
                 output.verbose_print(
                     verbose,
                     f"Searching for import chains from {source_module} to {forbidden_module}...",
@@ -181,6 +193,24 @@ class ForbiddenContract(Contract):
         for module in modules:
             if module.name not in graph.modules:
                 raise ValueError(f"Module '{module.name}' does not exist.")
+
+    def _modules_overlap(self, source_module: Module, forbidden_module: Module) -> bool:
+        """
+        Return whether the source and forbidden modules refer to the same module or, when treated
+        as packages, one contains the other.
+
+        Such a pair cannot describe a forbidden import, since a module cannot be forbidden from
+        importing itself. Skipping these pairs allows a wildcard such as ``mypackage.*`` to be used
+        as a forbidden module even when the source module is one of the matched modules, instead of
+        failing because the source and forbidden modules share descendants.
+        """
+        if source_module == forbidden_module:
+            return True
+        if self.as_packages:
+            return source_module.is_in_package(forbidden_module) or forbidden_module.is_in_package(
+                source_module
+            )
+        return False
 
     def _check_external_forbidden_modules(self, forbidden_modules) -> None:
         external_forbidden_modules = self._get_external_forbidden_modules(forbidden_modules)

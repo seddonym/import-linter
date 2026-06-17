@@ -30,5 +30,6 @@
 * [Peter Byfield](https://github.com/Peter554)
 * [Petter Friberg](https://github.com/flaeppe)
 * [piglei](https://github.com/piglei)
+* [Sebastian Penhouet](https://github.com/Spenhouet)
 * [Trevin Chow](https://github.com/tmchow)
 * [Uberto Barbini](https://github.com/uberto)
