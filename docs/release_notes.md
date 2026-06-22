@@ -4,10 +4,7 @@
 
 * Improve error message when root package is a single-file module.
 * Alert users with all unmatched ignored imports in the same run.
-* Forbidden contracts: skip any source/forbidden pair that refers to the same module (or, as
-  packages, one containing the other) instead of raising, so a wildcard such as `mypackage.*` can
-  be used as a forbidden module even when a source module is one of the modules it matches.
-  https://github.com/seddonym/import-linter/issues/360
+* Allow overlapping modules in forbidden contracts.
 
 ## 2.11 (2026-03-06)
 
