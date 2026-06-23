@@ -1,6 +1,6 @@
 # Release notes
 
-## latest
+## 2.12 (2026-06-23)
 
 * Improve error message when root package is a single-file module.
 * Alert users with all unmatched ignored imports in the same run.
