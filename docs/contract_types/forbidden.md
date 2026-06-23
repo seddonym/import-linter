@@ -11,7 +11,21 @@ checked, not their descendants.
 
 External packages may also be forbidden.
 
-**Examples:**
+## Overlapping modules
+
+Contracts may define `source_modules` and `forbidden_modules` that 'overlap':
+either the same module is in both; or one module is a subpackage that contains the other.
+This is handled differently depending on the value of `as_packages`:
+
+- When `as_packages` is `True` (the default), the source module is allowed to import the forbidden module **if they share descendants**. For example,
+`mypackage.one` will *not* be forbidden from importing `mypackage.one.blue`, or `mypackage.one` itself, even if
+those modules are listed in `forbidden_modules`.
+- When `as_packages` is `False`, a source module **is allowed to import itself**, even if it's listed in forbidden modules.  For example, a source module
+`mypackage.one` will *not* be forbidden `mypackage.one`, even if those modules are listed in `forbidden_modules`.
+
+This situation is most likely to occur when using wildcards.
+
+## Examples
 
 === "INI"
 
@@ -32,6 +46,29 @@ External packages may also be forbidden.
     ignore_imports =
       mypackage.one.green -> mypackage.utils
       mypackage.two -> mypackage.four
+
+    [importlinter:contract:forbidden-siblings]
+    # This contract prevents mypackage.one from importing
+    # anything from its siblings.
+    name = Forbidden descendants contract
+    type = forbidden
+    source_modules =
+      mypackage.one
+    forbidden_modules =
+      mypackage.*
+
+    [importlinter:contract:forbidden-descendants]
+    # This contract prevents mypackage.one from importing
+    # anything from its descendants.
+    # Note as_packages must be false, otherwise this contract would have no effect
+    # due to the rules around overlapping modules.
+    name = Forbidden descendants contract
+    type = forbidden
+    source_modules =
+      mypackage.one
+    forbidden_modules =
+      mypackage.one.**
+    as_packages = false
     ```
 
     ```ini
@@ -74,6 +111,33 @@ External packages may also be forbidden.
         "mypackage.one.green -> mypackage.utils",
         "mypackage.two -> mypackage.four",
     ]
+    
+    [[tool.importlinter.contracts]]
+    # This contract prevents mypackage.one from importing
+    # anything from its siblings.
+    name = "Forbidden siblings contract"
+    type = "forbidden"
+    source_modules = [
+      "mypackage.one",
+    ]
+    forbidden_modules = [
+      "mypackage.*",
+    ]
+
+    [[tool.importlinter.contracts]]
+    # This contract prevents mypackage.one from importing
+    # anything from its descendants.
+    # Note as_packages must be False, otherwise this contract would have no effect
+    # due to the rules around overlapping modules.
+    name = "Forbidden descendants contract"
+    type = "forbidden"
+    source_modules = [
+      "mypackage.one",
+    ]
+    forbidden_modules = [
+      "mypackage.one.**",
+    ]
+    as_packages = False
     ```
 
     ```toml

@@ -17,10 +17,35 @@ from importlinter.domain.imports import Module
 from ._common import format_line_numbers
 
 
+def _modules_overlap(
+    source_module: Module, forbidden_module: Module, *, as_packages: bool
+) -> bool:
+    """
+    Return whether the source and forbidden modules overlap: either they are the same module, or,
+    when treated as packages, one contains the other.
+
+    Overlapping pairs do not describe a forbiddable import and are skipped by the contract. See the
+    forbidden contract documentation for details.
+    """
+    if source_module == forbidden_module:
+        return True
+    if as_packages:
+        return source_module.is_in_package(forbidden_module) or forbidden_module.is_in_package(
+            source_module
+        )
+    return False
+
+
 class ForbiddenContract(Contract):
     """
     Forbidden contracts check that one set of modules are not imported by another set of modules.
     Indirect imports will also be checked.
+
+    Where the source and forbidden modules overlap (the same module is in both, or one is a
+    subpackage containing the other), the source module is not forbidden from importing the
+    forbidden module; such pairs are skipped. This allows a wildcard such as ``mypackage.*`` to be
+    used as a forbidden module even when a source module is one of the modules it matches. See the
+    documentation for details.
 
     Configuration options:
         - source_modules:    A set of Modules that should not import the forbidden modules.
@@ -82,6 +107,16 @@ class ForbiddenContract(Contract):
 
         for source_module in sorted(source_modules, key=sort_key):
             for forbidden_module in sorted(forbidden_modules_in_graph, key=sort_key):
+                if _modules_overlap(
+                    source_module,
+                    forbidden_module,
+                    as_packages=self.as_packages,  # type: ignore
+                ):
+                    output.verbose_print(
+                        verbose,
+                        f"Skipping overlapping modules {source_module} and {forbidden_module}.",
+                    )
+                    continue
                 output.verbose_print(
                     verbose,
                     f"Searching for import chains from {source_module} to {forbidden_module}...",

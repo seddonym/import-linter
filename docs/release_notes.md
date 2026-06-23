@@ -4,6 +4,7 @@
 
 * Improve error message when root package is a single-file module.
 * Alert users with all unmatched ignored imports in the same run.
+* Allow overlapping modules in forbidden contracts.
 
 ## 2.11 (2026-03-06)
 
