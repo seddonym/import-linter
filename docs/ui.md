@@ -55,6 +55,13 @@ it represents.
 
 Here you can see that there are two imports from modules within `.models` of modules within `.utils`.
 
+### Module counts
+
+Enabling **Module counts** labels each package node with the number of modules it contains
+(i.e. its descendants in the module tree).
+
+![Screenshot of module counts](img/ui-module-counts.png)
+
 ### Cycle breakers
 
 Enabling **Cycle breakers** highlights (with a dashed line) a minimal set of dependencies that,
@@ -85,5 +92,6 @@ The same display options are available as flags:
 
 ```console
 import-linter drawgraph mypackage --show-import-totals
+import-linter drawgraph mypackage --show-module-counts
 import-linter drawgraph mypackage --show-cycle-breakers
 ```
