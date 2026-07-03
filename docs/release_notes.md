@@ -1,6 +1,6 @@
 # Release notes
 
-## latest (unreleased)
+## 2.13 (2026-07-03)
 
 * Add module counts option to the explore UI and `drawgraph` command.
 
