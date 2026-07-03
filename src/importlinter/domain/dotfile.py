@@ -36,9 +36,12 @@ class DotGraph:
     concentrate: bool = True
     nodes: set[str] = field(default_factory=set)
     edges: set[Edge] = field(default_factory=set)
+    node_labels: dict[str, str] = field(default_factory=dict)
 
-    def add_node(self, name: str) -> None:
+    def add_node(self, name: str, label: str = "") -> None:
         self.nodes.add(name)
+        if label:
+            self.node_labels[name] = label
 
     def add_edge(self, edge: Edge) -> None:
         self.edges.add(edge)
@@ -50,7 +53,11 @@ class DotGraph:
         if self.concentrate:
             lines.append(f"{indent}concentrate=true")
         for node in sorted(self.nodes):
-            lines.append(f'{indent}"{self.render_module(node)}"')
+            rendered = self.render_module(node)
+            if node in self.node_labels:
+                lines.append(f'{indent}"{rendered}" [label="{self.node_labels[node]}"]')
+            else:
+                lines.append(f'{indent}"{rendered}"')
         for edge in sorted(self.edges):
             lines.append(f"{indent}{edge}")
         lines.append("}")

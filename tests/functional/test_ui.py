@@ -99,6 +99,16 @@ class TestGraphApi:
         assert ".blue" in data["child_packages"]
         assert ".green" not in data["child_packages"]
 
+    def test_shows_module_counts(self, client):
+        response = client.get("/api/graph/testpackage?show_module_counts=true")
+        data = response.json()
+        dot = data["dot_string"]
+        # testpackage.high has 4 descendants (blue, blue.one, blue.two, green)
+        assert r".high/\n4" in dot
+        # utils is a leaf module, so should not have a count
+        assert "utils" in dot
+        assert r".utils/\n" not in dot
+
     def test_caches_grimp_graph(self, client):
         # Two requests for different sub-modules of same top-level package
         # should both succeed (verifies caching doesn't break things)

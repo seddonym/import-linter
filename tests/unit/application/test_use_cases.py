@@ -765,6 +765,7 @@ class TestBuildDotGraph:
             grimp_graph,
             SOME_MODULE,
             show_import_totals=False,
+            show_module_counts=False,
             show_cycle_breakers=False,
         )
 
@@ -776,6 +777,11 @@ class TestBuildDotGraph:
                 "mypackage.foo.blue",
                 "mypackage.foo.yellow",
                 "mypackage.foo.red",
+            },
+            node_labels={
+                "mypackage.foo.blue": ".blue/",
+                "mypackage.foo.yellow": ".yellow/",
+                "mypackage.foo.red": ".red/",
             },
             edges={
                 Edge("mypackage.foo.blue", "mypackage.foo.green"),
@@ -792,6 +798,7 @@ class TestBuildDotGraph:
             grimp_graph,
             SOME_MODULE,
             show_import_totals=True,
+            show_module_counts=False,
             show_cycle_breakers=False,
         )
 
@@ -804,6 +811,11 @@ class TestBuildDotGraph:
                 "mypackage.foo.yellow",
                 "mypackage.foo.red",
             },
+            node_labels={
+                "mypackage.foo.blue": ".blue/",
+                "mypackage.foo.yellow": ".yellow/",
+                "mypackage.foo.red": ".red/",
+            },
             edges={
                 Edge("mypackage.foo.blue", "mypackage.foo.green", label="1"),
                 Edge("mypackage.foo.green", "mypackage.foo.yellow", label="1"),
@@ -812,6 +824,23 @@ class TestBuildDotGraph:
             },
         )
 
+    def test_shows_module_counts(self):
+        grimp_graph = _build_fake_graph(SOME_ROOT_PACKAGE)
+
+        dot = build_dot_graph(
+            grimp_graph,
+            SOME_MODULE,
+            show_import_totals=False,
+            show_module_counts=True,
+            show_cycle_breakers=False,
+        )
+
+        assert dot.node_labels == {
+            "mypackage.foo.blue": ".blue/\\n2",
+            "mypackage.foo.yellow": ".yellow/\\n1",
+            "mypackage.foo.red": ".red/\\n2",
+        }
+
     def test_shows_cycle_breakers(self):
         grimp_graph = _build_fake_graph(SOME_ROOT_PACKAGE)
 
@@ -819,6 +848,7 @@ class TestBuildDotGraph:
             grimp_graph,
             SOME_MODULE,
             show_import_totals=False,
+            show_module_counts=False,
             show_cycle_breakers=True,
         )
 
@@ -830,6 +860,11 @@ class TestBuildDotGraph:
                 "mypackage.foo.blue",
                 "mypackage.foo.yellow",
                 "mypackage.foo.red",
+            },
+            node_labels={
+                "mypackage.foo.blue": ".blue/",
+                "mypackage.foo.yellow": ".yellow/",
+                "mypackage.foo.red": ".red/",
             },
             edges={
                 Edge("mypackage.foo.blue", "mypackage.foo.green"),

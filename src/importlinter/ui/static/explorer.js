@@ -13,6 +13,7 @@ let currentPackages = [];
 
 // Settings state
 let showImportTotals = false;
+let showModuleCounts = false;
 let showCycleBreakers = false;
 
 // Client-side cache for rendered graphs
@@ -28,6 +29,9 @@ function buildApiUrl(moduleName) {
     if (showImportTotals) {
         params.push('show_import_totals=true');
     }
+    if (showModuleCounts) {
+        params.push('show_module_counts=true');
+    }
     if (showCycleBreakers) {
         params.push('show_cycle_breakers=true');
     }
@@ -38,11 +42,12 @@ function buildApiUrl(moduleName) {
 }
 
 function buildCacheKey(moduleName) {
-    return `${moduleName}|${showImportTotals}|${showCycleBreakers}`;
+    return `${moduleName}|${showImportTotals}|${showModuleCounts}|${showCycleBreakers}`;
 }
 
 function onSettingsChange() {
     showImportTotals = document.getElementById('toggle-import-totals').checked;
+    showModuleCounts = document.getElementById('toggle-module-counts').checked;
     showCycleBreakers = document.getElementById('toggle-cycle-breakers').checked;
     loadGraph(currentModule, false);
 }
@@ -81,16 +86,7 @@ async function loadGraph(moduleName = null, updateHistory = true) {
             updateUrl(currentModule);
         }
 
-        // Modify DOT to add trailing slash to package labels
         let dot = data.dot_string;
-        const nodeMatches = dot.matchAll(/^(\s*)"([^"]+)"\n/gm);
-        for (const match of nodeMatches) {
-            const whitespace = match[1];
-            const nodeName = match[2];
-            if (currentPackages.includes(nodeName)) {
-                dot = dot.replace(`${whitespace}"${nodeName}"\n`, `${whitespace}"${nodeName}" [label="${nodeName}/"]\n`);
-            }
-        }
 
         // Render DOT to SVG using viz.js
         if (!vizInstance) {
