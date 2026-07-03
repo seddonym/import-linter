@@ -178,7 +178,7 @@ def build_dot_graph(
             rendered = DotGraph.render_module(child)
             if show_module_counts:
                 module_count = len(grimp_graph.find_descendants(child))
-                dot.add_node(child, label=f"{rendered}/\\n{module_count}")
+                dot.add_node(child, label=f"{rendered}/\\n{_format_module_count(module_count)}")
             else:
                 dot.add_node(child, label=f"{rendered}/")
         else:
@@ -195,6 +195,10 @@ def build_dot_graph(
             dot.add_edge(edge)
 
     return dot
+
+
+def _format_module_count(count: int) -> str:
+    return f"{count:,}"
 
 
 # Private functions
