@@ -50,6 +50,36 @@ class TestDrawGraph:
         assert ".high" in output
         assert ".low" in output
 
+    def test_show_import_totals(self):
+        result = subprocess.run(
+            ["import-linter", "drawgraph", "testpackage", "--show-import-totals"],
+            capture_output=True,
+            cwd=testpackage_directory,
+        )
+        assert result.returncode == 0
+        output = result.stdout.decode()
+        assert "label=" in output
+
+    def test_show_module_counts(self):
+        result = subprocess.run(
+            ["import-linter", "drawgraph", "testpackage", "--show-module-counts"],
+            capture_output=True,
+            cwd=testpackage_directory,
+        )
+        assert result.returncode == 0
+        output = result.stdout.decode()
+        assert r".high/\n" in output
+
+    def test_show_cycle_breakers(self):
+        result = subprocess.run(
+            ["import-linter", "drawgraph", "testpackage", "--show-cycle-breakers"],
+            capture_output=True,
+            cwd=testpackage_directory,
+        )
+        assert result.returncode == 0
+        output = result.stdout.decode()
+        assert "dashed" in output
+
     def test_exits_with_error_if_module_not_importable(self):
         result = subprocess.run(
             ["import-linter", "drawgraph", "nonexistent"],
