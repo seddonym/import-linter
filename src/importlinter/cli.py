@@ -112,11 +112,18 @@ def explore(module_name: str) -> None:
 @click.argument("module_name")
 @click.option("--show-import-totals", is_flag=True, help="Label arrows with import counts.")
 @click.option(
+    "--show-module-counts",
+    is_flag=True,
+    help="Label packages with the number of modules they contain.",
+)
+@click.option(
     "--show-cycle-breakers",
     is_flag=True,
     help="Mark dependencies that, if removed, would make the graph acyclic.",
 )
-def drawgraph(module_name: str, show_import_totals: bool, show_cycle_breakers: bool) -> None:
+def drawgraph(
+    module_name: str, show_import_totals: bool, show_module_counts: bool, show_cycle_breakers: bool
+) -> None:
     """Output a DOT format graph of a module's dependencies to stdout.
 
     MODULE_NAME is the importable Python module to graph (e.g. 'django.db.models').
@@ -138,7 +145,7 @@ def drawgraph(module_name: str, show_import_totals: bool, show_cycle_breakers: b
 
     grimp_graph = grimp.build_graph(top_level_package)
     dot = use_cases.build_dot_graph(
-        grimp_graph, module_name, show_import_totals, show_cycle_breakers
+        grimp_graph, module_name, show_import_totals, show_module_counts, show_cycle_breakers
     )
     click.echo(dot.render(), nl=False)
 
