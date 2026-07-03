@@ -1,5 +1,9 @@
 # Release notes
 
+## latest (unreleased)
+
+* Add module counts option to the explore UI and `drawgraph` command.
+
 ## 2.12 (2026-06-23)
 
 * Improve error message when root package is a single-file module.
