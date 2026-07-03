@@ -15,6 +15,7 @@ from importlinter.application.use_cases import (
     SUCCESS,
     build_dot_graph,
     create_report,
+    _format_module_count,
     lint_imports,
 )
 from importlinter.domain.dotfile import DotGraph, Edge
@@ -873,3 +874,18 @@ class TestBuildDotGraph:
                 Edge("mypackage.foo.red", "mypackage.foo.blue", emphasized=True),
             },
         )
+
+
+class TestFormatModuleCount:
+    @pytest.mark.parametrize(
+        "count, expected",
+        [
+            (0, "0"),
+            (1, "1"),
+            (999, "999"),
+            (1_000, "1,000"),
+            (1_234_567, "1,234,567"),
+        ],
+    )
+    def test_formats_with_thousands_separator(self, count, expected):
+        assert _format_module_count(count) == expected
