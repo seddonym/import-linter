@@ -26,6 +26,8 @@ lint-imports
   Disable caching. See [Caching](../caching.md). (Optional.)
 - `--show-timings`:
   Display the times taken to build the graph and check each contract. (Optional.)
+- `--no-logo`:
+  Hide the project logo at startup. (Optional.)
 - `--verbose`:
   Noisily output progress as it goes along. (Optional.)
 - `--version`:

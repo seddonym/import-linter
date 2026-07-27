@@ -120,6 +120,11 @@ def test_show_timings_smoke_test():
     assert cli.EXIT_STATUS_SUCCESS == cli.lint_imports(show_timings=True)
 
 
+def test_no_logo_smoke_test():
+    os.chdir(testpackage_directory)
+    assert cli.EXIT_STATUS_SUCCESS == cli.lint_imports(no_logo=True)
+
+
 @pytest.mark.parametrize("verbose", (True, False))
 def test_logging_configuration_respects_verbose_flag(verbose, capsys):
     os.chdir(testpackage_directory)
