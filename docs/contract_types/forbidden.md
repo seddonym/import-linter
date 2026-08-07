@@ -9,7 +9,7 @@ By default, descendants of each module will be checked - so if `mypackage.one` i
 descendant behaviour can be changed by setting `as_packages` to `False`: in that case, only explicitly listed modules will be
 checked, not their descendants.
 
-External packages may also be forbidden.
+External packages may also be forbidden.  (Be sure to [configure Import Linter to include external packages](../get_started/configure.md#top-level-configuration)).
 
 ## Overlapping modules
 
