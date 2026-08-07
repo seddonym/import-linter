@@ -8,6 +8,8 @@ By default, descendants of each module will be checked too.
 For example, if `blue` is protected, and `green` is the only module in the allow list,
 then no module other than `green` (and its descendants) will be allowed to import `blue` (and its descendants) directly.
 
+External packages may also be protected. (Be sure to [configure Import Linter to include external packages](../get_started/configure.md#top-level-configuration)).
+
 **Examples:**
 
 === "INI"
@@ -41,6 +43,18 @@ then no module other than `green` (and its descendants) will be allowed to impor
         mypackage.one.green -> mypackage.one.models
         mypackage.colors.red.foo -> mypackage.three.models
     as_packages = False
+    ```
+
+    ```ini
+    [importlinter]
+    root_package = mypackage
+    include_external_packages = True
+    
+    [importlinter:contract:protected-boto]
+    name = Boto can only be imported by mypackage.allowed
+    type = protected
+    protected_modules = boto
+    allowed_importers = mypackage.allowed
     ```
 
 === "TOML"
@@ -80,6 +94,18 @@ then no module other than `green` (and its descendants) will be allowed to impor
         "mypackage.colors.red.foo -> mypackage.three.models",
     ]
     as_packages = false
+    ```
+
+    ```toml
+    [tool.importlinter]
+    root_package = "mypackage"
+    include_external_packages = true
+    
+    [[tool.importlinter.contracts]]
+    name = "Boto can only be imported by mypackage.allowed"
+    type = "protected"
+    protected_modules = ["boto"]
+    allowed_importers = ["mypackage.allowed"]
     ```
 
 **Configuration options**
