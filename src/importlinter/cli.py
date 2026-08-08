@@ -33,7 +33,7 @@ def check_options(f):
     f = click.option(
         "--no-logo",
         is_flag=True,
-        help="Hide the project logo at startup.",
+        help="Hide the logo at startup.",
     )(f)
     f = click.option("--debug", is_flag=True, help="Run in debug mode.")(f)
     f = click.option("--no-cache", is_flag=True, help="Disable caching.")(f)
@@ -181,7 +181,7 @@ def lint_imports(
                             not swallowed at the top level, so the stack trace can be seen.
         show_timings:       whether to show the times taken to build the graph and to check
                             each contract.
-        no_logo:            if True, the project logo is hidden at startup.
+        no_logo:            if True, the logo is hidden at startup.
         verbose:            if True, noisily output progress as it goes along.
 
     Returns:

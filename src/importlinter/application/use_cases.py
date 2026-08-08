@@ -54,7 +54,7 @@ def lint_imports(
                             not swallowed at the top level, so the stack trace can be seen.
         show_timings:       whether to show the times taken to build the graph and to check
                             each contract.
-        no_logo:            if True, the project logo is hidden at startup.
+        no_logo:            if True, the logo is hidden at startup.
         verbose:            if True, noisily output progress as it goes along.
 
     Returns:

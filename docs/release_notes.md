@@ -2,7 +2,7 @@
 
 ## latest
 
-* Add `--no-logo` option to hide the project logo in terminal output. 
+* Add `--no-logo` option to hide the logo in terminal output.
 
 ## 2.13 (2026-07-03)
 
