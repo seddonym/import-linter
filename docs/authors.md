@@ -15,6 +15,7 @@
 * [Daniele Esposti](https://github.com/expobrain)
 * [Fabian Binz](https://github.com/fbinz)
 * [Felix Uhl](https://github.com/iFreilicht)
+* [Felix Schneider](https://github.com/nf3lix)
 * [Ilya S. (Tapeline)](https://github.com/Tapeline)
 * [James Owen](https://github.com/leamingrad)
 * [Jan Bielecki](https://github.com/K4liber)

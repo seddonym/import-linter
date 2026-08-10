@@ -38,6 +38,7 @@ def lint_imports(
     cache_dir: str | None | type[NotSupplied] = NotSupplied,
     is_debug_mode: bool = False,
     show_timings: bool = False,
+    no_logo: bool = False,
     verbose: bool = False,
 ) -> bool:
     """
@@ -53,12 +54,14 @@ def lint_imports(
                             not swallowed at the top level, so the stack trace can be seen.
         show_timings:       whether to show the times taken to build the graph and to check
                             each contract.
+        no_logo:            if True, the logo is hidden at startup.
         verbose:            if True, noisily output progress as it goes along.
 
     Returns:
         True if the linting passed, False if it didn't.
     """
-    rendering.print_title()
+    if not no_logo:
+        rendering.print_title()
 
     output.verbose_print(verbose, "Verbose mode.")
     try:

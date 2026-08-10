@@ -30,6 +30,11 @@ def check_options(f):
         is_flag=True,
         help="Show times taken to build the graph and to check each contract.",
     )(f)
+    f = click.option(
+        "--no-logo",
+        is_flag=True,
+        help="Hide the logo at startup.",
+    )(f)
     f = click.option("--debug", is_flag=True, help="Run in debug mode.")(f)
     f = click.option("--no-cache", is_flag=True, help="Disable caching.")(f)
     f = click.option("--cache-dir", default=None, help="The directory to use for caching.")(f)
@@ -50,6 +55,7 @@ def _run_check(
     no_cache: bool,
     debug: bool,
     show_timings: bool,
+    no_logo: bool,
     verbose: bool,
 ) -> None:
     exit_code = lint_imports(
@@ -59,6 +65,7 @@ def _run_check(
         no_cache=no_cache,
         is_debug_mode=debug,
         show_timings=show_timings,
+        no_logo=no_logo,
         verbose=verbose,
     )
     sys.exit(exit_code)
@@ -157,6 +164,7 @@ def lint_imports(
     no_cache: bool = False,
     is_debug_mode: bool = False,
     show_timings: bool = False,
+    no_logo: bool = False,
     verbose: bool = False,
 ) -> int:
     """
@@ -173,6 +181,7 @@ def lint_imports(
                             not swallowed at the top level, so the stack trace can be seen.
         show_timings:       whether to show the times taken to build the graph and to check
                             each contract.
+        no_logo:            if True, the logo is hidden at startup.
         verbose:            if True, noisily output progress as it goes along.
 
     Returns:
@@ -191,6 +200,7 @@ def lint_imports(
         cache_dir=combined_cache_dir,
         is_debug_mode=is_debug_mode,
         show_timings=show_timings,
+        no_logo=no_logo,
         verbose=verbose,
     )
 

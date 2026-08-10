@@ -272,6 +272,33 @@ class TestCheckContractsAndPrintReport:
             """
         )
 
+    def test_no_logo(self):
+        self._configure(
+            contracts_options=[
+                {"type": "always_passes", "name": "Contract foo"},
+                {"type": "always_passes", "name": "Contract bar"},
+            ]
+        )
+
+        with console.capture() as capture:
+            lint_imports(no_logo=True)
+
+        assert capture.get() == dedent(
+            """\
+            ---------
+            Contracts
+            ---------
+
+            Analyzed 26 files, 10 dependencies.
+            -----------------------------------
+
+            Contract foo KEPT
+            Contract bar KEPT
+
+            Contracts: 2 kept, 0 broken.
+            """
+        )
+
     @pytest.mark.parametrize(
         "cache_dir, expected_graph_building_output",
         (

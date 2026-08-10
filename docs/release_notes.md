@@ -1,5 +1,9 @@
 # Release notes
 
+## latest
+
+* Add `--no-logo` option to hide the logo in terminal output.
+
 ## 2.13 (2026-07-03)
 
 * Add module counts option to the explore UI and `drawgraph` command.
