@@ -64,12 +64,6 @@ lint-imports --cache-dir path/to/cache
 lint-imports --no-cache
 ```
 
-Run in debug mode, showing full stack traces:
-
-```text
-lint-imports --debug
-```
-
 #### Showing timings
 
 ```console
@@ -80,6 +74,14 @@ lint-imports --show-timings
 
 ```console
 lint-imports --verbose
+```
+
+#### Debug mode
+
+Run in debug mode, showing full stack traces:
+
+```text
+lint-imports --debug
 ```
 
 ### Running using pre-commit
