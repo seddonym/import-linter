@@ -24,6 +24,9 @@ lint-imports
   The directory to use for caching. Defaults to `.import_linter_cache`. See [Caching](../caching.md). (Optional.)
 - `--no-cache`:
   Disable caching. See [Caching](../caching.md). (Optional.)
+- `--debug`:
+  Run in debug mode. Exceptions are not swallowed at the top level, so the full stack
+  trace can be seen — useful when investigating or reporting a bug. (Optional.)
 - `--show-timings`:
   Display the times taken to build the graph and check each contract. (Optional.)
 - `--no-logo`:
@@ -59,6 +62,12 @@ Using a different cache directory, or disabling caching
 lint-imports --cache-dir path/to/cache
 
 lint-imports --no-cache
+```
+
+Run in debug mode, showing full stack traces:
+
+```text
+lint-imports --debug
 ```
 
 #### Showing timings
