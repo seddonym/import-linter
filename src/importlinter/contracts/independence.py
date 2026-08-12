@@ -4,27 +4,20 @@ from typing import cast
 
 import grimp
 from grimp import ImportGraph
-from typing_extensions import TypedDict
 
 from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
 from importlinter.domain import fields
 from importlinter.domain.contract import Contract, ContractCheck
 from importlinter.domain.helpers import module_expressions_to_modules
-from importlinter.domain.imports import Module
 
 from ._common import (
-    DetailedChain,
-    Link,
+    ModulePairChains,
     build_detailed_chain_from_route,
     render_chain_data,
 )
 
-
-class _SubpackageChainData(TypedDict):
-    upstream_module: str
-    downstream_module: str
-    chains: list[DetailedChain]
+_SubpackageChainData = ModulePairChains
 
 
 class IndependenceContract(Contract):
@@ -104,42 +97,3 @@ class IndependenceContract(Contract):
             }
             for dependency in dependencies
         ]
-
-    def _build_subpackage_chain_data(
-        self, upstream_module: Module, downstream_module: Module, graph: ImportGraph
-    ) -> _SubpackageChainData:
-        """
-        Return any import chains from the upstream to downstream module.
-        """
-        subpackage_chain_data: _SubpackageChainData = {
-            "upstream_module": upstream_module.name,
-            "downstream_module": downstream_module.name,
-            "chains": [],
-        }
-        assert isinstance(subpackage_chain_data["chains"], list)  # For type checker.
-        chains = graph.find_shortest_chains(
-            importer=downstream_module.name, imported=upstream_module.name
-        )
-        if chains:
-            for chain in chains:
-                chain_data: list[Link] = []
-                for importer, imported in [
-                    (chain[i], chain[i + 1]) for i in range(len(chain) - 1)
-                ]:
-                    import_details = graph.get_import_details(importer=importer, imported=imported)
-                    line_numbers = tuple(j["line_number"] for j in import_details)
-                    chain_data.append(
-                        {
-                            "importer": importer,
-                            "imported": imported,
-                            "line_numbers": line_numbers,
-                        }
-                    )
-                detailed_chain: DetailedChain = {
-                    "chain": chain_data,
-                    "extra_firsts": [],
-                    "extra_lasts": [],
-                }
-                subpackage_chain_data["chains"].append(detailed_chain)
-
-        return subpackage_chain_data

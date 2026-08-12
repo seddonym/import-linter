@@ -6,7 +6,19 @@ from importlinter.application.output import console
 from importlinter.configuration import settings
 from importlinter.contracts.forbidden import ForbiddenContract
 from importlinter.domain.contract import ContractCheck
+from importlinter.domain.imports import Module
 from tests.adapters.timing import FakeTimer
+
+
+def detailed(chain: list[dict]) -> dict:
+    """
+    Wrap a flat chain of imports in the envelope that the contract reports.
+
+    The forbidden contract reports each chain in the same collapsed form as the layers and
+    independence contracts, but it never has shared heads or tails to collapse, so the extras
+    are always empty.
+    """
+    return {"chain": chain, "extra_firsts": [], "extra_lasts": []}
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -46,51 +58,59 @@ class TestForbiddenContract:
                         "upstream_module": "mypackage.green",
                         "downstream_module": "mypackage.one",
                         "chains": [
-                            [
-                                {
-                                    "importer": "mypackage.one.alpha",
-                                    "imported": "mypackage.green.beta",
-                                    "line_numbers": (3,),
-                                }
-                            ],
-                            [
-                                {
-                                    "importer": "mypackage.one.alpha.circle",
-                                    "imported": "mypackage.green.beta.sphere",
-                                    "line_numbers": (8,),
-                                },
-                            ],
+                            detailed(
+                                [
+                                    {
+                                        "importer": "mypackage.one.alpha",
+                                        "imported": "mypackage.green.beta",
+                                        "line_numbers": (3,),
+                                    }
+                                ]
+                            ),
+                            detailed(
+                                [
+                                    {
+                                        "importer": "mypackage.one.alpha.circle",
+                                        "imported": "mypackage.green.beta.sphere",
+                                        "line_numbers": (8,),
+                                    },
+                                ]
+                            ),
                         ],
                     },
                     {
                         "upstream_module": "mypackage.green",
                         "downstream_module": "mypackage.three",
                         "chains": [
-                            [
-                                {
-                                    "importer": "mypackage.three",
-                                    "imported": "mypackage.green",
-                                    "line_numbers": (4,),
-                                }
-                            ]
+                            detailed(
+                                [
+                                    {
+                                        "importer": "mypackage.three",
+                                        "imported": "mypackage.green",
+                                        "line_numbers": (4,),
+                                    }
+                                ]
+                            )
                         ],
                     },
                     {
                         "upstream_module": "mypackage.purple",
                         "downstream_module": "mypackage.two",
                         "chains": [
-                            [
-                                {
-                                    "importer": "mypackage.two",
-                                    "imported": "mypackage.utils",
-                                    "line_numbers": (9,),
-                                },
-                                {
-                                    "importer": "mypackage.utils",
-                                    "imported": "mypackage.purple",
-                                    "line_numbers": (1,),
-                                },
-                            ]
+                            detailed(
+                                [
+                                    {
+                                        "importer": "mypackage.two",
+                                        "imported": "mypackage.utils",
+                                        "line_numbers": (9,),
+                                    },
+                                    {
+                                        "importer": "mypackage.utils",
+                                        "imported": "mypackage.purple",
+                                        "line_numbers": (1,),
+                                    },
+                                ]
+                            )
                         ],
                     },
                 ],
@@ -108,31 +128,35 @@ class TestForbiddenContract:
                         "upstream_module": "mypackage.green",
                         "downstream_module": "mypackage.three",
                         "chains": [
-                            [
-                                {
-                                    "importer": "mypackage.three",
-                                    "imported": "mypackage.green",
-                                    "line_numbers": (4,),
-                                }
-                            ]
+                            detailed(
+                                [
+                                    {
+                                        "importer": "mypackage.three",
+                                        "imported": "mypackage.green",
+                                        "line_numbers": (4,),
+                                    }
+                                ]
+                            )
                         ],
                     },
                     {
                         "upstream_module": "mypackage.purple",
                         "downstream_module": "mypackage.two",
                         "chains": [
-                            [
-                                {
-                                    "importer": "mypackage.two",
-                                    "imported": "mypackage.utils",
-                                    "line_numbers": (9,),
-                                },
-                                {
-                                    "importer": "mypackage.utils",
-                                    "imported": "mypackage.purple",
-                                    "line_numbers": (1,),
-                                },
-                            ]
+                            detailed(
+                                [
+                                    {
+                                        "importer": "mypackage.two",
+                                        "imported": "mypackage.utils",
+                                        "line_numbers": (9,),
+                                    },
+                                    {
+                                        "importer": "mypackage.utils",
+                                        "imported": "mypackage.purple",
+                                        "line_numbers": (1,),
+                                    },
+                                ]
+                            )
                         ],
                     },
                 ],
@@ -184,13 +208,15 @@ class TestForbiddenContract:
                     "upstream_module": "sqlalchemy",
                     "downstream_module": "mypackage.three",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.three",
-                                "imported": "sqlalchemy",
-                                "line_numbers": (1,),
-                            }
-                        ]
+                        detailed(
+                            [
+                                {
+                                    "importer": "mypackage.three",
+                                    "imported": "sqlalchemy",
+                                    "line_numbers": (1,),
+                                }
+                            ]
+                        )
                     ],
                 }
             ]
@@ -262,20 +288,24 @@ class TestForbiddenContract:
                     "upstream_module": "mypackage.green",
                     "downstream_module": "mypackage.one.alpha",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.one.alpha",
-                                "imported": "mypackage.green.beta",
-                                "line_numbers": (3,),
-                            },
-                        ],
-                        [
-                            {
-                                "importer": "mypackage.one.alpha.circle",
-                                "imported": "mypackage.green.beta.sphere",
-                                "line_numbers": (8,),
-                            },
-                        ],
+                        detailed(
+                            [
+                                {
+                                    "importer": "mypackage.one.alpha",
+                                    "imported": "mypackage.green.beta",
+                                    "line_numbers": (3,),
+                                },
+                            ]
+                        ),
+                        detailed(
+                            [
+                                {
+                                    "importer": "mypackage.one.alpha.circle",
+                                    "imported": "mypackage.green.beta.sphere",
+                                    "line_numbers": (8,),
+                                },
+                            ]
+                        ),
                     ],
                 },
             ],
@@ -296,33 +326,39 @@ class TestForbiddenContract:
                     "upstream_module": "mypackage.green",
                     "downstream_module": "mypackage.one.alpha",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.one.alpha",
-                                "imported": "mypackage.green.beta",
-                                "line_numbers": (3,),
-                            },
-                        ],
-                        [
-                            {
-                                "importer": "mypackage.one.alpha.circle",
-                                "imported": "mypackage.green.beta.sphere",
-                                "line_numbers": (8,),
-                            },
-                        ],
+                        detailed(
+                            [
+                                {
+                                    "importer": "mypackage.one.alpha",
+                                    "imported": "mypackage.green.beta",
+                                    "line_numbers": (3,),
+                                },
+                            ]
+                        ),
+                        detailed(
+                            [
+                                {
+                                    "importer": "mypackage.one.alpha.circle",
+                                    "imported": "mypackage.green.beta.sphere",
+                                    "line_numbers": (8,),
+                                },
+                            ]
+                        ),
                     ],
                 },
                 {
                     "upstream_module": "mypackage.green",
                     "downstream_module": "mypackage.one.alpha.circle",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.one.alpha.circle",
-                                "imported": "mypackage.green.beta.sphere",
-                                "line_numbers": (8,),
-                            },
-                        ],
+                        detailed(
+                            [
+                                {
+                                    "importer": "mypackage.one.alpha.circle",
+                                    "imported": "mypackage.green.beta.sphere",
+                                    "line_numbers": (8,),
+                                },
+                            ]
+                        ),
                     ],
                 },
             ],
@@ -343,20 +379,24 @@ class TestForbiddenContract:
                     "upstream_module": "mypackage.green.beta",
                     "downstream_module": "mypackage.one",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.one.alpha",
-                                "imported": "mypackage.green.beta",
-                                "line_numbers": (3,),
-                            },
-                        ],
-                        [
-                            {
-                                "importer": "mypackage.one.alpha.circle",
-                                "imported": "mypackage.green.beta.sphere",
-                                "line_numbers": (8,),
-                            },
-                        ],
+                        detailed(
+                            [
+                                {
+                                    "importer": "mypackage.one.alpha",
+                                    "imported": "mypackage.green.beta",
+                                    "line_numbers": (3,),
+                                },
+                            ]
+                        ),
+                        detailed(
+                            [
+                                {
+                                    "importer": "mypackage.one.alpha.circle",
+                                    "imported": "mypackage.green.beta.sphere",
+                                    "line_numbers": (8,),
+                                },
+                            ]
+                        ),
                     ],
                 },
             ],
@@ -377,33 +417,39 @@ class TestForbiddenContract:
                     "upstream_module": "mypackage.green.beta",
                     "downstream_module": "mypackage.one",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.one.alpha",
-                                "imported": "mypackage.green.beta",
-                                "line_numbers": (3,),
-                            },
-                        ],
-                        [
-                            {
-                                "importer": "mypackage.one.alpha.circle",
-                                "imported": "mypackage.green.beta.sphere",
-                                "line_numbers": (8,),
-                            },
-                        ],
+                        detailed(
+                            [
+                                {
+                                    "importer": "mypackage.one.alpha",
+                                    "imported": "mypackage.green.beta",
+                                    "line_numbers": (3,),
+                                },
+                            ]
+                        ),
+                        detailed(
+                            [
+                                {
+                                    "importer": "mypackage.one.alpha.circle",
+                                    "imported": "mypackage.green.beta.sphere",
+                                    "line_numbers": (8,),
+                                },
+                            ]
+                        ),
                     ],
                 },
                 {
                     "upstream_module": "mypackage.green.beta.sphere",
                     "downstream_module": "mypackage.one",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.one.alpha.circle",
-                                "imported": "mypackage.green.beta.sphere",
-                                "line_numbers": (8,),
-                            },
-                        ],
+                        detailed(
+                            [
+                                {
+                                    "importer": "mypackage.one.alpha.circle",
+                                    "imported": "mypackage.green.beta.sphere",
+                                    "line_numbers": (8,),
+                                },
+                            ]
+                        ),
                     ],
                 },
             ],
@@ -491,6 +537,89 @@ class TestForbiddenContract:
         assert not contract_check.kept
 
     @pytest.mark.parametrize(
+        "options, expected",
+        [
+            ({}, True),
+            # Grimp's layers analysis always treats modules as packages.
+            ({"as_packages": False}, False),
+            # This option only looks at direct imports.
+            ({"allow_indirect_imports": True}, False),
+        ],
+    )
+    def test_batched_search_is_used_unless_options_prevent_it(self, options: dict, expected: bool):
+        contract = self._build_contract(forbidden_modules=("mypackage.green",), **options)
+
+        assert (
+            contract._can_use_batched_search(
+                [Module("mypackage.one")], [Module("mypackage.green")]
+            )
+            is expected
+        )
+
+    @pytest.mark.parametrize(
+        "source_module, forbidden_module",
+        [
+            # Identical modules.
+            ("mypackage.one", "mypackage.one"),
+            # A source module containing a forbidden module.
+            ("mypackage.one", "mypackage.one.alpha"),
+            # A forbidden module containing a source module.
+            ("mypackage.one.alpha", "mypackage.one"),
+        ],
+    )
+    def test_batched_search_is_not_used_for_overlapping_modules(
+        self, source_module: str, forbidden_module: str
+    ):
+        """
+        Grimp rejects layers that overlap, so any overlapping pair sends the whole contract
+        down the pair-by-pair path, which skips such pairs individually.
+        """
+        contract = self._build_contract(forbidden_modules=(forbidden_module,))
+
+        assert not contract._can_use_batched_search(
+            [Module(source_module)], [Module(forbidden_module)]
+        )
+
+    def test_batched_and_pair_by_pair_searches_agree(self):
+        """
+        The contract has two search strategies: a single batched graph search, and a slower
+        pair-by-pair fallback for the configurations the batched search can't express. They
+        must never disagree about which imports are illegal.
+        """
+        contract = self._build_contract(
+            forbidden_modules=(
+                "mypackage.blue",
+                "mypackage.green",
+                "mypackage.yellow",
+                "mypackage.purple",
+            ),
+        )
+        sources = [Module(m) for m in ("mypackage.one", "mypackage.two", "mypackage.three")]
+        forbidden = [
+            Module(m)
+            for m in (
+                "mypackage.blue",
+                "mypackage.green",
+                "mypackage.yellow",
+                "mypackage.purple",
+            )
+        ]
+        assert contract._can_use_batched_search(sources, forbidden)
+
+        batched = contract._find_invalid_chains_in_one_pass(
+            self._build_graph(), sources, forbidden, verbose=False
+        )
+        pair_by_pair = contract._find_invalid_chains_per_pair(
+            self._build_graph(), sources, forbidden, verbose=False
+        )
+
+        def pairs(invalid_chains):
+            return sorted((c["downstream_module"], c["upstream_module"]) for c in invalid_chains)
+
+        assert pairs(batched) == pairs(pair_by_pair)
+        assert pairs(batched) != []
+
+    @pytest.mark.parametrize(
         "as_packages, forbidden_modules, expected_invalid_chains",
         [
             (
@@ -501,26 +630,30 @@ class TestForbiddenContract:
                         "upstream_module": "mypackage.green",
                         "downstream_module": "mypackage.one",
                         "chains": [
-                            [
-                                {
-                                    "importer": "mypackage.one.alpha.circle",
-                                    "imported": "mypackage.green.beta.sphere",
-                                    "line_numbers": (8,),
-                                },
-                            ]
+                            detailed(
+                                [
+                                    {
+                                        "importer": "mypackage.one.alpha.circle",
+                                        "imported": "mypackage.green.beta.sphere",
+                                        "line_numbers": (8,),
+                                    },
+                                ]
+                            )
                         ],
                     },
                     {
                         "upstream_module": "mypackage.green",
                         "downstream_module": "mypackage.three",
                         "chains": [
-                            [
-                                {
-                                    "importer": "mypackage.three",
-                                    "imported": "mypackage.green",
-                                    "line_numbers": (4,),
-                                },
-                            ]
+                            detailed(
+                                [
+                                    {
+                                        "importer": "mypackage.three",
+                                        "imported": "mypackage.green",
+                                        "line_numbers": (4,),
+                                    },
+                                ]
+                            )
                         ],
                     },
                 ],
@@ -533,13 +666,15 @@ class TestForbiddenContract:
                         "upstream_module": "mypackage.green",
                         "downstream_module": "mypackage.three",
                         "chains": [
-                            [
-                                {
-                                    "importer": "mypackage.three",
-                                    "imported": "mypackage.green",
-                                    "line_numbers": (4,),
-                                },
-                            ]
+                            detailed(
+                                [
+                                    {
+                                        "importer": "mypackage.three",
+                                        "imported": "mypackage.green",
+                                        "line_numbers": (4,),
+                                    },
+                                ]
+                            )
                         ],
                     },
                 ],
@@ -586,13 +721,15 @@ class TestForbiddenContract:
                     "upstream_module": "mypackage.green",
                     "downstream_module": "mypackage.three",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.three",
-                                "imported": "mypackage.green",
-                                "line_numbers": (4,),
-                            }
-                        ]
+                        detailed(
+                            [
+                                {
+                                    "importer": "mypackage.three",
+                                    "imported": "mypackage.green",
+                                    "line_numbers": (4,),
+                                }
+                            ]
+                        )
                     ],
                 },
             ]
@@ -660,9 +797,9 @@ class TestForbiddenContract:
             },
         ]
         if allow_indirect_imports:
-            expected_chains = [direct_chain]
+            expected_chains = [detailed(direct_chain)]
         else:
-            expected_chains = [direct_chain, indirect_chain]
+            expected_chains = [detailed(direct_chain), detailed(indirect_chain)]
         assert contract_check.metadata == {
             "invalid_chains": [
                 {
@@ -922,31 +1059,35 @@ def test_render_broken_contract():
                     "upstream_module": "mypackage.purple",
                     "downstream_module": "mypackage.two",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.two",
-                                "imported": "mypackage.utils",
-                                "line_numbers": (9,),
-                            },
-                            {
-                                "importer": "mypackage.utils",
-                                "imported": "mypackage.purple",
-                                "line_numbers": (1,),
-                            },
-                        ]
+                        detailed(
+                            [
+                                {
+                                    "importer": "mypackage.two",
+                                    "imported": "mypackage.utils",
+                                    "line_numbers": (9,),
+                                },
+                                {
+                                    "importer": "mypackage.utils",
+                                    "imported": "mypackage.purple",
+                                    "line_numbers": (1,),
+                                },
+                            ]
+                        )
                     ],
                 },
                 {
                     "upstream_module": "mypackage.green",
                     "downstream_module": "mypackage.three",
                     "chains": [
-                        [
-                            {
-                                "importer": "mypackage.three",
-                                "imported": "mypackage.green",
-                                "line_numbers": (4,),
-                            }
-                        ]
+                        detailed(
+                            [
+                                {
+                                    "importer": "mypackage.three",
+                                    "imported": "mypackage.green",
+                                    "line_numbers": (4,),
+                                }
+                            ]
+                        )
                     ],
                 },
             ]
@@ -960,13 +1101,13 @@ def test_render_broken_contract():
         """\
         mypackage.two is not allowed to import mypackage.purple:
 
-        -   mypackage.two -> mypackage.utils (l.9)
-            mypackage.utils -> mypackage.purple (l.1)
+        - mypackage.two -> mypackage.utils (l.9)
+          mypackage.utils -> mypackage.purple (l.1)
 
 
         mypackage.three is not allowed to import mypackage.green:
 
-        -   mypackage.three -> mypackage.green (l.4)
+        - mypackage.three -> mypackage.green (l.4)
 
 
         """
@@ -974,11 +1115,8 @@ def test_render_broken_contract():
 
 
 class TestVerbosePrint:
-    def test_verbose(self):
-        timer = FakeTimer()
-        timer.setup(tick_duration=10, increment=0)
-        settings.configure(TIMER=timer)
-
+    @staticmethod
+    def _build_graph() -> ImportGraph:
         graph = ImportGraph()
         for module in (
             "one",
@@ -1023,7 +1161,11 @@ class TestVerbosePrint:
             line_number=1,
             line_contents="foo",
         )
-        contract = ForbiddenContract(
+        return graph
+
+    @staticmethod
+    def _build_contract(**extra_options) -> ForbiddenContract:
+        return ForbiddenContract(
             name="Forbid contract",
             session_options={"root_packages": ["mypackage"]},
             contract_options={
@@ -1036,8 +1178,43 @@ class TestVerbosePrint:
                 ),
                 "ignore_imports": [],
                 "allow_indirect_imports": "false",
+                **extra_options,
             },
         )
+
+    def test_verbose(self):
+        """
+        The batched search covers every source/forbidden pair in a single pass, so it reports
+        once rather than once per pair.
+        """
+        timer = FakeTimer()
+        timer.setup(tick_duration=10, increment=0)
+        settings.configure(TIMER=timer)
+
+        graph = self._build_graph()
+        contract = self._build_contract()
+
+        with console.capture() as capture:
+            contract.check(graph=graph, verbose=True)
+
+        assert capture.get() == dedent(
+            """\
+            Searching for import chains from 3 source module(s) to 4 forbidden module(s)...
+            Found 3 illegal chains in 10s.
+            """
+        )
+
+    def test_verbose_when_falling_back_to_pair_by_pair_search(self):
+        """
+        as_packages=False can't be expressed as a layers analysis, so the contract falls back
+        to searching each source/forbidden pair separately.
+        """
+        timer = FakeTimer()
+        timer.setup(tick_duration=10, increment=0)
+        settings.configure(TIMER=timer)
+
+        graph = self._build_graph()
+        contract = self._build_contract(as_packages="False")
 
         with console.capture() as capture:
             contract.check(graph=graph, verbose=True)
@@ -1047,7 +1224,7 @@ class TestVerbosePrint:
             Searching for import chains from mypackage.one to mypackage.blue...
             Found 0 illegal chains in 10s.
             Searching for import chains from mypackage.one to mypackage.green...
-            Found 1 illegal chain in 10s.
+            Found 0 illegal chains in 10s.
             Searching for import chains from mypackage.one to mypackage.purple...
             Found 0 illegal chains in 10s.
             Searching for import chains from mypackage.one to mypackage.yellow...
