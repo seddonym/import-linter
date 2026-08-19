@@ -43,7 +43,7 @@ class TestRemoveIgnoredImports:
     def test_no_unresolved_import_expressions(self, alert_level):
         graph = self._build_graph(self.DIRECT_IMPORTS)
 
-        warnings = remove_ignored_imports(
+        warnings, ignored_import_count = remove_ignored_imports(
             graph=graph,
             ignore_imports=[
                 ImportExpression(
@@ -60,6 +60,9 @@ class TestRemoveIgnoredImports:
 
         assert graph.count_imports() == 1  # The three matching imports have been removed.
         assert warnings == []
+        # Two distinct (importer, imported) pairs were removed (green->blue, green->purple),
+        # even though green->blue accounted for two individual import statements.
+        assert ignored_import_count == 2
 
     @pytest.mark.parametrize(
         "alert_level, expected_result",
@@ -97,13 +100,16 @@ class TestRemoveIgnoredImports:
             ),
         ]
 
-        warnings = remove_ignored_imports(
+        warnings, ignored_import_count = remove_ignored_imports(
             graph=graph,
             ignore_imports=ignore_imports,
             unmatched_alerting=alert_level,
         )
         assert graph.count_imports() == 1  # The three matching imports have been removed.
         assert warnings == expected_result
+        # Two distinct (importer, imported) pairs were removed (green->blue, green->purple);
+        # the two unresolved expressions don't contribute to the count.
+        assert ignored_import_count == 2
 
     def test_unresolved_import_expressions_with_error_level_alerting(self):
         graph = self._build_graph(self.DIRECT_IMPORTS)

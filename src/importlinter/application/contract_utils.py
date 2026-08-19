@@ -17,7 +17,7 @@ def remove_ignored_imports(
     graph: ImportGraph,
     ignore_imports: Sequence[ImportExpression] | None,
     unmatched_alerting: AlertLevel,
-) -> list[str]:
+) -> tuple[list[str], int]:
     """
     Remove any ignored imports from the graph.
 
@@ -30,7 +30,10 @@ def remove_ignored_imports(
                             a MissingImport with all unmatched imports.
 
     Returns:
-        A list of any warnings to be surfaced to the user.
+        A tuple of:
+            - A list of any warnings to be surfaced to the user.
+            - The number of individual imports that were removed from the graph (the size
+              of the imports_to_remove set).
     """
     imports_to_remove = set()
     unresolved_expressions = []
@@ -63,7 +66,7 @@ def remove_ignored_imports(
             imported=import_to_remove.imported.name,
         )
 
-    return warnings
+    return warnings, len(imports_to_remove)
 
 
 # Private functions

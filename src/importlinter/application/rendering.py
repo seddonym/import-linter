@@ -79,11 +79,15 @@ def render_contract_result_line(
                   The duration will only be displayed if it is provided.
     """
     result_text = "KEPT" if contract_check.kept else "BROKEN"
+    ignored_imports_text = _build_ignored_imports_text(
+        ignored_import_count=contract_check.ignored_import_count
+    )
     warning_text = _build_warning_text(warnings_count=len(contract_check.warnings))
     color_key = output.SUCCESS if contract_check.kept else output.ERROR
     color = output.COLORS[color_key]
     output.print(f"{contract.name} ", newline=False)
     output.print(result_text, color=color, newline=False)
+    output.print(ignored_imports_text, newline=False)
     output.print(warning_text, color=output.COLORS[output.WARNING], newline=False)
     if duration is not None:
         output.print(f" [{format_duration(duration)}]", newline=False)
@@ -113,6 +117,14 @@ def _build_warning_text(warnings_count: int) -> str:
     if warnings_count:
         noun = "warning" if warnings_count == 1 else "warnings"
         return f" ({warnings_count} {noun})"
+    else:
+        return ""
+
+
+def _build_ignored_imports_text(ignored_import_count: int) -> str:
+    if ignored_import_count:
+        noun = "import" if ignored_import_count == 1 else "imports"
+        return f" ({ignored_import_count} ignored {noun})"
     else:
         return ""
 

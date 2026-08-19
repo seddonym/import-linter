@@ -48,7 +48,7 @@ class AcyclicSiblingsContract(Contract):
         descendants_to_skip = self._get_concrete_skipped_descendants(graph)
         depth: int = self.depth  # type: ignore
 
-        warnings = contract_utils.remove_ignored_imports(
+        warnings, ignored_import_count = contract_utils.remove_ignored_imports(
             graph=graph,
             ignore_imports=self.ignore_imports,  # type: ignore
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
@@ -65,6 +65,7 @@ class AcyclicSiblingsContract(Contract):
         return ContractCheck(
             kept=not bool(cycle_breakers_by_package),
             warnings=warnings,
+            ignored_import_count=ignored_import_count,
             metadata={
                 "cycle_breakers_by_package": cycle_breakers_by_package,
                 "summaries": self._build_summaries(cycle_breakers_by_package),

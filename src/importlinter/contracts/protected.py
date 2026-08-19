@@ -42,7 +42,7 @@ class ProtectedContract(Contract):
     as_packages = fields.BooleanField(required=False, default=True)
 
     def check(self, graph: grimp.ImportGraph, verbose: bool) -> ContractCheck:
-        warnings = contract_utils.remove_ignored_imports(
+        warnings, ignored_import_count = contract_utils.remove_ignored_imports(
             graph=graph,
             ignore_imports=self.ignore_imports,  # type: ignore
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
@@ -114,6 +114,7 @@ class ProtectedContract(Contract):
         return ContractCheck(
             kept=not bool(illegal_imports_metadata),
             warnings=warnings,
+            ignored_import_count=ignored_import_count,
             metadata={"illegal_imports": illegal_imports_metadata},
         )
 
