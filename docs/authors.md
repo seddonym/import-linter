@@ -13,6 +13,7 @@
 * [Christoph Gietl](https://github.com/christophgietl)
 * [Daniel Jurczak](https://github.com/danieljurczak)
 * [Daniele Esposti](https://github.com/expobrain)
+* [Diego Impieri](https://github.com/yunusdim)
 * [Fabian Binz](https://github.com/fbinz)
 * [Felix Uhl](https://github.com/iFreilicht)
 * [Felix Schneider](https://github.com/nf3lix)

@@ -2,6 +2,7 @@
 
 ## latest
 
+* Show the count of ignored imports next to a contract's result, e.g. `KEPT (3 ignored imports)`. Omitted when the count is zero.
 * Add `--no-logo` option to hide the logo in terminal output.
 
 ## 2.13 (2026-07-03)
