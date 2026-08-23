@@ -52,7 +52,7 @@ class IndependenceContract(Contract):
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
 
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
-        warnings, ignored_import_count = contract_utils.remove_ignored_imports(
+        import_removal = contract_utils.remove_ignored_imports_and_report(
             graph=graph,
             ignore_imports=self.ignore_imports,  # type: ignore
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
@@ -69,8 +69,8 @@ class IndependenceContract(Contract):
 
         return ContractCheck(
             kept=not dependencies,
-            warnings=warnings,
-            ignored_import_count=ignored_import_count,
+            warnings=list(import_removal.warnings),
+            ignored_import_count=import_removal.ignored_import_count,
             metadata={"invalid_chains": invalid_chains},
         )
 

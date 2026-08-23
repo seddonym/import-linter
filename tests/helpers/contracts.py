@@ -7,9 +7,14 @@ from importlinter.domain.contract import Contract, ContractCheck
 
 class AlwaysPassesContract(Contract):
     warnings = fields.ListField(subfield=fields.StringField(), required=False)
+    ignored_import_count = fields.IntegerField(required=False)
 
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
-        return ContractCheck(kept=True, warnings=self.warnings)  # type: ignore
+        return ContractCheck(
+            kept=True,
+            warnings=self.warnings,  # type: ignore
+            ignored_import_count=self.ignored_import_count or 0,  # type: ignore
+        )
 
     def render_broken_contract(self, check: "ContractCheck") -> None:
         # No need to implement, will never fail.
