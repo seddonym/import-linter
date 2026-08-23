@@ -2,6 +2,7 @@
 
 ## latest
 
+* Add `symbol_visibility` contract: flag private (`_`-prefixed) symbols referenced from another module.
 * Add `--no-logo` option to hide the logo in terminal output.
 
 ## 2.13 (2026-07-03)

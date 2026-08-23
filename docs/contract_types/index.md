@@ -52,6 +52,16 @@ Forbid dependency cycles between siblings.
 [:octicons-arrow-right-24: Read more](acyclic_siblings.md)
 </div>
 
+<div class="flowcard" markdown>
+:material-code-tags:{ .lg .middle } __Symbol visibility__
+
+---
+
+Flag private symbols referenced from another module.
+
+[:octicons-arrow-right-24: Read more](symbol_visibility.md)
+</div>
+
 ## Custom contract types
 
 If none of the built in contract types meets your needs, you can define a custom contract type: see

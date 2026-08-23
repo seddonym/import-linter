@@ -52,6 +52,7 @@ nav:
        - contract_types/layers.md
        - contract_types/independence.md
        - contract_types/acyclic_siblings.md
+       - contract_types/symbol_visibility.md
    - ui.md
    - Advanced:
       - api.md
