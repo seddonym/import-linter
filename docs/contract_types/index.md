@@ -52,6 +52,16 @@ Forbid dependency cycles between siblings.
 [:octicons-arrow-right-24: Read more](acyclic_siblings.md)
 </div>
 
+<div class="flowcard" markdown>
+:material-code-tags:{ .lg .middle } __Unused public symbols__
+
+---
+
+Flag public names that have no in-package users and are not exported.
+
+[:octicons-arrow-right-24: Read more](unused_public_symbols.md)
+</div>
+
 ## Custom contract types
 
 If none of the built in contract types meets your needs, you can define a custom contract type: see

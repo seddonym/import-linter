@@ -2,6 +2,7 @@
 
 ## latest
 
+* Add `unused_public_symbols` contract: flag public names that have no in-package users and are not exported.
 * Add `--no-logo` option to hide the logo in terminal output.
 
 ## 2.13 (2026-07-03)

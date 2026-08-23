@@ -5,6 +5,7 @@
 ## Contributors
 
 * [Aaron Gokaslan](https://github.com/Skylion007)
+* [Akul Ameya](https://github.com/akul-ameya)
 * [Alexandre Beaufays](https://github.com/abeaufays)
 * [Amrou Bellalouna](https://github.com/shtlrs)
 * [Anthony Sottile](https://github.com/asottile)
