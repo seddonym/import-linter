@@ -15,6 +15,146 @@ from importlinter.domain.imports import (
 )
 
 
+class TestRemoveIgnoredImports:
+    DIRECT_IMPORTS = [
+        DirectImport(
+            importer=Module("mypackage.green"),
+            imported=Module("mypackage.yellow"),
+            line_number=1,
+            line_contents="-",
+        ),
+        DirectImport(
+            importer=Module("mypackage.green"),
+            imported=Module("mypackage.purple"),
+            line_number=1,
+            line_contents="-",
+        ),
+        DirectImport(
+            importer=Module("mypackage.green"),
+            imported=Module("mypackage.blue"),
+            line_number=1,
+            line_contents="-",
+        ),
+        DirectImport(  # Direct Imports can appear twice, for different line numbers.
+            importer=Module("mypackage.green"),
+            imported=Module("mypackage.blue"),
+            line_number=2,
+            line_contents="-",
+        ),
+    ]
+
+    @pytest.mark.parametrize("alert_level", [AlertLevel.NONE, AlertLevel.WARN, AlertLevel.ERROR])
+    def test_no_unresolved_import_expressions(self, alert_level):
+        graph = self._build_graph(self.DIRECT_IMPORTS)
+
+        warnings = remove_ignored_imports(
+            graph=graph,
+            ignore_imports=[
+                ImportExpression(
+                    importer=ModuleExpression("mypackage.green"),
+                    imported=ModuleExpression("mypackage.blue"),
+                ),
+                ImportExpression(
+                    importer=ModuleExpression("mypackage.green"),
+                    imported=ModuleExpression("mypackage.purple"),
+                ),
+            ],
+            unmatched_alerting=alert_level,
+        )
+
+        assert graph.count_imports() == 1  # The three matching imports have been removed.
+        assert warnings == []
+
+    @pytest.mark.parametrize(
+        "alert_level, expected_result",
+        [
+            (AlertLevel.NONE, []),
+            (
+                AlertLevel.WARN,
+                [
+                    "No matches for ignored import mypackage.* -> mypackage.nonexistent.",
+                    "No matches for ignored import mypackage.nonexistent -> mypackage.blue.",
+                ],
+            ),
+        ],
+    )
+    def test_unresolved_import_expressions_with_non_error_level_alerting(
+        self, alert_level, expected_result
+    ):
+        graph = self._build_graph(self.DIRECT_IMPORTS)
+        ignore_imports = [
+            ImportExpression(
+                importer=ModuleExpression("mypackage.green"),
+                imported=ModuleExpression("mypackage.blue"),
+            ),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.*"),
+                imported=ModuleExpression("mypackage.nonexistent"),
+            ),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.green"),
+                imported=ModuleExpression("mypackage.purple"),
+            ),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.nonexistent"),
+                imported=ModuleExpression("mypackage.blue"),
+            ),
+        ]
+
+        warnings = remove_ignored_imports(
+            graph=graph,
+            ignore_imports=ignore_imports,
+            unmatched_alerting=alert_level,
+        )
+        assert graph.count_imports() == 1  # The three matching imports have been removed.
+        assert warnings == expected_result
+
+    def test_unresolved_import_expressions_with_error_level_alerting(self):
+        graph = self._build_graph(self.DIRECT_IMPORTS)
+
+        expected_result = MissingImport(
+            "No matches for ignored import mypackage.* -> mypackage.nonexistent.\n"
+            "No matches for ignored import mypackage.nonexistent -> mypackage.blue."
+        )
+
+        ignore_imports = [
+            ImportExpression(
+                importer=ModuleExpression("mypackage.green"),
+                imported=ModuleExpression("mypackage.blue"),
+            ),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.*"),
+                imported=ModuleExpression("mypackage.nonexistent"),
+            ),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.green"),
+                imported=ModuleExpression("mypackage.purple"),
+            ),
+            ImportExpression(
+                importer=ModuleExpression("mypackage.nonexistent"),
+                imported=ModuleExpression("mypackage.blue"),
+            ),
+        ]
+
+        with pytest.raises(MissingImport, match=str(expected_result)):
+            remove_ignored_imports(
+                graph=graph,
+                ignore_imports=ignore_imports,
+                unmatched_alerting=AlertLevel.ERROR,
+            )
+
+    def _build_graph(self, direct_imports):
+        graph = ImportGraph()
+        for direct_import in direct_imports:
+            graph.add_import(
+                importer=direct_import.importer.name,
+                imported=direct_import.imported.name,
+                line_number=direct_import.line_number,
+                line_contents=direct_import.line_contents,
+            )
+        return graph
+
+
 class TestRemoveIgnoredImportsAndReport:
     DIRECT_IMPORTS = [
         DirectImport(
@@ -174,67 +314,3 @@ class TestRemoveIgnoredImportsAndReport:
                 line_contents=direct_import.line_contents,
             )
         return graph
-
-
-class TestRemoveIgnoredImportsDeprecated:
-    """
-    remove_ignored_imports() is deprecated in favour of remove_ignored_imports_and_report(),
-    but keeps its old behaviour (returning a plain list of warning strings) until Import
-    Linter 2.15. These tests only cover the deprecation shim; see
-    TestRemoveIgnoredImportsAndReport above for full coverage of the underlying behaviour.
-    """
-
-    def _build_graph(self):
-        graph = ImportGraph()
-        graph.add_import(
-            importer="mypackage.green",
-            imported="mypackage.blue",
-            line_number=1,
-            line_contents="-",
-        )
-        return graph
-
-    def test_emits_deprecation_warning(self):
-        graph = self._build_graph()
-
-        with pytest.warns(DeprecationWarning, match="remove_ignored_imports_and_report"):
-            remove_ignored_imports(
-                graph=graph,
-                ignore_imports=[],
-                unmatched_alerting=AlertLevel.ERROR,
-            )
-
-    def test_still_returns_a_plain_list_of_warnings(self):
-        graph = self._build_graph()
-
-        with pytest.warns(DeprecationWarning):
-            warnings = remove_ignored_imports(
-                graph=graph,
-                ignore_imports=[
-                    ImportExpression(
-                        importer=ModuleExpression("mypackage.*"),
-                        imported=ModuleExpression("mypackage.nonexistent"),
-                    ),
-                ],
-                unmatched_alerting=AlertLevel.WARN,
-            )
-
-        assert isinstance(warnings, list)
-        assert warnings == ["No matches for ignored import mypackage.* -> mypackage.nonexistent."]
-
-    def test_still_removes_matching_imports_from_the_graph(self):
-        graph = self._build_graph()
-
-        with pytest.warns(DeprecationWarning):
-            remove_ignored_imports(
-                graph=graph,
-                ignore_imports=[
-                    ImportExpression(
-                        importer=ModuleExpression("mypackage.green"),
-                        imported=ModuleExpression("mypackage.blue"),
-                    ),
-                ],
-                unmatched_alerting=AlertLevel.ERROR,
-            )
-
-        assert graph.count_imports() == 0

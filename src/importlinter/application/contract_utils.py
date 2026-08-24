@@ -1,5 +1,4 @@
 import enum
-import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -37,12 +36,6 @@ def remove_ignored_imports(
     """
     Remove any ignored imports from the graph.
 
-    Deprecated: this function's return type will change from list[str] to ImportRemoval in
-    Import Linter 2.15. New callers, and existing callers who are able to, should switch to
-    remove_ignored_imports_and_report, which already returns an ImportRemoval today. This
-    function will keep returning a plain list of warnings until that release, but emits a
-    DeprecationWarning as of this release to flag the upcoming change.
-
     Args:
         graph:              The graph that is being checked by a contract.
         ignore_imports:     Any import expressions that indicate imports to ignore.
@@ -54,14 +47,7 @@ def remove_ignored_imports(
     Returns:
         A list of any warnings to be surfaced to the user.
     """
-    warnings.warn(
-        "remove_ignored_imports() will change its return type from list[str] to ImportRemoval "
-        "in Import Linter 2.15. Switch to remove_ignored_imports_and_report(), which already "
-        "returns an ImportRemoval, to be ready ahead of that change.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    import_removal = _remove_ignored_imports(graph, ignore_imports, unmatched_alerting)
+    import_removal = remove_ignored_imports_and_report(graph, ignore_imports, unmatched_alerting)
     return list(import_removal.warnings)
 
 
@@ -72,6 +58,9 @@ def remove_ignored_imports_and_report(
 ) -> ImportRemoval:
     """
     Remove any ignored imports from the graph.
+
+    Behaves the same as remove_ignored_imports, except it returns an object
+    with more information about what was removed.
 
     Args:
         graph:              The graph that is being checked by a contract.
@@ -85,18 +74,6 @@ def remove_ignored_imports_and_report(
         An ImportRemoval, containing the DirectImports that were removed from the graph and any
         warnings to be surfaced to the user.
     """
-    return _remove_ignored_imports(graph, ignore_imports, unmatched_alerting)
-
-
-# Private functions
-# -----------------
-
-
-def _remove_ignored_imports(
-    graph: ImportGraph,
-    ignore_imports: Sequence[ImportExpression] | None,
-    unmatched_alerting: AlertLevel,
-) -> ImportRemoval:
     imports_to_remove: set[DirectImport] = set()
     unresolved_expressions = []
     for import_expression in ignore_imports or []:
@@ -132,6 +109,10 @@ def _remove_ignored_imports(
         removed_imports=frozenset(imports_to_remove),
         warnings=tuple(resolved_warnings),
     )
+
+
+# Private functions
+# -----------------
 
 
 def _handle_unresolved_import_expressions(

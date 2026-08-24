@@ -40,9 +40,7 @@ class TestRenderContractResultLine:
         assert capture.get() == f"{expected_line}\n"
 
     def test_broken_contract_with_no_ignored_imports_or_warnings(self):
-        contract = AlwaysFailsContract(
-            name="My contract", session_options={}, contract_options={}
-        )
+        contract = AlwaysFailsContract(name="My contract", session_options={}, contract_options={})
         contract_check = contract.check(ImportGraph(), verbose=False)
 
         with console.capture() as capture:
