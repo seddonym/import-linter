@@ -110,10 +110,12 @@ class ContractCheck:
         kept: bool,
         metadata: dict[str, Any] | None = None,
         warnings: list[str] | None = None,
+        ignored_import_count: int = 0,
     ) -> None:
         self.kept = kept
         self.metadata = metadata or {}
         self.warnings = warnings or []
+        self.ignored_import_count = ignored_import_count
 
 
 class NoSuchContractType(Exception):

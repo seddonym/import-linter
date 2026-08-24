@@ -141,7 +141,7 @@ class LayersContract(Contract):
             )
 
     def check(self, graph: grimp.ImportGraph, verbose: bool) -> ContractCheck:
-        warnings = contract_utils.remove_ignored_imports(
+        import_removal = contract_utils.remove_ignored_imports_and_report(
             graph=graph,
             ignore_imports=self.ignore_imports,  # type: ignore
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
@@ -168,7 +168,8 @@ class LayersContract(Contract):
 
         return ContractCheck(
             kept=not (dependencies or undeclared_modules),
-            warnings=warnings,
+            warnings=list(import_removal.warnings),
+            ignored_import_count=import_removal.ignored_import_count,
             metadata={
                 "invalid_dependencies": invalid_chains,
                 "undeclared_modules": undeclared_modules,

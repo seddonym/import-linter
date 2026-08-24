@@ -77,7 +77,7 @@ class ForbiddenContract(Contract):
         is_kept = True
         invalid_chains = []
 
-        warnings = contract_utils.remove_ignored_imports(
+        import_removal = contract_utils.remove_ignored_imports_and_report(
             graph=graph,
             ignore_imports=self.ignore_imports,  # type: ignore
             unmatched_alerting=self.unmatched_ignore_imports_alerting,  # type: ignore
@@ -177,7 +177,8 @@ class ForbiddenContract(Contract):
 
         return ContractCheck(
             kept=is_kept,
-            warnings=warnings,
+            warnings=list(import_removal.warnings),
+            ignored_import_count=import_removal.ignored_import_count,
             metadata={"invalid_chains": sorted(invalid_chains, key=chain_sort_key)},
         )
 

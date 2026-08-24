@@ -79,12 +79,16 @@ def render_contract_result_line(
                   The duration will only be displayed if it is provided.
     """
     result_text = "KEPT" if contract_check.kept else "BROKEN"
-    warning_text = _build_warning_text(warnings_count=len(contract_check.warnings))
+    warnings_count = len(contract_check.warnings)
+    result_suffix_text = _build_result_suffix_text(
+        ignored_import_count=contract_check.ignored_import_count,
+        warnings_count=warnings_count,
+    )
     color_key = output.SUCCESS if contract_check.kept else output.ERROR
     color = output.COLORS[color_key]
     output.print(f"{contract.name} ", newline=False)
     output.print(result_text, color=color, newline=False)
-    output.print(warning_text, color=output.COLORS[output.WARNING], newline=False)
+    output.print(result_suffix_text, color=output.COLORS[output.WARNING], newline=False)
     if duration is not None:
         output.print(f" [{format_duration(duration)}]", newline=False)
     output.new_line()
@@ -109,10 +113,26 @@ def _render_could_not_run(report: Report) -> None:
             output.print_error(f"{field_name}: {message}", bold=False)
 
 
-def _build_warning_text(warnings_count: int) -> str:
+def _build_result_suffix_text(ignored_import_count: int, warnings_count: int) -> str:
+    """
+    Build the "(...)" suffix that follows a contract's KEPT/BROKEN result, combining the
+    ignored imports count and the warnings count into a single clause, e.g.:
+
+        My contract KEPT
+        My contract KEPT (19 ignored imports)
+        My contract KEPT (1 warning)
+        My contract KEPT (19 ignored imports, 1 warning)
+    """
+    parts = []
+    if ignored_import_count:
+        noun = "import" if ignored_import_count == 1 else "imports"
+        parts.append(f"{ignored_import_count} ignored {noun}")
     if warnings_count:
         noun = "warning" if warnings_count == 1 else "warnings"
-        return f" ({warnings_count} {noun})"
+        parts.append(f"{warnings_count} {noun}")
+
+    if parts:
+        return f" ({', '.join(parts)})"
     else:
         return ""
 
