@@ -2,8 +2,7 @@
 
 ## latest
 
-* Show the count of ignored imports next to a contract's result, combined with the warning count into a single clause, e.g. `KEPT (3 ignored imports, 1 warning)`. Either part is omitted when its count is zero.
-* Add `contract_utils.remove_ignored_imports_and_report`, returning a new `ImportRemoval` object (the removed imports and any warnings). `contract_utils.remove_ignored_imports` is deprecated in favour of it and will change its return type in Import Linter 2.15.
+* Show the count of ignored imports next to a contract's result.
 * Add `--no-logo` option to hide the logo in terminal output.
 
 ## 2.13 (2026-07-03)
