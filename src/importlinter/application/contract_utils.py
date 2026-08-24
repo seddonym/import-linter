@@ -26,14 +26,6 @@ class ImportRemoval:
 
     @property
     def ignored_import_count(self) -> int:
-        """
-        The number of distinct (importer, imported) pairs that were removed from the graph.
-
-        This is the size of removed_imports, not a count of raw import statements or of
-        ignore_imports entries matched: an (importer, imported) pair that corresponds to
-        multiple import statements (e.g. several lines in the same module) is still counted
-        once.
-        """
         return len(self.removed_imports)
 
 
