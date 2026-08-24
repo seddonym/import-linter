@@ -88,10 +88,7 @@ def render_contract_result_line(
     color = output.COLORS[color_key]
     output.print(f"{contract.name} ", newline=False)
     output.print(result_text, color=color, newline=False)
-    if warnings_count:
-        output.print(result_suffix_text, color=output.COLORS[output.WARNING], newline=False)
-    else:
-        output.print(result_suffix_text, newline=False)
+    output.print(result_suffix_text, color=output.COLORS[output.WARNING], newline=False)
     if duration is not None:
         output.print(f" [{format_duration(duration)}]", newline=False)
     output.new_line()
