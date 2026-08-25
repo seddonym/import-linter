@@ -493,15 +493,16 @@ class TestProtectedContract:
 
         assert not contract_check.kept
         assert capture.get() == dedent(
-            """Illegal imports of protected package mypackage.foo.protected:
+            """\
+            Illegal imports of protected package mypackage.foo.protected:
 
-- mypackage.foo.sibling -> mypackage.foo.protected.models (l.6)
+            - mypackage.foo.sibling -> mypackage.foo.protected.models (l.6)
 
 
-Use the mypackage.foo interface.
-More info: http://docs/protected
+            Use the mypackage.foo interface.
+            More info: http://docs/protected
 
-        """
+            """
         )
 
     def test_render_broken_contract_simple_with_package(self):
@@ -532,12 +533,13 @@ More info: http://docs/protected
 
         assert not contract_check.kept
         assert capture.get() == dedent(
-            """Illegal imports of protected package mypackage.foo.protected:
+            """\
+            Illegal imports of protected package mypackage.foo.protected:
 
-- mypackage.foo.sibling -> mypackage.foo.protected.models (l.6)
+            - mypackage.foo.sibling -> mypackage.foo.protected.models (l.6)
 
 
-        """
+            """
         )
 
     def test_render_broken_contract_full_with_package(self):
@@ -639,31 +641,32 @@ More info: http://docs/protected
             contract.render_broken_contract(contract_check)
 
         assert capture.get() == dedent(
-            """Illegal imports of protected package mypackage.blue.models
-(via mypackage.**.models expression):
+            """\
+            Illegal imports of protected package mypackage.blue.models
+            (via mypackage.**.models expression):
 
-- mypackage.green.one -> mypackage.blue.models (l.7)
+            - mypackage.green.one -> mypackage.blue.models (l.7)
 
-- mypackage.green.three -> mypackage.blue.models (l.12, 34)
+            - mypackage.green.three -> mypackage.blue.models (l.12, 34)
 
-- mypackage.green.five -> mypackage.blue.models.alpha (l.4)
+            - mypackage.green.five -> mypackage.blue.models.alpha (l.4)
 
-Illegal imports of protected package mypackage.orange.models
-(via mypackage.**.models expression):
+            Illegal imports of protected package mypackage.orange.models
+            (via mypackage.**.models expression):
 
-- mypackage.yellow.one -> mypackage.orange.models (l.16)
+            - mypackage.yellow.one -> mypackage.orange.models (l.16)
 
-Illegal imports of protected package mypackage.orange.data
-(via mypackage.**.data expression):
+            Illegal imports of protected package mypackage.orange.data
+            (via mypackage.**.data expression):
 
-- mypackage.yellow.one -> mypackage.orange.data (l.17)
+            - mypackage.yellow.one -> mypackage.orange.data (l.17)
 
-Illegal imports of protected package mypackage.brown:
+            Illegal imports of protected package mypackage.brown:
 
-- mypackage.yellow.one -> mypackage.brown (l.18)
+            - mypackage.yellow.one -> mypackage.brown (l.18)
 
-- mypackage.yellow.one -> mypackage.brown.alpha (l.19)
+            - mypackage.yellow.one -> mypackage.brown.alpha (l.19)
 
 
-        """
+            """
         )
