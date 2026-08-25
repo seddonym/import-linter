@@ -41,6 +41,7 @@ class AcyclicSiblingsContract(Contract):
     skip_descendants = fields.SetField(subfield=fields.ModuleExpressionField(), required=False)
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
+    broken_contract_guidance = fields.TextField(required=False)
 
     def check(self, graph: grimp.ImportGraph, verbose: bool) -> ContractCheck:
         self._check_no_ancestors_and_descendant_expressions_are_the_same()
@@ -209,3 +210,5 @@ class AcyclicSiblingsContract(Contract):
             if num_extra:
                 output.print_error(f"(and {num_extra} more).")
             output.new_line()
+
+        contract_utils.render_broken_contract_guidance(self.broken_contract_guidance)  # type: ignore

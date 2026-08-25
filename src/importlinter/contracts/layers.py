@@ -119,6 +119,9 @@ class LayersContract(Contract):
                               its list of layers to check. (Optional, default False.)
         - exhaustive_ignores: A set of potential layers to ignore in exhaustiveness checks.
                               (Optional.)
+        - broken_contract_guidance:       Guidance explaining how to fix the contract if it's
+                              broken. These are displayed after the contract's violations.
+                              (Optional.)
     """
 
     type_name = "layers"
@@ -129,6 +132,7 @@ class LayersContract(Contract):
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
     exhaustive = fields.BooleanField(default=False)
     exhaustive_ignores = fields.SetField(subfield=fields.StringField(), required=False)
+    broken_contract_guidance = fields.TextField(required=False)
 
     def validate(self) -> None:
         if self.exhaustive and not self.containers:
@@ -208,6 +212,8 @@ class LayersContract(Contract):
                 "container must be declared as a layer.)"
             )
             output.new_line()
+
+        contract_utils.render_broken_contract_guidance(self.broken_contract_guidance)  # type: ignore
 
     def _validate_containers(self, graph: grimp.ImportGraph, containers: set[str]) -> None:
         root_package_names = self.session_options["root_packages"]

@@ -43,6 +43,8 @@ class IndependenceContract(Contract):
         - unmatched_ignore_imports_alerting: Decides how to report when the expression in the
                           `ignore_imports` set is not found in the graph. Valid values are
                           "none", "warn", "error". Default value is "error".
+        - broken_contract_guidance:   Guidance explaining how to fix the contract if it's broken.
+                          These are displayed after the contract's violations. (Optional.)
     """
 
     type_name = "independence"
@@ -50,6 +52,7 @@ class IndependenceContract(Contract):
     modules = fields.SetField(subfield=fields.ModuleExpressionField())
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
+    broken_contract_guidance = fields.TextField(required=False)
 
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
         import_removal = contract_utils.remove_ignored_imports_and_report(
@@ -88,6 +91,8 @@ class IndependenceContract(Contract):
                 output.new_line()
 
             output.new_line()
+
+        contract_utils.render_broken_contract_guidance(self.broken_contract_guidance)  # type: ignore
 
     def _check_all_modules_exist_in_graph(self, graph: ImportGraph, modules) -> None:
         for module in modules:

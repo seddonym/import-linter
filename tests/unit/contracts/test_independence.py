@@ -528,6 +528,57 @@ def test_ignore_imports_adds_warnings():
     }
 
 
+def test_render_broken_contract_guidance():
+    contract = IndependenceContract(
+        name="Independence contract",
+        session_options={"root_packages": ["mypackage"]},
+        contract_options={
+            "modules": ["mypackage.blue", "mypackage.green"],
+            "broken_contract_guidance": "Use the mypackage.blue interface.\nMore info: http://docs/blue",
+        },
+    )
+    check = ContractCheck(
+        kept=False,
+        metadata={
+            "invalid_chains": [
+                {
+                    "upstream_module": "mypackage.green",
+                    "downstream_module": "mypackage.blue",
+                    "chains": [
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.blue.foo",
+                                    "imported": "mypackage.green.bar",
+                                    "line_numbers": (5,),
+                                },
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        }
+                    ],
+                },
+            ]
+        },
+    )
+
+    with console.capture() as capture:
+        contract.render_broken_contract(check)
+
+    assert capture.get() == dedent(
+        """\
+        mypackage.blue is not allowed to import mypackage.green:
+
+        - mypackage.blue.foo -> mypackage.green.bar (l.5)
+
+
+        Use the mypackage.blue interface.
+        More info: http://docs/blue
+
+        """
+    )
+
+
 def test_render_broken_contract():
     contract = IndependenceContract(
         name="Independence contract",

@@ -464,6 +464,46 @@ class TestProtectedContract:
 
         assert contract_check.kept == contract_kept, description
 
+    def test_render_broken_contract_guidance(self):
+        graph = self._build_default_graph()
+
+        graph.add_import(
+            importer="mypackage.foo.sibling",
+            imported="mypackage.foo.protected.models",
+            line_number=6,
+            line_contents="import models",
+        )
+
+        contract = ProtectedContract(
+            name="Protected contract",
+            session_options={
+                "root_packages": ["mypackage"],
+            },
+            contract_options={
+                "protected_modules": ("mypackage.foo.protected"),
+                "allowed_importers": ("mypackage.bar.allowed"),
+                "as_packages": "True",
+                "broken_contract_guidance": "Use the mypackage.foo interface.\nMore info: http://docs/protected",
+            },
+        )
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        with console.capture() as capture:
+            contract.render_broken_contract(contract_check)
+
+        assert not contract_check.kept
+        assert capture.get() == dedent(
+            """Illegal imports of protected package mypackage.foo.protected:
+
+- mypackage.foo.sibling -> mypackage.foo.protected.models (l.6)
+
+
+Use the mypackage.foo interface.
+More info: http://docs/protected
+
+        """
+        )
+
     def test_render_broken_contract_simple_with_package(self):
         graph = self._build_default_graph()
 

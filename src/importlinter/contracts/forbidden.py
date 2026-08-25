@@ -62,6 +62,9 @@ class ForbiddenContract(Contract):
                              False, each of the modules passed in will be treated as a module
                              rather than a package. Default behaviour is True (treat modules as
                              packages).
+        - broken_contract_guidance:      Guidance explaining how to fix the contract if it's
+                             broken. These are displayed after the contract's violations.
+                             (Optional.)
     """
 
     type_name = "forbidden"
@@ -72,6 +75,7 @@ class ForbiddenContract(Contract):
     allow_indirect_imports = fields.BooleanField(required=False, default=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
     as_packages = fields.BooleanField(required=False, default=True)
+    broken_contract_guidance = fields.TextField(required=False)
 
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
         is_kept = True
@@ -210,6 +214,8 @@ class ForbiddenContract(Contract):
                 output.new_line()
 
             output.new_line()
+
+        contract_utils.render_broken_contract_guidance(self.broken_contract_guidance)  # type: ignore
 
     def _check_all_modules_exist_in_graph(
         self, modules: Iterable[Module], graph: ImportGraph

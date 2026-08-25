@@ -2,10 +2,11 @@ import enum
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-
-from importlinter.domain.helpers import MissingImport
-from importlinter.domain.imports import ImportExpression, DirectImport, Module
 from grimp import ImportGraph
+
+from importlinter.application import output
+from importlinter.domain.helpers import MissingImport
+from importlinter.domain.imports import DirectImport, ImportExpression, Module
 
 
 class AlertLevel(enum.Enum):
@@ -109,6 +110,23 @@ def remove_ignored_imports_and_report(
         removed_imports=frozenset(imports_to_remove),
         warnings=tuple(resolved_warnings),
     )
+
+
+def render_broken_contract_guidance(broken_contract_guidance: str | None) -> None:
+    """
+    Output any guidance for fixing a broken contract.
+
+    Intended to be called at the end of a contract's render_broken_contract method.
+
+    Args:
+        broken_contract_guidance: Guidance supplied by whoever defined the contract.
+                                  If there isn't any, nothing is rendered.
+    """
+    if not broken_contract_guidance:
+        return
+
+    output.print(broken_contract_guidance)
+    output.new_line()
 
 
 # Private functions
