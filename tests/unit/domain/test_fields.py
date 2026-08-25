@@ -1,5 +1,4 @@
 import enum
-
 import re
 from typing import Any
 
@@ -7,14 +6,15 @@ import pytest
 
 from importlinter.domain.fields import (
     BooleanField,
-    IntegerField,
     EnumField,
     Field,
     ImportExpressionField,
+    IntegerField,
     ListField,
     ModuleField,
     SetField,
     StringField,
+    TextField,
     ValidationError,
 )
 from importlinter.domain.imports import ImportExpression, Module, ModuleExpression
@@ -55,6 +55,20 @@ class BaseFieldTest:
 )
 class TestStringField(BaseFieldTest):
     field_class = StringField
+
+
+@pytest.mark.parametrize(
+    "raw_data, expected_value",
+    (
+        ("Some text.", "Some text."),
+        (
+            ["First paragraph.", "", "Second paragraph."],
+            "First paragraph.\n\nSecond paragraph.",
+        ),
+    ),
+)
+class TestTextField(BaseFieldTest):
+    field_class = TextField
 
 
 @pytest.mark.parametrize(

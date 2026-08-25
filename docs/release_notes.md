@@ -2,6 +2,7 @@
 
 ## latest
 
+* Add `TextField` for multi-line text configuration values.
 * Show the count of ignored imports next to a contract's result.
 * Add `--no-logo` option to hide the logo in terminal output.
 
