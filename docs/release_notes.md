@@ -2,6 +2,8 @@
 
 ## latest
 
+* Add `broken_contract_guidance` option to contracts, for explaining how to fix them when they're broken.
+* Add `TextField` for multi-line text configuration values.
 * Show the count of ignored imports next to a contract's result.
 * Add `--no-logo` option to hide the logo in terminal output.
 

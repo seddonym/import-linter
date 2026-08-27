@@ -973,6 +973,77 @@ def test_render_broken_contract():
     )
 
 
+@pytest.mark.parametrize(
+    "broken_contract_guidance, expected_broken_contract_guidance_output",
+    (
+        (
+            "Use the mypackage.blue interface.\nMore info: http://docs/blue",
+            "Use the mypackage.blue interface.\nMore info: http://docs/blue\n\n",
+        ),
+        # A single line, as supplied by a single-line INI value.
+        (
+            "Use the mypackage.blue interface.",
+            "Use the mypackage.blue interface.\n\n",
+        ),
+        # Unconfigured and empty guidance should both render nothing.
+        (None, ""),
+        ("", ""),
+    ),
+)
+def test_render_broken_contract_guidance(
+    broken_contract_guidance, expected_broken_contract_guidance_output
+):
+    contract_options = {
+        "source_modules": ("mypackage.one",),
+        "forbidden_modules": ("mypackage.blue",),
+    }
+    if broken_contract_guidance is not None:
+        contract_options["broken_contract_guidance"] = broken_contract_guidance
+
+    contract = ForbiddenContract(
+        name="Forbid contract",
+        session_options={"root_packages": ["mypackage"]},
+        contract_options=contract_options,
+    )
+    check = ContractCheck(
+        kept=False,
+        metadata={
+            "invalid_chains": [
+                {
+                    "upstream_module": "mypackage.blue",
+                    "downstream_module": "mypackage.one",
+                    "chains": [
+                        [
+                            {
+                                "importer": "mypackage.one",
+                                "imported": "mypackage.blue",
+                                "line_numbers": (3,),
+                            }
+                        ]
+                    ],
+                },
+            ]
+        },
+    )
+
+    with console.capture() as capture:
+        contract.render_broken_contract(check)
+
+    assert (
+        capture.get()
+        == dedent(
+            """\
+        mypackage.one is not allowed to import mypackage.blue:
+
+        -   mypackage.one -> mypackage.blue (l.3)
+
+
+        """
+        )
+        + expected_broken_contract_guidance_output
+    )
+
+
 class TestVerbosePrint:
     def test_verbose(self):
         timer = FakeTimer()

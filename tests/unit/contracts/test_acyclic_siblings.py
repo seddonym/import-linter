@@ -318,6 +318,7 @@ def _build_contract(
     skip_descendants: list[str] | None = None,
     depth: str = "",
     ignore_imports: list[str] | None = None,
+    broken_contract_guidance: str | None = None,
 ) -> AcyclicSiblingsContract:
     contract_options: dict[str, list[str] | str] = {"ancestors": ancestors or ["pkg"]}
     if skip_descendants:
@@ -326,6 +327,8 @@ def _build_contract(
         contract_options["depth"] = depth
     if ignore_imports:
         contract_options["ignore_imports"] = ignore_imports
+    if broken_contract_guidance:
+        contract_options["broken_contract_guidance"] = broken_contract_guidance
     return AcyclicSiblingsContract(
         name="My contract",
         session_options={"root_packages": ["pkg"]},
@@ -381,6 +384,46 @@ class TestVerbosePrint:
 
 
 class TestRenderBrokenContract:
+    def test_render_broken_contract_guidance(self):
+        contract = _build_contract(
+            broken_contract_guidance="Break the cycle via pkg.interfaces.\nMore info: http://docs/cycles"
+        )
+        check = ContractCheck(
+            kept=False,
+            metadata={
+                "summaries": {
+                    PackageSummary(
+                        package="pkg",
+                        dependencies=frozenset(
+                            {
+                                Dependency(
+                                    downstream="pkg.foo",
+                                    upstream="pkg.bar",
+                                    num_imports=10,
+                                ),
+                            }
+                        ),
+                    ),
+                },
+            },
+        )
+
+        with console.capture() as capture:
+            contract.render_broken_contract(check)
+
+        assert capture.get() == dedent(
+            """\
+            No cycles are allowed in pkg.
+            It could be made acyclic by removing 1 dependency:
+
+            - .foo -> .bar (10 imports)
+
+            Break the cycle via pkg.interfaces.
+            More info: http://docs/cycles
+
+            """
+        )
+
     def test_render(self):
         contract = _build_contract()
         check = ContractCheck(

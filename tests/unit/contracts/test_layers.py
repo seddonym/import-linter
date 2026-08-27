@@ -1342,6 +1342,59 @@ def test_missing_containerless_layers_raise_value_error():
         contract.check(graph=graph, verbose=False)
 
 
+def test_render_broken_contract_guidance():
+    contract = LayersContract(
+        name="Layers contract",
+        session_options={"root_packages": ["mypackage"]},
+        contract_options={
+            "containers": ["mypackage"],
+            "layers": ["high", "low"],
+            "broken_contract_guidance": "Use the mypackage.high interface.\nMore info: http://docs/layers",
+        },
+    )
+    check = ContractCheck(
+        kept=False,
+        metadata={
+            "invalid_dependencies": [
+                {
+                    "importer": "mypackage.low",
+                    "imported": "mypackage.high",
+                    "routes": [
+                        {
+                            "chain": [
+                                {
+                                    "importer": "mypackage.low.blue",
+                                    "imported": "mypackage.high.yellow",
+                                    "line_numbers": (6,),
+                                }
+                            ],
+                            "extra_firsts": [],
+                            "extra_lasts": [],
+                        }
+                    ],
+                },
+            ],
+            "undeclared_modules": set(),
+        },
+    )
+
+    with console.capture() as capture:
+        contract.render_broken_contract(check)
+
+    assert capture.get() == dedent(
+        """\
+        mypackage.low is not allowed to import mypackage.high:
+
+        - mypackage.low.blue -> mypackage.high.yellow (l.6)
+
+
+        Use the mypackage.high interface.
+        More info: http://docs/layers
+
+        """
+    )
+
+
 def test_render_broken_contract():
     contract = LayersContract(
         name="Layers contract",

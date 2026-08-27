@@ -73,6 +73,17 @@ class StringField(Field[str]):
         return str(raw_data)
 
 
+class TextField(Field[str]):
+    """
+    A field for text that may span multiple lines.
+    """
+
+    def parse(self, raw_data: str | list) -> str:
+        if isinstance(raw_data, list):
+            return "\n".join(raw_data)
+        return raw_data
+
+
 class BooleanField(Field[bool]):
     """
     A field for single values of booleans.

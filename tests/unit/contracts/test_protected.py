@@ -464,6 +464,47 @@ class TestProtectedContract:
 
         assert contract_check.kept == contract_kept, description
 
+    def test_render_broken_contract_guidance(self):
+        graph = self._build_default_graph()
+
+        graph.add_import(
+            importer="mypackage.foo.sibling",
+            imported="mypackage.foo.protected.models",
+            line_number=6,
+            line_contents="import models",
+        )
+
+        contract = ProtectedContract(
+            name="Protected contract",
+            session_options={
+                "root_packages": ["mypackage"],
+            },
+            contract_options={
+                "protected_modules": ("mypackage.foo.protected"),
+                "allowed_importers": ("mypackage.bar.allowed"),
+                "as_packages": "True",
+                "broken_contract_guidance": "Use the mypackage.foo interface.\nMore info: http://docs/protected",
+            },
+        )
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        with console.capture() as capture:
+            contract.render_broken_contract(contract_check)
+
+        assert not contract_check.kept
+        assert capture.get() == dedent(
+            """\
+            Illegal imports of protected package mypackage.foo.protected:
+
+            - mypackage.foo.sibling -> mypackage.foo.protected.models (l.6)
+
+
+            Use the mypackage.foo interface.
+            More info: http://docs/protected
+
+            """
+        )
+
     def test_render_broken_contract_simple_with_package(self):
         graph = self._build_default_graph()
 
@@ -492,12 +533,13 @@ class TestProtectedContract:
 
         assert not contract_check.kept
         assert capture.get() == dedent(
-            """Illegal imports of protected package mypackage.foo.protected:
+            """\
+            Illegal imports of protected package mypackage.foo.protected:
 
-- mypackage.foo.sibling -> mypackage.foo.protected.models (l.6)
+            - mypackage.foo.sibling -> mypackage.foo.protected.models (l.6)
 
 
-        """
+            """
         )
 
     def test_render_broken_contract_full_with_package(self):
@@ -599,31 +641,32 @@ class TestProtectedContract:
             contract.render_broken_contract(contract_check)
 
         assert capture.get() == dedent(
-            """Illegal imports of protected package mypackage.blue.models
-(via mypackage.**.models expression):
+            """\
+            Illegal imports of protected package mypackage.blue.models
+            (via mypackage.**.models expression):
 
-- mypackage.green.one -> mypackage.blue.models (l.7)
+            - mypackage.green.one -> mypackage.blue.models (l.7)
 
-- mypackage.green.three -> mypackage.blue.models (l.12, 34)
+            - mypackage.green.three -> mypackage.blue.models (l.12, 34)
 
-- mypackage.green.five -> mypackage.blue.models.alpha (l.4)
+            - mypackage.green.five -> mypackage.blue.models.alpha (l.4)
 
-Illegal imports of protected package mypackage.orange.models
-(via mypackage.**.models expression):
+            Illegal imports of protected package mypackage.orange.models
+            (via mypackage.**.models expression):
 
-- mypackage.yellow.one -> mypackage.orange.models (l.16)
+            - mypackage.yellow.one -> mypackage.orange.models (l.16)
 
-Illegal imports of protected package mypackage.orange.data
-(via mypackage.**.data expression):
+            Illegal imports of protected package mypackage.orange.data
+            (via mypackage.**.data expression):
 
-- mypackage.yellow.one -> mypackage.orange.data (l.17)
+            - mypackage.yellow.one -> mypackage.orange.data (l.17)
 
-Illegal imports of protected package mypackage.brown:
+            Illegal imports of protected package mypackage.brown:
 
-- mypackage.yellow.one -> mypackage.brown (l.18)
+            - mypackage.yellow.one -> mypackage.brown (l.18)
 
-- mypackage.yellow.one -> mypackage.brown.alpha (l.19)
+            - mypackage.yellow.one -> mypackage.brown.alpha (l.19)
 
 
-        """
+            """
         )

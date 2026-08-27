@@ -70,6 +70,35 @@ If none of the built in contract types meets your needs, you can define a custom
     - `warn`: Print a warning for each unmatched expression.
     - `none`: Do not alert.
 
+- `broken_contract_guidance`: A message for Import Linter to display when the contract is broken, below the built-in message. (Optional.) 
+
+=== "INI"
+    ```ini
+    [importlinter:contract:no-legacy-colors]
+    name = Colors should not use the legacy numbers API
+    type = forbidden
+    source_modules =
+        mypackage.colors
+    forbidden_modules =
+        mypackage.legacy.numbers
+    broken_contract_guidance =
+        Use mypackage.numbers instead - it's the supported top-level interface.
+        Migration guide: https://docs.example.com/numbers-migration
+    ```
+
+=== "TOML"
+    ```toml
+    [[tool.importlinter.contracts]]
+    name = "Colors should not use the legacy numbers API"
+    type = "forbidden"
+    source_modules = ["mypackage.colors"]
+    forbidden_modules = ["mypackage.legacy.numbers"]
+    broken_contract_guidance = """
+    Use mypackage.numbers instead - it's the supported top-level interface.
+    Migration guide: https://docs.example.com/numbers-migration
+    """
+    ```
+
 ## Wildcards
 
 Many contract fields refer to sets of modules - some (but not all) of these support wildcards.
