@@ -135,6 +135,34 @@ def test_respects_passed_filename(passed_filename, expected_foo_value):
     (
         (
             """
+            root_package = "mypackage"
+            include_external_packages = true
+            exclude_type_checking_imports = false
+    
+            [[contracts]]
+            name = "Test Contract"
+            type = "forbidden"
+            source_modules = ["mypackage.foo"]
+            forbidden_modules = ["mypackage.bar"]
+            """,
+            UserOptions(
+                session_options={
+                    "root_package": "mypackage",
+                    "include_external_packages": "True",
+                    "exclude_type_checking_imports": "False",
+                },
+                contracts_options=[
+                    {
+                        "name": "Test Contract",
+                        "type": "forbidden",
+                        "source_modules": ["mypackage.foo"],
+                        "forbidden_modules": ["mypackage.bar"],
+                    }
+                ],
+            ),
+        ),
+        (
+            """
             [something]
             # This file has no import-linter section.
             foo = 1
@@ -153,6 +181,34 @@ def test_respects_passed_filename(passed_filename, expected_foo_value):
             bar = 999
             """,
             UserOptions(session_options={"foo": "hello", "bar": 999}, contracts_options=[]),
+        ),
+        (
+            """  
+            root_package = "mypackage"
+            contract_types = [
+                "mypackage.contracts.CustomContract",
+                "anotherpackage.contracts.AnotherContract"
+            ]
+
+            [[contracts]]
+            name = "Custom Contract"
+            type = "custom"
+            """,
+            UserOptions(
+                session_options={
+                    "root_package": "mypackage",
+                    "contract_types": [
+                        "mypackage.contracts.CustomContract",
+                        "anotherpackage.contracts.AnotherContract",
+                    ],
+                },
+                contracts_options=[
+                    {
+                        "name": "Custom Contract",
+                        "type": "custom",
+                    }
+                ],
+            ),
         ),
         (
             """
