@@ -36,6 +36,7 @@ def generate_dot(
     module: str,
     show_import_totals: bool,
     show_module_counts: bool,
+    show_lazy_imports: bool,
     show_cycle_breakers: bool,
 ) -> ModuleDot:
     logger.info(f"Building graph for module '{module}'...")
@@ -43,7 +44,12 @@ def generate_dot(
     grimp_graph = _get_grimp_graph(cache, top_level_package)
 
     dot_graph = build_dot_graph(
-        grimp_graph, module, show_import_totals, show_module_counts, show_cycle_breakers
+        grimp_graph,
+        module,
+        show_import_totals,
+        show_module_counts,
+        show_lazy_imports,
+        show_cycle_breakers,
     )
     dot_string = dot_graph.render()
 

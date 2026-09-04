@@ -40,6 +40,7 @@ class Edge:
         else:
             return ""
 
+
 _EDGE_FIELDS = {f.name: f for f in fields(Edge)}
 
 

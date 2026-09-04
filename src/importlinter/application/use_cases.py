@@ -21,7 +21,7 @@ from . import output
 from .app_config import settings
 from .ports.reporting import Report
 from .rendering import render_exception, render_report, format_duration
-from ..domain.dotfile import DotGraph, Edge, EdgeStyle
+from ..domain.dotfile import DotGraph, Edge, EdgeArrowhead, EdgeStyle
 from .sentinels import NotSupplied
 from .user_options import InvalidUserOptions, UserOptions
 
@@ -152,6 +152,7 @@ def build_dot_graph(
     module_name: str,
     show_import_totals: bool,
     show_module_counts: bool,
+    show_lazy_imports: bool,
     show_cycle_breakers: bool,
 ) -> DotGraph:
     """
@@ -164,6 +165,8 @@ def build_dot_graph(
         module_name: the module to visualize, e.g. 'mypackage.foo'.
         show_import_totals: whether to label the edges with the total amount of imports.
         show_module_counts: whether to display a module count below each node label.
+        show_lazy_imports: whether to distinguish dependencies that are entirely lazy
+            (every underlying import performed lazily) with an open arrowhead.
         show_cycle_breakers: whether to emphasize cycle-breaker edges.
         See https://grimp.readthedocs.io/en/stable/usage.html#ImportGraph.nominate_cycle_breakers
     """
@@ -192,6 +195,7 @@ def build_dot_graph(
             upstream,
             downstream,
             show_import_totals=show_import_totals,
+            show_lazy_imports=show_lazy_imports,
             cycle_breakers=cycle_breakers,
         )
         if edge:
@@ -458,6 +462,7 @@ def _build_dot_edge(
     upstream: str,
     downstream: str,
     show_import_totals: bool,
+    show_lazy_imports: bool,
     cycle_breakers: set[tuple[str, str]] | None,
 ) -> Edge | None:
     if not grimp_graph.direct_import_exists(
@@ -473,12 +478,20 @@ def _build_dot_edge(
     else:
         label = ""
 
+    is_lazy = show_lazy_imports and _is_lazy_dependency(
+        grimp_graph, importer=downstream, imported=upstream
+    )
+
     if cycle_breakers is not None and (downstream, upstream) in cycle_breakers:
         style = EdgeStyle.DASHED
     else:
         style = EdgeStyle.SOLID
 
-    return Edge(source=downstream, destination=upstream, label=label, style=style)
+    arrowhead = EdgeArrowhead.VEE if is_lazy else EdgeArrowhead.NORMAL
+
+    return Edge(
+        source=downstream, destination=upstream, label=label, style=style, arrowhead=arrowhead
+    )
 
 
 def _get_coarse_grained_cycle_breakers(
@@ -506,11 +519,50 @@ def _get_self_or_ancestor(candidate: str, ancestors: Set[str]) -> str | None:
 
 
 def _count_imports_between_packages(graph: ImportGraph, *, importer: str, imported: str) -> int:
-    return (
-        len(graph.find_matching_direct_imports(import_expression=f"{importer} -> {imported}"))
-        + len(graph.find_matching_direct_imports(import_expression=f"{importer} -> {imported}.**"))
-        + len(graph.find_matching_direct_imports(import_expression=f"{importer}.** -> {imported}"))
-        + len(
-            graph.find_matching_direct_imports(import_expression=f"{importer}.** -> {imported}.**")
-        )
+    return len(_get_direct_imports_between_packages(graph, importer=importer, imported=imported))
+
+
+def _is_lazy_dependency(graph: ImportGraph, *, importer: str, imported: str) -> bool:
+    """
+    Return whether every import underlying the dependency between two packages is lazy.
+
+    A coarse-grained edge aggregates all the fine-grained imports between two packages. We only
+    consider the dependency lazy if there is at least one import with known details and every such
+    import is lazy, i.e. the packages have no import-time coupling whatsoever.
+    """
+    direct_imports = _get_direct_imports_between_packages(
+        graph, importer=importer, imported=imported
     )
+
+    found_lazy_import = False
+    for fine_grained_importer, fine_grained_imported in direct_imports:
+        for detail in graph.get_import_details(
+            importer=fine_grained_importer, imported=fine_grained_imported
+        ):
+            if not detail["is_lazy"]:
+                return False
+            found_lazy_import = True
+
+    return found_lazy_import
+
+
+def _get_direct_imports_between_packages(
+    graph: ImportGraph, *, importer: str, imported: str
+) -> set[tuple[str, str]]:
+    """
+    Return the (importer, imported) module pairs for every direct import between two packages.
+
+    Covers all four permutations of the packages and their descendants.
+    """
+    direct_imports: set[tuple[str, str]] = set()
+    for import_expression in (
+        f"{importer} -> {imported}",
+        f"{importer} -> {imported}.**",
+        f"{importer}.** -> {imported}",
+        f"{importer}.** -> {imported}.**",
+    ):
+        for direct_import in graph.find_matching_direct_imports(
+            import_expression=import_expression
+        ):
+            direct_imports.add((direct_import["importer"], direct_import["imported"]))
+    return direct_imports

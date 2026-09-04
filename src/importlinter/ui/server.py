@@ -103,6 +103,7 @@ def create_app(
         module: str,
         show_import_totals: bool = False,
         show_module_counts: bool = False,
+        show_lazy_imports: bool = False,
         show_cycle_breakers: bool = False,
     ) -> GraphResponse | ErrorResponse:
         try:
@@ -111,6 +112,7 @@ def create_app(
                 module,
                 show_import_totals,
                 show_module_counts,
+                show_lazy_imports,
                 show_cycle_breakers,
             )
             return cast(GraphResponse, dataclasses.asdict(graph_data))

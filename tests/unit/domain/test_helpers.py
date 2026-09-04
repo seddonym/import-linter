@@ -28,18 +28,21 @@ class TestPopImports:
             imported="mypackage.green",
             line_number=10,
             line_contents="blahblahblah",
+            is_lazy=False,
         ),
         dict(
             importer="mypackage.green",
             imported="mypackage.blue",
             line_number=2,
             line_contents="blahblah",
+            is_lazy=False,
         ),
         dict(
             importer="mypackage.green",
             imported="mypackage.yellow",
             line_number=1,
             line_contents="blah",
+            is_lazy=False,
         ),
     ]
 
@@ -86,12 +89,14 @@ class TestPopImports:
                 imported="someexternalpackage",
                 line_number=2,
                 line_contents="from someexternalpackage import one",
+                is_lazy=False,
             ),
             dict(
                 importer="mypackage.green",
                 imported="someexternalpackage",
                 line_number=2,
                 line_contents="from someexternalpackage import two",
+                is_lazy=False,
             ),
         ]
         imports = self.IMPORTS + imports_to_pop
@@ -865,12 +870,14 @@ def test_add_imports() -> None:
             "imported": "b",
             "line_number": 1,
             "line_contents": "lorem ipsum",
+            "is_lazy": False,
         },
         {
             "importer": "c",
             "imported": "d",
             "line_number": 2,
             "line_contents": "lorem ipsum 2",
+            "is_lazy": False,
         },
     ]
     assert not graph.modules

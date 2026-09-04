@@ -62,6 +62,18 @@ Enabling **Module counts** labels each package node with the number of modules i
 
 ![Screenshot of module counts](img/ui-module-counts.png)
 
+### Lazy imports
+
+Enabling **Lazy imports** uses an open arrowhead for any dependencies that consist entirely of
+[explicit lazy imports](https://docs.python.org/3.15/reference/simple_stmts.html#lazy-imports) (Python 3.15+).
+
+![Screenshot of lazy import](img/ui-lazy-import.png)
+
+Here you can see that there is an open arrowhead from `backends` to `utils`.
+This means that all imports of `utils` by `backends` begin with the keyword `lazy`.
+
+(This diagram uses an amended version of `django.db`, as currently the real one doesn't use lazy imports.)
+
 ### Cycle breakers
 
 Enabling **Cycle breakers** highlights (with a dashed line) a minimal set of dependencies that,
@@ -93,5 +105,6 @@ The same display options are available as flags:
 ```console
 import-linter drawgraph mypackage --show-import-totals
 import-linter drawgraph mypackage --show-module-counts
+import-linter drawgraph mypackage --show-lazy-imports
 import-linter drawgraph mypackage --show-cycle-breakers
 ```
