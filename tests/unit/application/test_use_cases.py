@@ -18,7 +18,7 @@ from importlinter.application.use_cases import (
     _format_module_count,
     lint_imports,
 )
-from importlinter.domain.dotfile import DotGraph, Edge
+from importlinter.domain.dotfile import DotGraph, Edge, EdgeStyle
 from importlinter.application.user_options import UserOptions
 from tests.adapters.building import FakeGraphBuilder
 from tests.adapters.timing import FakeTimer
@@ -898,7 +898,7 @@ class TestBuildDotGraph:
                 Edge("mypackage.foo.blue", "mypackage.foo.green"),
                 Edge("mypackage.foo.green", "mypackage.foo.yellow"),
                 Edge("mypackage.foo.blue", "mypackage.foo.red"),
-                Edge("mypackage.foo.red", "mypackage.foo.blue", emphasized=True),
+                Edge("mypackage.foo.red", "mypackage.foo.blue", style=EdgeStyle.DASHED),
             },
         )
 
