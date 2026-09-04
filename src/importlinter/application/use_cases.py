@@ -21,7 +21,7 @@ from . import output
 from .app_config import settings
 from .ports.reporting import Report
 from .rendering import render_exception, render_report, format_duration
-from ..domain.dotfile import DotGraph, Edge
+from ..domain.dotfile import DotGraph, Edge, EdgeStyle
 from .sentinels import NotSupplied
 from .user_options import InvalidUserOptions, UserOptions
 
@@ -473,12 +473,12 @@ def _build_dot_edge(
     else:
         label = ""
 
-    if cycle_breakers is not None:
-        emphasized = (downstream, upstream) in cycle_breakers
+    if cycle_breakers is not None and (downstream, upstream) in cycle_breakers:
+        style = EdgeStyle.DASHED
     else:
-        emphasized = False
+        style = EdgeStyle.SOLID
 
-    return Edge(source=downstream, destination=upstream, label=label, emphasized=emphasized)
+    return Edge(source=downstream, destination=upstream, label=label, style=style)
 
 
 def _get_coarse_grained_cycle_breakers(
