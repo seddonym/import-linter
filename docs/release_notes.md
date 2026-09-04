@@ -1,5 +1,9 @@
 # Release notes
 
+## Latest
+
+* Add support for lazy imports to the explore UI and `drawgraph` command.
+
 ## 2.14 (2026-08-28)
 
 * Add `broken_contract_guidance` option to contracts, for explaining how to fix them when they're broken.

@@ -14,6 +14,7 @@ let currentPackages = [];
 // Settings state
 let showImportTotals = false;
 let showModuleCounts = false;
+let showLazyImports = false;
 let showCycleBreakers = false;
 
 // Client-side cache for rendered graphs
@@ -32,6 +33,9 @@ function buildApiUrl(moduleName) {
     if (showModuleCounts) {
         params.push('show_module_counts=true');
     }
+    if (showLazyImports) {
+        params.push('show_lazy_imports=true');
+    }
     if (showCycleBreakers) {
         params.push('show_cycle_breakers=true');
     }
@@ -42,12 +46,13 @@ function buildApiUrl(moduleName) {
 }
 
 function buildCacheKey(moduleName) {
-    return `${moduleName}|${showImportTotals}|${showModuleCounts}|${showCycleBreakers}`;
+    return `${moduleName}|${showImportTotals}|${showModuleCounts}|${showLazyImports}|${showCycleBreakers}`;
 }
 
 function onSettingsChange() {
     showImportTotals = document.getElementById('toggle-import-totals').checked;
     showModuleCounts = document.getElementById('toggle-module-counts').checked;
+    showLazyImports = document.getElementById('toggle-lazy-imports').checked;
     showCycleBreakers = document.getElementById('toggle-cycle-breakers').checked;
     loadGraph(currentModule, false);
 }

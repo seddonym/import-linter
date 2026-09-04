@@ -64,6 +64,19 @@
                     <div class="toggle-item">
                         <div class="toggle-row">
                             <label class="toggle-switch">
+                                <input type="checkbox" id="toggle-lazy-imports" onchange="onSettingsChange()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <label class="toggle-label" for="toggle-lazy-imports">Lazy imports</label>
+                        </div>
+                        <div class="toggle-help">
+                            Use an open arrowhead for dependencies that consist entirely of explicit lazy imports
+                            (<code>lazy import</code> or <code>lazy from</code> statements).
+                        </div>
+                    </div>
+                    <div class="toggle-item">
+                        <div class="toggle-row">
+                            <label class="toggle-switch">
                                 <input type="checkbox" id="toggle-cycle-breakers" onchange="onSettingsChange()">
                                 <span class="toggle-slider"></span>
                             </label>

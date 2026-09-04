@@ -124,12 +124,21 @@ def explore(module_name: str) -> None:
     help="Label packages with the number of modules they contain.",
 )
 @click.option(
+    "--show-lazy-imports",
+    is_flag=True,
+    help="Use an open arrowhead for lazy dependencies.",
+)
+@click.option(
     "--show-cycle-breakers",
     is_flag=True,
     help="Mark dependencies that, if removed, would make the graph acyclic.",
 )
 def drawgraph(
-    module_name: str, show_import_totals: bool, show_module_counts: bool, show_cycle_breakers: bool
+    module_name: str,
+    show_import_totals: bool,
+    show_module_counts: bool,
+    show_lazy_imports: bool,
+    show_cycle_breakers: bool,
 ) -> None:
     """Output a DOT format graph of a module's dependencies to stdout.
 
@@ -152,7 +161,12 @@ def drawgraph(
 
     grimp_graph = grimp.build_graph(top_level_package)
     dot = use_cases.build_dot_graph(
-        grimp_graph, module_name, show_import_totals, show_module_counts, show_cycle_breakers
+        grimp_graph,
+        module_name,
+        show_import_totals,
+        show_module_counts,
+        show_lazy_imports,
+        show_cycle_breakers,
     )
     click.echo(dot.render(), nl=False)
 

@@ -18,7 +18,7 @@ from importlinter.application.use_cases import (
     _format_module_count,
     lint_imports,
 )
-from importlinter.domain.dotfile import DotGraph, Edge, EdgeStyle
+from importlinter.domain.dotfile import DotGraph, Edge, EdgeArrowhead, EdgeStyle
 from importlinter.application.user_options import UserOptions
 from tests.adapters.building import FakeGraphBuilder
 from tests.adapters.timing import FakeTimer
@@ -751,35 +751,55 @@ def _build_fake_graph(package_name: str) -> ImportGraph:
     for child in ("blue", "green", "yellow", "red"):
         graph.add_module(f"{SOME_MODULE}.{child}")
 
+    # As with a real graph, every import has line details. Where is_lazy is omitted, it defaults
+    # to a normal (eager) import.
     graph.add_import(
         importer=f"{SOME_MODULE}.blue.alpha",
         imported=f"{SOME_MODULE}.green",
+        line_number=1,
+        line_contents="import mypackage.foo.green",
     )
+    # The only import between green and yellow is lazy, so the whole dependency is lazy.
     graph.add_import(
         importer=f"{SOME_MODULE}.green",
         imported=f"{SOME_MODULE}.yellow.beta",
+        line_number=1,
+        line_contents="lazy from mypackage.foo import yellow",
+        is_lazy=True,
     )
     # Add 4 imports between blue and red in different permutations of root and descendants.
     graph.add_import(
         importer=f"{SOME_MODULE}.blue",
         imported=f"{SOME_MODULE}.red",
+        line_number=1,
+        line_contents="import mypackage.foo.red",
     )
     graph.add_import(
         importer=f"{SOME_MODULE}.blue",
         imported=f"{SOME_MODULE}.red.gamma",
+        line_number=2,
+        line_contents="import mypackage.foo.red.gamma",
     )
     graph.add_import(
         importer=f"{SOME_MODULE}.blue.alpha",
         imported=f"{SOME_MODULE}.red",
+        line_number=1,
+        line_contents="import mypackage.foo.red",
     )
+    # Only one of the four blue -> red imports is lazy, so the dependency is not wholly lazy.
     graph.add_import(
         importer=f"{SOME_MODULE}.blue.delta",
         imported=f"{SOME_MODULE}.red.epsilon",
+        line_number=1,
+        line_contents="lazy from mypackage.foo import red",
+        is_lazy=True,
     )
     # Add a cycle.
     graph.add_import(
         importer=f"{SOME_MODULE}.red.epsilon",
         imported=f"{SOME_MODULE}.blue.alpha",
+        line_number=1,
+        line_contents="import mypackage.foo.blue",
     )
 
     return graph
@@ -794,6 +814,7 @@ class TestBuildDotGraph:
             SOME_MODULE,
             show_import_totals=False,
             show_module_counts=False,
+            show_lazy_imports=False,
             show_cycle_breakers=False,
         )
 
@@ -827,6 +848,7 @@ class TestBuildDotGraph:
             SOME_MODULE,
             show_import_totals=True,
             show_module_counts=False,
+            show_lazy_imports=False,
             show_cycle_breakers=False,
         )
 
@@ -860,6 +882,7 @@ class TestBuildDotGraph:
             SOME_MODULE,
             show_import_totals=False,
             show_module_counts=True,
+            show_lazy_imports=False,
             show_cycle_breakers=False,
         )
 
@@ -877,6 +900,7 @@ class TestBuildDotGraph:
             SOME_MODULE,
             show_import_totals=False,
             show_module_counts=False,
+            show_lazy_imports=False,
             show_cycle_breakers=True,
         )
 
@@ -901,6 +925,89 @@ class TestBuildDotGraph:
                 Edge("mypackage.foo.red", "mypackage.foo.blue", style=EdgeStyle.DASHED),
             },
         )
+
+    def test_shows_lazy_imports(self):
+        grimp_graph = _build_fake_graph(SOME_ROOT_PACKAGE)
+
+        dot = build_dot_graph(
+            grimp_graph,
+            SOME_MODULE,
+            show_import_totals=False,
+            show_module_counts=False,
+            show_lazy_imports=True,
+            show_cycle_breakers=False,
+        )
+
+        assert dot == DotGraph(
+            title=SOME_MODULE,
+            concentrate=True,
+            nodes={
+                "mypackage.foo.green",
+                "mypackage.foo.blue",
+                "mypackage.foo.yellow",
+                "mypackage.foo.red",
+            },
+            node_labels={
+                "mypackage.foo.blue": ".blue/",
+                "mypackage.foo.yellow": ".yellow/",
+                "mypackage.foo.red": ".red/",
+            },
+            edges={
+                # Eager dependency: unchanged.
+                Edge("mypackage.foo.blue", "mypackage.foo.green"),
+                # Wholly lazy dependency: solid line with an open arrowhead.
+                Edge(
+                    "mypackage.foo.green",
+                    "mypackage.foo.yellow",
+                    arrowhead=EdgeArrowhead.VEE,
+                ),
+                # Only partially lazy, so it stays a normal solid edge.
+                Edge("mypackage.foo.blue", "mypackage.foo.red"),
+                Edge("mypackage.foo.red", "mypackage.foo.blue"),
+            },
+        )
+
+    def test_lazy_and_cycle_breaker_styling_compose(self):
+        # A minimal cycle whose only breaker (b -> a) is itself wholly lazy.
+        grimp_graph = ImportGraph()
+        grimp_graph.add_module(SOME_ROOT_PACKAGE)
+        grimp_graph.add_module(SOME_MODULE)
+        grimp_graph.add_module(f"{SOME_MODULE}.a")
+        grimp_graph.add_module(f"{SOME_MODULE}.b")
+        grimp_graph.add_import(
+            importer=f"{SOME_MODULE}.a",
+            imported=f"{SOME_MODULE}.b",
+            line_number=1,
+            line_contents="import mypackage.foo.b",
+        )
+        grimp_graph.add_import(
+            importer=f"{SOME_MODULE}.b",
+            imported=f"{SOME_MODULE}.a",
+            line_number=1,
+            line_contents="lazy import mypackage.foo.a",
+            is_lazy=True,
+        )
+
+        dot = build_dot_graph(
+            grimp_graph,
+            SOME_MODULE,
+            show_import_totals=False,
+            show_module_counts=False,
+            show_lazy_imports=True,
+            show_cycle_breakers=True,
+        )
+
+        assert dot.edges == {
+            # Eager import: unchanged.
+            Edge("mypackage.foo.a", "mypackage.foo.b"),
+            # Both a cycle breaker and wholly lazy: the dashed line and open arrowhead compose.
+            Edge(
+                "mypackage.foo.b",
+                "mypackage.foo.a",
+                style=EdgeStyle.DASHED,
+                arrowhead=EdgeArrowhead.VEE,
+            ),
+        }
 
 
 class TestFormatModuleCount:

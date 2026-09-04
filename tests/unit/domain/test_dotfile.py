@@ -1,5 +1,5 @@
 from textwrap import dedent
-from importlinter.domain.dotfile import DotGraph, Edge
+from importlinter.domain.dotfile import DotGraph, Edge, EdgeArrowhead, EdgeStyle
 
 
 class TestDotGraph:
@@ -31,3 +31,23 @@ class TestDotGraph:
                 ".bar" ->  ".baz"
             }
         """)
+
+    def test_render_vee_arrowhead(self):
+        edge = Edge(
+            source="mypackage.foo.bar",
+            destination="mypackage.foo.baz",
+            arrowhead=EdgeArrowhead.VEE,
+        )
+
+        assert str(edge) == '".bar" ->  ".baz" [arrowhead="vee"]'
+
+    def test_render_combined_style_and_arrowhead(self):
+        # A cycle breaker (dashed) that is also lazy (open arrowhead) composes both attributes.
+        edge = Edge(
+            source="mypackage.foo.bar",
+            destination="mypackage.foo.baz",
+            style=EdgeStyle.DASHED,
+            arrowhead=EdgeArrowhead.VEE,
+        )
+
+        assert str(edge) == '".bar" ->  ".baz" [style="dashed", arrowhead="vee"]'
