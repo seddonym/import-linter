@@ -1,6 +1,6 @@
 # Release notes
 
-## Latest
+## 2.15 (2026-09-04)
 
 * Add support for lazy imports to the explore UI and `drawgraph` command.
 
