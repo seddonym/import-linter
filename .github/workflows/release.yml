@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
       - name: Build a binary wheel and a source tarball
         run: "uv run --with=build python -m build --sdist --wheel --outdir dist/"
       - name: Publish to PyPI
