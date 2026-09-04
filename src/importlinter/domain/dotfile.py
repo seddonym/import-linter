@@ -7,12 +7,18 @@ class EdgeStyle(str, Enum):
     DASHED = "dashed"
 
 
+class EdgeArrowhead(str, Enum):
+    NORMAL = "normal"
+    VEE = "vee"
+
+
 @dataclass(frozen=True, order=True)
 class Edge:
     source: str
     destination: str
     label: str = ""
     style: EdgeStyle = EdgeStyle.SOLID
+    arrowhead: EdgeArrowhead = EdgeArrowhead.NORMAL
 
     def __str__(self) -> str:
         return f'"{DotGraph.render_module(self.source)}" ->  "{DotGraph.render_module(self.destination)}"{self._render_attrs()}'
@@ -24,6 +30,9 @@ class Edge:
 
         if self.style != _EDGE_FIELDS["style"].default:
             attrs["style"] = self.style.value
+
+        if self.arrowhead != _EDGE_FIELDS["arrowhead"].default:
+            attrs["arrowhead"] = self.arrowhead.value
 
         if attrs:
             joined_attrs = ", ".join([f'{key}="{value}"' for key, value in attrs.items()])
