@@ -96,11 +96,13 @@ def lint_command(**kwargs) -> None:
 
 
 @import_linter.command()
-@click.argument("module_name")
-def explore(module_name: str) -> None:
+@click.argument("module_names", nargs=-1, required=True)
+def explore(module_names: tuple[str, ...]) -> None:
     """Launch the interactive UI in a local browser.
 
-    MODULE_NAME is the importable Python module to explore (e.g. 'django.db.models').
+    MODULE_NAMES are the importable Python modules to explore (e.g. 'django.db.models').
+    If more than one is supplied, the UI opens on an overview showing the packages and the
+    dependencies between them.
     """
     try:
         from importlinter.ui import server
@@ -112,11 +114,11 @@ def explore(module_name: str) -> None:
         )
         sys.exit(1)
     rendering.print_title()
-    server.launch(module_name)
+    server.launch(list(module_names))
 
 
 @import_linter.command()
-@click.argument("module_name")
+@click.argument("module_names", nargs=-1, required=True)
 @click.option("--show-import-totals", is_flag=True, help="Label arrows with import counts.")
 @click.option(
     "--show-module-counts",
@@ -134,7 +136,7 @@ def explore(module_name: str) -> None:
     help="Mark dependencies that, if removed, would make the graph acyclic.",
 )
 def drawgraph(
-    module_name: str,
+    module_names: tuple[str, ...],
     show_import_totals: bool,
     show_module_counts: bool,
     show_lazy_imports: bool,
@@ -142,32 +144,46 @@ def drawgraph(
 ) -> None:
     """Output a DOT format graph of a module's dependencies to stdout.
 
-    MODULE_NAME is the importable Python module to graph (e.g. 'django.db.models').
+    MODULE_NAMES are the importable Python modules to graph (e.g. 'django.db.models').
+    If more than one is supplied, the graph is an overview of the packages and the dependencies
+    between them.
     """
     cwd = os.getcwd()
     if cwd not in sys.path:
         sys.path.insert(0, cwd)
 
-    top_level_package = module_name.split(".")[0]
-    try:
-        __import__(top_level_package)
-    except ImportError:
-        click.echo(
-            f"Could not import '{top_level_package}'. "
-            f"Make sure the package is installed or the current directory contains it.",
-            err=True,
-        )
-        sys.exit(1)
+    root_packages = [module_name.split(".")[0] for module_name in module_names]
+    for top_level_package in root_packages:
+        try:
+            __import__(top_level_package)
+        except ImportError:
+            click.echo(
+                f"Could not import '{top_level_package}'. "
+                f"Make sure the package is installed or the current directory contains it.",
+                err=True,
+            )
+            sys.exit(1)
 
-    grimp_graph = grimp.build_graph(top_level_package)
-    dot = use_cases.build_dot_graph(
-        grimp_graph,
-        module_name,
-        show_import_totals,
-        show_module_counts,
-        show_lazy_imports,
-        show_cycle_breakers,
-    )
+    grimp_graph = grimp.build_graph(*root_packages)
+    if len(module_names) == 1:
+        dot = use_cases.build_dot_graph(
+            grimp_graph,
+            module_names[0],
+            show_import_totals,
+            show_module_counts,
+            show_lazy_imports,
+            show_cycle_breakers,
+        )
+    else:
+        dot = use_cases.build_dot_graph(
+            grimp_graph,
+            "",
+            show_import_totals,
+            show_module_counts,
+            show_lazy_imports,
+            show_cycle_breakers,
+            modules=list(module_names),
+        )
     click.echo(dot.render(), nl=False)
 
 

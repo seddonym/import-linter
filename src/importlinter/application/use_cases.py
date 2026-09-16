@@ -1,7 +1,7 @@
 import importlib
 import importlib.util
 import itertools
-from collections.abc import Set
+from collections.abc import Iterable, Set
 from copy import copy, deepcopy
 from typing import Any
 import contextlib
@@ -154,6 +154,7 @@ def build_dot_graph(
     show_module_counts: bool,
     show_lazy_imports: bool,
     show_cycle_breakers: bool,
+    modules: Iterable[str] | None = None,
 ) -> DotGraph:
     """
     Build a DotGraph visualizing the architecture of the supplied module.
@@ -169,13 +170,23 @@ def build_dot_graph(
             (every underlying import performed lazily) with an open arrowhead.
         show_cycle_breakers: whether to emphasize cycle-breaker edges.
         See https://grimp.readthedocs.io/en/stable/usage.html#ImportGraph.nominate_cycle_breakers
+        modules: if supplied, the exact set of modules to draw as nodes (and between which to
+            draw dependencies), instead of the children of module_name. This is used to draw a
+            top-level overview of several root packages together.
     """
-    children = grimp_graph.find_children(module_name)
+    if modules is None:
+        children: Set[str] = grimp_graph.find_children(module_name)
+        cycle_breaker_packages = [module_name]
+    else:
+        children = set(modules)
+        cycle_breaker_packages = list(children)
     concentrate = not (show_import_totals or show_cycle_breakers)
 
     cycle_breakers: set[tuple[str, str]] | None = None
     if show_cycle_breakers:
-        cycle_breakers = _get_coarse_grained_cycle_breakers(grimp_graph, module_name, children)
+        cycle_breakers = _get_coarse_grained_cycle_breakers(
+            grimp_graph, cycle_breaker_packages, children
+        )
 
     dot = DotGraph(title=module_name, concentrate=concentrate)
     for child in children:
@@ -495,18 +506,23 @@ def _build_dot_edge(
 
 
 def _get_coarse_grained_cycle_breakers(
-    grimp_graph: ImportGraph, module_name: str, children: Set[str]
+    grimp_graph: ImportGraph, packages: Iterable[str], children: Set[str]
 ) -> set[tuple[str, str]]:
     # In the form (importer, imported).
+    #
+    # Grimp only nominates cycle breakers within a single package, so when drawing an overview of
+    # several root packages we nominate within each of them and union the results. Cycles that
+    # exist only *between* the packages cannot be nominated and are therefore not highlighted.
     coarse_grained_cycle_breakers: set[tuple[str, str]] = set()
 
-    for fine_grained_cycle_breaker in grimp_graph.nominate_cycle_breakers(module_name):
-        importer, imported = fine_grained_cycle_breaker
-        importer_ancestor = _get_self_or_ancestor(candidate=importer, ancestors=children)
-        imported_ancestor = _get_self_or_ancestor(candidate=imported, ancestors=children)
+    for package in packages:
+        for fine_grained_cycle_breaker in grimp_graph.nominate_cycle_breakers(package):
+            importer, imported = fine_grained_cycle_breaker
+            importer_ancestor = _get_self_or_ancestor(candidate=importer, ancestors=children)
+            imported_ancestor = _get_self_or_ancestor(candidate=imported, ancestors=children)
 
-        if importer_ancestor and imported_ancestor:
-            coarse_grained_cycle_breakers.add((importer_ancestor, imported_ancestor))
+            if importer_ancestor and imported_ancestor:
+                coarse_grained_cycle_breakers.add((importer_ancestor, imported_ancestor))
 
     return coarse_grained_cycle_breakers
 

@@ -840,6 +840,37 @@ class TestBuildDotGraph:
             },
         )
 
+    def test_draws_supplied_modules_as_overview(self):
+        grimp_graph = ImportGraph()
+        for package in ("blue", "green"):
+            grimp_graph.add_module(package)
+            grimp_graph.add_module(f"{package}.one")
+        # green depends on blue.
+        grimp_graph.add_import(
+            importer="green.one",
+            imported="blue.one",
+            line_number=1,
+            line_contents="import blue.one",
+        )
+
+        dot = build_dot_graph(
+            grimp_graph,
+            "",
+            show_import_totals=False,
+            show_module_counts=False,
+            show_lazy_imports=False,
+            show_cycle_breakers=False,
+            modules=["blue", "green"],
+        )
+
+        assert dot == DotGraph(
+            title="",
+            concentrate=True,
+            nodes={"blue", "green"},
+            node_labels={"blue": ".blue/", "green": ".green/"},
+            edges={Edge("green", "blue")},
+        )
+
     def test_shows_import_totals(self):
         grimp_graph = _build_fake_graph(SOME_ROOT_PACKAGE)
 

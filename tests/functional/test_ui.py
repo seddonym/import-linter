@@ -9,6 +9,7 @@ import pytest
 this_directory = Path(__file__).parent
 assets_directory = this_directory / ".." / "assets"
 testpackage_directory = assets_directory / "testpackage"
+multipleroots_directory = assets_directory / "multipleroots"
 
 
 def test_starts_without_error():
@@ -16,6 +17,23 @@ def test_starts_without_error():
         ["import-linter", "explore", "testpackage"],
         stderr=subprocess.PIPE,
         cwd=testpackage_directory,
+        env={**os.environ, "BROWSER": "echo"},
+    )
+    try:
+        for line in process.stderr:
+            if b"Application startup complete" in line:
+                return
+        assert False, "UI did not start"
+    finally:
+        process.terminate()
+        process.wait()
+
+
+def test_starts_without_error_with_multiple_packages():
+    process = subprocess.Popen(
+        ["import-linter", "explore", "rootpackageblue", "rootpackagegreen"],
+        stderr=subprocess.PIPE,
+        cwd=multipleroots_directory,
         env={**os.environ, "BROWSER": "echo"},
     )
     try:
@@ -88,6 +106,21 @@ class TestDrawGraph:
         assert result.returncode == 1
         assert b"Could not import" in result.stderr
 
+    def test_multiple_packages_overview(self):
+        result = subprocess.run(
+            ["import-linter", "drawgraph", "rootpackageblue", "rootpackagegreen"],
+            capture_output=True,
+            cwd=multipleroots_directory,
+        )
+        assert result.returncode == 0
+        output = result.stdout.decode()
+        assert output.startswith("digraph {")
+        assert ".rootpackageblue" in output
+        assert ".rootpackagegreen" in output
+        # rootpackagegreen.two imports rootpackageblue.one, so green depends on blue.
+        normalized = output.replace(" ", "")
+        assert '".rootpackagegreen"->".rootpackageblue"' in normalized
+
 
 class TestGraphApi:
     @pytest.fixture(autouse=True)
@@ -101,7 +134,7 @@ class TestGraphApi:
         from fastapi.testclient import TestClient
         from importlinter.ui.server import create_app
 
-        return TestClient(create_app(module_name="testpackage"))
+        return TestClient(create_app(root_packages=["testpackage"], initial_module="testpackage"))
 
     def test_returns_graph_for_top_level_module(self, client):
         response = client.get("/api/graph/testpackage")
@@ -146,3 +179,44 @@ class TestGraphApi:
         r2 = client.get("/api/graph/testpackage.high")
         assert r1.status_code == 200
         assert r2.status_code == 200
+
+
+class TestMultiRootGraphApi:
+    @pytest.fixture(autouse=True)
+    def setup_sys_path(self):
+        sys.path.insert(0, str(multipleroots_directory))
+        yield
+        sys.path.remove(str(multipleroots_directory))
+
+    @pytest.fixture
+    def client(self):
+        from fastapi.testclient import TestClient
+        from importlinter.ui.server import create_app
+
+        return TestClient(
+            create_app(
+                root_packages=["rootpackageblue", "rootpackagegreen"],
+                initial_module="",
+            )
+        )
+
+    def test_overview_shows_root_packages(self, client):
+        response = client.get("/api/graph")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["module"] == ""
+        assert ".rootpackageblue" in data["child_packages"]
+        assert ".rootpackagegreen" in data["child_packages"]
+
+    def test_overview_includes_cross_package_edge(self, client):
+        response = client.get("/api/graph")
+        data = response.json()
+        # rootpackagegreen.two imports rootpackageblue.one, so green depends on blue.
+        normalized = data["dot_string"].replace(" ", "")
+        assert '".rootpackagegreen"->".rootpackageblue"' in normalized
+
+    def test_drills_into_root_package(self, client):
+        response = client.get("/api/graph/rootpackageblue")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["module"] == "rootpackageblue"
