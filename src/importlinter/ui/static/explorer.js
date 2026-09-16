@@ -11,6 +11,12 @@ let navigationHistory = [];
 let vizInstance = null;
 let currentPackages = [];
 
+// Root packages being explored. When more than one is supplied, an empty module ("") is the
+// top-level overview showing the packages and the dependencies between them.
+const rootPackages = window.__ROOT_PACKAGES__ || [];
+const isMultiRoot = rootPackages.length > 1;
+const OVERVIEW_LABEL = 'all packages';
+
 // Settings state
 let showImportTotals = false;
 let showModuleCounts = false;
@@ -25,7 +31,7 @@ async function initViz() {
 }
 
 function buildApiUrl(moduleName) {
-    let url = `/api/graph/${encodeURIComponent(moduleName)}`;
+    let url = moduleName ? `/api/graph/${encodeURIComponent(moduleName)}` : '/api/graph';
     const params = [];
     if (showImportTotals) {
         params.push('show_import_totals=true');
@@ -164,9 +170,22 @@ function restoreFromCache(cached, updateHistory) {
 
 function updateBreadcrumb() {
     const breadcrumb = document.getElementById('breadcrumb');
-    const parts = currentModule.split('.');
     let html = '<span class="prefix">Import graph for</span>';
 
+    if (isMultiRoot && currentModule === '') {
+        html += `<span class="current">${OVERVIEW_LABEL}</span>`;
+        breadcrumb.innerHTML = html;
+        document.getElementById('nav-section').style.display = 'none';
+        return;
+    }
+
+    // In multi-root mode, every module hangs off the overview, so show it as the first crumb.
+    if (isMultiRoot) {
+        html += `<span class="crumb" onclick="navigateTo('')">${OVERVIEW_LABEL}</span>`;
+        html += '<span class="separator">/</span>';
+    }
+
+    const parts = currentModule.split('.');
     for (let i = 0; i < parts.length; i++) {
         const fullPath = parts.slice(0, i + 1).join('.');
         if (i < parts.length - 1) {
@@ -180,12 +199,21 @@ function updateBreadcrumb() {
     breadcrumb.innerHTML = html;
 
     const navSection = document.getElementById('nav-section');
-    navSection.style.display = parts.length <= 1 ? 'none' : 'flex';
+    // We can go up whenever there's a parent module, or (in multi-root mode) back to the overview.
+    const canGoUp = parts.length > 1 || isMultiRoot;
+    navSection.style.display = canGoUp ? 'flex' : 'none';
 }
 
 function goUp() {
     const parts = currentModule.split('.');
-    if (parts.length <= 1) return;
+    if (parts.length <= 1) {
+        // Single segment: in multi-root mode we can still go up to the overview.
+        if (isMultiRoot && currentModule !== '') {
+            navigationHistory.push(currentModule);
+            loadGraph('');
+        }
+        return;
+    }
 
     const parentModule = parts.slice(0, -1).join('.');
     navigationHistory.push(currentModule);
@@ -200,7 +228,8 @@ function navigateTo(moduleName) {
 
 function drillDown(relativeNodeName) {
     const childName = relativeNodeName.startsWith('.') ? relativeNodeName.slice(1) : relativeNodeName;
-    const fullModuleName = `${currentModule}.${childName}`;
+    // From the overview ("") the child is a root package, with no prefix to prepend.
+    const fullModuleName = currentModule ? `${currentModule}.${childName}` : childName;
     navigationHistory.push(currentModule);
     loadGraph(fullModuleName);
 }
@@ -329,7 +358,8 @@ function setupNodeClicks() {
 
             node.addEventListener('mouseenter', (e) => {
                 const childName = nodeName.startsWith('.') ? nodeName.slice(1) : nodeName;
-                tooltip.textContent = `Explore ${currentModule}.${childName}`;
+                const target = currentModule ? `${currentModule}.${childName}` : childName;
+                tooltip.textContent = `Explore ${target}`;
                 tooltip.style.display = 'block';
             });
 
@@ -369,7 +399,7 @@ window.addEventListener('popstate', (event) => {
 // Load graph on page load
 initViz().then(() => {
     const moduleFromUrl = getModuleFromUrl();
-    const initialModule = moduleFromUrl || document.querySelector('#breadcrumb .current')?.textContent;
+    const initialModule = moduleFromUrl !== null ? moduleFromUrl : (window.__INITIAL_MODULE__ || '');
     loadGraph(initialModule, false);
     history.replaceState({ module: initialModule }, '');
 });

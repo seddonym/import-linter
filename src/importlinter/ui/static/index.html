@@ -14,7 +14,6 @@
     </header>
     <div id="breadcrumb">
         <span class="prefix">Import graph for</span>
-        <span class="current">{{module_name}}</span>
     </div>
     <main>
         <div id="graph-container">
@@ -88,6 +87,10 @@
             </div>
         </div>
     </main>
+    <script>
+        window.__ROOT_PACKAGES__ = {{root_packages_json}};
+        window.__INITIAL_MODULE__ = {{initial_module_json}};
+    </script>
     <script src="/static/viz-standalone.js"></script>
     <script src="/static/explorer.js"></script>
 </body>

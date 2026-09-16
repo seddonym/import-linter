@@ -1,5 +1,10 @@
 # Release notes
 
+## Latest
+
+* Support exploring and drawing multiple packages together, by passing several package names to
+  `explore` or `drawgraph`.
+
 ## 2.15 (2026-09-04)
 
 * Add support for lazy imports to the explore UI and `drawgraph` command.
