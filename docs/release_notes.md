@@ -1,5 +1,9 @@
 # Release notes
 
+## latest
+
+* Bugfix: raise an error when a forbidden module within the root packages does not exist.
+
 ## 2.15 (2026-09-04)
 
 * Add support for lazy imports to the explore UI and `drawgraph` command.

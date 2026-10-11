@@ -231,6 +231,34 @@ class TestForbiddenContract:
             ("True"),
         ),
     )
+    def test_is_invalid_when_forbidden_module_does_not_exist(self, as_packages: bool):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            forbidden_modules=("mypackage.blue", "mypackage.nonexistent"),
+            as_packages=as_packages,
+        )
+
+        with pytest.raises(ValueError, match="Module 'mypackage.nonexistent' does not exist."):
+            contract.check(graph=graph, verbose=False)
+
+    def test_is_kept_when_forbidden_external_module_is_not_imported(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            forbidden_modules=("mypackage.blue", "django"),
+            include_external_packages=True,
+        )
+
+        contract_check = contract.check(graph=graph, verbose=False)
+
+        assert contract_check.kept
+
+    @pytest.mark.parametrize(
+        "as_packages",
+        (
+            ("False"),
+            ("True"),
+        ),
+    )
     def test_ignore_imports_tolerates_duplicates(self, as_packages: bool):
         graph = self._build_graph()
         contract = self._build_contract(
