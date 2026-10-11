@@ -102,6 +102,11 @@ class ForbiddenContract(Contract):
 
         self._check_all_modules_exist_in_graph(source_modules, graph)
         self._check_external_forbidden_modules(forbidden_modules)
+        # Modules within the root packages are always in the graph, so a missing one is a mistake.
+        external_forbidden_modules = self._get_external_forbidden_modules(forbidden_modules)
+        self._check_all_modules_exist_in_graph(
+            (m for m in forbidden_modules if m not in external_forbidden_modules), graph
+        )
 
         # We only need to check for illegal imports for forbidden modules that are in the graph.
         forbidden_modules_in_graph = [m for m in forbidden_modules if m.name in graph.modules]
