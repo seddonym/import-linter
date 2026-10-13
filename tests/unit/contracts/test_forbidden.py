@@ -15,11 +15,8 @@ def configure():
 
 
 class TestForbiddenContract:
-    @pytest.mark.parametrize("as_packages", ("False", "True"))
-    def test_is_kept_when_no_forbidden_modules_imported(
-        self,
-        as_packages: bool,
-    ):
+    @pytest.mark.parametrize("as_packages", (False, True))
+    def test_is_kept_when_no_forbidden_modules_imported(self, as_packages: bool):
         graph = self._build_graph()
         contract = self._build_contract(
             forbidden_modules=("mypackage.blue", "mypackage.yellow"),
@@ -141,7 +138,7 @@ class TestForbiddenContract:
     )
     def test_is_broken_when_forbidden_modules_imported(
         self,
-        as_packages: str,
+        as_packages: bool,
         forbidden_modules: tuple[str],
         expected_invalid_chains: list[dict],
     ):
@@ -163,10 +160,7 @@ class TestForbiddenContract:
         "as_packages",
         (False, True),
     )
-    def test_is_broken_when_forbidden_external_modules_imported(
-        self,
-        as_packages: str,
-    ):
+    def test_is_broken_when_forbidden_external_modules_imported(self, as_packages: bool):
         graph = self._build_graph()
         contract = self._build_contract(
             forbidden_modules=("sqlalchemy", "requests"),
@@ -198,13 +192,7 @@ class TestForbiddenContract:
 
         assert expected_metadata == contract_check.metadata
 
-    @pytest.mark.parametrize(
-        "as_packages",
-        (
-            ("False"),
-            ("True"),
-        ),
-    )
+    @pytest.mark.parametrize("as_packages", (False, True))
     def test_is_invalid_when_forbidden_externals_but_graph_does_not_include_externals(
         self,
         as_packages: bool,
@@ -226,10 +214,7 @@ class TestForbiddenContract:
 
     @pytest.mark.parametrize(
         "as_packages",
-        (
-            ("False"),
-            ("True"),
-        ),
+        (False, True),
     )
     def test_is_invalid_when_forbidden_module_does_not_exist(self, as_packages: bool):
         graph = self._build_graph()
@@ -254,10 +239,7 @@ class TestForbiddenContract:
 
     @pytest.mark.parametrize(
         "as_packages",
-        (
-            ("False"),
-            ("True"),
-        ),
+        (False, True),
     )
     def test_ignore_imports_tolerates_duplicates(self, as_packages: bool):
         graph = self._build_graph()
@@ -437,7 +419,7 @@ class TestForbiddenContract:
             ],
         }
 
-    @pytest.mark.parametrize("as_packages", ("False", "True"))
+    @pytest.mark.parametrize("as_packages", (False, True))
     def test_source_module_equal_to_forbidden_module_is_skipped(self, as_packages: bool):
         graph = self._build_graph()
         contract = self._build_contract(
@@ -576,7 +558,7 @@ class TestForbiddenContract:
     )
     def test_ignore_imports_with_wildcards(
         self,
-        as_packages: str,
+        as_packages: bool,
         forbidden_modules: tuple[str],
         expected_invalid_chains: list[dict],
     ):
@@ -593,10 +575,7 @@ class TestForbiddenContract:
         }
 
     @pytest.mark.parametrize("as_packages", (False, True))
-    def test_ignore_imports_with_recursive_wildcards(
-        self,
-        as_packages: str,
-    ):
+    def test_ignore_imports_with_recursive_wildcards(self, as_packages: bool):
         graph = self._build_graph()
         contract = self._build_contract(
             forbidden_modules=("mypackage.green",),
@@ -702,13 +681,10 @@ class TestForbiddenContract:
         }
 
     @pytest.mark.parametrize(
-        "as_packages",
-        (
-            ("False"),
-            ("True"),
-        ),
+        "as_packages_string",
+        ("False", "True"),
     )
-    def test_ignore_imports_adds_warnings(self, as_packages: bool):
+    def test_ignore_imports_adds_warnings(self, as_packages_string: str):
         graph = self._build_graph()
         contract = ForbiddenContract(
             name="Forbid contract",
@@ -721,7 +697,7 @@ class TestForbiddenContract:
                     "mypackage.*.nonexistent -> mypackage.three",
                 ],
                 "unmatched_ignore_imports_alerting": "warn",
-                "as_packages": as_packages,
+                "as_packages": as_packages_string,
             },
         )
 
@@ -734,10 +710,7 @@ class TestForbiddenContract:
 
     @pytest.mark.parametrize(
         "as_packages",
-        (
-            ("False"),
-            ("True"),
-        ),
+        (False, True),
     )
     @pytest.mark.parametrize(
         "module, expected_error",
