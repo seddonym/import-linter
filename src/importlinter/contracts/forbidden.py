@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import cast
 from collections.abc import Iterable
 
 from grimp import ImportGraph
@@ -100,13 +99,15 @@ class ForbiddenContract(Contract):
             )
         )
 
-        self._check_all_modules_exist_in_graph(source_modules, graph)
-        self._check_external_forbidden_modules(forbidden_modules)
-        # Modules within the root packages are always in the graph, so a missing one is a mistake.
-        external_forbidden_modules = self._get_external_forbidden_modules(forbidden_modules)
-        self._check_all_modules_exist_in_graph(
-            (m for m in forbidden_modules if m not in external_forbidden_modules), graph
+        internal_forbidden, external_forbidden = (
+            self._partition_modules_by_whether_they_are_internal(forbidden_modules)
         )
+
+        self._check_all_modules_exist_in_graph(source_modules, graph)
+        # Internal modules are always in the graph, so a missing one is a mistake.
+        self._check_all_modules_exist_in_graph(internal_forbidden, graph)
+
+        self._validate_external_forbidden_modules(external_forbidden)
 
         # We only need to check for illegal imports for forbidden modules that are in the graph.
         forbidden_modules_in_graph = [m for m in forbidden_modules if m.name in graph.modules]
@@ -229,8 +230,9 @@ class ForbiddenContract(Contract):
             if module.name not in graph.modules:
                 raise ValueError(f"Module '{module.name}' does not exist.")
 
-    def _check_external_forbidden_modules(self, forbidden_modules) -> None:
-        external_forbidden_modules = self._get_external_forbidden_modules(forbidden_modules)
+    def _validate_external_forbidden_modules(
+        self, external_forbidden_modules: Iterable[Module]
+    ) -> None:
         if external_forbidden_modules:
             if self._graph_was_built_with_externals():
                 for module in external_forbidden_modules:
@@ -245,15 +247,20 @@ class ForbiddenContract(Contract):
                     "when there are external forbidden modules."
                 )
 
-    def _get_external_forbidden_modules(self, forbidden_modules) -> set[Module]:
+    def _partition_modules_by_whether_they_are_internal(
+        self, modules: Iterable[Module]
+    ) -> tuple[set[Module], set[Module]]:
+        internal_modules: set[Module] = set()
+        external_modules: set[Module] = set()
+
         root_packages = [Module(name) for name in self.session_options["root_packages"]]
-        return {
-            forbidden_module
-            for forbidden_module in cast(list[Module], forbidden_modules)
-            if not any(
-                forbidden_module.is_in_package(root_package) for root_package in root_packages
-            )
-        }
+        for module in modules:
+            if any(module.is_in_package(root_package) for root_package in root_packages):
+                internal_modules.add(module)
+            else:
+                external_modules.add(module)
+
+        return internal_modules, external_modules
 
     def _graph_was_built_with_externals(self) -> bool:
         return str(self.session_options.get("include_external_packages")).lower() == "true"
