@@ -2,7 +2,7 @@
 
 ## latest
 
-* Bugfix: raise an error when a forbidden module within the root packages does not exist.
+* In `forbidden` contracts, error if a non-external module listed in `forbidden_modules` does not exist.
 
 ## 2.15 (2026-09-04)
 
