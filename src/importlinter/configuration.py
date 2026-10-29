@@ -5,7 +5,7 @@ from .adapters.user_options import IniFileUserOptionReader, TomlFileUserOptionRe
 from .application.app_config import settings
 
 
-def configure():
+def configure() -> None:
     settings.configure(
         USER_OPTION_READERS={
             "ini": IniFileUserOptionReader(),
