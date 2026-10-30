@@ -25,6 +25,7 @@
 * [Łukasz Skarżyński](https://github.com/skarzi)
 * [Matt Wang](https://github.com/mattwang44)
 * [Matthew Gamble](https://github.com/mwgamble)
+* [Mint0424](https://github.com/Mint0424)
 * [Nazli Ander](https://github.com/nazliander)
 * [Neil Williams](https://github.com/spladug)
 * [Nicholas Bunn](https://github.com/NicholasBunn)
