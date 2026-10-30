@@ -135,6 +135,18 @@ class LayersContract(Contract):
     broken_contract_guidance = fields.TextField(required=False)
 
     def validate(self) -> None:
+        seen_modules: set[str] = set()
+        duplicated_modules: set[str] = set()
+        for layer in cast(Sequence[Layer], self.layers):
+            module_names = {module_tail.name for module_tail in layer.module_tails}
+            duplicated_modules.update(seen_modules & module_names)
+            seen_modules.update(module_names)
+        if duplicated_modules:
+            modules = ", ".join(repr(name) for name in sorted(duplicated_modules))
+            raise InvalidContractOptions(
+                {"layers": f"Modules cannot be in more than one layer: {modules}."}
+            )
+
         if self.exhaustive and not self.containers:
             raise InvalidContractOptions(
                 {
