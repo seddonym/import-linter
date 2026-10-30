@@ -114,6 +114,28 @@ def test_lint_imports_raises_clear_error_when_root_package_is_single_file(capsys
     assert "'single_file_module' is a module, not a package" in captured.out
 
 
+def test_lint_imports_rejects_duplicate_layers(tmp_path, monkeypatch):
+    config = tmp_path / ".importlinter"
+    config.write_text(
+        "[importlinter]\n"
+        "root_package = testpackage\n"
+        "[importlinter:contract:layers]\n"
+        "name = Duplicate layers\n"
+        "type = layers\n"
+        "layers =\n"
+        "    testpackage.high\n"
+        "    testpackage.low : testpackage.high\n"
+    )
+    monkeypatch.chdir(testpackage_directory)
+
+    result = CliRunner().invoke(cli.lint_imports_command, ["--config", str(config)])
+
+    assert result.exit_code == cli.EXIT_STATUS_ERROR
+    assert "Modules cannot be in more than one layer:" in result.output
+    assert "'testpackage.high'." in result.output
+    assert "Traceback" not in result.output
+
+
 @pytest.mark.parametrize("is_debug_mode", (True, False))
 def test_lint_imports_debug_mode(is_debug_mode):
     os.chdir(testpackage_directory)
