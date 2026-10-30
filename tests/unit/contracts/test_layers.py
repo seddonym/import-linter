@@ -77,6 +77,33 @@ def test_layer_field_raises_error_if_both_independent_and_non_independent():
     )
 
 
+@pytest.mark.parametrize(
+    "contract_options, duplicated_modules",
+    (
+        ({"layers": ["foo.high", "foo.high"]}, "'foo.high'"),
+        ({"layers": ["foo.high", "foo.low | foo.high"]}, "'foo.high'"),
+        ({"layers": ["foo.high : foo.low", "foo.low"]}, "'foo.low'"),
+        ({"layers": ["foo.high", "(foo.high)"]}, "'foo.high'"),
+        (
+            {"layers": ["foo.high | (foo.low)", "foo.low : foo.high"]},
+            "'foo.high', 'foo.low'",
+        ),
+        ({"layers": ["high", "high"], "containers": ["foo"]}, "'high'"),
+    ),
+)
+def test_duplicate_layers_are_invalid(contract_options, duplicated_modules):
+    with pytest.raises(InvalidContractOptions) as exc_info:
+        LayersContract(
+            name="Layers contract",
+            session_options={"root_packages": ["foo"]},
+            contract_options=contract_options,
+        )
+
+    assert exc_info.value.errors == {
+        "layers": f"Modules cannot be in more than one layer: {duplicated_modules}."
+    }
+
+
 class TestLayerContractSingleContainers:
     def test_no_illegal_imports_means_contract_is_kept(self):
         contract = self._build_contract()

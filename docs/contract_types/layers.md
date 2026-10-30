@@ -13,6 +13,7 @@ way around.
   (e.g. `(foo)`) will be ignored if they are not present in the file system; otherwise, the contract will fail.
   It's also possible to include multiple layer modules on the same line, separated by either exclusively pipes
   (`|`) or exclusively colons (`:`) - see [Multi-item layers](#multi-item-layers). Does not support [wildcards](index.md#wildcards).
+  A module may only appear in one layer, including optional and multi-item layers.
 - `containers`:
   List of the parent modules of the layers, as *absolute names* that you could import, such as
   `mypackage.foo`. See [Containers](#containers). Supports [wildcards](index.md#wildcards). (Optional.)
