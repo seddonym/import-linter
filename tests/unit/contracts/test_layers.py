@@ -78,6 +78,44 @@ def test_layer_field_raises_error_if_both_independent_and_non_independent():
 
 
 @pytest.mark.parametrize(
+    "data, duplicated_modules",
+    (
+        ("duplicate | duplicate", "'duplicate'"),
+        ("duplicate : duplicate", "'duplicate'"),
+        ("(duplicate) | (duplicate)", "'duplicate'"),
+        ("(duplicate) : (duplicate)", "'duplicate'"),
+        ("duplicate | (duplicate)", "'duplicate'"),
+        ("(duplicate) : duplicate", "'duplicate'"),
+        ("z | a | z | (a)", "'a', 'z'"),
+    ),
+)
+def test_layer_field_rejects_duplicate_modules(data, duplicated_modules):
+    with pytest.raises(fields.ValidationError) as exc_info:
+        LayerField().parse(data)
+
+    assert (
+        exc_info.value.message == f"Modules cannot be repeated in a layer: {duplicated_modules}."
+    )
+
+
+@pytest.mark.parametrize("containers", (None, ["mypackage"]))
+def test_duplicate_modules_in_a_layer_are_invalid_contract_options(containers):
+    options = {"layers": ["duplicate | (duplicate)"]}
+    if containers is not None:
+        options["containers"] = containers
+    with pytest.raises(InvalidContractOptions) as exc_info:
+        LayersContract(
+            name="Layers contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options=options,
+        )
+
+    assert exc_info.value.errors == {
+        "layers": "Modules cannot be repeated in a layer: 'duplicate'."
+    }
+
+
+@pytest.mark.parametrize(
     "contract_options, duplicated_modules",
     (
         ({"layers": ["foo.high", "foo.high"]}, "'foo.high'"),
@@ -89,6 +127,7 @@ def test_layer_field_raises_error_if_both_independent_and_non_independent():
             "'foo.high', 'foo.low'",
         ),
         ({"layers": ["high", "high"], "containers": ["foo"]}, "'high'"),
+        ({"layers": ["duplicate", "duplicate"], "containers": ["mypackage"]}, "'duplicate'"),
     ),
 )
 def test_duplicate_layers_are_invalid(contract_options, duplicated_modules):
