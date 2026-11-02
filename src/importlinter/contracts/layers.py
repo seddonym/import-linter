@@ -45,6 +45,8 @@ class LayerField(fields.Field):
         raw_string = fields.StringField().parse(raw_data)
         raw_module_tails = self._parse_raw_module_tails(raw_string)
         module_tails = set()
+        seen_module_names: set[str] = set()
+        duplicated_module_names: set[str] = set()
         for raw_module_tail in raw_module_tails:
             if raw_module_tail.startswith("(") and raw_module_tail.endswith(")"):
                 module_tail = raw_module_tail[1:-1]
@@ -52,7 +54,13 @@ class LayerField(fields.Field):
             else:
                 module_tail = raw_module_tail
                 is_optional = False
+            if module_tail in seen_module_names:
+                duplicated_module_names.add(module_tail)
+            seen_module_names.add(module_tail)
             module_tails.add(ModuleTail(name=module_tail, is_optional=is_optional))
+        if duplicated_module_names:
+            modules = ", ".join(repr(name) for name in sorted(duplicated_module_names))
+            raise fields.ValidationError(f"Modules cannot be repeated in a layer: {modules}.")
         is_independent = self._parse_is_independent(raw_string)
         return Layer(module_tails, is_independent=is_independent)
 
