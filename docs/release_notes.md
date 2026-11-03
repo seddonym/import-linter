@@ -2,6 +2,7 @@
 
 ## latest
 
+* Reject repeated modules within or across layers with a contract validation error.
 * In `forbidden` contracts, error if a non-external module listed in `forbidden_modules` does not exist.
 
 ## 2.15 (2026-09-04)
