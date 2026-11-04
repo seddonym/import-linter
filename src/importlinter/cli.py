@@ -45,10 +45,12 @@ def check_options(f):
         help="Limit the check to the supplied contract identifier. May be passed multiple times.",
     )(f)
     f = click.option("--config", default=None, help="The config file to use.")(f)
+    f = click.argument("config_files", nargs=-1, type=click.Path())(f)
     return f
 
 
 def _run_check(
+    config_files: tuple[str, ...],
     config: str | None,
     contract: tuple[str, ...],
     cache_dir: str | None,
@@ -60,6 +62,7 @@ def _run_check(
 ) -> None:
     exit_code = lint_imports(
         config_filename=config,
+        config_filenames=config_files,
         limit_to_contracts=contract,
         cache_dir=cache_dir,
         no_cache=no_cache,
@@ -75,7 +78,12 @@ def _run_check(
 @click.version_option(version=__version__, message="import-linter %(version)s")
 @check_options
 def lint_imports_command(**kwargs) -> None:
-    """Check that a project adheres to a set of contracts."""
+    """Check that a project adheres to a set of contracts.
+
+    CONFIG_FILES are optional config files to read contracts from. Contracts from all the files
+    are checked in a single run, and the import graph is only built once for files that share
+    the same top-level configuration.
+    """
     _run_check(**kwargs)
 
 
@@ -91,7 +99,12 @@ def import_linter(ctx: click.Context) -> None:
 @import_linter.command("lint")
 @check_options
 def lint_command(**kwargs) -> None:
-    """Check that a project adheres to a set of contracts."""
+    """Check that a project adheres to a set of contracts.
+
+    CONFIG_FILES are optional config files to read contracts from. Contracts from all the files
+    are checked in a single run, and the import graph is only built once for files that share
+    the same top-level configuration.
+    """
     _run_check(**kwargs)
 
 
@@ -194,6 +207,7 @@ def lint_imports(
     show_timings: bool = False,
     no_logo: bool = False,
     verbose: bool = False,
+    config_filenames: tuple[str, ...] = (),
 ) -> int:
     """
     Check that a project adheres to a set of contracts.
@@ -211,6 +225,8 @@ def lint_imports(
                             each contract.
         no_logo:            if True, the logo is hidden at startup.
         verbose:            if True, noisily output progress as it goes along.
+        config_filenames:   further config files to check in the same run. The graph is only
+                            built once for files that share the same top-level configuration.
 
     Returns:
         EXIT_STATUS_SUCCESS or EXIT_STATUS_ERROR.
@@ -224,6 +240,7 @@ def lint_imports(
 
     passed = use_cases.lint_imports(
         config_filename=config_filename,
+        config_filenames=config_filenames,
         limit_to_contracts=limit_to_contracts,
         cache_dir=combined_cache_dir,
         is_debug_mode=is_debug_mode,

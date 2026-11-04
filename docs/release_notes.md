@@ -1,5 +1,13 @@
 # Release notes
 
+## latest
+
+* Accept configuration files as positional arguments (e.g. `lint-imports main.ini extra/*.ini`), checking contracts
+  from all of them in a single run. The import graph is only built once for files that share the same top level
+  configuration. Contract ids can be qualified with a filename (`--contract=path/to/file.ini:id`) when an id is used
+  in more than one file.
+* Error if two contracts in the same file share an id.
+
 ## 2.16 (2026-11-06)
 
 * Reject repeated modules within or across layers with a contract validation error.

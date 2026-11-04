@@ -136,6 +136,95 @@ def test_lint_imports_rejects_duplicate_layers(tmp_path, monkeypatch):
     assert "Traceback" not in result.output
 
 
+class TestMultipleConfigFiles:
+    @pytest.mark.parametrize("command", (cli.lint_imports_command, cli.lint_command))
+    def test_checks_contracts_from_all_files(self, command, monkeypatch):
+        monkeypatch.chdir(testpackage_directory)
+
+        result = CliRunner().invoke(
+            command, [".brokencontract.ini", ".customkeptcontract.ini", "--no-logo"]
+        )
+
+        assert result.exit_code == cli.EXIT_STATUS_ERROR
+        assert "Expected broken contract BROKEN" in result.output
+        assert "Custom kept contract KEPT" in result.output
+        assert "Contracts: 1 kept, 1 broken." in result.output
+        # Both files have the same top level configuration, so they share a graph.
+        assert "across" not in result.output
+
+    def test_builds_a_graph_for_each_distinct_top_level_configuration(self, monkeypatch):
+        monkeypatch.chdir(testpackage_directory)
+
+        result = CliRunner().invoke(
+            cli.lint_imports_command,
+            [
+                ".customkeptcontract.ini",
+                ".typecheckkeptcontract.ini",
+                ".customkeptcontract.toml",
+                "--no-logo",
+                "--show-timings",
+            ],
+        )
+
+        assert result.exit_code == cli.EXIT_STATUS_SUCCESS, result.output
+        assert "Building 2 graphs took" in result.output
+        assert "across 2 graphs." in result.output
+        assert "Contracts: 3 kept, 0 broken." in result.output
+
+    def test_config_option_can_be_combined_with_positional_files(self, monkeypatch):
+        monkeypatch.chdir(testpackage_directory)
+
+        result = CliRunner().invoke(
+            cli.lint_imports_command,
+            ["--config", ".customkeptcontract.ini", ".typecheckkeptcontract.ini", "--no-logo"],
+        )
+
+        assert result.exit_code == cli.EXIT_STATUS_SUCCESS, result.output
+        assert "Contracts: 2 kept, 0 broken." in result.output
+
+    def test_ambiguous_contract_id_suggests_filenames(self, monkeypatch):
+        monkeypatch.chdir(testpackage_directory)
+
+        # Both files have a contract with the id "one".
+        result = CliRunner().invoke(
+            cli.lint_imports_command,
+            [".brokencontract.ini", ".customkeptcontract.ini", "--contract=one", "--no-logo"],
+        )
+
+        assert result.exit_code == cli.EXIT_STATUS_ERROR
+        assert "Multiple contracts found with the id 'one'." in result.output
+        assert "--contract=.brokencontract.ini:one" in result.output
+        assert "--contract=.customkeptcontract.ini:one" in result.output
+
+    def test_contract_id_qualified_with_filename(self, monkeypatch):
+        monkeypatch.chdir(testpackage_directory)
+
+        result = CliRunner().invoke(
+            cli.lint_imports_command,
+            [
+                ".brokencontract.ini",
+                ".customkeptcontract.ini",
+                "--contract=.customkeptcontract.ini:one",
+                "--no-logo",
+            ],
+        )
+
+        assert result.exit_code == cli.EXIT_STATUS_SUCCESS, result.output
+        assert "Custom kept contract KEPT" in result.output
+        assert "Expected broken contract" not in result.output
+
+    def test_missing_file_errors(self, monkeypatch):
+        monkeypatch.chdir(testpackage_directory)
+
+        result = CliRunner().invoke(
+            cli.lint_imports_command,
+            [".customkeptcontract.ini", ".doesnotexist.ini", "--no-logo"],
+        )
+
+        assert result.exit_code == cli.EXIT_STATUS_ERROR
+        assert "Could not find .doesnotexist.ini." in result.output
+
+
 @pytest.mark.parametrize("is_debug_mode", (True, False))
 def test_lint_imports_debug_mode(is_debug_mode):
     os.chdir(testpackage_directory)
