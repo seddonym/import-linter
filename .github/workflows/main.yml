@@ -20,7 +20,7 @@ jobs:
         uses: extractions/setup-just@v4
 
       - name: Install uv and set the Python version
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.3.3
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -33,9 +33,7 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.14"  # Latest Python version.
-          - "3.10"  # Lint under a version <3.11 too, due to conditional dependency on tomli.
-
+          - "3.11"
     steps:
       - uses: actions/checkout@v5
 
@@ -43,7 +41,7 @@ jobs:
         uses: extractions/setup-just@v4
 
       - name: Install uv and set the Python version
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.3.3
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -66,7 +64,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Install uv and set the Python version
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Smoke test lint-imports
         run: uv run lint-imports
@@ -88,7 +86,7 @@ jobs:
         uses: extractions/setup-just@v4
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Build docs
         run: just build-docs

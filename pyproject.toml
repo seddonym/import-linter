@@ -6,13 +6,12 @@ description = "Lint your Python architecture"
 authors = [
     {name = "David Seddon", email = "david@seddonym.me"},
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
-    "click>=6",
+    "click>=7",
     "grimp>=3.17",
     "rich>=14.2.0",
-    "tomli>=1.2.1; python_version < '3.11'",
-    "typing-extensions>=3.10.0.0",
+    "typing-extensions>=4.10.0.0",
 ]
 
 classifiers = [
@@ -23,7 +22,6 @@ classifiers = [
     "Operating System :: POSIX",
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -104,14 +102,14 @@ dev = [
     "httpx>=0.28.1",
 ]
 dev-minimal = [
-    "mypy>=1.18.2",
-    "pre-commit>=4.3.0",
-    "pytest>=8.4.2",
-    "pyupgrade>=3.21.0",
+    "mypy>=2.4.1",
+    "pre-commit>=4.7.0",
+    "pytest>=9.2.0",
+    "pyupgrade>=3.22.0",
     "pyyaml>=6.0.3",
     "ruff>=0.13.2",
     "tox>=4.30.2",
-    "types-pyyaml>=6.0.12.20250915",
+    "types-pyyaml>=6.0.12.20261103",
 ]
 docs = [
     "mkdocs>=1.6.1",

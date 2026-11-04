@@ -77,7 +77,7 @@ class AcyclicSiblingsContract(Contract):
         if self.skip_descendants and self.ancestors:
             overlap = cast(set, self.ancestors) & cast(set, self.skip_descendants)
             if overlap:
-                first_overlap = sorted(list(overlap))[0]
+                first_overlap = sorted(overlap)[0]
                 assert isinstance(first_overlap, ModuleExpression)
                 if first_overlap.has_wildcard_expression():
                     raise ValueError(

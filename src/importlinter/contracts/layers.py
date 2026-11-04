@@ -265,7 +265,7 @@ class LayersContract(Contract):
         for module_tail in self.all_module_tails:
             if module_tail.is_optional:
                 continue
-            module_name = ".".join([container, module_tail.name])
+            module_name = f"{container}.{module_tail.name}"
             if module_name not in graph.modules:
                 raise ValueError(
                     f"Missing layer in container '{container}': "

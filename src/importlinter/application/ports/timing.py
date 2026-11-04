@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 from types import TracebackType
+from typing import Self
 
 
 class Timer(abc.ABC):
@@ -22,7 +23,7 @@ class Timer(abc.ABC):
         # We use a stack so context managers can be nested.
         self._start_stack_ms: list[int] = []
 
-    def __enter__(self) -> Timer:
+    def __enter__(self) -> Self:
         self._start_stack_ms.append(self.get_current_time_ms())
         return self
 
