@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import cast
+from typing import TypedDict, cast
 
 import grimp
 from grimp import ImportGraph
-from typing_extensions import TypedDict
 
 from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel

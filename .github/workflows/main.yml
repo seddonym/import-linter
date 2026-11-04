@@ -33,7 +33,8 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.11"
+          - "3.11"  # Lowest supported version.
+          - "3.14"  # Latest supported version.
     steps:
       - uses: actions/checkout@v5
 
