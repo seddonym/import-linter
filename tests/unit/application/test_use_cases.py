@@ -1,3 +1,4 @@
+import os
 import re
 import string
 from typing import Any
@@ -15,17 +16,23 @@ from importlinter.application.use_cases import (
     SUCCESS,
     build_dot_graph,
     create_report,
+    _create_report_from_sources,
     _format_module_count,
+    _read_config_sources,
+    _register_contract_types_for_sources,
     lint_imports,
 )
+from importlinter.application.user_options import InvalidUserOptions
 from importlinter.domain.dotfile import DotGraph, Edge, EdgeArrowhead, EdgeStyle
 from importlinter.application.user_options import UserOptions
 from tests.adapters.building import FakeGraphBuilder
 from tests.adapters.timing import FakeTimer
 from tests.adapters.user_options import (
     ExceptionRaisingUserOptionReader,
+    FakeMultipleFileUserOptionReader,
     FakeUserOptionReader,
 )
+from importlinter.adapters.filesystem import FileSystem
 from importlinter.application import rendering
 
 SOME_CACHE_DIR = "/path/to/some/cache/dir"
@@ -756,6 +763,449 @@ class TestReadUserOptions:
         )
         with pytest.raises(RuntimeError, match="expected"):
             lint_imports(filename, is_debug_mode=True)
+
+
+class RecordingGraphBuilder(GraphBuilder):
+    """
+    Graph builder that records every build, and returns a graph chosen by the build arguments.
+    """
+
+    def __init__(self, graphs_by_exclude_type_checking_imports: dict[bool, ImportGraph]):
+        self._graphs = graphs_by_exclude_type_checking_imports
+        self.builds: list[dict[str, Any]] = []
+
+    def build(
+        self,
+        root_package_names: list[str],
+        cache_dir: str | None,
+        include_external_packages: bool = False,
+        exclude_type_checking_imports: bool = False,
+    ) -> ImportGraph:
+        self.builds.append(
+            {
+                "root_package_names": root_package_names,
+                "cache_dir": cache_dir,
+                "include_external_packages": include_external_packages,
+                "exclude_type_checking_imports": exclude_type_checking_imports,
+            }
+        )
+        return self._graphs[exclude_type_checking_imports]
+
+
+class TestMultipleConfigFiles:
+    CONTRACT_TYPES = [
+        "always_passes: tests.helpers.contracts.AlwaysPassesContract",
+        "always_fails: tests.helpers.contracts.AlwaysFailsContract",
+        "forbidden: tests.helpers.contracts.ForbiddenImportContract",
+    ]
+
+    def test_contracts_from_files_with_same_top_level_config_share_one_graph(self):
+        builder = self._configure(
+            {
+                "main.ini": self._options([{"type": "always_passes", "name": "Contract one"}]),
+                "extra/two.ini": self._options(
+                    [{"type": "always_passes", "name": "Contract two"}]
+                ),
+                "extra/three.toml": self._options(
+                    [{"type": "always_passes", "name": "Contract three"}]
+                ),
+            }
+        )
+
+        with console.capture() as capture:
+            result = lint_imports(
+                config_filenames=("main.ini", "extra/two.ini", "extra/three.toml"),
+                no_logo=True,
+            )
+
+        assert result == SUCCESS
+        assert len(builder.builds) == 1
+        assert capture.get() == dedent(
+            """\
+            ---------
+            Contracts
+            ---------
+
+            Analyzed 3 files, 1 dependencies.
+            ---------------------------------
+
+            Contract one KEPT
+            Contract two KEPT
+            Contract three KEPT
+
+            Contracts: 3 kept, 0 broken.
+            """
+        )
+
+    def test_builds_one_graph_per_distinct_top_level_config(self):
+        # The import from mypackage.a to mypackage.b is only in the graph that
+        # includes type checking imports, so only the first file's contract is broken.
+        builder = self._configure(
+            {
+                "main.ini": self._options(
+                    [self._forbidden_contract("Contract one")],
+                ),
+                "extra.ini": self._options(
+                    [self._forbidden_contract("Contract two")],
+                    exclude_type_checking_imports="True",
+                ),
+                "another.ini": self._options(
+                    [self._forbidden_contract("Contract three")],
+                    exclude_type_checking_imports="True",
+                ),
+            }
+        )
+
+        with console.capture() as capture:
+            result = lint_imports(
+                config_filenames=("main.ini", "extra.ini", "another.ini"), no_logo=True
+            )
+
+        assert result == FAILURE
+        assert [build["exclude_type_checking_imports"] for build in builder.builds] == [
+            False,
+            True,
+        ]
+        output = capture.get()
+        assert "Analyzed 5 files, 1 dependencies across 2 graphs." in output
+        assert "Contract one BROKEN" in output
+        assert "Contract two KEPT" in output
+        assert "Contract three KEPT" in output
+        assert "Contracts: 2 kept, 1 broken." in output
+
+    def test_each_contract_receives_its_own_files_session_options(self):
+        self._configure(
+            {
+                "main.ini": self._options(
+                    [self._forbidden_contract("Contract one")],
+                ),
+                "extra.ini": self._options(
+                    [self._forbidden_contract("Contract two")],
+                    exclude_type_checking_imports="True",
+                ),
+            }
+        )
+
+        report = create_report_from_files("main.ini", "extra.ini")
+
+        session_options_by_name = {
+            contract.name: contract.session_options for contract in report.contracts
+        }
+        assert "exclude_type_checking_imports" not in session_options_by_name["Contract one"]
+        assert session_options_by_name["Contract two"]["exclude_type_checking_imports"] == "True"
+
+    def test_shows_combined_graph_building_time(self):
+        timer = FakeTimer()
+        timer.setup(tick_duration=5, increment=0)
+        self._configure(
+            {
+                "main.ini": self._options([{"type": "always_passes", "name": "Contract one"}]),
+                "extra.ini": self._options(
+                    [{"type": "always_passes", "name": "Contract two"}],
+                    exclude_type_checking_imports="True",
+                ),
+            },
+            timer=timer,
+        )
+
+        with console.capture() as capture:
+            lint_imports(config_filenames=("main.ini", "extra.ini"), show_timings=True)
+
+        assert "Building 2 graphs took 10s." in capture.get()
+
+    def test_only_builds_graphs_needed_by_selected_contracts(self):
+        builder = self._configure(
+            {
+                "main.ini": self._options(
+                    [{"type": "always_passes", "id": "one", "name": "Contract one"}]
+                ),
+                "extra.ini": self._options(
+                    [{"type": "always_passes", "id": "two", "name": "Contract two"}],
+                    exclude_type_checking_imports="True",
+                ),
+            }
+        )
+
+        with console.capture() as capture:
+            result = lint_imports(
+                config_filenames=("main.ini", "extra.ini"),
+                limit_to_contracts=("two",),
+                no_logo=True,
+            )
+
+        assert result == SUCCESS
+        assert [build["exclude_type_checking_imports"] for build in builder.builds] == [True]
+        assert "Contract one" not in capture.get()
+        assert "Contract two KEPT" in capture.get()
+
+    def test_config_filename_is_treated_as_first_file(self):
+        builder = self._configure(
+            {
+                "main.ini": self._options([{"type": "always_passes", "name": "Contract one"}]),
+                "extra.ini": self._options([{"type": "always_passes", "name": "Contract two"}]),
+            }
+        )
+
+        with console.capture() as capture:
+            result = lint_imports(
+                config_filename="main.ini", config_filenames=("extra.ini",), no_logo=True
+            )
+
+        assert result == SUCCESS
+        assert len(builder.builds) == 1
+        output = capture.get()
+        assert output.index("Contract one KEPT") < output.index("Contract two KEPT")
+
+    def test_file_passed_more_than_once_is_only_read_once(self):
+        self._configure(
+            {"main.ini": self._options([{"type": "always_passes", "name": "Contract one"}])}
+        )
+
+        with console.capture() as capture:
+            result = lint_imports(
+                config_filenames=("main.ini", "./main.ini", "main.ini"), no_logo=True
+            )
+
+        assert result == SUCCESS
+        assert settings.USER_OPTION_READERS["ini"].read_filenames == ["main.ini"]
+        assert "Contracts: 1 kept, 0 broken." in capture.get()
+
+    def test_errors_if_file_has_no_configuration(self):
+        self._configure(
+            {"main.ini": self._options([{"type": "always_passes", "name": "Contract one"}])}
+        )
+
+        with pytest.raises(
+            FileNotFoundError, match=re.escape("Could not read any configuration from extra.ini.")
+        ):
+            lint_imports(config_filenames=("main.ini", "extra.ini"), is_debug_mode=True)
+
+    def test_ambiguous_contract_id_errors_with_filename_suggestions(self):
+        self._configure(
+            {
+                "main.ini": self._options(
+                    [{"type": "always_passes", "id": "my-contract", "name": "Contract one"}]
+                ),
+                "extra/two.ini": self._options(
+                    [{"type": "always_passes", "id": "my-contract", "name": "Contract two"}]
+                ),
+            }
+        )
+
+        with pytest.raises(ValueError) as exc_info:
+            lint_imports(
+                config_filenames=("main.ini", "extra/two.ini"),
+                limit_to_contracts=("my-contract",),
+                is_debug_mode=True,
+            )
+
+        assert str(exc_info.value) == (
+            "Multiple contracts found with the id 'my-contract'. "
+            "Try including the filename, e.g.\n\n"
+            "--contract=main.ini:my-contract\n"
+            f"--contract={os.path.join('extra', 'two.ini')}:my-contract"
+        )
+
+    def test_same_id_in_different_files_is_allowed_without_contract_option(self):
+        self._configure(
+            {
+                "main.ini": self._options(
+                    [{"type": "always_passes", "id": "my-contract", "name": "Contract one"}]
+                ),
+                "extra.ini": self._options(
+                    [{"type": "always_passes", "id": "my-contract", "name": "Contract two"}]
+                ),
+            }
+        )
+
+        with console.capture() as capture:
+            result = lint_imports(config_filenames=("main.ini", "extra.ini"), no_logo=True)
+
+        assert result == SUCCESS
+        assert "Contracts: 2 kept, 0 broken." in capture.get()
+
+    @pytest.mark.parametrize(
+        "requested",
+        (
+            "extra/two.ini:my-contract",
+            "./extra/two.ini:my-contract",
+            "extra/../extra/two.ini:my-contract",
+        ),
+    )
+    def test_contract_id_can_be_qualified_with_filename(self, requested):
+        self._configure(
+            {
+                "main.ini": self._options(
+                    [{"type": "always_fails", "id": "my-contract", "name": "Contract one"}]
+                ),
+                "extra/two.ini": self._options(
+                    [
+                        {"type": "always_passes", "id": "my-contract", "name": "Contract two"},
+                        {"type": "always_fails", "id": "other", "name": "Contract three"},
+                    ]
+                ),
+            }
+        )
+
+        with console.capture() as capture:
+            result = lint_imports(
+                config_filenames=("main.ini", "extra/two.ini"),
+                limit_to_contracts=(requested,),
+                no_logo=True,
+            )
+
+        assert result == SUCCESS
+        output = capture.get()
+        assert "Contract two KEPT" in output
+        assert "Contract one" not in output
+        assert "Contract three" not in output
+
+    def test_qualified_contract_id_with_unknown_filename_is_not_found(self):
+        self._configure(
+            {
+                "main.ini": self._options(
+                    [{"type": "always_passes", "id": "my-contract", "name": "Contract one"}]
+                ),
+            }
+        )
+
+        with pytest.raises(
+            ValueError, match=re.escape("Could not find contract 'other.ini:my-contract'.")
+        ):
+            lint_imports(
+                config_filenames=("main.ini",),
+                limit_to_contracts=("other.ini:my-contract",),
+                is_debug_mode=True,
+            )
+
+    def test_duplicate_ids_within_a_single_file_error(self):
+        self._configure(
+            {
+                "pyproject.toml": self._options(
+                    [
+                        {"type": "always_passes", "id": "my-contract", "name": "Contract one"},
+                        {"type": "always_passes", "id": "my-contract", "name": "Contract two"},
+                    ]
+                ),
+            }
+        )
+
+        with pytest.raises(
+            InvalidUserOptions,
+            match=re.escape(
+                "More than one contract in pyproject.toml has the id 'my-contract'. "
+                "Contract ids must be unique within a file."
+            ),
+        ):
+            lint_imports(config_filenames=("pyproject.toml",), is_debug_mode=True)
+
+    def test_errors_if_contract_type_is_defined_differently_in_two_files(self):
+        self._configure(
+            {
+                "main.ini": self._options(
+                    [{"type": "custom", "name": "Contract one"}],
+                    contract_types=["custom: tests.helpers.contracts.AlwaysPassesContract"],
+                ),
+                "extra.ini": self._options(
+                    [{"type": "custom", "name": "Contract two"}],
+                    contract_types=["custom: tests.helpers.contracts.AlwaysFailsContract"],
+                ),
+            }
+        )
+
+        with pytest.raises(
+            InvalidUserOptions,
+            match=re.escape(
+                "The contract type 'custom' is defined differently in more than one "
+                "configuration file."
+            ),
+        ):
+            lint_imports(config_filenames=("main.ini", "extra.ini"), is_debug_mode=True)
+
+    def test_contract_types_from_any_file_can_be_used(self):
+        self._configure(
+            {
+                "main.ini": self._options(
+                    [{"type": "always_passes", "name": "Contract one"}],
+                    contract_types=["custom: tests.helpers.contracts.AlwaysPassesContract"],
+                ),
+                "extra.ini": self._options(
+                    [{"type": "custom", "name": "Contract two"}],
+                    contract_types=["custom: tests.helpers.contracts.AlwaysPassesContract"],
+                ),
+            }
+        )
+
+        with console.capture() as capture:
+            result = lint_imports(config_filenames=("main.ini", "extra.ini"), no_logo=True)
+
+        assert result == SUCCESS
+        assert "Contract two KEPT" in capture.get()
+
+    # Helpers
+
+    def _options(
+        self,
+        contracts_options: list[dict[str, Any]],
+        contract_types: list[str] | None = None,
+        **extra_session_options: str,
+    ) -> UserOptions:
+        return UserOptions(
+            session_options={
+                "root_package": "mypackage",
+                "contract_types": contract_types or self.CONTRACT_TYPES,
+                **extra_session_options,
+            },
+            contracts_options=contracts_options,
+        )
+
+    def _forbidden_contract(self, name: str) -> dict[str, Any]:
+        return {
+            "type": "forbidden",
+            "name": name,
+            "importer": "mypackage.a",
+            "imported": "mypackage.b",
+        }
+
+    def _configure(
+        self,
+        user_options_by_filename: dict[str, UserOptions],
+        timer: FakeTimer | None = None,
+    ) -> RecordingGraphBuilder:
+        graph_with_type_checking_imports = ImportGraph()
+        for module in ("mypackage", "mypackage.a", "mypackage.b"):
+            graph_with_type_checking_imports.add_module(module)
+        graph_with_type_checking_imports.add_import(
+            importer="mypackage.a",
+            imported="mypackage.b",
+            line_number=3,
+            line_contents="from mypackage import b",
+        )
+        graph_without_type_checking_imports = ImportGraph()
+        for module in ("mypackage", "mypackage.a"):
+            graph_without_type_checking_imports.add_module(module)
+
+        builder = RecordingGraphBuilder(
+            {
+                False: graph_with_type_checking_imports,
+                True: graph_without_type_checking_imports,
+            }
+        )
+        reader = FakeMultipleFileUserOptionReader(user_options_by_filename)
+        settings.configure(
+            USER_OPTION_READERS={"ini": reader, "toml": reader},
+            GRAPH_BUILDER=builder,
+            FILE_SYSTEM=FileSystem(),
+            TIMER=timer or FakeTimer(),
+            DEFAULT_CACHE_DIR=SOME_CACHE_DIR,
+        )
+        return builder
+
+
+def create_report_from_files(*filenames: str):
+    config_sources = _read_config_sources(None, filenames)
+    _register_contract_types_for_sources(config_sources)
+    return _create_report_from_sources(config_sources)
 
 
 # Dot graph generation tests

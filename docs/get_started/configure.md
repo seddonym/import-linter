@@ -122,3 +122,6 @@ The way these ids are supplied depends on the configuration file format:
 - *`ini` format:* each contract has its own INI section, which begins `importlinter:contract:` and ends in a
 unique id (in the example above, the ids are `one` and `two`).
 - *`toml` format:* ids are optional. To set one, provide an `id` (as shown in the second contract in the example above).
+
+Contract ids must be unique within a file. Different files may use the same id: see
+[Using more than one configuration file](run.md#using-more-than-one-configuration-file).

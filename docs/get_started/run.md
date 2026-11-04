@@ -8,17 +8,25 @@ lint-imports
 
 (Or you can use the alias `import-linter lint` if you prefer.)
 
+**Arguments:**
+
+- `CONFIG_FILES`:
+  One or more configuration files to check, in a single run. This overrides the default file search strategy.
+  See [Using more than one configuration file](#using-more-than-one-configuration-file). (Optional.)
+
 **Options:**
 
 - `--config`:
   The configuration file to use. This overrides the default file search strategy.
   By default it's assumed that the file is an ini-file unless the file extension is `toml`.
+  If configuration files are also passed as arguments, this file is checked first.
   (Optional.)
 - `--contract`:
   Limit the check to the contract with the supplied id. In INI files, a contract's id is
   the final part of the section header: for example, the id for a contract with a section
   header of `[importlinter:contract:foo]` is `foo`. In TOML files, ids are supplied
-  explicitly with an `id` key. This option may be provided multiple
+  explicitly with an `id` key. If more than one configuration file uses the same id, prefix the id with the
+  filename and a colon, e.g. `--contract=path/to/config.ini:foo`. This option may be provided multiple
   times to check more than one contract. (Optional.)
 - `--cache-dir`:
   The directory to use for caching. Defaults to `.import_linter_cache`. See [Caching](../caching.md). (Optional.)
@@ -48,10 +56,34 @@ lint-imports
 lint-imports --config path/to/alternative-config.ini
 ```
 
+#### Using more than one configuration file
+
+Contracts can be split across several files (for example, so that different teams can own their own contracts)
+and checked in a single run:
+
+```console
+lint-imports main.ini extra_contracts/*.ini
+```
+
+Each file is a complete configuration file, with its own [top level configuration](configure.md#top-level-configuration).
+Building the import graph is usually the slowest part of a run, so Import Linter only builds it once for all
+the files that share the same top level configuration (`root_packages`, `include_external_packages` and
+`exclude_type_checking_imports`). Files with a different top level configuration get a graph of their own.
+
+Import Linter doesn't expand globs itself: in the example above, the shell does that. Any file that is
+passed more than once is only checked once.
+
 #### Checking only certain contracts
 
 ```console
 lint-imports --contract some-contract --contract another-contract
+```
+
+If you're using more than one configuration file and the same id appears in more than one of them, include the
+filename (relative to the current working directory) to say which one you mean:
+
+```console
+lint-imports main.ini extra_contracts/*.ini --contract=extra_contracts/two.ini:some-contract
 ```
 
 #### Customizing cache behavior
