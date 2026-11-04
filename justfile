@@ -50,7 +50,6 @@ serve-docs:
 
 # Run all linters, build docs and tests.
 check:
-    @UV_PYTHON=3.11 just lint  # See .github/workflows/main.yml for why.
     @just lint
     @just build-docs
     @just test-all

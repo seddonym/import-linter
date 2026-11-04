@@ -19,32 +19,23 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v4
 
-      - name: Install uv and set the Python version
+      - name: Install uv
         uses: astral-sh/setup-uv@v10.3.3
-        with:
-          python-version: ${{ matrix.python-version }}
 
       - name: Test
         run: just test-all
 
   lint:
-    name: Lint under ${{ matrix.python-version }}
+    name: Lint
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version:
-          - "3.11"  # Lowest supported version.
-          - "3.14"  # Latest supported version.
     steps:
       - uses: actions/checkout@v5
 
       - name: Install just
         uses: extractions/setup-just@v4
 
-      - name: Install uv and set the Python version
+      - name: Install uv
         uses: astral-sh/setup-uv@v10.3.3
-        with:
-          python-version: ${{ matrix.python-version }}
 
       - name: Lint
         run: just lint

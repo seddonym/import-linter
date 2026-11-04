@@ -68,6 +68,7 @@ where = ["src"]
 namespaces = false
 
 [tool.ruff]
+target-version = "py311"
 line-length = 99
 exclude = [
     "tests/assets"  # These are sample packages for tests to run under - we don't want ruff to mess with them.
