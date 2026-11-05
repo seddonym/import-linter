@@ -1,12 +1,7 @@
-import configparser
-from typing import Any
 import abc
-import sys
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
+import configparser
+import tomllib
+from typing import Any
 
 from importlinter.application import file_finding
 from importlinter.application.app_config import settings

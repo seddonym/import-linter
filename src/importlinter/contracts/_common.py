@@ -10,10 +10,10 @@ from __future__ import annotations
 
 import itertools
 from collections.abc import Sequence
+from typing import TypedDict
 
 import grimp
 from grimp import ImportGraph
-from typing_extensions import TypedDict
 
 from importlinter.application import output
 from importlinter.domain.imports import Module

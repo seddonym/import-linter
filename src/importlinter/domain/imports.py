@@ -1,12 +1,11 @@
 from __future__ import annotations
-from typing import Any
 
 
 class ValueObject:
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}: {self}>"
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return hash(self) == hash(other)
         else:
@@ -36,23 +35,23 @@ class Module(ValueObject):
         return self.name.split(".")[0]
 
     @property
-    def parent(self) -> "Module":
+    def parent(self) -> Module:
         components = self.name.split(".")
         if len(components) == 1:
             raise ValueError("Module has no parent.")
         return Module(".".join(components[:-1]))
 
-    def is_child_of(self, module: "Module") -> bool:
+    def is_child_of(self, module: Module) -> bool:
         try:
             return module == self.parent
         except ValueError:
             # If this module has no parent, then it cannot be a child of the supplied module.
             return False
 
-    def is_descendant_of(self, module: "Module") -> bool:
+    def is_descendant_of(self, module: Module) -> bool:
         return self.name.startswith(f"{module.name}.")
 
-    def is_in_package(self, package: "Module") -> bool:
+    def is_in_package(self, package: Module) -> bool:
         return self == package or self.is_descendant_of(package)
 
 

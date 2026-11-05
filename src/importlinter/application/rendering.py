@@ -180,4 +180,4 @@ def format_duration(milliseconds: int) -> str:
         return f"{s:.3f}s"
     if s < 10:
         return f"{s:.1f}s"
-    return f"{int(round(s))}s"
+    return f"{round(s)}s"

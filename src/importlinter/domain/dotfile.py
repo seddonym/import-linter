@@ -1,13 +1,13 @@
 from dataclasses import dataclass, field, fields
-from enum import Enum
+from enum import StrEnum
 
 
-class EdgeStyle(str, Enum):
+class EdgeStyle(StrEnum):
     SOLID = "solid"
     DASHED = "dashed"
 
 
-class EdgeArrowhead(str, Enum):
+class EdgeArrowhead(StrEnum):
     NORMAL = "normal"
     VEE = "vee"
 
