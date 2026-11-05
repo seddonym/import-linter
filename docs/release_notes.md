@@ -7,6 +7,8 @@
 * Officially support Python 3.15.
 * Officially support free-threaded Python.
 * Drop support for Python 3.10.
+* Support exploring and drawing multiple packages together, by passing several package names to
+  `explore` or `drawgraph`.
 
 ## 2.15 (2026-09-04)
 

@@ -85,5 +85,9 @@ class DotGraph:
 
     @staticmethod
     def render_module(module: str) -> str:
-        # Render as relative module.
-        return f".{module.split('.')[-1]}"
+        # Render as relative module, except for root packages, which have no parent to be
+        # relative to.
+        last_part = module.split(".")[-1]
+        if "." in module:
+            return f".{last_part}"
+        return last_part
