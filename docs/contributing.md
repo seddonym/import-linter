@@ -123,6 +123,38 @@ Or, if you just want to build them:
 just build-docs
 ```
 
+## Supported Python versions
+
+The set of supported Python versions is driven by the
+`Programming Language :: Python :: 3.X` classifiers in `pyproject.toml`. `noxfile.py` reads these (via
+`nox.project.python_versions`) to decide which versions to test under, so CI and `just test-all` pick up
+changes automatically. The lower bound is also declared once in `requires-python`, which ruff uses to infer
+its target version.
+
+### Supporting a new Python version
+
+1. Add a `"Programming Language :: Python :: 3.X"` classifier for the new version in `pyproject.toml`.
+2. Update the default in the `test` recipe in `justfile` (e.g. `test python="3.14"`) to the new version, so
+   that `just test` runs under the latest supported version.
+3. Add a note to `docs/release_notes.md` in the form "Officially support Python 3.x."
+
+### Dropping support for an old Python version
+
+1. In `pyproject.toml`:
+
+     - Bump `requires-python` in `pyproject.toml` to the new lowest version (e.g. `">=3.11"` → `">=3.12"`).
+     - Remove the `"Programming Language :: Python :: 3.X"` classifier for the dropped version.
+     - Update `python_version` under `[tool.mypy]` to the new lowest version. (Unlike ruff, mypy has no
+       inference from `requires-python`, so this must be set explicitly.)
+     - Remove any dependencies carrying a `python_version < '3.x'` marker for the old version.
+
+2. Across the code base, remove any redundant `sys.version_info` checks that reference the unsupported Python version.
+3. Run `just upgrade-python 312` (pass the new lowest version, without the dot).
+   This will modernize the code for the new floor.
+4. Run `just test-all`.
+5. Run `uv lock`.
+6. Add a note to `docs/release_notes.md` in the form "Drop support for Python 3.x."
+
 ## Releasing to Pypi
 
 (Only maintainers can do this.)
