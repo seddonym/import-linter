@@ -9,6 +9,7 @@
 * Drop support for Python 3.10.
 * Support exploring and drawing multiple packages together, by passing several package names to
   `explore` or `drawgraph`.
+* Fail if the configuration defines no contracts, rather than reporting success.
 
 ## 2.15 (2026-09-04)
 

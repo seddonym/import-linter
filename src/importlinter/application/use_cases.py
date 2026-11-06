@@ -66,6 +66,7 @@ def lint_imports(
     output.verbose_print(verbose, "Verbose mode.")
     try:
         user_options = read_user_options(config_filename=config_filename)
+        _validate_contracts_present(user_options)
         _register_contract_types(user_options)
         report = create_report(user_options, limit_to_contracts, cache_dir, show_timings, verbose)
     except Exception as e:
@@ -240,6 +241,18 @@ def _get_spinner(message: str, verbose: bool) -> contextlib.AbstractContextManag
         return contextlib.nullcontext()
     else:
         return console.status(":brick: Building graph...", spinner="point")
+
+
+def _validate_contracts_present(user_options: UserOptions) -> None:
+    # Running the linter with nothing to check is almost always a configuration mistake
+    # (e.g. [[tool.importlinter.contract]] instead of [[tool.importlinter.contracts]]),
+    # so fail rather than report success.
+    if not user_options.contracts_options:
+        raise InvalidUserOptions(
+            "No contracts found in the configuration.\n\n"
+            "Each contract goes in an 'importlinter:contract:<name>' section (INI files)\n"
+            "or a 'tool.importlinter.contracts' array of tables (TOML files)."
+        )
 
 
 def _validate_root_package_names(root_package_names: list[str]) -> None:
