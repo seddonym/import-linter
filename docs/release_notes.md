@@ -5,6 +5,7 @@
 * Reject repeated modules within or across layers with a contract validation error.
 * In `forbidden` contracts, error if a non-external module listed in `forbidden_modules` does not exist.
 * Officially support Python 3.15.
+* Officially support free-threaded Python.
 * Drop support for Python 3.10.
 
 ## 2.15 (2026-09-04)
