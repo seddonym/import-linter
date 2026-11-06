@@ -57,6 +57,10 @@ Fields definition can be found in `importlinter.domain.fields`.
 Fields are to be added in the class definition, the base Contract constructor will parse the value from the config and inject it
 into the instance with the same name. *(this will make type checker complain about field usage)*
 
+An option in the contract's configuration that matches none of its fields (other than `id`, `name` and `type`) is
+reported as an error, so a misspelled optional field does not go unnoticed. Options a contract needs must therefore be
+declared as fields, not read from `self.contract_options` directly.
+
 Example of multiple values fields usage can be found in `importlinter.contracts.forbidden`
 
 **Example custom contract**

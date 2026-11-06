@@ -1,9 +1,14 @@
 import abc
+import difflib
 from typing import Any
 
 from grimp import ImportGraph
 
 from . import fields
+
+
+# Options that every contract has, read by the application layer rather than by a field.
+COMMON_CONTRACT_OPTIONS = frozenset({"id", "name", "type"})
 
 
 class Contract(abc.ABC):
@@ -48,6 +53,8 @@ class Contract(abc.ABC):
                 continue
             setattr(self, field_name, clean_data)
 
+        errors.update(self.__class__._get_unrecognised_option_errors(self.contract_options))
+
         if errors:
             raise InvalidContractOptions(errors)
 
@@ -68,6 +75,28 @@ class Contract(abc.ABC):
             The names of all the fields on this contract class.
         """
         return [name for name, attr in cls.__dict__.items() if isinstance(attr, fields.Field)]
+
+    @classmethod
+    def _get_unrecognised_option_errors(cls, contract_options: dict[str, Any]) -> dict[str, str]:
+        """
+        Returns:
+            An error for each contract option that does not correspond to a field. Without
+            this, a misspelled optional field (e.g. 'exhaustiv') would be silently ignored.
+        """
+        recognised = set(COMMON_CONTRACT_OPTIONS)
+        for klass in cls.__mro__:
+            recognised.update(
+                name for name, attr in vars(klass).items() if isinstance(attr, fields.Field)
+            )
+
+        errors = {}
+        for option in sorted(set(contract_options) - recognised):
+            message = "Unrecognised option."
+            close_matches = difflib.get_close_matches(option, sorted(recognised), n=1)
+            if close_matches:
+                message += f" Did you mean '{close_matches[0]}'?"
+            errors[option] = message
+        return errors
 
     @classmethod
     def _get_field(cls, field_name: str) -> fields.Field:

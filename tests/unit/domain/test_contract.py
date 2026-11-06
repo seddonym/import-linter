@@ -56,6 +56,18 @@ class AnotherContract(Contract):
             {"foo": '"something invalid" is not a valid value.'},
         ),
         ({"foo": "hello", "baz": "hello"}, {"baz": "Baz must not equal foo."}),
+        (
+            {"foo": "hello", "bazz": "a typo"},
+            {"bazz": "Unrecognised option. Did you mean 'baz'?"},
+        ),
+        ({"foo": "hello", "qux": "unrelated"}, {"qux": "Unrecognised option."}),
+        (
+            {"bazz": "a typo"},
+            {
+                "foo": "This is a required field.",
+                "bazz": "Unrecognised option. Did you mean 'baz'?",
+            },
+        ),
     ),
 )
 def test_contract_validation(contract_options, expected_errors):
@@ -90,6 +102,27 @@ def test_contract_populated_with_default(provide_value_for_field):
     )
 
     assert contract.baz == expected_value
+
+
+def test_common_options_are_recognised():
+    contract = MyContract(
+        name="My contract",
+        session_options={},
+        contract_options={"foo": "hello", "id": "my-id", "name": "My contract", "type": "mine"},
+    )
+
+    assert contract.foo == "hello"
+
+
+class SubclassOfMyContract(MyContract):
+    pass
+
+
+def test_options_for_inherited_fields_are_recognised():
+    # Fields declared on a parent class are not unrecognised options.
+    SubclassOfMyContract(
+        name="My contract", session_options={}, contract_options={"foo": "hello", "bar": "x"}
+    )
 
 
 class TestContractRegistry:
