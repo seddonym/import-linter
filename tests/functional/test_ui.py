@@ -121,6 +121,22 @@ class TestDrawGraph:
         normalized = output.replace(" ", "")
         assert '"rootpackagegreen"->"rootpackageblue"' in normalized
 
+    def test_multiple_subpackages_overview(self):
+        # Supplied subpackages are drawn as distinct, fully qualified nodes (not collapsed to
+        # their root packages, nor merged by a shared last component).
+        result = subprocess.run(
+            ["import-linter", "drawgraph", "rootpackageblue.one", "rootpackagegreen.two"],
+            capture_output=True,
+            cwd=multipleroots_directory,
+        )
+        assert result.returncode == 0
+        output = result.stdout.decode()
+        normalized = output.replace(" ", "")
+        assert '"rootpackageblue.one"' in normalized
+        assert '"rootpackagegreen.two"' in normalized
+        # rootpackagegreen.two imports rootpackageblue.one.alpha.
+        assert '"rootpackagegreen.two"->"rootpackageblue.one"' in normalized
+
 
 class TestGraphApi:
     @pytest.fixture(autouse=True)
@@ -220,3 +236,40 @@ class TestMultiRootGraphApi:
         assert response.status_code == 200
         data = response.json()
         assert data["module"] == "rootpackageblue"
+
+
+class TestOverviewPreservesSuppliedSubpackages:
+    @pytest.fixture(autouse=True)
+    def setup_sys_path(self):
+        sys.path.insert(0, str(multipleroots_directory))
+        yield
+        sys.path.remove(str(multipleroots_directory))
+
+    @pytest.fixture
+    def client(self):
+        from fastapi.testclient import TestClient
+        from importlinter.ui.server import create_app
+
+        # The user supplied subpackages, which must be preserved as overview nodes even though the
+        # Grimp graph is built from the deduplicated root package.
+        return TestClient(
+            create_app(
+                root_packages=["rootpackageblue"],
+                overview_modules=["rootpackageblue.one", "rootpackageblue.two"],
+                initial_module="",
+            )
+        )
+
+    def test_overview_shows_supplied_subpackages(self, client):
+        response = client.get("/api/graph")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["module"] == ""
+        dot = data["dot_string"].replace(" ", "")
+        # The supplied subpackages are drawn, not their root package.
+        assert '"rootpackageblue.one"' in dot
+        assert '"rootpackageblue.two"' in dot
+        # rootpackageblue.two imports rootpackageblue.one.alpha.
+        assert '"rootpackageblue.two"->"rootpackageblue.one"' in dot
+        # rootpackageblue.one is a package, so it's reported as a drillable child.
+        assert "rootpackageblue.one" in data["child_packages"]

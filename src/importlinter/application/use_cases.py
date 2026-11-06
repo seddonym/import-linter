@@ -177,9 +177,15 @@ def build_dot_graph(
     if modules is None:
         children: Set[str] = grimp_graph.find_children(module_name)
         cycle_breaker_packages = [module_name]
+        # Ordinary child graph: every node shares module_name as a parent, so nodes can be
+        # identified by their relative name.
+        relative = True
     else:
         children = set(modules)
         cycle_breaker_packages = list(children)
+        # Top-level overview: the supplied modules may have different (or no) parents, so nodes
+        # must be identified by their fully qualified name to avoid collisions.
+        relative = False
     concentrate = not (show_import_totals or show_cycle_breakers)
 
     cycle_breakers: set[tuple[str, str]] | None = None
@@ -188,11 +194,11 @@ def build_dot_graph(
             grimp_graph, cycle_breaker_packages, children
         )
 
-    dot = DotGraph(title=module_name, concentrate=concentrate)
+    dot = DotGraph(title=module_name, concentrate=concentrate, relative=relative)
     for child in children:
         is_package = bool(grimp_graph.find_children(child))
         if is_package:
-            rendered = DotGraph.render_module(child)
+            rendered = DotGraph.render_module(child) if relative else child
             if show_module_counts:
                 module_count = len(grimp_graph.find_descendants(child))
                 dot.add_node(child, label=f"{rendered}/\\n{_format_module_count(module_count)}")

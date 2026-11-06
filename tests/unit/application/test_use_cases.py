@@ -869,6 +869,92 @@ class TestBuildDotGraph:
             nodes={"blue", "green"},
             node_labels={"blue": "blue/", "green": "green/"},
             edges={Edge("green", "blue")},
+            relative=False,
+        )
+
+    def test_draws_supplied_subpackages_with_distinct_identifiers(self):
+        # Two subpackages that share a last component ('api') must not collide when drawn on an
+        # overview: they need fully qualified identifiers, not relative ones.
+        grimp_graph = ImportGraph()
+        for package in ("blue", "green"):
+            grimp_graph.add_module(package)
+            grimp_graph.add_module(f"{package}.api")
+            grimp_graph.add_module(f"{package}.api.handlers")
+        # green.api depends on blue.api.
+        grimp_graph.add_import(
+            importer="green.api.handlers",
+            imported="blue.api.handlers",
+            line_number=1,
+            line_contents="import blue.api.handlers",
+        )
+
+        dot = build_dot_graph(
+            grimp_graph,
+            "",
+            show_import_totals=False,
+            show_module_counts=False,
+            show_lazy_imports=False,
+            show_cycle_breakers=False,
+            modules=["blue.api", "green.api"],
+        )
+
+        assert dot == DotGraph(
+            title="",
+            concentrate=True,
+            nodes={"blue.api", "green.api"},
+            node_labels={"blue.api": "blue.api/", "green.api": "green.api/"},
+            edges={Edge("green.api", "blue.api")},
+            relative=False,
+        )
+        # The rendered output must keep the nodes distinct (not merged into a single ".api" node
+        # with a self-edge).
+        rendered = dot.render()
+        assert '"blue.api"' in rendered
+        assert '"green.api"' in rendered
+        assert '"green.api" ->  "blue.api"' in rendered
+
+    def test_draws_only_supplied_modules_ignoring_sibling_subpackages(self):
+        # Only the supplied modules are drawn, even when their parents contain other subpackages.
+        grimp_graph = ImportGraph()
+        for package in ("blue", "green"):
+            grimp_graph.add_module(package)
+            for child in ("api", "db", "utils"):
+                grimp_graph.add_module(f"{package}.{child}")
+                grimp_graph.add_module(f"{package}.{child}.handlers")
+        # green.api depends on blue.api.
+        grimp_graph.add_import(
+            importer="green.api.handlers",
+            imported="blue.api.handlers",
+            line_number=1,
+            line_contents="import blue.api.handlers",
+        )
+        # green.db depends on blue.db, but neither was supplied, so this must not be drawn.
+        grimp_graph.add_import(
+            importer="green.db.handlers",
+            imported="blue.db.handlers",
+            line_number=1,
+            line_contents="import blue.db.handlers",
+        )
+
+        dot = build_dot_graph(
+            grimp_graph,
+            "",
+            show_import_totals=False,
+            show_module_counts=False,
+            show_lazy_imports=False,
+            show_cycle_breakers=False,
+            modules=["blue.api", "green.api"],
+        )
+
+        # The sibling subpackages (blue.db, blue.utils, green.db, green.utils) exist in the graph
+        # but were not supplied, so only blue.api and green.api are drawn.
+        assert dot == DotGraph(
+            title="",
+            concentrate=True,
+            nodes={"blue.api", "green.api"},
+            node_labels={"blue.api": "blue.api/", "green.api": "green.api/"},
+            edges={Edge("green.api", "blue.api")},
+            relative=False,
         )
 
     def test_shows_import_totals(self):

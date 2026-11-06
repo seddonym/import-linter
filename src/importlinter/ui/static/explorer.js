@@ -11,10 +11,10 @@ let navigationHistory = [];
 let vizInstance = null;
 let currentPackages = [];
 
-// Root packages being explored. When more than one is supplied, an empty module ("") is the
-// top-level overview showing the packages and the dependencies between them.
-const rootPackages = window.__ROOT_PACKAGES__ || [];
-const isMultiRoot = rootPackages.length > 1;
+// The modules being explored. When more than one is supplied, an empty module ("") is the
+// top-level overview showing those modules and the dependencies between them.
+const overviewModules = window.__OVERVIEW_MODULES__ || [];
+const isMultiRoot = overviewModules.length > 1;
 const OVERVIEW_LABEL = 'multiple packages';
 
 // Settings state
@@ -168,6 +168,55 @@ function restoreFromCache(cached, updateHistory) {
     setupNodeClicks();
 }
 
+// Return the supplied overview module that moduleName is equal to, or a descendant of, or null if
+// there is none. When overview modules are nested, the longest (most specific) match wins.
+function overviewModuleFor(moduleName) {
+    let match = null;
+    for (const m of overviewModules) {
+        if (moduleName === m || moduleName.startsWith(m + '.')) {
+            if (match === null || m.length > match.length) {
+                match = m;
+            }
+        }
+    }
+    return match;
+}
+
+// Append one crumb per namespace component of dotted (e.g. "utils.translation"), each linking to
+// its full path under prefix. An empty dotted string appends nothing.
+function appendDottedCrumbs(crumbs, prefix, dotted) {
+    if (!dotted) return;
+    const parts = dotted.split('.');
+    for (let i = 0; i < parts.length; i++) {
+        const sub = parts.slice(0, i + 1).join('.');
+        crumbs.push({ label: parts[i], path: prefix ? `${prefix}.${sub}` : sub });
+    }
+}
+
+// Build the list of {label, path} crumbs for the current module. The last crumb is the current
+// location; the rest are clickable ancestors.
+function buildCrumbs() {
+    const crumbs = [];
+
+    if (isMultiRoot) {
+        // Every module hangs off the overview.
+        crumbs.push({ label: OVERVIEW_LABEL, path: '' });
+        // A supplied module is shown as a single crumb rather than split into its namespace
+        // components: its parents weren't requested and aren't navigable. Only drill-down below
+        // the supplied module is broken out into further crumbs.
+        const base = overviewModuleFor(currentModule);
+        if (base !== null) {
+            crumbs.push({ label: base, path: base });
+            appendDottedCrumbs(crumbs, base, currentModule.slice(base.length + 1));
+            return crumbs;
+        }
+    }
+
+    // Single module (or a module outside the supplied set): show the full namespace path.
+    appendDottedCrumbs(crumbs, '', currentModule);
+    return crumbs;
+}
+
 function updateBreadcrumb() {
     const breadcrumb = document.getElementById('breadcrumb');
     let html = '<span class="prefix">Import graph for</span>';
@@ -179,42 +228,45 @@ function updateBreadcrumb() {
         return;
     }
 
-    // In multi-root mode, every module hangs off the overview, so show it as the first crumb.
-    if (isMultiRoot) {
-        html += `<span class="crumb" onclick="navigateTo('')">${OVERVIEW_LABEL}</span>`;
-        html += '<span class="separator">/</span>';
-    }
-
-    const parts = currentModule.split('.');
-    for (let i = 0; i < parts.length; i++) {
-        const fullPath = parts.slice(0, i + 1).join('.');
-        if (i < parts.length - 1) {
-            html += `<span class="crumb" onclick="navigateTo('${fullPath}')">${parts[i]}</span>`;
-            html += '<span class="separator">/</span>';
+    const crumbs = buildCrumbs();
+    crumbs.forEach((crumb, i) => {
+        if (i === crumbs.length - 1) {
+            html += `<span class="current">${crumb.label}</span>`;
         } else {
-            html += `<span class="current">${parts[i]}</span>`;
+            html += `<span class="crumb" onclick="navigateTo('${crumb.path}')">${crumb.label}</span>`;
+            html += '<span class="separator">/</span>';
         }
-    }
+    });
 
     breadcrumb.innerHTML = html;
 
     const navSection = document.getElementById('nav-section');
-    // We can go up whenever there's a parent module, or (in multi-root mode) back to the overview.
-    const canGoUp = parts.length > 1 || isMultiRoot;
-    navSection.style.display = canGoUp ? 'flex' : 'none';
+    // We can go up whenever there's an ancestor crumb to go up to.
+    navSection.style.display = crumbs.length > 1 ? 'flex' : 'none';
 }
 
 function goUp() {
-    const parts = currentModule.split('.');
-    if (parts.length <= 1) {
-        // Single segment: in multi-root mode we can still go up to the overview.
-        if (isMultiRoot && currentModule !== '') {
-            navigationHistory.push(currentModule);
-            loadGraph('');
+    if (isMultiRoot) {
+        const base = overviewModuleFor(currentModule);
+        if (base === null || currentModule === base) {
+            // At a supplied module (or outside the set): the only way up is the overview.
+            if (currentModule !== '') {
+                navigationHistory.push(currentModule);
+                loadGraph('');
+            }
+            return;
         }
+        // Below a supplied module: go up one namespace level (never past the supplied module).
+        const parentModule = currentModule.split('.').slice(0, -1).join('.');
+        navigationHistory.push(currentModule);
+        loadGraph(parentModule);
         return;
     }
 
+    const parts = currentModule.split('.');
+    if (parts.length <= 1) {
+        return;
+    }
     const parentModule = parts.slice(0, -1).join('.');
     navigationHistory.push(currentModule);
     loadGraph(parentModule);

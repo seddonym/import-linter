@@ -43,9 +43,15 @@ def generate_dot(
     show_lazy_imports: bool,
     show_cycle_breakers: bool,
     root_packages: list[str],
+    overview_modules: list[str] | None = None,
 ) -> ModuleDot:
     logger.info(f"Building graph for module '{module}'...")
     grimp_graph = _get_grimp_graph(cache, root_packages)
+
+    # The modules to draw on the top-level overview. These are the exact modules the user supplied,
+    # which may be subpackages (e.g. 'foo.api'), as opposed to the deduplicated root packages used
+    # to build the Grimp graph.
+    overview_modules = list(overview_modules) if overview_modules else list(root_packages)
 
     if module:
         dot_graph = build_dot_graph(
@@ -58,7 +64,7 @@ def generate_dot(
         )
         child_packages = _get_child_packages(grimp_graph, module)
     else:
-        # Top-level overview of all the root packages together.
+        # Top-level overview of all the supplied modules together.
         dot_graph = build_dot_graph(
             grimp_graph,
             module,
@@ -66,12 +72,14 @@ def generate_dot(
             show_module_counts,
             show_lazy_imports,
             show_cycle_breakers,
-            modules=root_packages,
+            modules=overview_modules,
         )
+        # On the overview, nodes are identified by their fully qualified name, so that's what the
+        # front end needs to match clickable packages against.
         child_packages = {
-            package.split(".")[-1]
-            for package in root_packages
-            if grimp_graph.find_children(package)
+            overview_module
+            for overview_module in overview_modules
+            if grimp_graph.find_children(overview_module)
         }
 
     dot_string = dot_graph.render()
