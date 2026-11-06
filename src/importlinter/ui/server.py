@@ -59,7 +59,9 @@ def launch(module_names: list[str]) -> None:
     if cwd not in sys.path:
         sys.path.insert(0, cwd)
 
-    root_packages = [module_name.split(".")[0] for module_name in module_names]
+    # Deduplicate the root packages (preserving order) so that supplying two subpackages of the
+    # same package, e.g. 'foo.api foo.db', builds the Grimp graph for 'foo' only once.
+    root_packages = _deduplicate([module_name.split(".")[0] for module_name in module_names])
     for top_level_package in root_packages:
         try:
             __import__(top_level_package)
@@ -76,6 +78,7 @@ def launch(module_names: list[str]) -> None:
     port = _find_free_port()
     app = create_app(
         root_packages=root_packages,
+        overview_modules=list(module_names),
         initial_module=initial_module,
         browser_url=f"http://{LOCALHOST}:{port}",
     )
@@ -84,6 +87,7 @@ def launch(module_names: list[str]) -> None:
 
 def create_app(
     root_packages: list[str] | None = None,
+    overview_modules: list[str] | None = None,
     initial_module: str = "",
     browser_url: str | None = None,
 ) -> FastAPI:
@@ -91,11 +95,14 @@ def create_app(
     Return FastAPI application for the interactive UI.
 
     Args:
-        root_packages: The root packages whose combined graph is being explored.
+        root_packages: The deduplicated root packages whose combined graph is built with Grimp.
+        overview_modules: The exact modules the user supplied, drawn as nodes on the top-level
+            overview. These may be subpackages (e.g. 'foo.api'). Defaults to root_packages.
         initial_module: The module to display on load (empty for the top-level overview).
         browser_url: The URL to open in a browser once the app is ready.
     """
     root_packages = list(root_packages or [])
+    overview_modules = list(overview_modules) if overview_modules else list(root_packages)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -105,13 +112,16 @@ def create_app(
 
     app = FastAPI(lifespan=lifespan)
     app.state.root_packages = root_packages
+    app.state.overview_modules = overview_modules
     app.state.initial_module = initial_module
     app.state.grimp_cache = {}
 
     @app.get("/", response_class=HTMLResponse)
     def index(request: Request) -> HTMLResponse:
         html = (STATIC_DIR / "index.html").read_text()
-        html = html.replace("{{root_packages_json}}", json.dumps(request.app.state.root_packages))
+        html = html.replace(
+            "{{overview_modules_json}}", json.dumps(request.app.state.overview_modules)
+        )
         html = html.replace(
             "{{initial_module_json}}", json.dumps(request.app.state.initial_module)
         )
@@ -134,6 +144,7 @@ def create_app(
                 show_lazy_imports,
                 show_cycle_breakers,
                 request.app.state.root_packages,
+                request.app.state.overview_modules,
             )
             return cast(GraphResponse, dataclasses.asdict(graph_data))
         except Exception as e:
@@ -184,3 +195,8 @@ def _find_free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((LOCALHOST, 0))
         return s.getsockname()[1]
+
+
+def _deduplicate(items: list[str]) -> list[str]:
+    """Return the items with duplicates removed, preserving the order of first appearance."""
+    return list(dict.fromkeys(items))

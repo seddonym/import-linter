@@ -1925,6 +1925,23 @@ class TestExhaustiveContracts:
             "exhaustive": "The exhaustive option is not supported for contracts without containers."
         }
 
+    def test_misspelled_option_is_invalid(self):
+        # Otherwise the contract would run, and be kept, as if it were not exhaustive.
+        with pytest.raises(InvalidContractOptions) as exc_info:
+            LayersContract(
+                name="Layer contract",
+                session_options={"root_packages": ["foo"]},
+                contract_options={
+                    "containers": ["foo"],
+                    "layers": ["red", "green"],
+                    "exhaustiv": "true",
+                },
+            )
+
+        assert exc_info.value.args[0] == {
+            "exhaustiv": "Unrecognized option. Did you mean 'exhaustive'?"
+        }
+
     def test_fails_for_single_missing_layer(self):
         graph = self._setup_graph()
         contract = LayersContract(

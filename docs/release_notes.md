@@ -11,6 +11,7 @@
   `explore` or `drawgraph`.
 * Fail if the configuration defines no contracts, rather than reporting success.
 * Fix crash when an INI config value contains a `%` character.
+* Error if a contract has an option that none of its fields recognize, e.g. a misspelled `exhaustive`.
 
 ## 2.15 (2026-09-04)
 

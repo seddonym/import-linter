@@ -1,9 +1,14 @@
 import abc
+import difflib
 from typing import Any
 
 from grimp import ImportGraph
 
 from . import fields
+
+
+# Options that every contract has, read by the application layer rather than by a field.
+COMMON_CONTRACT_OPTIONS = frozenset({"id", "name", "type"})
 
 
 class Contract(abc.ABC):
@@ -48,6 +53,8 @@ class Contract(abc.ABC):
                 continue
             setattr(self, field_name, clean_data)
 
+        errors.update(self.__class__._get_unrecognized_option_errors(self.contract_options))
+
         if errors:
             raise InvalidContractOptions(errors)
 
@@ -67,7 +74,32 @@ class Contract(abc.ABC):
         Returns:
             The names of all the fields on this contract class.
         """
-        return [name for name, attr in cls.__dict__.items() if isinstance(attr, fields.Field)]
+        names: list[str] = []
+        for klass in reversed(cls.__mro__):
+            for name, attr in vars(klass).items():
+                if isinstance(attr, fields.Field) and name not in names:
+                    names.append(name)
+        return names
+
+    @classmethod
+    def _get_unrecognized_option_errors(cls, contract_options: dict[str, Any]) -> dict[str, str]:
+        """
+        Returns:
+            An error for each contract option that does not correspond to a field. Without
+            this, a misspelled optional field (e.g. 'exhaustiv') would be silently ignored.
+        """
+        recognized = COMMON_CONTRACT_OPTIONS | {
+            name for name in dir(cls) if isinstance(getattr(cls, name), fields.Field)
+        }
+
+        errors = {}
+        for option in sorted(set(contract_options) - recognized):
+            message = "Unrecognized option."
+            close_matches = difflib.get_close_matches(option, sorted(recognized), n=1)
+            if close_matches:
+                message += f" Did you mean '{close_matches[0]}'?"
+            errors[option] = message
+        return errors
 
     @classmethod
     def _get_field(cls, field_name: str) -> fields.Field:

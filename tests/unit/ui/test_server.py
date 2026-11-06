@@ -37,6 +37,7 @@ class TestGetGraph:
             show_lazy_imports,
             show_cycle_breakers,
             root_packages,
+            overview_modules=None,
         ):
             calls["show_lazy_imports"] = show_lazy_imports
             calls["show_cycle_breakers"] = show_cycle_breakers
@@ -66,6 +67,7 @@ class TestGetGraph:
             show_lazy_imports,
             show_cycle_breakers,
             root_packages,
+            overview_modules=None,
         ):
             calls["module"] = module
             return ModuleDot(dot_string="digraph {}", module=module, child_packages=set())
@@ -76,3 +78,10 @@ class TestGetGraph:
 
         assert response.status_code == 200
         assert calls["module"] == ""
+
+
+class TestDeduplicate:
+    def test_removes_duplicates_preserving_order(self):
+        from importlinter.ui.server import _deduplicate
+
+        assert _deduplicate(["foo", "bar", "foo", "baz", "bar"]) == ["foo", "bar", "baz"]
