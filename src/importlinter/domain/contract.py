@@ -83,11 +83,9 @@ class Contract(abc.ABC):
             An error for each contract option that does not correspond to a field. Without
             this, a misspelled optional field (e.g. 'exhaustiv') would be silently ignored.
         """
-        recognised = set(COMMON_CONTRACT_OPTIONS)
-        for klass in cls.__mro__:
-            recognised.update(
-                name for name, attr in vars(klass).items() if isinstance(attr, fields.Field)
-            )
+        recognised = COMMON_CONTRACT_OPTIONS | {
+            name for name in dir(cls) if isinstance(getattr(cls, name), fields.Field)
+        }
 
         errors = {}
         for option in sorted(set(contract_options) - recognised):
