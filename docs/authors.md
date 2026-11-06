@@ -21,6 +21,7 @@
 * [James Owen](https://github.com/leamingrad)
 * [Jan Bielecki](https://github.com/K4liber)
 * [Kai Mueller](https://github.com/kasium)
+* [kogriv](https://github.com/kogriv)
 * [Lincoln Puzey](https://github.com/LincolnPuzey)
 * [Łukasz Skarżyński](https://github.com/skarzi)
 * [Matt Wang](https://github.com/mattwang44)

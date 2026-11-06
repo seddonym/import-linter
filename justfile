@@ -11,7 +11,7 @@ nox *args:
     @uv run --group nox nox {{args}}
 
 # Runs tests under the supplied Python version.
-test python="3.14":
+test python="3.15":
     @just nox --python {{python}}
 
 # Runs tests under all supported Python versions.

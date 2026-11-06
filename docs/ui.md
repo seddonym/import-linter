@@ -26,6 +26,24 @@ You can also pass a subpackage to start deeper in the hierarchy:
 import-linter explore mypackage.subpackage
 ```
 
+### Exploring multiple packages
+
+You can pass more than one package to explore them together:
+
+```console
+import-linter explore packageone packagetwo packagethree
+```
+
+!!! tip "Exploring every package in a directory"
+
+    If you want to explore every package in a directory (for example, a `src` layout monorepo),
+    you can use shell expansion instead of typing each package name out.
+
+    ```console
+    cd src
+    import-linter explore $(dirname */__init__.py)
+    ```
+
 ## Navigating the graph
 
 The graph shows the dependencies between all the immediate children of the package you're viewing.
@@ -98,6 +116,13 @@ This can be piped to Graphviz or any other tool that accepts DOT input:
 
 ```console
 import-linter drawgraph mypackage | dot -Tpng -o graph.png
+```
+
+As with `explore`, you can pass multiple packages to output an overview of the dependencies
+between them:
+
+```console
+import-linter drawgraph packageone packagetwo packagethree
 ```
 
 The same display options are available as flags:

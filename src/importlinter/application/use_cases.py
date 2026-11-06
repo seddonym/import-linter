@@ -1,7 +1,7 @@
 import importlib
 import importlib.util
 import itertools
-from collections.abc import Set
+from collections.abc import Iterable, Set
 from copy import copy, deepcopy
 from typing import Any
 import contextlib
@@ -66,6 +66,7 @@ def lint_imports(
     output.verbose_print(verbose, "Verbose mode.")
     try:
         user_options = read_user_options(config_filename=config_filename)
+        _validate_contracts_present(user_options)
         _register_contract_types(user_options)
         report = create_report(user_options, limit_to_contracts, cache_dir, show_timings, verbose)
     except Exception as e:
@@ -154,6 +155,7 @@ def build_dot_graph(
     show_module_counts: bool,
     show_lazy_imports: bool,
     show_cycle_breakers: bool,
+    modules: Iterable[str] | None = None,
 ) -> DotGraph:
     """
     Build a DotGraph visualizing the architecture of the supplied module.
@@ -169,13 +171,23 @@ def build_dot_graph(
             (every underlying import performed lazily) with an open arrowhead.
         show_cycle_breakers: whether to emphasize cycle-breaker edges.
         See https://grimp.readthedocs.io/en/stable/usage.html#ImportGraph.nominate_cycle_breakers
+        modules: if supplied, the exact set of modules to draw as nodes (and between which to
+            draw dependencies), instead of the children of module_name. This is used to draw a
+            top-level overview of several root packages together.
     """
-    children = grimp_graph.find_children(module_name)
+    if modules is None:
+        children: Set[str] = grimp_graph.find_children(module_name)
+        cycle_breaker_packages = [module_name]
+    else:
+        children = set(modules)
+        cycle_breaker_packages = list(children)
     concentrate = not (show_import_totals or show_cycle_breakers)
 
     cycle_breakers: set[tuple[str, str]] | None = None
     if show_cycle_breakers:
-        cycle_breakers = _get_coarse_grained_cycle_breakers(grimp_graph, module_name, children)
+        cycle_breakers = _get_coarse_grained_cycle_breakers(
+            grimp_graph, cycle_breaker_packages, children
+        )
 
     dot = DotGraph(title=module_name, concentrate=concentrate)
     for child in children:
@@ -229,6 +241,18 @@ def _get_spinner(message: str, verbose: bool) -> contextlib.AbstractContextManag
         return contextlib.nullcontext()
     else:
         return console.status(":brick: Building graph...", spinner="point")
+
+
+def _validate_contracts_present(user_options: UserOptions) -> None:
+    # Running the linter with nothing to check is almost always a configuration mistake
+    # (e.g. [[tool.importlinter.contract]] instead of [[tool.importlinter.contracts]]),
+    # so fail rather than report success.
+    if not user_options.contracts_options:
+        raise InvalidUserOptions(
+            "No contracts found in the configuration.\n\n"
+            "Each contract goes in an 'importlinter:contract:<name>' section (INI files)\n"
+            "or a 'tool.importlinter.contracts' array of tables (TOML files)."
+        )
 
 
 def _validate_root_package_names(root_package_names: list[str]) -> None:
@@ -495,12 +519,12 @@ def _build_dot_edge(
 
 
 def _get_coarse_grained_cycle_breakers(
-    grimp_graph: ImportGraph, module_name: str, children: Set[str]
+    grimp_graph: ImportGraph, packages: Iterable[str], children: Set[str]
 ) -> set[tuple[str, str]]:
     # In the form (importer, imported).
     coarse_grained_cycle_breakers: set[tuple[str, str]] = set()
 
-    for fine_grained_cycle_breaker in grimp_graph.nominate_cycle_breakers(module_name):
+    for fine_grained_cycle_breaker in grimp_graph.nominate_cycle_breakers(*packages):
         importer, imported = fine_grained_cycle_breaker
         importer_ancestor = _get_self_or_ancestor(candidate=importer, ancestors=children)
         imported_ancestor = _get_self_or_ancestor(candidate=imported, ancestors=children)
