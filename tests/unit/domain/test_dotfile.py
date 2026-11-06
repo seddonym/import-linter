@@ -32,6 +32,26 @@ class TestDotGraph:
             }
         """)
 
+    def test_render_non_relative_uses_full_identifiers(self):
+        # In an overview, nodes with the same last component but different parents must not
+        # collide: they are identified by their fully qualified names.
+        dot = DotGraph(title="", relative=False)
+        dot.add_node("blue.api", label="blue.api/")
+        dot.add_node("green.api", label="green.api/")
+        dot.add_edge(Edge(source="blue.api", destination="green.api"))
+
+        rendered = dot.render()
+
+        assert rendered == dedent("""\
+            digraph {
+                node [fontname=helvetica]
+                concentrate=true
+                "blue.api" [label="blue.api/"]
+                "green.api" [label="green.api/"]
+                "blue.api" ->  "green.api"
+            }
+        """)
+
     def test_render_vee_arrowhead(self):
         edge = Edge(
             source="mypackage.foo.bar",

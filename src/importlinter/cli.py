@@ -148,7 +148,9 @@ def drawgraph(
     if cwd not in sys.path:
         sys.path.insert(0, cwd)
 
-    root_packages = [module_name.split(".")[0] for module_name in module_names]
+    # Deduplicate the root packages (preserving order) so that supplying two subpackages of the
+    # same package, e.g. 'foo.api foo.db', builds the Grimp graph for 'foo' only once.
+    root_packages = list(dict.fromkeys(module_name.split(".")[0] for module_name in module_names))
     for top_level_package in root_packages:
         try:
             __import__(top_level_package)
