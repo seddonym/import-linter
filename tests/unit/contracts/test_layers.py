@@ -1939,7 +1939,7 @@ class TestExhaustiveContracts:
             )
 
         assert exc_info.value.args[0] == {
-            "exhaustiv": "Unrecognised option. Did you mean 'exhaustive'?"
+            "exhaustiv": "Unrecognized option. Did you mean 'exhaustive'?"
         }
 
     def test_fails_for_single_missing_layer(self):

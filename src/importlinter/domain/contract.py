@@ -53,7 +53,7 @@ class Contract(abc.ABC):
                 continue
             setattr(self, field_name, clean_data)
 
-        errors.update(self.__class__._get_unrecognised_option_errors(self.contract_options))
+        errors.update(self.__class__._get_unrecognized_option_errors(self.contract_options))
 
         if errors:
             raise InvalidContractOptions(errors)
@@ -82,20 +82,20 @@ class Contract(abc.ABC):
         return names
 
     @classmethod
-    def _get_unrecognised_option_errors(cls, contract_options: dict[str, Any]) -> dict[str, str]:
+    def _get_unrecognized_option_errors(cls, contract_options: dict[str, Any]) -> dict[str, str]:
         """
         Returns:
             An error for each contract option that does not correspond to a field. Without
             this, a misspelled optional field (e.g. 'exhaustiv') would be silently ignored.
         """
-        recognised = COMMON_CONTRACT_OPTIONS | {
+        recognized = COMMON_CONTRACT_OPTIONS | {
             name for name in dir(cls) if isinstance(getattr(cls, name), fields.Field)
         }
 
         errors = {}
-        for option in sorted(set(contract_options) - recognised):
-            message = "Unrecognised option."
-            close_matches = difflib.get_close_matches(option, sorted(recognised), n=1)
+        for option in sorted(set(contract_options) - recognized):
+            message = "Unrecognized option."
+            close_matches = difflib.get_close_matches(option, sorted(recognized), n=1)
             if close_matches:
                 message += f" Did you mean '{close_matches[0]}'?"
             errors[option] = message
