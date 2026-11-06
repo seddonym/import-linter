@@ -74,7 +74,12 @@ class Contract(abc.ABC):
         Returns:
             The names of all the fields on this contract class.
         """
-        return [name for name, attr in cls.__dict__.items() if isinstance(attr, fields.Field)]
+        names: list[str] = []
+        for klass in reversed(cls.__mro__):
+            for name, attr in vars(klass).items():
+                if isinstance(attr, fields.Field) and name not in names:
+                    names.append(name)
+        return names
 
     @classmethod
     def _get_unrecognised_option_errors(cls, contract_options: dict[str, Any]) -> dict[str, str]:
