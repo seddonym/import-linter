@@ -70,6 +70,26 @@ from tests.adapters.filesystem import FakeFileSystem
                 ],
             ),
         ),
+        (
+            """
+            [importlinter]
+            foo = hello
+
+            [importlinter:contract:contract-one]
+            name=100% independent
+            broken_contract_guidance=See https://example.com/a%20page
+            """,
+            UserOptions(
+                session_options={"foo": "hello"},
+                contracts_options=[
+                    {
+                        "name": "100% independent",
+                        "id": "contract-one",
+                        "broken_contract_guidance": "See https://example.com/a%20page",
+                    },
+                ],
+            ),
+        ),
     ),
 )
 def test_ini_file_reader(filename, contents, expected_options):

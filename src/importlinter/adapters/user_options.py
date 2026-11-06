@@ -44,7 +44,7 @@ class IniFileUserOptionReader(AbstractUserOptionReader):
     section_name = "importlinter"
 
     def _read_config_filename(self, config_filename: str) -> UserOptions | None:
-        config = configparser.ConfigParser()
+        config = configparser.ConfigParser(interpolation=None)
         file_contents = settings.FILE_SYSTEM.read(config_filename)
         config.read_string(file_contents)
         if self.section_name in config.sections():
