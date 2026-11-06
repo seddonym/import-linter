@@ -400,7 +400,10 @@ class TestCheckContractsAndPrintReport:
     )
     def test_cache_dir_is_passed_correctly(self, passed_arg, expected_cache_dir):
         builder = FakeGraphBuilder()
-        self._configure(contracts_options=[], graph_builder=builder)
+        self._configure(
+            contracts_options=[{"type": "always_passes", "name": "Contract foo"}],
+            graph_builder=builder,
+        )
 
         if passed_arg is sentinel.not_supplied:
             lint_imports()
@@ -513,6 +516,26 @@ class TestCheckContractsAndPrintReport:
             There was some sort of exception.
             """
         )
+
+    def test_no_contracts_is_a_failure(self):
+        builder = FakeGraphBuilder()
+        self._configure(contracts_options=[], graph_builder=builder)
+
+        with console.capture() as capture:
+            result = lint_imports()
+
+        assert result == FAILURE
+        assert capture.get() == dedent(
+            f"""\
+            {INDENTED_LOGO}
+            No contracts found in the configuration.
+
+            Each contract goes in an 'importlinter:contract:<name>' section (INI files)
+            or a 'tool.importlinter.contracts' array of tables (TOML files).
+            """
+        )
+        # Fail before building the graph: there is nothing to check it against.
+        assert not hasattr(builder, "build_arguments")
 
     def _configure(
         self,
