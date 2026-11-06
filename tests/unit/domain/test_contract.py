@@ -125,6 +125,15 @@ def test_options_for_inherited_fields_are_recognised():
     )
 
 
+def test_inherited_fields_are_populated():
+    contract = SubclassOfMyContract(
+        name="My contract", session_options={}, contract_options={"foo": "hello", "bar": "x"}
+    )
+
+    assert contract.foo == "hello"
+    assert contract.bar == "x"
+
+
 class TestContractRegistry:
     @pytest.mark.parametrize(
         "name, expected_result",
