@@ -73,6 +73,10 @@ the files that share the same top level configuration (`root_packages`, `include
 Import Linter doesn't expand globs itself: in the example above, the shell does that. Any file that is
 passed more than once is only checked once.
 
+[Custom contract types](../custom_contract_types.md) registered in any of the files can be used by contracts in
+the others. If a file registers a custom type under the name of a built-in type, that only applies to the contracts
+in that file.
+
 #### Checking only certain contracts
 
 ```console

@@ -283,12 +283,18 @@ def _validate_unique_contract_ids(config_source: ConfigSource) -> None:
 
 
 def _register_contract_types_for_sources(config_sources: list[ConfigSource]) -> None:
+    built_in_names: set[str] = set()
     for name, contract_class in _get_built_in_contract_types():
         registry.register(contract_class, name)
+        built_in_names.add(name)
 
     registered_plugins: dict[str, type[Contract]] = {}
     for config_source in config_sources:
         for name, contract_class in _get_plugin_contract_types(config_source.user_options):
+            if name in built_in_names:
+                # A file may replace a built-in contract type, but only for its own contracts
+                # (see _get_contract_class). Contracts in other files keep the built-in type.
+                continue
             already_registered = registered_plugins.get(name)
             if already_registered is not None and already_registered is not contract_class:
                 raise InvalidUserOptions(
@@ -356,6 +362,7 @@ def _create_report_from_sources(
         report,
         [
             (
+                _get_contract_class(config_source, contract_options["type"]),
                 contract_options,
                 config_source.user_options.session_options,
                 graphs[_graph_key(config_source.user_options)],
@@ -366,6 +373,19 @@ def _create_report_from_sources(
     )
 
 
+def _get_contract_class(config_source: ConfigSource, contract_type: str) -> type[Contract]:
+    """
+    Return the class for a contract type, as seen from the supplied config source.
+
+    Contract types defined in the source's own file take precedence, so that a file can
+    replace a built-in type without affecting contracts in other files.
+    """
+    own_contract_types = dict(_get_plugin_contract_types(config_source.user_options))
+    if contract_type in own_contract_types:
+        return own_contract_types[contract_type]
+    return registry.get_contract_class(contract_type)
+
+
 def _graph_key(user_options: UserOptions) -> tuple:
     """
     Return a hashable key identifying the graph needed for the supplied user options.
@@ -374,13 +394,15 @@ def _graph_key(user_options: UserOptions) -> tuple:
     """
     return (
         tuple(sorted(user_options.session_options["root_packages"])),
-        _get_include_external_packages(user_options),
+        # An omitted include_external_packages (None) behaves the same as False.
+        bool(_get_include_external_packages(user_options)),
         _get_exclude_type_checking_imports(user_options),
     )
 
 
 def _absolute_path(filename: str) -> str:
-    return os.path.normcase(os.path.abspath(filename))
+    # Resolve symlinks, so that e.g. 'linked/../rules.ini' isn't mistaken for 'rules.ini'.
+    return os.path.normcase(os.path.realpath(filename))
 
 
 def _display_filename(filename: str | None) -> str:
@@ -470,22 +492,25 @@ def _build_graph(
 
 def _check_contracts(
     report: Report,
-    contracts_to_check: list[tuple[dict[str, Any], dict[str, Any], ImportGraph]],
+    contracts_to_check: list[tuple[type[Contract], dict[str, Any], dict[str, Any], ImportGraph]],
     verbose: bool,
 ) -> Report:
     """
     Check each contract against its graph, adding the results to the report.
 
     Args:
-        contracts_to_check: (contract options, session options, graph) for each contract.
+        contracts_to_check: (contract class, contract options, session options, graph) for
+                            each contract.
     """
     contract_checking_progress = _get_contract_checking_progress(verbose)
     with contract_checking_progress:
         with Live(transient=True) as live:
-            for contract_options, session_options, graph in contract_checking_progress.track(
-                contracts_to_check
-            ):
-                contract_class = registry.get_contract_class(contract_options["type"])
+            for (
+                contract_class,
+                contract_options,
+                session_options,
+                graph,
+            ) in contract_checking_progress.track(contracts_to_check):
                 try:
                     contract = contract_class(
                         name=contract_options["name"],
@@ -557,13 +582,16 @@ def _select_contracts(
             if contract_options.get("id") == requested
         ]
         if not matches and ":" in requested:
-            filename, contract_id = requested.rsplit(":", 1)
+            # Match the whole configured id as a suffix, rather than splitting on a colon,
+            # since ids may themselves contain colons.
             matches = [
                 index
                 for index, (source, contract_options) in enumerate(all_contracts)
-                if contract_options.get("id") == contract_id
-                and source.filename is not None
-                and _absolute_path(source.filename) == _absolute_path(filename)
+                if source.filename is not None
+                and isinstance(contract_id := contract_options.get("id"), str)
+                and requested.endswith(f":{contract_id}")
+                and _absolute_path(source.filename)
+                == _absolute_path(requested[: -len(contract_id) - 1])
             ]
 
         if not matches:

@@ -1060,6 +1060,36 @@ class TestMultipleConfigFiles:
         assert "Contract one" not in output
         assert "Contract three" not in output
 
+    def test_contract_id_containing_colon_can_be_qualified_with_filename(self):
+        self._configure(
+            {
+                "main.toml": self._options(
+                    [{"type": "always_fails", "id": "scope:one", "name": "Contract one"}]
+                ),
+                "extra.toml": self._options(
+                    [{"type": "always_passes", "id": "scope:one", "name": "Contract two"}]
+                ),
+            }
+        )
+
+        with pytest.raises(ValueError, match=re.escape("--contract=extra.toml:scope:one")):
+            lint_imports(
+                config_filenames=("main.toml", "extra.toml"),
+                limit_to_contracts=("scope:one",),
+                is_debug_mode=True,
+            )
+
+        with console.capture() as capture:
+            result = lint_imports(
+                config_filenames=("main.toml", "extra.toml"),
+                limit_to_contracts=("extra.toml:scope:one",),
+                no_logo=True,
+            )
+
+        assert result == SUCCESS
+        assert "Contract two KEPT" in capture.get()
+        assert "Contract one" not in capture.get()
+
     def test_qualified_contract_id_with_unknown_filename_is_not_found(self):
         self._configure(
             {
@@ -1123,16 +1153,14 @@ class TestMultipleConfigFiles:
             lint_imports(config_filenames=("main.ini", "extra.ini"), is_debug_mode=True)
 
     def test_contract_types_from_any_file_can_be_used(self):
+        # Each file uses a contract type that is only defined in the other file.
         self._configure(
             {
                 "main.ini": self._options(
                     [{"type": "always_passes", "name": "Contract one"}],
                     contract_types=["custom: tests.helpers.contracts.AlwaysPassesContract"],
                 ),
-                "extra.ini": self._options(
-                    [{"type": "custom", "name": "Contract two"}],
-                    contract_types=["custom: tests.helpers.contracts.AlwaysPassesContract"],
-                ),
+                "extra.ini": self._options([{"type": "custom", "name": "Contract two"}]),
             }
         )
 
@@ -1140,6 +1168,93 @@ class TestMultipleConfigFiles:
             result = lint_imports(config_filenames=("main.ini", "extra.ini"), no_logo=True)
 
         assert result == SUCCESS
+        assert "Contract one KEPT" in capture.get()
+        assert "Contract two KEPT" in capture.get()
+
+    def test_file_replacing_built_in_contract_type_does_not_affect_other_files(self):
+        self._configure(
+            {
+                "main.ini": self._options(
+                    [{"type": "forbidden", "name": "Contract one"}],
+                    contract_types=["forbidden: tests.helpers.contracts.AlwaysPassesContract"],
+                ),
+                "extra.ini": self._options(
+                    [
+                        {
+                            "type": "forbidden",
+                            "name": "Contract two",
+                            "source_modules": ["mypackage.a"],
+                            "forbidden_modules": ["mypackage.b"],
+                        }
+                    ],
+                    contract_types=["always_passes: tests.helpers.contracts.AlwaysPassesContract"],
+                ),
+            }
+        )
+
+        with console.capture() as capture:
+            result = lint_imports(config_filenames=("main.ini", "extra.ini"), no_logo=True)
+
+        assert result == FAILURE
+        output = capture.get()
+        # main.ini's replacement applies to its own contract...
+        assert "Contract one KEPT" in output
+        # ...but extra.ini's contract is still checked by the built-in forbidden contract.
+        assert "Contract two BROKEN" in output
+
+    def test_errors_if_a_file_has_no_contracts(self):
+        self._configure(
+            {
+                "main.ini": self._options([{"type": "always_passes", "name": "Contract one"}]),
+                "extra.ini": self._options([]),
+            }
+        )
+
+        with pytest.raises(
+            InvalidUserOptions, match=re.escape("No contracts found in extra.ini.")
+        ):
+            lint_imports(config_filenames=("main.ini", "extra.ini"), is_debug_mode=True)
+
+    def test_omitted_and_false_include_external_packages_share_a_graph(self):
+        builder = self._configure(
+            {
+                "main.ini": self._options([{"type": "always_passes", "name": "Contract one"}]),
+                "extra.ini": self._options(
+                    [{"type": "always_passes", "name": "Contract two"}],
+                    include_external_packages="False",
+                ),
+            }
+        )
+
+        with console.capture():
+            result = lint_imports(config_filenames=("main.ini", "extra.ini"), no_logo=True)
+
+        assert result == SUCCESS
+        assert len(builder.builds) == 1
+
+    def test_files_reached_through_a_symlink_are_not_treated_as_duplicates(self, tmp_path):
+        if not hasattr(os, "symlink"):
+            pytest.skip("Symlinks not supported.")
+        (tmp_path / "extra" / "nested").mkdir(parents=True)
+        try:
+            os.symlink(tmp_path / "extra" / "nested", tmp_path / "linked")
+        except OSError:
+            pytest.skip("Symlinks not supported.")
+        # Through the symlink, linked/../rules.ini is extra/rules.ini, not rules.ini.
+        main = str(tmp_path / "rules.ini")
+        extra = os.path.join(str(tmp_path), "linked", "..", "rules.ini")
+        self._configure(
+            {
+                main: self._options([{"type": "always_passes", "name": "Contract one"}]),
+                extra: self._options([{"type": "always_passes", "name": "Contract two"}]),
+            }
+        )
+
+        with console.capture() as capture:
+            result = lint_imports(config_filenames=(main, extra), no_logo=True)
+
+        assert result == SUCCESS
+        assert "Contract one KEPT" in capture.get()
         assert "Contract two KEPT" in capture.get()
 
     # Helpers
