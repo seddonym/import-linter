@@ -1,7 +1,9 @@
 import importlib
 import importlib.util
 import itertools
-from collections.abc import Iterable, Set
+import os
+from collections.abc import Iterable, Sequence, Set
+from dataclasses import dataclass
 from copy import copy, deepcopy
 from typing import Any
 import contextlib
@@ -32,6 +34,18 @@ SUCCESS = True
 FAILURE = False
 
 
+@dataclass(frozen=True)
+class ConfigSource:
+    """
+    The user options read from a single configuration file.
+
+    The filename is None if the file was found using the default search strategy.
+    """
+
+    filename: str | None
+    user_options: UserOptions
+
+
 def lint_imports(
     config_filename: str | None = None,
     limit_to_contracts: tuple[str, ...] = (),
@@ -40,6 +54,7 @@ def lint_imports(
     show_timings: bool = False,
     no_logo: bool = False,
     verbose: bool = False,
+    config_filenames: Sequence[str] = (),
 ) -> bool:
     """
     Analyse whether a Python package follows a set of contracts, and report on the results.
@@ -56,6 +71,10 @@ def lint_imports(
                             each contract.
         no_logo:            if True, the logo is hidden at startup.
         verbose:            if True, noisily output progress as it goes along.
+        config_filenames:   further config files to check in the same run. Each file is read
+                            independently, and an import graph is only built once for each
+                            distinct graph configuration. If config_filename is also supplied,
+                            it is treated as the first file.
 
     Returns:
         True if the linting passed, False if it didn't.
@@ -65,10 +84,13 @@ def lint_imports(
 
     output.verbose_print(verbose, "Verbose mode.")
     try:
-        user_options = read_user_options(config_filename=config_filename)
-        _validate_contracts_present(user_options)
-        _register_contract_types(user_options)
-        report = create_report(user_options, limit_to_contracts, cache_dir, show_timings, verbose)
+        config_sources = _read_config_sources(config_filename, config_filenames)
+        for config_source in config_sources:
+            _validate_contracts_present(config_source)
+        _register_contract_types_for_sources(config_sources)
+        report = _create_report_from_sources(
+            config_sources, limit_to_contracts, cache_dir, show_timings, verbose
+        )
     except Exception as e:
         if is_debug_mode:
             raise e
@@ -105,6 +127,8 @@ def read_user_options(config_filename: str | None = None) -> UserOptions:
         if options:
             normalized_options = _normalize_user_options(options)
             return normalized_options
+    if config_filename:
+        raise FileNotFoundError(f"Could not read any configuration from {config_filename}.")
     raise FileNotFoundError("Could not read any configuration.")
 
 
@@ -122,27 +146,10 @@ def create_report(
         InvalidUserOptions: if the report could not be run due to invalid user configuration,
                             such as a module that could not be imported.
     """
-    include_external_packages = _get_include_external_packages(user_options)
-    exclude_type_checking_imports = _get_exclude_type_checking_imports(user_options)
-
-    with _get_spinner(":brick: Building graph...", verbose):
-        with settings.TIMER as timer:
-            graph = _build_graph(
-                root_package_names=user_options.session_options["root_packages"],
-                cache_dir=cache_dir,
-                include_external_packages=include_external_packages,
-                exclude_type_checking_imports=exclude_type_checking_imports,
-                verbose=verbose,
-            )
-    graph_building_duration = timer.duration_in_ms
-
-    output.verbose_print(verbose, f"Built graph in {format_duration(graph_building_duration)}.")
-
-    return _build_report(
-        graph=graph,
-        graph_building_duration=graph_building_duration,
-        user_options=user_options,
+    return _create_report_from_sources(
+        [ConfigSource(filename=None, user_options=user_options)],
         limit_to_contracts=limit_to_contracts,
+        cache_dir=cache_dir,
         show_timings=show_timings,
         verbose=verbose,
     )
@@ -230,6 +237,187 @@ def _format_module_count(count: int) -> str:
 # -----------------
 
 
+def _read_config_sources(
+    config_filename: str | None, config_filenames: Sequence[str]
+) -> list[ConfigSource]:
+    filenames = ([config_filename] if config_filename else []) + list(config_filenames)
+    if not filenames:
+        return [ConfigSource(filename=None, user_options=read_user_options())]
+
+    config_sources: list[ConfigSource] = []
+    seen_paths: set[str] = set()
+    for filename in filenames:
+        # The same file may be passed twice, e.g. via overlapping shell globs.
+        path = _absolute_path(filename)
+        if path in seen_paths:
+            continue
+        seen_paths.add(path)
+        config_sources.append(
+            ConfigSource(filename=filename, user_options=read_user_options(filename))
+        )
+    return config_sources
+
+
+def _validate_unique_contract_ids(config_source: ConfigSource) -> None:
+    """
+    Raise InvalidUserOptions if two contracts in the same file share an id.
+
+    This can only happen in toml files (in ini files, the id is the section name).
+    """
+    seen_ids: set[str] = set()
+    for contract_options in config_source.user_options.contracts_options:
+        contract_id = contract_options.get("id")
+        if contract_id is None:
+            continue
+        if contract_id in seen_ids:
+            location = (
+                _display_filename(config_source.filename)
+                if config_source.filename
+                else "the configuration"
+            )
+            raise InvalidUserOptions(
+                f"More than one contract in {location} has the id '{contract_id}'. "
+                "Contract ids must be unique within a file."
+            )
+        seen_ids.add(contract_id)
+
+
+def _register_contract_types_for_sources(config_sources: list[ConfigSource]) -> None:
+    built_in_names: set[str] = set()
+    for name, contract_class in _get_built_in_contract_types():
+        registry.register(contract_class, name)
+        built_in_names.add(name)
+
+    registered_plugins: dict[str, type[Contract]] = {}
+    for config_source in config_sources:
+        for name, contract_class in _get_plugin_contract_types(config_source.user_options):
+            if name in built_in_names:
+                # A file may replace a built-in contract type, but only for its own contracts
+                # (see _get_contract_class). Contracts in other files keep the built-in type.
+                continue
+            already_registered = registered_plugins.get(name)
+            if already_registered is not None and already_registered is not contract_class:
+                raise InvalidUserOptions(
+                    f"The contract type '{name}' is defined differently in more than one "
+                    "configuration file."
+                )
+            registered_plugins[name] = contract_class
+            registry.register(contract_class, name)
+
+
+def _create_report_from_sources(
+    config_sources: list[ConfigSource],
+    limit_to_contracts: tuple[str, ...] = tuple(),
+    cache_dir: str | None | type[NotSupplied] = NotSupplied,
+    show_timings: bool = False,
+    verbose: bool = False,
+) -> Report:
+    """
+    Check the contracts from one or more config sources, returning a report on the results.
+
+    A graph is built once for each distinct graph configuration (root packages,
+    include_external_packages and exclude_type_checking_imports), and shared by every
+    contract that needs it.
+    """
+    for config_source in config_sources:
+        _validate_unique_contract_ids(config_source)
+
+    selected_contracts = _select_contracts(config_sources, limit_to_contracts)
+
+    # Work out which graphs we need, in the order they're first needed. If no contracts were
+    # selected, we still build the first graph so the report can describe the codebase.
+    sources_by_graph_key: dict[tuple, ConfigSource] = {}
+    for config_source, _ in selected_contracts or [(config_sources[0], {})]:
+        sources_by_graph_key.setdefault(_graph_key(config_source.user_options), config_source)
+
+    graphs: dict[tuple, ImportGraph] = {}
+    report: Report | None = None
+    for graph_key, config_source in sources_by_graph_key.items():
+        user_options = config_source.user_options
+        with _get_spinner(":brick: Building graph...", verbose):
+            with settings.TIMER as timer:
+                graph = _build_graph(
+                    root_package_names=user_options.session_options["root_packages"],
+                    cache_dir=cache_dir,
+                    include_external_packages=_get_include_external_packages(user_options),
+                    exclude_type_checking_imports=_get_exclude_type_checking_imports(user_options),
+                    verbose=verbose,
+                )
+        graph_building_duration = timer.duration_in_ms
+        output.verbose_print(
+            verbose, f"Built graph in {format_duration(graph_building_duration)}."
+        )
+        graphs[graph_key] = graph
+        if report is None:
+            report = Report(
+                graph=graph,
+                show_timings=show_timings,
+                graph_building_duration=graph_building_duration,
+            )
+        else:
+            report.add_graph(graph, graph_building_duration=graph_building_duration)
+    assert report is not None
+
+    return _check_contracts(
+        report,
+        [
+            (
+                _get_contract_class(config_source, contract_options["type"]),
+                contract_options,
+                config_source.user_options.session_options,
+                graphs[_graph_key(config_source.user_options)],
+            )
+            for config_source, contract_options in selected_contracts
+        ],
+        verbose=verbose,
+    )
+
+
+def _get_contract_class(config_source: ConfigSource, contract_type: str) -> type[Contract]:
+    """
+    Return the class for a contract type, as seen from the supplied config source.
+
+    Contract types defined in the source's own file take precedence, so that a file can
+    replace a built-in type without affecting contracts in other files.
+    """
+    own_contract_types = dict(_get_plugin_contract_types(config_source.user_options))
+    if contract_type in own_contract_types:
+        return own_contract_types[contract_type]
+    return registry.get_contract_class(contract_type)
+
+
+def _graph_key(user_options: UserOptions) -> tuple:
+    """
+    Return a hashable key identifying the graph needed for the supplied user options.
+
+    Two sets of user options with the same key can share a graph.
+    """
+    return (
+        tuple(sorted(user_options.session_options["root_packages"])),
+        # An omitted include_external_packages (None) behaves the same as False.
+        bool(_get_include_external_packages(user_options)),
+        _get_exclude_type_checking_imports(user_options),
+    )
+
+
+def _absolute_path(filename: str) -> str:
+    # Resolve symlinks, so that e.g. 'linked/../rules.ini' isn't mistaken for 'rules.ini'.
+    return os.path.normcase(os.path.realpath(filename))
+
+
+def _display_filename(filename: str | None) -> str:
+    """
+    Return the filename relative to the current working directory, if possible.
+    """
+    if filename is None:
+        return ""
+    try:
+        return os.path.relpath(filename)
+    except ValueError:
+        # On Windows, a path on a different drive can't be made relative.
+        return filename
+
+
 def _normalize_user_options(user_options: UserOptions) -> UserOptions:
     normalized_options = copy(user_options)
     if "root_packages" not in normalized_options.session_options:
@@ -249,13 +437,18 @@ def _get_spinner(message: str, verbose: bool) -> contextlib.AbstractContextManag
         return console.status(":brick: Building graph...", spinner="point")
 
 
-def _validate_contracts_present(user_options: UserOptions) -> None:
+def _validate_contracts_present(config_source: ConfigSource) -> None:
     # Running the linter with nothing to check is almost always a configuration mistake
     # (e.g. [[tool.importlinter.contract]] instead of [[tool.importlinter.contracts]]),
     # so fail rather than report success.
-    if not user_options.contracts_options:
+    if not config_source.user_options.contracts_options:
+        location = (
+            _display_filename(config_source.filename)
+            if config_source.filename
+            else "the configuration"
+        )
         raise InvalidUserOptions(
-            "No contracts found in the configuration.\n\n"
+            f"No contracts found in {location}.\n\n"
             "Each contract goes in an 'importlinter:contract:<name>' section (INI files)\n"
             "or a 'tool.importlinter.contracts' array of tables (TOML files)."
         )
@@ -297,32 +490,31 @@ def _build_graph(
     )
 
 
-def _build_report(
-    graph: ImportGraph,
-    graph_building_duration: int,
-    user_options: UserOptions,
-    limit_to_contracts: tuple[str, ...],
-    show_timings: bool,
+def _check_contracts(
+    report: Report,
+    contracts_to_check: list[tuple[type[Contract], dict[str, Any], dict[str, Any], ImportGraph]],
     verbose: bool,
 ) -> Report:
-    report = Report(
-        graph=graph,
-        show_timings=show_timings,
-        graph_building_duration=graph_building_duration,
-    )
-    contracts_options = _filter_contract_options(
-        user_options.contracts_options, limit_to_contracts
-    )
+    """
+    Check each contract against its graph, adding the results to the report.
 
+    Args:
+        contracts_to_check: (contract class, contract options, session options, graph) for
+                            each contract.
+    """
     contract_checking_progress = _get_contract_checking_progress(verbose)
     with contract_checking_progress:
         with Live(transient=True) as live:
-            for contract_options in contract_checking_progress.track(contracts_options):
-                contract_class = registry.get_contract_class(contract_options["type"])
+            for (
+                contract_class,
+                contract_options,
+                session_options,
+                graph,
+            ) in contract_checking_progress.track(contracts_to_check):
                 try:
                     contract = contract_class(
                         name=contract_options["name"],
-                        session_options=user_options.session_options,
+                        session_options=session_options,
                         contract_options=contract_options,
                     )
                 except InvalidContractOptions as e:
@@ -356,40 +548,88 @@ def _get_contract_checking_progress(verbose: bool) -> Progress:
     )
 
 
-def _filter_contract_options(
-    contracts_options: list[dict[str, Any]], limit_to_contracts: tuple[str, ...]
-) -> list[dict[str, Any]]:
-    if limit_to_contracts:
-        # Validate the supplied contract ids. Contracts without an "id" key can't be
-        # matched by name (this happens with toml configs, where ids are optional), so
-        # they fall through to the "Could not find contract" error below instead of
-        # raising KeyError.
-        registered_contract_ids = {option["id"] for option in contracts_options if "id" in option}
-        missing_contract_ids = set(limit_to_contracts) - registered_contract_ids
-        if missing_contract_ids:
-            if len(missing_contract_ids) == 1:
-                raise ValueError(
-                    f"Could not find contract '{missing_contract_ids.pop()}'.\n\n"
-                    "You asked to limit the check to that contract, but nothing exists "
-                    "with that id."
-                )
-            else:
-                raise ValueError(
-                    "Could not find the following contract ids: "
-                    f"{', '.join(sorted(missing_contract_ids))}.\n\n"
-                    "You asked to limit the check to those contracts, but there are no "
-                    "contracts with those ids."
-                )
+def _select_contracts(
+    config_sources: list[ConfigSource], limit_to_contracts: tuple[str, ...]
+) -> list[tuple[ConfigSource, dict[str, Any]]]:
+    """
+    Return the contracts to check, in configuration order, along with the source of each.
+
+    Each item in limit_to_contracts is either a contract id, or a filename and contract id
+    separated by a colon (e.g. 'path/to/config.ini:my-contract'). The second form is needed
+    when the same id is used in more than one file.
+
+    Raises:
+        ValueError if a contract could not be found, or if an id is ambiguous.
+    """
+    all_contracts = [
+        (source, contract_options)
+        for source in config_sources
+        for contract_options in source.user_options.contracts_options
+    ]
+    if not limit_to_contracts:
+        return all_contracts
+
+    # Contracts without an "id" key can't be matched by name (this happens with toml configs,
+    # where ids are optional), so they fall through to the "Could not find contract" error
+    # below instead of raising KeyError.
+    missing_contract_ids: list[str] = []
+    ambiguous: dict[str, list[tuple[ConfigSource, dict[str, Any]]]] = {}
+    selected_indexes: set[int] = set()
+    for requested in limit_to_contracts:
+        matches = [
+            index
+            for index, (_, contract_options) in enumerate(all_contracts)
+            if contract_options.get("id") == requested
+        ]
+        if not matches and ":" in requested:
+            # Match the whole configured id as a suffix, rather than splitting on a colon,
+            # since ids may themselves contain colons.
+            matches = [
+                index
+                for index, (source, contract_options) in enumerate(all_contracts)
+                if source.filename is not None
+                and isinstance(contract_id := contract_options.get("id"), str)
+                and requested.endswith(f":{contract_id}")
+                and _absolute_path(source.filename)
+                == _absolute_path(requested[: -len(contract_id) - 1])
+            ]
+
+        if not matches:
+            missing_contract_ids.append(requested)
+        elif len(matches) > 1:
+            ambiguous[requested] = [all_contracts[index] for index in matches]
         else:
-            return [o for o in contracts_options if o.get("id") in limit_to_contracts]
-    else:
-        return contracts_options
+            selected_indexes.add(matches[0])
 
+    if missing_contract_ids:
+        if len(missing_contract_ids) == 1:
+            raise ValueError(
+                f"Could not find contract '{missing_contract_ids[0]}'.\n\n"
+                "You asked to limit the check to that contract, but nothing exists "
+                "with that id."
+            )
+        else:
+            raise ValueError(
+                "Could not find the following contract ids: "
+                f"{', '.join(sorted(missing_contract_ids))}.\n\n"
+                "You asked to limit the check to those contracts, but there are no "
+                "contracts with those ids."
+            )
+    if ambiguous:
+        raise ValueError(
+            "\n\n".join(
+                f"Multiple contracts found with the id '{contract_id}'. "
+                "Try including the filename, e.g.\n\n"
+                + "\n".join(
+                    f"--contract={_display_filename(source.filename)}:{contract_id}"
+                    for source, _ in matches_for_id
+                    if source.filename is not None
+                )
+                for contract_id, matches_for_id in ambiguous.items()
+            )
+        )
 
-def _register_contract_types(user_options: UserOptions) -> None:
-    contract_types = _get_built_in_contract_types() + _get_plugin_contract_types(user_options)
-    for name, contract_class in contract_types:
-        registry.register(contract_class, name)
+    return [contract for index, contract in enumerate(all_contracts) if index in selected_indexes]
 
 
 def _get_built_in_contract_types() -> list[tuple[str, type[Contract]]]:

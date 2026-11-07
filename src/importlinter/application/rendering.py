@@ -38,14 +38,21 @@ def render_report(report: Report) -> None:
         return
 
     if report.show_timings:
-        output.print(f"Building graph took {format_duration(report.graph_building_duration)}.")
+        if report.graph_count == 1:
+            output.print(f"Building graph took {format_duration(report.graph_building_duration)}.")
+        else:
+            output.print(
+                f"Building {report.graph_count} graphs took "
+                f"{format_duration(report.graph_building_duration)}."
+            )
         output.new_line()
 
     output.print_heading("Contracts", output.HEADING_LEVEL_TWO)
     file_count = report.module_count
     dependency_count = report.import_count
+    graphs_suffix = f" across {report.graph_count} graphs" if report.graph_count > 1 else ""
     output.print_heading(
-        f"Analyzed {file_count} files, {dependency_count} dependencies.",
+        f"Analyzed {file_count} files, {dependency_count} dependencies{graphs_suffix}.",
         output.HEADING_LEVEL_THREE,
     )
 

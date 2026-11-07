@@ -29,6 +29,18 @@ class Report:
         self.kept_count = 0
         self.module_count = len(graph.modules)
         self.import_count = graph.count_imports()
+        self.graph_count = 1
+
+    def add_graph(self, graph: ImportGraph, graph_building_duration: int) -> None:
+        """
+        Record an additional graph that was built for this report.
+
+        This happens when contracts from several config files need different graphs.
+        """
+        self.graph_count += 1
+        self.graph_building_duration += graph_building_duration
+        self.module_count += len(graph.modules)
+        self.import_count += graph.count_imports()
 
     def add_contract_check(
         self, contract: Contract, contract_check: ContractCheck, duration: int
