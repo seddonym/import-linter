@@ -2,11 +2,8 @@
 
 ## latest
 
-* Accept configuration files as positional arguments (e.g. `lint-imports main.ini extra/*.ini`), checking contracts
-  from all of them in a single run. The import graph is only built once for files that share the same top level
-  configuration. Contract ids can be qualified with a filename (`--contract=path/to/file.ini:id`) when an id is used
-  in more than one file.
-* Deprecate the `--config` option; pass the configuration file as a positional argument instead.
+* Accept multiple configuration files as positional arguments to `lint-imports` / `import-linter lint`.
+  Deprecate the `--config` option.
 * Error if two contracts in the same file share an id, or if a contract id contains a colon.
 
 ## 2.16 (2026-11-06)
