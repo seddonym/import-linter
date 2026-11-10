@@ -315,17 +315,32 @@ def _create_report_from_sources(
 
     selected_contracts = _select_contracts(config_sources, limit_to_contracts)
 
-    # Work out which graphs we need, in the order they're first needed. If no contracts were
-    # selected, we still build the first graph so the report can describe the codebase.
+    # Work out which graphs we need, in the order they're first needed, along with which
+    # config sources share each one. If no contracts were selected, we still build the first
+    # graph so the report can describe the codebase.
     sources_by_graph_key: dict[tuple, ConfigSource] = {}
+    filenames_by_graph_key: dict[tuple, list[str]] = {}
     for config_source, _ in selected_contracts or [(config_sources[0], {})]:
-        sources_by_graph_key.setdefault(_graph_key(config_source.user_options), config_source)
+        graph_key = _graph_key(config_source.user_options)
+        sources_by_graph_key.setdefault(graph_key, config_source)
+        display_name = _display_filename(config_source.filename)
+        filenames = filenames_by_graph_key.setdefault(graph_key, [])
+        if display_name not in filenames:
+            filenames.append(display_name)
 
     graphs: dict[tuple, ImportGraph] = {}
     report: Report | None = None
-    for graph_key, config_source in sources_by_graph_key.items():
+    graph_count = len(sources_by_graph_key)
+    for graph_index, (graph_key, config_source) in enumerate(
+        sources_by_graph_key.items(), start=1
+    ):
         user_options = config_source.user_options
-        with _get_spinner(":brick: Building graph...", verbose):
+        spinner_message = (
+            f":brick: Building graph {graph_index}/{graph_count}..."
+            if graph_count > 1
+            else ":brick: Building graph..."
+        )
+        with _get_spinner(spinner_message, verbose):
             with settings.TIMER as timer:
                 graph = _build_graph(
                     root_package_names=user_options.session_options["root_packages"],
@@ -339,14 +354,18 @@ def _create_report_from_sources(
             verbose, f"Built graph in {format_duration(graph_building_duration)}."
         )
         graphs[graph_key] = graph
+        filenames = filenames_by_graph_key[graph_key]
         if report is None:
             report = Report(
                 graph=graph,
                 show_timings=show_timings,
                 graph_building_duration=graph_building_duration,
+                filenames=filenames,
             )
         else:
-            report.add_graph(graph, graph_building_duration=graph_building_duration)
+            report.add_graph(
+                graph, graph_building_duration=graph_building_duration, filenames=filenames
+            )
     assert report is not None
 
     return _check_contracts(
@@ -428,7 +447,7 @@ def _get_spinner(message: str, verbose: bool) -> contextlib.AbstractContextManag
         # The output in verbose mode interferes with the spinner so we disable it.
         return contextlib.nullcontext()
     else:
-        return console.status(":brick: Building graph...", spinner="point")
+        return console.status(message, spinner="point")
 
 
 def _validate_contracts_present(config_source: ConfigSource) -> None:

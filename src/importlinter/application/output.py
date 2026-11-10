@@ -1,4 +1,6 @@
-from rich.console import Console
+from rich.console import Console, JustifyMethod
+from collections.abc import Iterable
+from rich.table import Table
 
 
 ERROR = "error"
@@ -114,6 +116,37 @@ class Output:
         """
         self.print(text, color=COLORS[WARNING])
 
+    def print_table(
+        self,
+        columns: Iterable[str],
+        rows: Iterable[Iterable[str]],
+        footer: Iterable[str] | None = None,
+        column_justify: Iterable[JustifyMethod] | None = None,
+    ) -> None:
+        """
+        Prints a table to the console.
+
+        Args:
+            columns:        The column headings.
+            rows:           The rows of the table, each a list of values corresponding to the
+                             columns.
+            footer:         An optional final row, visually separated from the rows above it.
+            column_justify: An optional justification ("left", "center" or "right") for each
+                             column, corresponding to columns. Defaults to left-justified.
+        """
+        table = Table()
+        justifications = list(column_justify) if column_justify is not None else []
+        for index, column in enumerate(columns):
+            justify = justifications[index] if index < len(justifications) else "left"
+            table.add_column(column, justify=justify)
+        rows = list(rows)
+        last_index = len(rows) - 1
+        for index, row in enumerate(rows):
+            table.add_row(*row, end_section=footer is not None and index == last_index)
+        if footer is not None:
+            table.add_row(*footer, style="bold")
+        console.print(table)
+
 
 # Use prebound method pattern to provide a simple API.
 # https://python-patterns.guide/python/prebound-methods/
@@ -125,6 +158,7 @@ print_success = _instance.print_success
 print_heading = _instance.print_heading
 print_error = _instance.print_error
 print_warning = _instance.print_warning
+print_table = _instance.print_table
 
 
 def verbose_print(
