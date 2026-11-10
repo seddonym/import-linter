@@ -1006,6 +1006,55 @@ class TestMultipleConfigFiles:
             f"--contract={os.path.join('extra', 'two.ini')}:my-contract"
         )
 
+    def test_ambiguous_contract_id_through_symlink_gives_usable_suggestions(self, tmp_path):
+        if not hasattr(os, "symlink"):
+            pytest.skip("Symlinks not supported.")
+        (tmp_path / "extra" / "nested").mkdir(parents=True)
+        try:
+            os.symlink(tmp_path / "extra" / "nested", tmp_path / "linked")
+        except OSError:
+            pytest.skip("Symlinks not supported.")
+        # Through the symlink, linked/../rules.ini is extra/rules.ini, not rules.ini -
+        # but os.path.relpath doesn't know that, and displays both the same way.
+        main = str(tmp_path / "rules.ini")
+        extra = os.path.join(str(tmp_path), "linked", "..", "rules.ini")
+        self._configure(
+            {
+                main: self._options(
+                    [{"type": "always_passes", "id": "my-contract", "name": "Contract one"}]
+                ),
+                extra: self._options(
+                    [{"type": "always_passes", "id": "my-contract", "name": "Contract two"}]
+                ),
+            }
+        )
+
+        with pytest.raises(ValueError) as exc_info:
+            lint_imports(
+                config_filenames=(main, extra),
+                limit_to_contracts=("my-contract",),
+                is_debug_mode=True,
+            )
+
+        suggestions = re.findall(r"^--contract=(.+)$", str(exc_info.value), re.MULTILINE)
+        assert len(suggestions) == 2
+        # The suggestions must be distinguishable, even though the two files share a
+        # display name when symlinks aren't resolved.
+        assert suggestions[0] != suggestions[1]
+
+        # Using the second suggestion should actually select the second file's contract.
+        with console.capture() as capture:
+            result = lint_imports(
+                config_filenames=(main, extra),
+                limit_to_contracts=(suggestions[1],),
+                no_logo=True,
+            )
+
+        assert result == SUCCESS
+        output = capture.get()
+        assert "Contract two KEPT" in output
+        assert "Contract one" not in output
+
     def test_same_id_in_different_files_is_allowed_without_contract_option(self):
         self._configure(
             {
