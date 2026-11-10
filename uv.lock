@@ -592,7 +592,7 @@ nox = [
 
 [package.metadata]
 requires-dist = [
-    { name = "click", specifier = ">=7" },
+    { name = "click", specifier = ">=8.2.0" },
     { name = "fastapi", marker = "extra == 'ui'", specifier = ">=0.113" },
     { name = "grimp", specifier = ">=3.19" },
     { name = "rich", specifier = ">=14.2.0" },

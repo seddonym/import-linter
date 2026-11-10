@@ -17,6 +17,7 @@ lint-imports
 **Options:**
 
 - `--config`:
+  **Deprecated:** pass the config file as a positional `CONFIG_FILES` argument instead.
   The configuration file to use. This overrides the default file search strategy.
   By default it's assumed that the file is an ini-file unless the file extension is `toml`.
   If configuration files are also passed as arguments, this file is checked first.
@@ -53,7 +54,7 @@ lint-imports
 #### Using a different filename or location
 
 ```console
-lint-imports --config path/to/alternative-config.ini
+lint-imports path/to/alternative-config.ini
 ```
 
 #### Using multiple configuration files
