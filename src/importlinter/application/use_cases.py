@@ -258,23 +258,32 @@ def _read_config_sources(
     return config_sources
 
 
-def _validate_unique_contract_ids(config_source: ConfigSource) -> None:
+def _validate_contract_ids(config_source: ConfigSource) -> None:
     """
-    Raise InvalidUserOptions if two contracts in the same file share an id.
+    Raise InvalidUserOptions if any contract id is invalid, or if two contracts in the same
+    file share an id.
 
-    This can only happen in toml files (in ini files, the id is the section name).
+    Duplicate ids can only happen in toml files (in ini files, the id is the section name).
     """
     seen_ids: set[str] = set()
     for contract_options in config_source.user_options.contracts_options:
         contract_id = contract_options.get("id")
         if contract_id is None:
             continue
-        if contract_id in seen_ids:
-            location = (
-                _display_filename(config_source.filename)
-                if config_source.filename
-                else "the configuration"
+        location = (
+            _display_filename(config_source.filename)
+            if config_source.filename
+            else "the configuration"
+        )
+        # We don't allow colons in contract ids, as they are used to qualify an id
+        # with its filename (e.g. --contract=path/to/config.ini:foo). If we allowed them,
+        # the qualifier could be ambiguous.
+        if ":" in contract_id:
+            raise InvalidUserOptions(
+                f"The contract id '{contract_id}' in {location} is invalid. "
+                "Contract ids may not contain a colon."
             )
+        if contract_id in seen_ids:
             raise InvalidUserOptions(
                 f"More than one contract in {location} has the id '{contract_id}'. "
                 "Contract ids must be unique within a file."
@@ -320,7 +329,7 @@ def _create_report_from_sources(
     contract that needs it.
     """
     for config_source in config_sources:
-        _validate_unique_contract_ids(config_source)
+        _validate_contract_ids(config_source)
 
     selected_contracts = _select_contracts(config_sources, limit_to_contracts)
 
@@ -584,16 +593,15 @@ def _select_contracts(
             if contract_options.get("id") == requested
         ]
         if not matches and ":" in requested:
-            # Match the whole configured id as a suffix, rather than splitting on a colon,
-            # since ids may themselves contain colons.
+            # Contract ids may not contain a colon, so the part after the last colon is
+            # unambiguously the id, and everything before it is the filename.
+            requested_filename, _, requested_id = requested.rpartition(":")
             matches = [
                 index
                 for index, (source, contract_options) in enumerate(all_contracts)
                 if source.filename is not None
-                and isinstance(contract_id := contract_options.get("id"), str)
-                and requested.endswith(f":{contract_id}")
-                and _absolute_path(source.filename)
-                == _absolute_path(requested[: -len(contract_id) - 1])
+                and contract_options.get("id") == requested_id
+                and _absolute_path(source.filename) == _absolute_path(requested_filename)
             ]
 
         if not matches:

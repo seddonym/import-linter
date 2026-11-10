@@ -1109,35 +1109,23 @@ class TestMultipleConfigFiles:
         assert "Contract one" not in output
         assert "Contract three" not in output
 
-    def test_contract_id_containing_colon_can_be_qualified_with_filename(self):
+    def test_contract_id_containing_colon_is_rejected(self):
         self._configure(
             {
-                "main.toml": self._options(
+                "pyproject.toml": self._options(
                     [{"type": "always_fails", "id": "scope:one", "name": "Contract one"}]
-                ),
-                "extra.toml": self._options(
-                    [{"type": "always_passes", "id": "scope:one", "name": "Contract two"}]
                 ),
             }
         )
 
-        with pytest.raises(ValueError, match=re.escape("--contract=extra.toml:scope:one")):
-            lint_imports(
-                config_filenames=("main.toml", "extra.toml"),
-                limit_to_contracts=("scope:one",),
-                is_debug_mode=True,
-            )
-
-        with console.capture() as capture:
-            result = lint_imports(
-                config_filenames=("main.toml", "extra.toml"),
-                limit_to_contracts=("extra.toml:scope:one",),
-                no_logo=True,
-            )
-
-        assert result == SUCCESS
-        assert "Contract two KEPT" in capture.get()
-        assert "Contract one" not in capture.get()
+        with pytest.raises(
+            InvalidUserOptions,
+            match=re.escape(
+                "The contract id 'scope:one' in pyproject.toml is invalid. "
+                "Contract ids may not contain a colon."
+            ),
+        ):
+            lint_imports(config_filenames=("pyproject.toml",), is_debug_mode=True)
 
     def test_qualified_contract_id_with_unknown_filename_is_not_found(self):
         self._configure(
