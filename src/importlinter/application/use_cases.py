@@ -87,7 +87,7 @@ def lint_imports(
         config_sources = _read_config_sources(config_filename, config_filenames)
         for config_source in config_sources:
             _validate_contracts_present(config_source)
-        _register_contract_types_for_sources(config_sources)
+        _register_built_in_contract_types()
         report = _create_report_from_sources(
             config_sources, limit_to_contracts, cache_dir, show_timings, verbose
         )
@@ -291,27 +291,9 @@ def _validate_contract_ids(config_source: ConfigSource) -> None:
         seen_ids.add(contract_id)
 
 
-def _register_contract_types_for_sources(config_sources: list[ConfigSource]) -> None:
-    built_in_names: set[str] = set()
+def _register_built_in_contract_types() -> None:
     for name, contract_class in _get_built_in_contract_types():
         registry.register(contract_class, name)
-        built_in_names.add(name)
-
-    registered_plugins: dict[str, type[Contract]] = {}
-    for config_source in config_sources:
-        for name, contract_class in _get_plugin_contract_types(config_source.user_options):
-            if name in built_in_names:
-                # A file may replace a built-in contract type, but only for its own contracts
-                # (see _get_contract_class). Contracts in other files keep the built-in type.
-                continue
-            already_registered = registered_plugins.get(name)
-            if already_registered is not None and already_registered is not contract_class:
-                raise InvalidUserOptions(
-                    f"The contract type '{name}' is defined differently in more than one "
-                    "configuration file."
-                )
-            registered_plugins[name] = contract_class
-            registry.register(contract_class, name)
 
 
 def _create_report_from_sources(
@@ -386,8 +368,9 @@ def _get_contract_class(config_source: ConfigSource, contract_type: str) -> type
     """
     Return the class for a contract type, as seen from the supplied config source.
 
-    Contract types defined in the source's own file take precedence, so that a file can
-    replace a built-in type without affecting contracts in other files.
+    Custom contract types are scoped to the file that registers them: they are only
+    available to contracts in that same file, and they may replace a built-in type
+    without affecting contracts in other files.
     """
     own_contract_types = dict(_get_plugin_contract_types(config_source.user_options))
     if contract_type in own_contract_types:

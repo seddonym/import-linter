@@ -135,9 +135,6 @@ Each file is a complete configuration file, with its own [top level configuratio
 
 It's okay for [contract ids](#contract-ids) to be the same as long as they're in different configuration files.
 
-[Custom contract types](../custom_contract_types.md) registered in any of the files can be used by contracts in
-the others. If a file registers a custom type under the name of a built-in type, that only applies to the contracts
-in that file.
 
 !!! tip "Optimizing runs on multiple configuration files"
 
