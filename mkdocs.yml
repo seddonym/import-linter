@@ -49,6 +49,7 @@ nav:
        - contract_types/index.md
        - contract_types/forbidden.md
        - contract_types/protected.md
+       - contract_types/encapsulated.md
        - contract_types/layers.md
        - contract_types/independence.md
        - contract_types/acyclic_siblings.md
