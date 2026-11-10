@@ -19,10 +19,11 @@ from importlinter.application.use_cases import (
     _create_report_from_sources,
     _format_module_count,
     _read_config_sources,
-    _register_contract_types_for_sources,
+    _register_built_in_contract_types,
     lint_imports,
 )
 from importlinter.application.user_options import InvalidUserOptions
+from importlinter.domain.contract import NoSuchContractType
 from importlinter.domain.dotfile import DotGraph, Edge, EdgeArrowhead, EdgeStyle
 from importlinter.application.user_options import UserOptions
 from tests.adapters.building import FakeGraphBuilder
@@ -1166,7 +1167,9 @@ class TestMultipleConfigFiles:
         ):
             lint_imports(config_filenames=("pyproject.toml",), is_debug_mode=True)
 
-    def test_errors_if_contract_type_is_defined_differently_in_two_files(self):
+    def test_same_custom_contract_type_name_in_different_files_are_independent(self):
+        # Each file registers "custom" as a different class. Since custom contract types are
+        # scoped to the file that declares them, this isn't a conflict.
         self._configure(
             {
                 "main.ini": self._options(
@@ -1180,33 +1183,28 @@ class TestMultipleConfigFiles:
             }
         )
 
-        with pytest.raises(
-            InvalidUserOptions,
-            match=re.escape(
-                "The contract type 'custom' is defined differently in more than one "
-                "configuration file."
-            ),
-        ):
-            lint_imports(config_filenames=("main.ini", "extra.ini"), is_debug_mode=True)
+        with console.capture() as capture:
+            result = lint_imports(config_filenames=("main.ini", "extra.ini"), no_logo=True)
 
-    def test_contract_types_from_any_file_can_be_used(self):
-        # Each file uses a contract type that is only defined in the other file.
+        assert result == FAILURE
+        output = capture.get()
+        assert "Contract one KEPT" in output
+        assert "Contract two BROKEN" in output
+
+    def test_custom_contract_type_is_not_available_in_other_files(self):
+        # main.ini registers "custom", but extra.ini never declares it, so it can't use it.
         self._configure(
             {
                 "main.ini": self._options(
-                    [{"type": "always_passes", "name": "Contract one"}],
+                    [{"type": "custom", "name": "Contract one"}],
                     contract_types=["custom: tests.helpers.contracts.AlwaysPassesContract"],
                 ),
                 "extra.ini": self._options([{"type": "custom", "name": "Contract two"}]),
             }
         )
 
-        with console.capture() as capture:
-            result = lint_imports(config_filenames=("main.ini", "extra.ini"), no_logo=True)
-
-        assert result == SUCCESS
-        assert "Contract one KEPT" in capture.get()
-        assert "Contract two KEPT" in capture.get()
+        with pytest.raises(NoSuchContractType, match=re.escape("custom")):
+            lint_imports(config_filenames=("main.ini", "extra.ini"), is_debug_mode=True)
 
     def test_file_replacing_built_in_contract_type_does_not_affect_other_files(self):
         self._configure(
@@ -1356,7 +1354,7 @@ class TestMultipleConfigFiles:
 
 def create_report_from_files(*filenames: str):
     config_sources = _read_config_sources(None, filenames)
-    _register_contract_types_for_sources(config_sources)
+    _register_built_in_contract_types()
     return _create_report_from_sources(config_sources)
 
 
