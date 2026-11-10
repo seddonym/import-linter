@@ -44,7 +44,12 @@ def check_options(f):
         multiple=True,
         help="Limit the check to the supplied contract identifier. May be passed multiple times.",
     )(f)
-    f = click.option("--config", default=None, help="The config file to use.")(f)
+    f = click.option(
+        "--config",
+        default=None,
+        deprecated="Pass the config file as a positional argument instead.",
+        help="The config file to use.",
+    )(f)
     f = click.argument("config_files", nargs=-1, type=click.Path())(f)
     return f
 
@@ -78,11 +83,15 @@ def _run_check(
 @click.version_option(version=__version__, message="import-linter %(version)s")
 @check_options
 def lint_imports_command(**kwargs) -> None:
-    """Check that a project adheres to a set of contracts.
+    """Check that a project's Python imports adhere to a set of contracts.
 
-    CONFIG_FILES are optional config files to read contracts from. Contracts from all the files
-    are checked in a single run, and the import graph is only built once for files that share
-    the same top-level configuration.
+    CONFIG_FILES are the paths to the files containing the contracts. If none are provided,
+    Import Linter will look in the current directory for one of the following files:
+
+    \b
+        - setup.cfg (INI format)
+        - .importlinter (INI format)
+        - pyproject.toml (TOML format)
     """
     _run_check(**kwargs)
 
@@ -99,11 +108,15 @@ def import_linter(ctx: click.Context) -> None:
 @import_linter.command("lint")
 @check_options
 def lint_command(**kwargs) -> None:
-    """Check that a project adheres to a set of contracts.
+    """Check that a project's Python imports adhere to a set of contracts.
 
-    CONFIG_FILES are optional config files to read contracts from. Contracts from all the files
-    are checked in a single run, and the import graph is only built once for files that share
-    the same top-level configuration.
+    CONFIG_FILES are the paths to the files containing the contracts. If none are provided,
+    Import Linter will look in the current directory for one of the following files:
+
+    \b
+        - setup.cfg (INI format)
+        - .importlinter (INI format)
+        - pyproject.toml (TOML format)
     """
     _run_check(**kwargs)
 

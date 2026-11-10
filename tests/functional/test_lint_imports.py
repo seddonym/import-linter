@@ -181,6 +181,7 @@ class TestMultipleConfigFiles:
 
         assert result.exit_code == cli.EXIT_STATUS_SUCCESS, result.output
         assert "Contracts: 2 kept, 0 broken." in result.output
+        assert "DeprecationWarning: The option 'config' is deprecated" in result.output
 
     def test_ambiguous_contract_id_suggests_filenames(self, monkeypatch):
         monkeypatch.chdir(testpackage_directory)
