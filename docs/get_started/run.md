@@ -12,7 +12,7 @@ lint-imports
 
 - `CONFIG_FILES`:
   One or more configuration files to check, in a single run. This overrides the default file search strategy.
-  See [Using more than one configuration file](#using-more-than-one-configuration-file). (Optional.)
+  (Optional.)
 
 **Options:**
 
@@ -56,26 +56,20 @@ lint-imports
 lint-imports --config path/to/alternative-config.ini
 ```
 
-#### Using more than one configuration file
-
-Contracts can be split across several files (for example, so that different teams can own their own contracts)
-and checked in a single run:
+#### Using multiple configuration files
 
 ```console
-lint-imports main.ini extra_contracts/*.ini
+lint-imports path/to/config-one.ini path/to/config-two.ini
 ```
 
-Each file is a complete configuration file, with its own [top level configuration](configure.md#top-level-configuration).
-Building the import graph is usually the slowest part of a run, so Import Linter only builds it once for all
-the files that share the same top level configuration (`root_packages`, `include_external_packages` and
-`exclude_type_checking_imports`). Files with a different top level configuration get a graph of their own.
+If you don't want to pass each file explicitly, you can make use of glob-expansion in your shell:
 
-Import Linter doesn't expand globs itself: in the example above, the shell does that. Any file that is
-passed more than once is only checked once.
+```console
+lint-imports path/to/*.ini
+```
 
-[Custom contract types](../custom_contract_types.md) registered in any of the files can be used by contracts in
-the others. If a file registers a custom type under the name of a built-in type, that only applies to the contracts
-in that file.
+For more information about how multiple contracts work,
+see [the guidance on configuring with multiple files](configure.md#using-more-than-one-configuration-file).
 
 #### Checking only certain contracts
 
@@ -87,7 +81,7 @@ If you're using more than one configuration file and the same id appears in more
 filename (relative to the current working directory) to say which one you mean:
 
 ```console
-lint-imports main.ini extra_contracts/*.ini --contract=extra_contracts/two.ini:some-contract
+lint-imports contracts/*.ini --contract=contracts/blue.ini:some-contract
 ```
 
 #### Customizing cache behavior
