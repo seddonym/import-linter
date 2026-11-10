@@ -1,5 +1,10 @@
 # Release notes
 
+## latest
+
+* Add `encapsulated` contract type, for isolating a set of modules from the rest of the project other than via its
+  public modules.
+
 ## 2.16 (2026-11-06)
 
 * Reject repeated modules within or across layers with a contract validation error.

@@ -77,6 +77,9 @@ sys.path.extend(
         # Type checking imports
         (testpackage_directory, ".typecheckkeptcontract.ini", cli.EXIT_STATUS_SUCCESS),
         (testpackage_directory, ".typecheckbrokencontract.ini", cli.EXIT_STATUS_ERROR),
+        # Encapsulated
+        (testpackage_directory, ".encapsulatedkeptcontract.ini", cli.EXIT_STATUS_SUCCESS),
+        (testpackage_directory, ".encapsulatedbrokencontract.ini", cli.EXIT_STATUS_ERROR),
         # Acyclic siblings
         (cyclicpackage_directory, ".keptcontract.ini", cli.EXIT_STATUS_SUCCESS),
         (cyclicpackage_directory, ".brokencontract.ini", cli.EXIT_STATUS_ERROR),
@@ -102,6 +105,21 @@ def test_lint_imports_renders_broken_contract_guidance_for_broken_contract(capsy
     captured = capsys.readouterr()
     assert "Use the testpackage.high top-level interface." in captured.out
     assert "More information here: http://docs.example.com/high" in captured.out
+
+
+def test_lint_imports_renders_encapsulated_contract_violations(capsys):
+    os.chdir(testpackage_directory)
+
+    result = cli.lint_imports(config_filename=".encapsulatedbrokencontract.ini")
+
+    assert cli.EXIT_STATUS_ERROR == result
+    captured = capsys.readouterr()
+    assert "Imports out of the encapsulated modules are not allowed:" in captured.out
+    assert "- testpackage.high.blue.one -> testpackage.utils (l.3)" in captured.out
+    assert "- testpackage.high.blue.two -> testpackage.indirect.brown (l.1)" in captured.out
+    assert "Imports into the encapsulated modules are not allowed:" in captured.out
+    assert "- testpackage.utils -> testpackage.high.green (l.3)" in captured.out
+    assert "- testpackage.indirect.brown -> testpackage.high.green (l.1)" in captured.out
 
 
 def test_lint_imports_raises_clear_error_when_root_package_is_single_file(capsys):
