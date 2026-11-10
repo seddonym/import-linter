@@ -412,7 +412,9 @@ def _display_filename(filename: str | None) -> str:
     if filename is None:
         return ""
     try:
-        return os.path.relpath(filename)
+        # Resolve symlinks, so that two different files aren't displayed identically
+        # just because a symlink makes their unresolved paths coincide.
+        return os.path.relpath(os.path.realpath(filename))
     except ValueError:
         # On Windows, a path on a different drive can't be made relative.
         return filename
