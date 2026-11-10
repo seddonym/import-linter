@@ -1,3 +1,6 @@
+from rich.console import JustifyMethod
+from rich.markup import escape
+
 from importlinter.domain.contract import Contract, ContractCheck
 
 from . import output
@@ -37,22 +40,41 @@ def render_report(report: Report) -> None:
         _render_could_not_run(report)
         return
 
-    if report.show_timings:
-        if report.graph_count == 1:
-            output.print(f"Building graph took {format_duration(report.graph_building_duration)}.")
-        else:
-            output.print(
-                f"Building {report.graph_count} graphs took "
-                f"{format_duration(report.graph_building_duration)}."
-            )
+    if report.graph_count > 1 or report.show_timings:
+        columns = ["Config files"]
+        column_justify: list[JustifyMethod] = ["left"]
+        if report.show_timings:
+            columns.append("Graph build duration")
+            column_justify.append("right")
+        footer = None
+        if report.graph_count > 1:
+            total_file_count = sum(len(filenames) for filenames, _ in report.graph_summaries)
+            file_noun = "config file" if total_file_count == 1 else "config files"
+            graph_noun = "import graph" if report.graph_count == 1 else "import graphs"
+            footer = [f"Total {total_file_count} {file_noun}, {report.graph_count} {graph_noun}."]
+            if report.show_timings:
+                footer.append(format_duration(report.graph_building_duration))
+        output.print_table(
+            columns=columns,
+            rows=[
+                [
+                    ", ".join(f"[blue]{escape(filename)}[/blue]" for filename in filenames)
+                    if filenames
+                    else "(no files)",
+                    *([format_duration(duration)] if report.show_timings else []),
+                ]
+                for index, (filenames, duration) in enumerate(report.graph_summaries, start=1)
+            ],
+            footer=footer,
+            column_justify=column_justify,
+        )
         output.new_line()
 
     output.print_heading("Contracts", output.HEADING_LEVEL_TWO)
     file_count = report.module_count
     dependency_count = report.import_count
-    graphs_suffix = f" across {report.graph_count} graphs" if report.graph_count > 1 else ""
     output.print_heading(
-        f"Analyzed {file_count} files, {dependency_count} dependencies{graphs_suffix}.",
+        f"Analyzed {file_count} files, {dependency_count} dependencies.",
         output.HEADING_LEVEL_THREE,
     )
 

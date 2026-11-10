@@ -149,8 +149,9 @@ class TestMultipleConfigFiles:
         assert "Expected broken contract BROKEN" in result.output
         assert "Custom kept contract KEPT" in result.output
         assert "Contracts: 1 kept, 1 broken." in result.output
-        # Both files have the same top level configuration, so they share a graph.
-        assert "across" not in result.output
+        # Both files have the same top level configuration, so they share a single graph,
+        # and no breakdown table is shown.
+        assert "Config files" not in result.output
 
     def test_builds_a_graph_for_each_distinct_top_level_configuration(self, monkeypatch):
         monkeypatch.chdir(testpackage_directory)
@@ -167,8 +168,7 @@ class TestMultipleConfigFiles:
         )
 
         assert result.exit_code == cli.EXIT_STATUS_SUCCESS, result.output
-        assert "Building 2 graphs took" in result.output
-        assert "across 2 graphs." in result.output
+        assert "Total 3 config files, 2 import graphs." in result.output
         assert "Contracts: 3 kept, 0 broken." in result.output
 
     def test_config_option_can_be_combined_with_positional_files(self, monkeypatch):

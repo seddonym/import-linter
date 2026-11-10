@@ -255,7 +255,11 @@ class TestCheckContractsAndPrintReport:
         assert capture.get() == dedent(
             f"""\
             {INDENTED_LOGO}
-            Building graph took 5.0s.
+            ┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┓
+            ┃ Config files ┃ Graph build duration ┃
+            ┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━┩
+            │              │                 5.0s │
+            └──────────────┴──────────────────────┘
 
             ---------
             Contracts
@@ -868,7 +872,7 @@ class TestMultipleConfigFiles:
             True,
         ]
         output = capture.get()
-        assert "Analyzed 5 files, 1 dependencies across 2 graphs." in output
+        assert "Analyzed 5 files, 1 dependencies." in output
         assert "Contract one BROKEN" in output
         assert "Contract two KEPT" in output
         assert "Contract three KEPT" in output
@@ -912,7 +916,87 @@ class TestMultipleConfigFiles:
         with console.capture() as capture:
             lint_imports(config_filenames=("main.ini", "extra.ini"), show_timings=True)
 
-        assert "Building 2 graphs took 10s." in capture.get()
+        assert "Total 2 config files, 2 import graphs." in capture.get()
+        assert "10s" in capture.get()
+
+    def test_shows_which_files_share_each_graph(self):
+        self._configure(
+            {
+                "main.ini": self._options([{"type": "always_passes", "name": "Contract one"}]),
+                "same.ini": self._options([{"type": "always_passes", "name": "Contract two"}]),
+                "extra.ini": self._options(
+                    [{"type": "always_passes", "name": "Contract three"}],
+                    exclude_type_checking_imports="True",
+                ),
+            },
+        )
+
+        with console.capture() as capture:
+            lint_imports(config_filenames=("main.ini", "same.ini", "extra.ini"), no_logo=True)
+
+        output = capture.get()
+        assert "Config files" in output
+        assert "Duration" not in output
+        assert "main.ini, same.ini" in output
+        assert "extra.ini" in output
+        assert "Total 3 config files, 2 import graphs." in output
+
+    def test_shows_graph_durations_when_show_timings_is_used(self):
+        timer = FakeTimer()
+        timer.setup(tick_duration=5, increment=0)
+        self._configure(
+            {
+                "main.ini": self._options([{"type": "always_passes", "name": "Contract one"}]),
+                "same.ini": self._options([{"type": "always_passes", "name": "Contract two"}]),
+                "extra.ini": self._options(
+                    [{"type": "always_passes", "name": "Contract three"}],
+                    exclude_type_checking_imports="True",
+                ),
+            },
+            timer=timer,
+        )
+
+        with console.capture() as capture:
+            lint_imports(config_filenames=("main.ini", "same.ini", "extra.ini"), show_timings=True)
+
+        output = capture.get()
+        assert "Graph build duration" in output
+        assert "5.0s" in output
+        assert "main.ini, same.ini" in output
+        assert "extra.ini" in output
+        assert "Total 3 config files, 2 import graphs." in output
+
+    def test_does_not_show_graph_breakdown_for_a_single_graph(self):
+        self._configure(
+            {
+                "main.ini": self._options([{"type": "always_passes", "name": "Contract one"}]),
+                "extra.ini": self._options([{"type": "always_passes", "name": "Contract two"}]),
+            },
+        )
+
+        with console.capture() as capture:
+            lint_imports(config_filenames=("main.ini", "extra.ini"), no_logo=True)
+
+        output = capture.get()
+        assert "Graph" not in output
+
+    def test_does_not_show_total_row_for_a_single_graph(self):
+        timer = FakeTimer()
+        timer.setup(tick_duration=5, increment=0)
+        self._configure(
+            {
+                "main.ini": self._options([{"type": "always_passes", "name": "Contract one"}]),
+                "extra.ini": self._options([{"type": "always_passes", "name": "Contract two"}]),
+            },
+            timer=timer,
+        )
+
+        with console.capture() as capture:
+            lint_imports(config_filenames=("main.ini", "extra.ini"), show_timings=True)
+
+        output = capture.get()
+        assert "Config files" in output
+        assert "Total" not in output
 
     def test_only_builds_graphs_needed_by_selected_contracts(self):
         builder = self._configure(
