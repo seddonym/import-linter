@@ -1,6 +1,6 @@
 # Configure
 
-Before [running Import Linter](run.md), you need to supply configuration in a file.
+Before [running Import Linter](run.md), you need to supply configuration in one or more files.
 
 ## Configuration file location
 
@@ -116,7 +116,8 @@ Each contract type defines additional options that you supply here.
 
 ### Contract ids
 
-It's possible to select individual contracts by id when [running the linter](run.md) via the `--contract` argument.
+It's possible to select individual contracts by id when
+[running the linter with the `--contract` argument](run.md#checking-only-certain-contracts).
 The way these ids are supplied depends on the configuration file format:
 
 - *`ini` format:* each contract has its own INI section, which begins `importlinter:contract:` and ends in a
@@ -124,4 +125,25 @@ unique id (in the example above, the ids are `one` and `two`).
 - *`toml` format:* ids are optional. To set one, provide an `id` (as shown in the second contract in the example above).
 
 Contract ids must be unique within a file, and must not contain a colon (`:`).
-Different files may use the same id: see [Using more than one configuration file](run.md#using-more-than-one-configuration-file).
+
+## Using more than one configuration file
+
+Contracts can be split across several files (for example, so that different teams can own their own contracts),
+and [checked in a single run](run.md#using-multiple-configuration-files).
+
+Each file is a complete configuration file, with its own [top level configuration](#top-level-configuration).
+
+It's okay for [contract ids](#contract-ids) to be the same as long as they're in different configuration files.
+
+[Custom contract types](../custom_contract_types.md) registered in any of the files can be used by contracts in
+the others. If a file registers a custom type under the name of a built-in type, that only applies to the contracts
+in that file.
+
+!!! tip "Optimizing runs on multiple configuration files"
+
+    If you are running Import Linter on a large code base using multiple configuration files,
+    it can speed things up to use the same [top-level configuration](#top-level-configuration)
+    across multiple files.
+
+    This is because Import Linter will reuse the same import graph across files, if the top-level
+    configuration is the same.  
