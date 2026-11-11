@@ -15,6 +15,7 @@ from grimp import ImportGraph
 from importlinter.adapters.timing import SystemClockTimer
 from importlinter.application.app_config import settings
 from importlinter.contracts.forbidden import ForbiddenContract
+from importlinter.contracts.layers import LayersContract
 from importlinter.contracts.protected import ProtectedContract
 
 from . import graph as fake_graph
@@ -85,6 +86,36 @@ class TestProtected:
         fake_graph.add_imports(
             graph, importer_layer="domain", imported_layer="application", count=100
         )
+
+        contract = self._build_contract()
+        contract_check = benchmark(contract.check, graph, verbose=False)
+        assert not contract_check.kept
+
+
+class TestLayers:
+    @staticmethod
+    def _build_contract() -> LayersContract:
+        return LayersContract(
+            name="Application, domain and data are layered",
+            session_options={"root_packages": [fake_graph._ROOT_PACKAGE]},
+            contract_options={
+                "layers": [
+                    "mypkg.plugins",
+                    "mypkg.application",
+                    "mypkg.domain",
+                    "mypkg.data",
+                ],
+            },
+        )
+
+    def test_kept(self, graph, benchmark):
+        contract = self._build_contract()
+        contract_check = benchmark(contract.check, graph, verbose=False)
+        assert contract_check.kept
+
+    def test_broken(self, graph, benchmark):
+        # Add violations
+        fake_graph.add_imports(graph, importer_layer="data", imported_layer="domain", count=100)
 
         contract = self._build_contract()
         contract_check = benchmark(contract.check, graph, verbose=False)
