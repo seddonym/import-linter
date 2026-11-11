@@ -28,6 +28,10 @@ benchmark-local:
 show-benchmark-results:
     @uv run pytest-benchmark compare --group-by=fullname --sort=name --columns=mean
 
+# Run benchmarks using CodSpeed. This only works in CI.
+benchmark-ci:
+    @uv run --group=benchmark-ci pytest tests/benchmarking --codspeed
+
 # Format the code.
 format:
     @uv run ruff format

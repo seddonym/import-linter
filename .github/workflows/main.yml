@@ -50,7 +50,7 @@ jobs:
     strategy:
       matrix:
         # We run this already for ubuntu-latest in the lint action.
-        os: [ macos-latest, windows-latest ]
+        os: [macos-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v5
@@ -82,3 +82,24 @@ jobs:
 
       - name: Build docs
         run: just build-docs
+
+  benchmarks:
+    name: Benchmarks
+    runs-on: codspeed-macro
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+
+      - name: Install uv and set the latest supported Python version
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.14"
+
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v4
+        with:
+          mode: walltime
+          run: just benchmark-ci

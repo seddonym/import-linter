@@ -124,3 +124,6 @@ docs = [
 nox = [
     "nox-uv>=0.7.1",
 ]
+benchmark-ci = [
+    "pytest-codspeed>=4.2.0",
+]
