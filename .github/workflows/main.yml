@@ -82,3 +82,24 @@ jobs:
 
       - name: Build docs
         run: just build-docs
+
+  benchmarks:
+    name: Benchmarks
+    runs-on: codspeed-macro-arm64-graviton-ubuntu-22-04
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+
+      - name: Install uv and set the latest supported Python version
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.14"
+
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v4
+        with:
+          mode: walltime
+          run: just benchmark-ci
