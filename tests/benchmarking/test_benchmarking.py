@@ -14,6 +14,7 @@ from grimp import ImportGraph
 
 from importlinter.adapters.timing import SystemClockTimer
 from importlinter.application.app_config import settings
+from importlinter.contracts.acyclic_siblings import AcyclicSiblingsContract
 from importlinter.contracts.forbidden import ForbiddenContract
 from importlinter.contracts.independence import IndependenceContract
 from importlinter.contracts.layers import LayersContract
@@ -144,6 +145,29 @@ class TestIndependence:
         fake_graph.add_imports(
             graph, importer_layer="plugins.red", imported_layer="plugins.green", count=100
         )
+
+        contract = self._build_contract()
+        contract_check = benchmark(contract.check, graph, verbose=False)
+        assert not contract_check.kept
+
+
+class TestAcyclicSiblings:
+    @staticmethod
+    def _build_contract() -> AcyclicSiblingsContract:
+        return AcyclicSiblingsContract(
+            name="There are no cycles between siblings",
+            session_options={"root_packages": [fake_graph._ROOT_PACKAGE]},
+            contract_options={"ancestors": ["mypkg"]},
+        )
+
+    def test_kept(self, graph, benchmark):
+        contract = self._build_contract()
+        contract_check = benchmark(contract.check, graph, verbose=False)
+        assert contract_check.kept
+
+    def test_broken(self, graph, benchmark):
+        # Add violations. The domain already imports the data layer, so this makes a cycle.
+        fake_graph.add_imports(graph, importer_layer="data", imported_layer="domain", count=100)
 
         contract = self._build_contract()
         contract_check = benchmark(contract.check, graph, verbose=False)
