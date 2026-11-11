@@ -6,6 +6,7 @@
   Deprecate the `--config` option.
 * Error if two contracts in the same file share an id, or if a contract id contains a colon.
 * Migrate to import-linter Github organization.
+* Speed up `forbidden` contracts with many source and forbidden modules (for example when using wildcards), by only searching for chains between modules that might be linked.
 
 ## 2.16 (2026-11-06)
 

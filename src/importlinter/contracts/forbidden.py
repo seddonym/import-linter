@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 
 from grimp import ImportGraph
 
-from importlinter.application import contract_utils, output
-from importlinter.application import rendering
+from importlinter.application import contract_utils, output, rendering
 from importlinter.application.contract_utils import AlertLevel
 from importlinter.configuration import settings
 from importlinter.domain import fields
@@ -116,7 +115,9 @@ class ForbiddenContract(Contract):
             return module.name
 
         for source_module in sorted(source_modules, key=sort_key):
-            for forbidden_module in sorted(forbidden_modules_in_graph, key=sort_key):
+            for forbidden_module in self._find_forbidden_modules_to_visit(
+                source_module, forbidden_modules_in_graph, graph, verbose
+            ):
                 if _modules_overlap(
                     source_module,
                     forbidden_module,
@@ -265,6 +266,50 @@ class ForbiddenContract(Contract):
     def _graph_was_built_with_externals(self) -> bool:
         return str(self.session_options.get("include_external_packages")).lower() == "true"
 
+    def _find_forbidden_modules_to_visit(
+        self,
+        source_module: Module,
+        forbidden_modules: list[Module],
+        graph: ImportGraph,
+        verbose: bool,
+    ) -> list[Module]:
+        """
+        Return the forbidden modules to search for chains to from the source module, sorted by name.
+
+        We only need to search for chains to the forbidden modules that the source module has
+        chains to. A quick check finds those with a single pass over the imports from the source
+        module, instead of searching for chains to each forbidden module in turn.
+
+        In verbose mode we report on every pair of modules, so all the forbidden modules are
+        returned and the quick check is skipped.
+        """
+        if verbose:
+            return sorted(forbidden_modules, key=lambda module: module.name)
+
+        forbidden_module_names = {module.name for module in forbidden_modules}
+        as_packages: bool = self.as_packages  # type: ignore
+
+        if str(self.allow_indirect_imports).lower() == "true":
+            imported_names = graph.find_modules_directly_imported_by(
+                source_module.name, as_package=as_packages
+            )
+        else:
+            imported_names = graph.find_upstream_modules(
+                source_module.name, as_package=as_packages
+            )
+
+        if as_packages:
+            # Importing a descendant of a forbidden module is importing the forbidden module
+            imported_names = {
+                ancestor_or_self
+                for name in imported_names
+                for ancestor_or_self in _get_name_and_ancestors(name)
+            }
+
+        forbidden_module_names_to_visit = imported_names & forbidden_module_names
+
+        return [Module(name) for name in sorted(forbidden_module_names_to_visit)]
+
     def _get_direct_chains(
         self,
         source_package: Module,
@@ -301,3 +346,14 @@ class ForbiddenContract(Contract):
         if not graph.is_module_squashed(module.name):
             importer_modules |= {Module(m) for m in graph.find_descendants(module.name)}
         return importer_modules
+
+
+def _get_name_and_ancestors(name: str) -> Iterator[str]:
+    """
+    Yield the module name, followed by the names of each of its ancestors.
+    """
+    while True:
+        yield name
+        if "." not in name:
+            return
+        name = name.rsplit(".", 1)[0]
