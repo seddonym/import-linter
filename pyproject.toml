@@ -108,6 +108,7 @@ dev-minimal = [
     "mypy>=2.4.1",
     "pre-commit>=4.7.0",
     "pytest>=9.2.0",
+    "pytest-benchmark>=5.3.1",
     "pyupgrade>=3.22.0",
     "pyyaml>=6.0.3",
     "ruff>=0.13.2",

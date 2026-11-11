@@ -18,7 +18,7 @@ def test_with_ui_deps_installed(session: nox.Session) -> None:
 
     (This is most of the tests.)
     """
-    session.run("pytest", "-m", "not no_ui_deps_installed")
+    session.run("pytest", "--benchmark-disable", "-m", "not no_ui_deps_installed")
 
 
 @nox_uv.session(
@@ -29,7 +29,7 @@ def test_without_ui_deps_installed(session: nox.Session) -> None:
     """
     Run the tests that are specifically for when the `ui` extra is not installed.
     """
-    session.run("pytest", "-m", "no_ui_deps_installed")
+    session.run("pytest", "--benchmark-disable", "-m", "no_ui_deps_installed")
 
 
 @nox.session(python=[EARLIEST_PYTHON])
@@ -68,4 +68,4 @@ def test_earliest_dependencies(session: nox.Session, with_ui: bool) -> None:
         env={"VIRTUAL_ENV": session.virtualenv.location},
     )
 
-    session.run("pytest", "-m", pytest_mark)
+    session.run("pytest", "--benchmark-disable", "-m", pytest_mark)
