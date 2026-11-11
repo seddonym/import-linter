@@ -76,3 +76,6 @@ pip-wheel-metadata
 .history/
 
 */pyvenv.cfg
+
+# Benchmark results.
+.benchmarks/

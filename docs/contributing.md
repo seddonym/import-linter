@@ -104,6 +104,18 @@ Finally, you can run all the tests under all supported Python versions with `jus
 picture of whether the changes are compatible with all supported versions. Additionally, it will run tests under the
 *lowest* versions of dependencies specified in `pyproject.toml`, with the lowest supported Python version. 
 
+### Running benchmarks
+
+The benchmarks are in `tests/benchmarking`. They check contracts against a fake graph, so they don't depend on a real
+package. When you run the tests normally, each benchmark is run once without being timed, to check that it still
+works. To time them:
+
+```console
+just benchmark-local
+```
+
+This saves the results, so running it again shows how they compare with the earlier runs.
+
 ### Before you push
 
 It's a good idea to run `just check` before getting a review. This will run linters, docs build and tests under

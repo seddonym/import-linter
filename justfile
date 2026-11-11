@@ -19,6 +19,15 @@ test-all:
     @uv run --group nox nox
 
 
+# Run benchmarks locally using pytest-benchmark.
+benchmark-local:
+    @uv run pytest tests/benchmarking --benchmark-only --benchmark-autosave
+    @just show-benchmark-results
+
+# Show recent local benchmark results.
+show-benchmark-results:
+    @uv run pytest-benchmark compare --group-by=fullname --sort=name --columns=mean
+
 # Format the code.
 format:
     @uv run ruff format
