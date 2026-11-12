@@ -39,6 +39,18 @@ class Layer:
     is_independent: bool = True
 
 
+def _find_contained_modules(module_names: set[str]) -> list[tuple[str, str]]:
+    contained_modules: set[tuple[str, str]] = set()
+    for candidate_parent in module_names:
+        parent_module = Module(candidate_parent)
+        for candidate_child in module_names:
+            if candidate_parent != candidate_child and Module(candidate_child).is_descendant_of(
+                parent_module
+            ):
+                contained_modules.add((candidate_parent, candidate_child))
+    return sorted(contained_modules)
+
+
 class LayerField(fields.Field):
     def parse(self, raw_data: str | list) -> Layer:
         raw_string = fields.StringField().parse(raw_data)
@@ -60,6 +72,14 @@ class LayerField(fields.Field):
         if duplicated_module_names:
             modules = ", ".join(repr(name) for name in sorted(duplicated_module_names))
             raise fields.ValidationError(f"Modules cannot be repeated in a layer: {modules}.")
+        contained_modules = _find_contained_modules(seen_module_names)
+        if contained_modules:
+            descendants = ", ".join(
+                f"'{parent}' contains '{child}'" for parent, child in contained_modules
+            )
+            raise fields.ValidationError(
+                f"Modules cannot contain each other in a layer: {descendants}."
+            )
         is_independent = self._parse_is_independent(raw_string)
         return Layer(module_tails, is_independent=is_independent)
 
@@ -152,6 +172,15 @@ class LayersContract(Contract):
             modules = ", ".join(repr(name) for name in sorted(duplicated_modules))
             raise InvalidContractOptions(
                 {"layers": f"Modules cannot be in more than one layer: {modules}."}
+            )
+
+        contained_modules = _find_contained_modules(seen_modules)
+        if contained_modules:
+            descendants = ", ".join(
+                f"'{parent}' contains '{child}'" for parent, child in contained_modules
+            )
+            raise InvalidContractOptions(
+                {"layers": f"Layers cannot contain other layers: {descendants}."}
             )
 
         if self.exhaustive and not self.containers:

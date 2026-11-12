@@ -136,6 +136,29 @@ def test_lint_imports_rejects_duplicate_layers(tmp_path, monkeypatch):
     assert "Traceback" not in result.output
 
 
+def test_lint_imports_rejects_nested_layers(tmp_path, monkeypatch):
+    config = tmp_path / ".importlinter"
+    config.write_text(
+        "[importlinter]\n"
+        "root_package = testpackage\n"
+        "[importlinter:contract:layers]\n"
+        "name = Nested layers\n"
+        "type = layers\n"
+        "layers =\n"
+        "    testpackage\n"
+        "    testpackage.high\n"
+    )
+    monkeypatch.chdir(testpackage_directory)
+
+    result = CliRunner().invoke(cli.lint_imports_command, ["--config", str(config)])
+
+    assert result.exit_code == cli.EXIT_STATUS_ERROR
+    assert "Layers cannot contain other layers:" in result.output
+    assert "'testpackage' contains" in result.output
+    assert "'testpackage.high'" in result.output
+    assert "Traceback" not in result.output
+
+
 class TestMultipleConfigFiles:
     @pytest.mark.parametrize("command", (cli.lint_imports_command, cli.lint_command))
     def test_checks_contracts_from_all_files(self, command, monkeypatch):
