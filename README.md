@@ -8,6 +8,7 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/import-linter.svg)](https://pypi.org/project/import-linter)
 [![CI status](https://github.com/seddonym/import-linter/actions/workflows/main.yml/badge.svg)](https://github.com/seddonym/import-linter/actions/workflows/main.yml)
 [![BSD license](https://img.shields.io/badge/License-BSD_2--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
+[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/seddonym/import-linter?utm_source=badge)
 
 </div>
 

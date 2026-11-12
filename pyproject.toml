@@ -103,6 +103,7 @@ dev = [
     {include-group = "dev-minimal"},
     "import-linter[ui]",
     "httpx>=0.28.1",
+    "pytest-codspeed>=5.0.4",
 ]
 dev-minimal = [
     "mypy>=2.4.1",

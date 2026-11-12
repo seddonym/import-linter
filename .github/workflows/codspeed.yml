@@ -1,0 +1,38 @@
+name: CodSpeed
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Allows CodSpeed to trigger backtest performance analysis to generate initial data.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # for OpenID Connect authentication with CodSpeed
+
+jobs:
+  benchmarks:
+    name: Run benchmarks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv and set the Python version
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v5
+        env:
+          # Run grimp single-threaded, so that measurements are more stable.
+          RAYON_NUM_THREADS: "1"
+        with:
+          mode: simulation
+          run: uv run pytest tests/benchmarks --codspeed
