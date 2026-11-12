@@ -143,6 +143,84 @@ def test_duplicate_layers_are_invalid(contract_options, duplicated_modules):
     }
 
 
+@pytest.mark.parametrize(
+    "data, contained_modules",
+    (
+        ("parent | parent.child", "'parent' contains 'parent.child'"),
+        ("parent.child | parent", "'parent' contains 'parent.child'"),
+        ("parent : parent.child", "'parent' contains 'parent.child'"),
+        ("parent.child : parent", "'parent' contains 'parent.child'"),
+        ("(parent) | (parent.child)", "'parent' contains 'parent.child'"),
+        ("(parent) : (parent.child)", "'parent' contains 'parent.child'"),
+        ("(parent.child) | parent", "'parent' contains 'parent.child'"),
+        ("parent : (parent.child)", "'parent' contains 'parent.child'"),
+        (
+            "b | a | a.child | b.child",
+            "'a' contains 'a.child', 'b' contains 'b.child'",
+        ),
+    ),
+)
+def test_layer_field_rejects_contained_modules(data, contained_modules):
+    with pytest.raises(fields.ValidationError) as exc_info:
+        LayerField().parse(data)
+
+    assert (
+        exc_info.value.message
+        == f"Modules cannot contain each other in a layer: {contained_modules}."
+    )
+
+
+@pytest.mark.parametrize("containers", (None, ["mypackage"]))
+def test_contained_modules_in_a_layer_are_invalid_contract_options(containers):
+    options = {"layers": ["parent | (parent.child)"]}
+    if containers is not None:
+        options["containers"] = containers
+    with pytest.raises(InvalidContractOptions) as exc_info:
+        LayersContract(
+            name="Layers contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options=options,
+        )
+
+    assert exc_info.value.errors == {
+        "layers": "Modules cannot contain each other in a layer: 'parent' contains 'parent.child'."
+    }
+
+
+@pytest.mark.parametrize(
+    "contract_options, contained_modules",
+    (
+        ({"layers": ["foo", "foo.bar"]}, "'foo' contains 'foo.bar'"),
+        ({"layers": ["foo.bar", "foo"]}, "'foo' contains 'foo.bar'"),
+        ({"layers": ["foo", "foo.low | bar"]}, "'foo' contains 'foo.low'"),
+        ({"layers": ["foo.high : bar", "foo"]}, "'foo' contains 'foo.high'"),
+        ({"layers": ["(foo)", "foo.bar"]}, "'foo' contains 'foo.bar'"),
+        ({"layers": ["foo", "(foo.bar)"]}, "'foo' contains 'foo.bar'"),
+        (
+            {"layers": ["foo | (bar.nested)", "bar : foo.nested"]},
+            "'bar' contains 'bar.nested', 'foo' contains 'foo.nested'",
+        ),
+        ({"layers": ["high", "high.sub"], "containers": ["foo"]}, "'high' contains 'high.sub'"),
+        ({"layers": ["high.sub", "high"], "containers": ["foo"]}, "'high' contains 'high.sub'"),
+        (
+            {"layers": ["minegauler", "minegauler.app"]},
+            "'minegauler' contains 'minegauler.app'",
+        ),
+    ),
+)
+def test_nested_layers_are_invalid(contract_options, contained_modules):
+    with pytest.raises(InvalidContractOptions) as exc_info:
+        LayersContract(
+            name="Layers contract",
+            session_options={"root_packages": ["foo"]},
+            contract_options=contract_options,
+        )
+
+    assert exc_info.value.errors == {
+        "layers": f"Layers cannot contain other layers: {contained_modules}."
+    }
+
+
 class TestLayerContractSingleContainers:
     def test_no_illegal_imports_means_contract_is_kept(self):
         contract = self._build_contract()
