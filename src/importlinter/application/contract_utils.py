@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from grimp import ImportGraph
 
 from importlinter.application import output
-from importlinter.domain.helpers import MissingImport
+from importlinter.domain.helpers import MissingImport, OutOfScopeImport
 from importlinter.domain.imports import DirectImport, ImportExpression, Module
 
 
@@ -129,6 +129,39 @@ def render_broken_contract_guidance(broken_contract_guidance: str | None) -> Non
     output.new_line()
 
 
+def handle_out_of_scope_imports(
+    expressions: Sequence[ImportExpression], alert_level: AlertLevel
+) -> list[str]:
+    """
+    Handle any out-of-scope import expressions based on the supplied alert level.
+
+    Args:
+        expressions: The import expressions that were determined to be outside the scope
+                     of the contract.
+        alert_level: An AlertLevel that indicates how to handle any out-of-scope expressions.
+                     AlertLevel.NONE will ignore them, AlertLevel.WARN will return a warning for each
+                     one, and AlertLevel.ERROR will raise an OutOfScopeImport with all out-of-scope
+                     expressions.
+
+    Returns:
+        A list of any warnings to be surfaced to the user.
+    """
+    if alert_level is AlertLevel.NONE:
+        return []
+    if not expressions:
+        return []
+
+    sorted_expressions = sorted(expressions, key=str)
+
+    if alert_level is AlertLevel.WARN:
+        return [
+            _build_out_of_scope_import_message(expression) for expression in sorted_expressions
+        ]
+    else:  # AlertLevel.ERROR
+        messages = [_build_out_of_scope_import_message(expr) for expr in sorted_expressions]
+        raise OutOfScopeImport("\n".join(messages))
+
+
 # Private functions
 # -----------------
 
@@ -158,3 +191,7 @@ def _handle_unresolved_import_expressions(
 
 def _build_missing_import_message(expression: ImportExpression) -> str:
     return f"No matches for ignored import {expression}."
+
+
+def _build_out_of_scope_import_message(expression: ImportExpression) -> str:
+    return f"Ignored import {expression} is outside the scope of the contract."

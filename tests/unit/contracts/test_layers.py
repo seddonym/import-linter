@@ -221,6 +221,39 @@ def test_nested_layers_are_invalid(contract_options, contained_modules):
     }
 
 
+@pytest.mark.parametrize("alert_level", ("warn", "error"))
+def test_out_of_scope_ignore_imports_alerting_not_supported(alert_level):
+    with pytest.raises(InvalidContractOptions) as exc_info:
+        LayersContract(
+            name="Layers contract",
+            session_options={"root_packages": ["foo"]},
+            contract_options={
+                "layers": ["foo", "bar"],
+                "out_of_scope_ignore_imports_alerting": alert_level,
+            },
+        )
+
+    assert exc_info.value.errors == {
+        "out_of_scope_ignore_imports_alerting": (
+            "The out_of_scope_ignore_imports_alerting option is not supported for layers contracts."
+        )
+    }
+
+
+def test_out_of_scope_ignore_imports_alerting_none_supported():
+    from importlinter.application.contract_utils import AlertLevel
+
+    contract = LayersContract(
+        name="Layers contract",
+        session_options={"root_packages": ["foo"]},
+        contract_options={
+            "layers": ["foo", "bar"],
+            "out_of_scope_ignore_imports_alerting": "none",
+        },
+    )
+    assert contract.out_of_scope_ignore_imports_alerting == AlertLevel.NONE
+
+
 class TestLayerContractSingleContainers:
     def test_no_illegal_imports_means_contract_is_kept(self):
         contract = self._build_contract()

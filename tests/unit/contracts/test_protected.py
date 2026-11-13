@@ -2,6 +2,7 @@ import pytest
 from textwrap import dedent
 from importlinter.application.output import console
 from importlinter.contracts.protected import ProtectedContract
+from importlinter.domain.helpers import OutOfScopeImport
 from grimp import ImportGraph
 
 
@@ -670,3 +671,160 @@ class TestProtectedContract:
 
             """
         )
+
+    def test_in_scope_ignore_imports_passes(self):
+        graph = self._build_default_graph()
+        graph.add_import(
+            importer="mypackage.bar.other_package.one",
+            imported="mypackage.foo.protected",
+            line_number=1,
+            line_contents="import",
+        )
+        contract = ProtectedContract(
+            name="Protected contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options={
+                "protected_modules": ("mypackage.foo.protected",),
+                "allowed_importers": ("mypackage.bar.allowed",),
+                "ignore_imports": ("mypackage.bar.other_package.one -> mypackage.foo.protected",),
+                "out_of_scope_ignore_imports_alerting": "error",
+            },
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+
+        assert check.kept
+        assert check.warnings == []
+
+    def test_out_of_scope_ignore_imported_is_not_protected(self):
+        graph = self._build_default_graph()
+        graph.add_import(
+            importer="mypackage.bar.other_package.one",
+            imported="mypackage.bar.other_package.two",
+            line_number=1,
+            line_contents="import",
+        )
+        contract = ProtectedContract(
+            name="Protected contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options={
+                "protected_modules": ("mypackage.foo.protected",),
+                "allowed_importers": ("mypackage.bar.allowed",),
+                "ignore_imports": (
+                    "mypackage.bar.other_package.one -> mypackage.bar.other_package.two",
+                ),
+                "out_of_scope_ignore_imports_alerting": "error",
+            },
+        )
+
+        with pytest.raises(OutOfScopeImport) as exc_info:
+            contract.check(graph=graph, verbose=False)
+
+        assert str(exc_info.value) == (
+            "Ignored import mypackage.bar.other_package.one -> mypackage.bar.other_package.two "
+            "is outside the scope of the contract."
+        )
+
+    def test_out_of_scope_ignore_importer_is_allowed(self):
+        graph = self._build_default_graph()
+        graph.add_import(
+            importer="mypackage.bar.allowed",
+            imported="mypackage.foo.protected",
+            line_number=1,
+            line_contents="import",
+        )
+        contract = ProtectedContract(
+            name="Protected contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options={
+                "protected_modules": ("mypackage.foo.protected",),
+                "allowed_importers": ("mypackage.bar.allowed",),
+                "ignore_imports": ("mypackage.bar.allowed -> mypackage.foo.protected",),
+                "out_of_scope_ignore_imports_alerting": "error",
+            },
+        )
+
+        with pytest.raises(OutOfScopeImport) as exc_info:
+            contract.check(graph=graph, verbose=False)
+
+        assert str(exc_info.value) == (
+            "Ignored import mypackage.bar.allowed -> mypackage.foo.protected "
+            "is outside the scope of the contract."
+        )
+
+    def test_out_of_scope_ignore_importer_is_internal_to_protected(self):
+        graph = self._build_default_graph()
+        graph.add_import(
+            importer="mypackage.foo.protected.other_models",
+            imported="mypackage.foo.protected.models",
+            line_number=1,
+            line_contents="import",
+        )
+        contract = ProtectedContract(
+            name="Protected contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options={
+                "protected_modules": ("mypackage.foo.protected",),
+                "allowed_importers": ("mypackage.bar.allowed",),
+                "ignore_imports": (
+                    "mypackage.foo.protected.other_models -> mypackage.foo.protected.models",
+                ),
+                "out_of_scope_ignore_imports_alerting": "error",
+            },
+        )
+
+        with pytest.raises(OutOfScopeImport) as exc_info:
+            contract.check(graph=graph, verbose=False)
+
+        assert str(exc_info.value) == (
+            "Ignored import mypackage.foo.protected.other_models -> mypackage.foo.protected.models "
+            "is outside the scope of the contract."
+        )
+
+    def test_out_of_scope_ignore_imports_warn(self):
+        graph = self._build_default_graph()
+        graph.add_import(
+            importer="mypackage.bar.allowed",
+            imported="mypackage.foo.protected",
+            line_number=1,
+            line_contents="import",
+        )
+        contract = ProtectedContract(
+            name="Protected contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options={
+                "protected_modules": ("mypackage.foo.protected",),
+                "allowed_importers": ("mypackage.bar.allowed",),
+                "ignore_imports": ("mypackage.bar.allowed -> mypackage.foo.protected",),
+                "out_of_scope_ignore_imports_alerting": "warn",
+            },
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+
+        assert check.warnings == [
+            "Ignored import mypackage.bar.allowed -> mypackage.foo.protected "
+            "is outside the scope of the contract."
+        ]
+
+    def test_out_of_scope_ignore_imports_none_default(self):
+        graph = self._build_default_graph()
+        graph.add_import(
+            importer="mypackage.bar.allowed",
+            imported="mypackage.foo.protected",
+            line_number=1,
+            line_contents="import",
+        )
+        contract = ProtectedContract(
+            name="Protected contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options={
+                "protected_modules": ("mypackage.foo.protected",),
+                "allowed_importers": ("mypackage.bar.allowed",),
+                "ignore_imports": ("mypackage.bar.allowed -> mypackage.foo.protected",),
+            },
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+
+        assert check.warnings == []

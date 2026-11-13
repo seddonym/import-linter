@@ -8,7 +8,7 @@ from importlinter.contracts.independence import (
     IndependenceContract,
     _SubpackageChainData,
 )
-from importlinter.domain.contract import ContractCheck
+from importlinter.domain.contract import ContractCheck, InvalidContractOptions
 
 from tests.adapters.timing import FakeTimer
 
@@ -836,3 +836,36 @@ def _sort_invalid_chains(
     invalid_chains: list[_SubpackageChainData],
 ) -> list[_SubpackageChainData]:
     return sorted(invalid_chains, key=lambda i: (i["upstream_module"], i["downstream_module"]))
+
+
+@pytest.mark.parametrize("alert_level", ("warn", "error"))
+def test_out_of_scope_ignore_imports_alerting_not_supported(alert_level):
+    with pytest.raises(InvalidContractOptions) as exc_info:
+        IndependenceContract(
+            name="Independence contract",
+            session_options={"root_packages": ["mypackage"]},
+            contract_options={
+                "modules": ["mypackage.blue", "mypackage.green"],
+                "out_of_scope_ignore_imports_alerting": alert_level,
+            },
+        )
+
+    assert exc_info.value.errors == {
+        "out_of_scope_ignore_imports_alerting": (
+            "The out_of_scope_ignore_imports_alerting option is not supported for independence contracts."
+        )
+    }
+
+
+def test_out_of_scope_ignore_imports_alerting_none_supported():
+    from importlinter.application.contract_utils import AlertLevel
+
+    contract = IndependenceContract(
+        name="Independence contract",
+        session_options={"root_packages": ["mypackage"]},
+        contract_options={
+            "modules": ["mypackage.blue", "mypackage.green"],
+            "out_of_scope_ignore_imports_alerting": "none",
+        },
+    )
+    assert contract.out_of_scope_ignore_imports_alerting == AlertLevel.NONE
