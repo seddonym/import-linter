@@ -27,6 +27,9 @@
   <a href="https://opensource.org/licenses/BSD-2-Clause" target="_blank">
       <img src="https://img.shields.io/badge/License-BSD_2--Clause-orange.svg" alt="BSD license">
   </a>
+  <a href="https://app.codspeed.io//import-linter/import-linter?utm_source=badge" target="_blank">
+    <img src="https://img.shields.io/endpoint?url=https://app.codspeed.io//badge.json" alt="CodSpeed"/>
+  </a>
 </p>
 
 ---
