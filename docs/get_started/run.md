@@ -139,7 +139,7 @@ Or, if you prefer pre-commit to install Import Linter separately, you can do thi
 with the version number of Import Linter you wish to use):
 
 ```yaml
-- repo: https://github.com/seddonym/import-linter
+- repo: https://github.com/import-linter/import-linter
   rev: <import linter version>
   hooks:
   - id: import-linter

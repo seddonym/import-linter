@@ -49,7 +49,7 @@ packages = ["src/importlinter"]
 
 [project.urls]
 Documentation = "https://import-linter.readthedocs.io/"
-Source-code = "https://github.com/seddonym/import-linter/"
+Source-code = "https://github.com/import-linter/import-linter/"
 
 [project.scripts]
 lint-imports = "importlinter.cli:lint_imports_command"

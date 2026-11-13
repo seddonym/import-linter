@@ -4,7 +4,7 @@ We welcome contributions to Import Linter.
 
 ## Bug reports
 
-When [reporting a bug](https://github.com/seddonym/import-linter/issues) please include:
+When [reporting a bug](https://github.com/import-linter/import-linter/issues) please include:
 
 * Your operating system name and version.
 * Any details about your local setup that might be helpful in troubleshooting.
@@ -12,7 +12,7 @@ When [reporting a bug](https://github.com/seddonym/import-linter/issues) please 
 
 ## Feature requests and feedback
 
-The best way to send feedback is to file an issue at https://github.com/seddonym/import-linter/issues.
+The best way to send feedback is to file an issue at https://github.com/import-linter/import-linter/issues.
 
 If you are proposing a feature:
 
@@ -49,7 +49,7 @@ Make sure these are installed first.
 
 You don't need to activate or manage a virtual environment - this is taken care in the background of by `uv`.
 
-1. Fork [import-linter](https://github.com/seddonym/import-linter)
+1. Fork [import-linter](https://github.com/import-linter/import-linter)
    (look for the "Fork" button).
 2. Clone your fork locally:
 
