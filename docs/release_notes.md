@@ -6,6 +6,8 @@
   Deprecate the `--config` option.
 * Error if two contracts in the same file share an id, or if a contract id contains a colon.
 * Migrate to import-linter Github organization.
+* Speed up protected contracts by querying the direct imports of whole packages rather than of
+  each module within them.
 
 ## 2.16 (2026-11-06)
 

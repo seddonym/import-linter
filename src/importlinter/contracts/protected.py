@@ -1,9 +1,12 @@
 from dataclasses import dataclass
+
 import grimp
-from importlinter.application import contract_utils
-from ._common import Link
-from importlinter.domain import helpers, imports
+
 from importlinter import Contract, ContractCheck, fields, output
+from importlinter.application import contract_utils
+from importlinter.domain import helpers, imports
+
+from ._common import Link
 
 
 class ProtectedContract(Contract):
@@ -91,27 +94,43 @@ class ProtectedContract(Contract):
                 if self.as_packages and not graph.is_module_squashed(top_level_protected_module):
                     protected_modules.update(graph.find_descendants(top_level_protected_module))
 
-                for protected_module in sorted(protected_modules):
-                    illegal_importers = (
-                        graph.find_modules_that_directly_import(protected_module)
-                        - allowed_modules
-                        - protected_modules
+                # Find the illegal importers of the protected package as a whole, rather than
+                # querying the importers of each protected module individually.
+                # This avoids a query per protected module.
+                illegal_importers = (
+                    graph.find_modules_that_directly_import(
+                        top_level_protected_module,
+                        as_package=self.as_packages,  # type: ignore
+                    )
+                    - allowed_modules
+                    - protected_modules
+                )
+
+                illegal_links: list[tuple[str, str]] = [
+                    (illegal_importer, protected_module)
+                    for illegal_importer in illegal_importers
+                    for protected_module in (
+                        graph.find_modules_directly_imported_by(illegal_importer)
+                        & protected_modules
+                    )
+                ]
+
+                for illegal_importer, protected_module in sorted(
+                    illegal_links, key=lambda link: (link[1], link[0])
+                ):
+                    import_details = graph.get_import_details(
+                        importer=illegal_importer, imported=protected_module
                     )
 
-                    for illegal_importer in sorted(illegal_importers):
-                        import_details = graph.get_import_details(
-                            importer=illegal_importer, imported=protected_module
-                        )
-
-                        broken_contract_metadata_object.illegal_links.append(
-                            {
-                                "importer": illegal_importer,
-                                "imported": protected_module,
-                                "line_numbers": tuple(
-                                    detail["line_number"] for detail in import_details
-                                ),
-                            }
-                        )
+                    broken_contract_metadata_object.illegal_links.append(
+                        {
+                            "importer": illegal_importer,
+                            "imported": protected_module,
+                            "line_numbers": tuple(
+                                detail["line_number"] for detail in import_details
+                            ),
+                        }
+                    )
 
                 if broken_contract_metadata_object.illegal_links:
                     illegal_imports_metadata.append(broken_contract_metadata_object)
