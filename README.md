@@ -6,7 +6,7 @@
 
 [![Package version](https://img.shields.io/pypi/v/import-linter.svg)](https://pypi.org/project/import-linter)
 [![Python versions](https://img.shields.io/pypi/pyversions/import-linter.svg)](https://pypi.org/project/import-linter)
-[![CI status](https://github.com/seddonym/import-linter/actions/workflows/main.yml/badge.svg)](https://github.com/seddonym/import-linter/actions/workflows/main.yml)
+[![CI status](https://github.com/import-linter/import-linter/actions/workflows/main.yml/badge.svg)](https://github.com/import-linter/import-linter/actions/workflows/main.yml)
 [![BSD license](https://img.shields.io/badge/License-BSD_2--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
 
 </div>

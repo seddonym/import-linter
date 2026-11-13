@@ -21,8 +21,8 @@
   <a href="https://pypi.org/project/import-linter" target="_blank">
       <img src="https://img.shields.io/pypi/pyversions/import-linter.svg" alt="Python versions">
   </a>
-  <a href="https://github.com/seddonym/import-linter/actions/workflows/main.yml" target="_blank">
-      <img src="https://github.com/seddonym/import-linter/actions/workflows/main.yml/badge.svg" alt="CI status">
+  <a href="https://github.com/import-linter/import-linter/actions/workflows/main.yml" target="_blank">
+      <img src="https://github.com/import-linter/import-linter/actions/workflows/main.yml/badge.svg" alt="CI status">
   </a>
   <a href="https://opensource.org/licenses/BSD-2-Clause" target="_blank">
       <img src="https://img.shields.io/badge/License-BSD_2--Clause-orange.svg" alt="BSD license">

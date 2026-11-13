@@ -1,8 +1,8 @@
 site_name: Import Linter
 site_description: Lint your Python architecture.
 site_url: https://import-linter.readthedocs.io/
-repo_name: seddonym/import-linter
-repo_url: https://github.com/seddonym/import-linter
+repo_name: import-linter/import-linter
+repo_url: https://github.com/import-linter/import-linter
 
 extra_css:
   - stylesheets/extra.css
