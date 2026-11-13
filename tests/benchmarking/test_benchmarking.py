@@ -13,12 +13,14 @@ import pytest
 from grimp import ImportGraph
 
 from importlinter.adapters.timing import SystemClockTimer
+from importlinter.application import contract_utils
 from importlinter.application.app_config import settings
 from importlinter.contracts.acyclic_siblings import AcyclicSiblingsContract
 from importlinter.contracts.forbidden import ForbiddenContract
 from importlinter.contracts.independence import IndependenceContract
 from importlinter.contracts.layers import LayersContract
 from importlinter.contracts.protected import ProtectedContract
+from importlinter.domain.imports import ImportExpression, ModuleExpression
 
 from . import graph as fake_graph
 
@@ -38,6 +40,28 @@ def graph(_kept_graph) -> ImportGraph:
     # Copy because checking a contract may mutate the graph.
     # e.g. removing imports from ignore_imports.
     return deepcopy(_kept_graph)
+
+
+def test_remove_ignored_imports(_kept_graph, benchmark):
+    # remove_ignored_imports mutates the graph, and raises if an import is missing, so each round
+    # needs a fresh graph. Setup runs outside the timed region.
+    def setup():
+        graph = deepcopy(_kept_graph)
+        imports_added = [
+            ImportExpression(ModuleExpression(importer), ModuleExpression(imported))
+            for importer, imported in fake_graph.add_imports(
+                graph, importer_layer="data", imported_layer="domain", count=1000
+            )
+        ]
+        return (graph, imports_added), {}
+
+    def run(graph, imports_added):
+        contract_utils.remove_ignored_imports(
+            graph, imports_added, contract_utils.AlertLevel.ERROR
+        )
+
+    # iterations must be 1 when passing setup.
+    benchmark.pedantic(run, setup=setup, rounds=20, iterations=1)
 
 
 class TestForbidden:
