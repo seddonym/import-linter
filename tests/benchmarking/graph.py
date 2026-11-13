@@ -76,7 +76,9 @@ def build_graph() -> ImportGraph:
     return graph
 
 
-def add_imports(graph: ImportGraph, importer_layer: str, imported_layer: str, count: int) -> None:
+def add_imports(
+    graph: ImportGraph, importer_layer: str, imported_layer: str, count: int
+) -> tuple[tuple[str, str], ...]:
     """
     Add imports of modules in the imported layer by modules in the importer layer to the graph.
 
@@ -84,9 +86,11 @@ def add_imports(graph: ImportGraph, importer_layer: str, imported_layer: str, co
     modules are chosen by going through _IMPORT_ORDER and skipping the imports that are already in
     the graph, so the results are deterministic.
     """
-    added_count = 0
+    # [(importer, imported)]
+    imports_added: list[tuple[str, str]] = []
+
     for importer_number, imported_number in _IMPORT_ORDER:
-        if added_count == count:
+        if len(imports_added) == count:
             break
         importer = _module_name(importer_layer, importer_number)
         imported = _module_name(imported_layer, imported_number)
@@ -98,13 +102,15 @@ def add_imports(graph: ImportGraph, importer_layer: str, imported_layer: str, co
             line_number=1,
             line_contents=f"import {imported}",
         )
-        added_count += 1
+        imports_added.append((importer, imported))
 
-    if added_count < count:
+    if len(imports_added) < count:
         raise ValueError(
             f"Cannot add {count} imports of {imported_layer} by {importer_layer}: "
-            f"only {added_count} are possible."
+            f"only {len(imports_added)} are possible."
         )
+
+    return tuple(imports_added)
 
 
 def _add_module(graph: ImportGraph, module: str) -> None:
