@@ -9,7 +9,7 @@ authors = [
 requires-python = ">=3.11"
 dependencies = [
     "click>=8.2.0",
-    "grimp>=3.19",
+    "grimp>=3.20",
     "rich>=14.2.0",
 ]
 
