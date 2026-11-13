@@ -159,6 +159,104 @@ def test_lint_imports_rejects_nested_layers(tmp_path, monkeypatch):
     assert "Traceback" not in result.output
 
 
+def test_lint_imports_forbidden_out_of_scope_error(tmp_path, monkeypatch):
+    config = tmp_path / ".importlinter"
+    config.write_text(
+        "[importlinter]\n"
+        "root_package = testpackage\n"
+        "[importlinter:contract:forbidden]\n"
+        "name = Forbidden out of scope\n"
+        "type = forbidden\n"
+        "source_modules = testpackage.low\n"
+        "forbidden_modules = testpackage.medium\n"
+        "ignore_imports =\n"
+        "    testpackage.utils -> testpackage.high.green\n"
+        "out_of_scope_ignore_imports_alerting = error\n"
+    )
+    monkeypatch.chdir(testpackage_directory)
+
+    result = CliRunner().invoke(cli.lint_imports_command, [str(config)])
+
+    assert result.exit_code == cli.EXIT_STATUS_ERROR
+    assert "Ignored import testpackage.utils -> testpackage.high.green" in result.output
+    assert "is outside the" in result.output
+    assert "of the contract." in result.output
+    assert "Traceback" not in result.output
+
+
+def test_lint_imports_forbidden_out_of_scope_warn(tmp_path, monkeypatch):
+    config = tmp_path / ".importlinter"
+    config.write_text(
+        "[importlinter]\n"
+        "root_package = testpackage\n"
+        "[importlinter:contract:forbidden]\n"
+        "name = Forbidden out of scope warn\n"
+        "type = forbidden\n"
+        "source_modules = testpackage.low\n"
+        "forbidden_modules = testpackage.medium\n"
+        "ignore_imports =\n"
+        "    testpackage.utils -> testpackage.high.green\n"
+        "out_of_scope_ignore_imports_alerting = warn\n"
+    )
+    monkeypatch.chdir(testpackage_directory)
+
+    result = CliRunner().invoke(cli.lint_imports_command, [str(config)])
+
+    assert result.exit_code == cli.EXIT_STATUS_SUCCESS
+    assert "Warnings" in result.output
+    assert "Ignored import testpackage.utils -> testpackage.high.green" in result.output
+    assert "is outside the" in result.output
+    assert "of the contract." in result.output
+    assert "Traceback" not in result.output
+
+
+def test_lint_imports_forbidden_out_of_scope_none(tmp_path, monkeypatch):
+    config = tmp_path / ".importlinter"
+    config.write_text(
+        "[importlinter]\n"
+        "root_package = testpackage\n"
+        "[importlinter:contract:forbidden]\n"
+        "name = Forbidden out of scope none\n"
+        "type = forbidden\n"
+        "source_modules = testpackage.low\n"
+        "forbidden_modules = testpackage.medium\n"
+        "ignore_imports =\n"
+        "    testpackage.utils -> testpackage.high.green\n"
+        "out_of_scope_ignore_imports_alerting = none\n"
+    )
+    monkeypatch.chdir(testpackage_directory)
+
+    result = CliRunner().invoke(cli.lint_imports_command, [str(config)])
+
+    assert result.exit_code == cli.EXIT_STATUS_SUCCESS
+    assert "Warnings" not in result.output
+    assert "is outside the scope" not in result.output
+    assert "Traceback" not in result.output
+
+
+def test_lint_imports_unsupported_contract_out_of_scope_alerting(tmp_path, monkeypatch):
+    config = tmp_path / ".importlinter"
+    config.write_text(
+        "[importlinter]\n"
+        "root_package = testpackage\n"
+        "[importlinter:contract:layers]\n"
+        "name = Unsupported contract out of scope\n"
+        "type = layers\n"
+        "layers =\n"
+        "    testpackage.high\n"
+        "    testpackage.medium\n"
+        "out_of_scope_ignore_imports_alerting = error\n"
+    )
+    monkeypatch.chdir(testpackage_directory)
+
+    result = CliRunner().invoke(cli.lint_imports_command, [str(config)])
+
+    assert result.exit_code == cli.EXIT_STATUS_ERROR
+    assert "out_of_scope_ignore_imports_alerting" in result.output
+    assert "not supported for layers contracts." in result.output
+    assert "Traceback" not in result.output
+
+
 class TestMultipleConfigFiles:
     @pytest.mark.parametrize("command", (cli.lint_imports_command, cli.lint_command))
     def test_checks_contracts_from_all_files(self, command, monkeypatch):

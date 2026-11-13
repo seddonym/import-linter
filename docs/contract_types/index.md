@@ -70,6 +70,15 @@ If none of the built in contract types meets your needs, you can define a custom
     - `warn`: Print a warning for each unmatched expression.
     - `none`: Do not alert.
 
+- `out_of_scope_ignore_imports_alerting`: The alerting level for handling expressions supplied in `ignore_imports`
+  that match imports in the graph, but are outside the scope of the contract (i.e. they could never cause the contract
+  to be broken). Currently supported by `forbidden` and `protected` contracts. Other built-in contracts will raise an
+  error if this option is set to anything other than `none`. Choices are:
+
+    - `none`: Do not alert (default).
+    - `warn`: Print a warning for each out of scope expression.
+    - `error`: Error if there are any out of scope expressions.
+
 - `broken_contract_guidance`: A message for Import Linter to display when the contract is broken, below the built-in message. (Optional.) 
 
 === "INI"

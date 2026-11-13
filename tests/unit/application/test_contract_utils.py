@@ -3,10 +3,11 @@ from grimp import ImportGraph
 
 from importlinter.application.contract_utils import (
     AlertLevel,
+    handle_out_of_scope_imports,
     remove_ignored_imports,
     remove_ignored_imports_and_report,
 )
-from importlinter.domain.helpers import MissingImport
+from importlinter.domain.helpers import MissingImport, OutOfScopeImport
 from importlinter.domain.imports import (
     DirectImport,
     ImportExpression,
@@ -314,3 +315,43 @@ class TestRemoveIgnoredImportsAndReport:
                 line_contents=direct_import.line_contents,
             )
         return graph
+
+
+class TestHandleOutOfScopeImports:
+    EXPRESSIONS = [
+        ImportExpression(
+            importer=ModuleExpression("mypackage.foo"),
+            imported=ModuleExpression("mypackage.bar"),
+        ),
+        ImportExpression(
+            importer=ModuleExpression("mypackage.alpha"),
+            imported=ModuleExpression("mypackage.beta"),
+        ),
+    ]
+
+    def test_alert_level_none_returns_empty_list(self):
+        warnings = handle_out_of_scope_imports(
+            expressions=self.EXPRESSIONS, alert_level=AlertLevel.NONE
+        )
+        assert warnings == []
+
+    def test_empty_expressions_returns_empty_list(self):
+        warnings = handle_out_of_scope_imports(expressions=[], alert_level=AlertLevel.ERROR)
+        assert warnings == []
+
+    def test_alert_level_warn_returns_warnings(self):
+        warnings = handle_out_of_scope_imports(
+            expressions=self.EXPRESSIONS, alert_level=AlertLevel.WARN
+        )
+        assert warnings == [
+            "Ignored import mypackage.alpha -> mypackage.beta is outside the scope of the contract.",
+            "Ignored import mypackage.foo -> mypackage.bar is outside the scope of the contract.",
+        ]
+
+    def test_alert_level_error_raises_exception(self):
+        with pytest.raises(OutOfScopeImport) as exc_info:
+            handle_out_of_scope_imports(expressions=self.EXPRESSIONS, alert_level=AlertLevel.ERROR)
+        assert str(exc_info.value) == (
+            "Ignored import mypackage.alpha -> mypackage.beta is outside the scope of the contract.\n"
+            "Ignored import mypackage.foo -> mypackage.bar is outside the scope of the contract."
+        )

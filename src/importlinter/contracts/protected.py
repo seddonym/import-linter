@@ -23,6 +23,9 @@ class ProtectedContract(Contract):
         - unmatched_ignore_imports_alerting: Decides how to report when the expression in the
                                 `ignore_imports` set is not found in the graph. Valid values are
                                 "none", "warn", "error". Default value is "error".
+        - out_of_scope_ignore_imports_alerting: Decides how to report when an expression in the
+                                `ignore_imports` set is outside the scope of the contract. Valid
+                                values are "none", "warn", "error". Default value is "none".
         - as_packages:          Whether to treat the protected and allowed modules as packages. If
                                 False, each of the modules passed in will be treated as a module
                                 rather than a package. Default behaviour is True (treat modules as
@@ -41,12 +44,17 @@ class ProtectedContract(Contract):
     unmatched_ignore_imports_alerting = fields.EnumField(
         contract_utils.AlertLevel, default=contract_utils.AlertLevel.ERROR
     )
+    out_of_scope_ignore_imports_alerting = fields.EnumField(
+        contract_utils.AlertLevel, default=contract_utils.AlertLevel.NONE, required=False
+    )
 
     as_packages = fields.BooleanField(required=False, default=True)
 
     broken_contract_guidance = fields.TextField(required=False)
 
     def check(self, graph: grimp.ImportGraph, verbose: bool) -> ContractCheck:
+        out_of_scope_warnings = self._check_out_of_scope_imports(graph)
+
         import_removal = contract_utils.remove_ignored_imports_and_report(
             graph=graph,
             ignore_imports=self.ignore_imports,  # type: ignore
@@ -116,11 +124,64 @@ class ProtectedContract(Contract):
                 if broken_contract_metadata_object.illegal_links:
                     illegal_imports_metadata.append(broken_contract_metadata_object)
 
+        warnings = list(import_removal.warnings) + out_of_scope_warnings
         return ContractCheck(
             kept=not bool(illegal_imports_metadata),
-            warnings=list(import_removal.warnings),
+            warnings=warnings,
             ignored_import_count=import_removal.ignored_import_count,
             metadata={"illegal_imports": illegal_imports_metadata},
+        )
+
+    def _check_out_of_scope_imports(self, graph: grimp.ImportGraph) -> list[str]:
+        if self.out_of_scope_ignore_imports_alerting == contract_utils.AlertLevel.NONE:
+            return []
+        if not self.ignore_imports:
+            return []
+
+        all_protected_modules: set[str] = set()
+        for protected_module_expression in self.protected_modules:  # type: ignore
+            for module in helpers.module_expression_to_modules(
+                graph=graph,
+                expression=protected_module_expression,
+                as_packages=False,
+            ):
+                all_protected_modules.add(module.name)
+                if self.as_packages and not graph.is_module_squashed(module.name):
+                    all_protected_modules.update(graph.find_descendants(module.name))
+
+        allowed_modules: set[str] = {
+            module.name
+            for module in helpers.module_expressions_to_modules(
+                graph=graph,
+                expressions=self.allowed_importers,  # type: ignore
+                as_packages=self.as_packages,  # type: ignore
+            )
+        }
+
+        out_of_scope_expressions = []
+        for expression in sorted(self.ignore_imports, key=str):  # type: ignore
+            matched_imports = graph.find_matching_direct_imports(str(expression))
+            if not matched_imports:
+                continue
+
+            in_scope = False
+            for matched in matched_imports:
+                importer = matched["importer"]
+                imported = matched["imported"]
+                if (
+                    imported in all_protected_modules
+                    and importer not in allowed_modules
+                    and importer not in all_protected_modules
+                ):
+                    in_scope = True
+                    break
+
+            if not in_scope:
+                out_of_scope_expressions.append(expression)
+
+        return contract_utils.handle_out_of_scope_imports(
+            out_of_scope_expressions,
+            self.out_of_scope_ignore_imports_alerting,  # type: ignore
         )
 
     def render_broken_contract(self, check: ContractCheck) -> None:

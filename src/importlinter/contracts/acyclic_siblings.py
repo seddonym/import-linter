@@ -5,7 +5,7 @@ import dataclasses
 from importlinter.configuration import settings
 from collections.abc import Set, Mapping
 from typing import cast
-from importlinter.domain.contract import Contract, ContractCheck
+from importlinter.domain.contract import Contract, ContractCheck, InvalidContractOptions
 from importlinter.domain.helpers import module_expressions_to_modules
 from importlinter.domain import fields
 from importlinter.domain.imports import ModuleExpression
@@ -41,7 +41,21 @@ class AcyclicSiblingsContract(Contract):
     skip_descendants = fields.SetField(subfield=fields.ModuleExpressionField(), required=False)
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
+    out_of_scope_ignore_imports_alerting = fields.EnumField(
+        AlertLevel, default=AlertLevel.NONE, required=False
+    )
     broken_contract_guidance = fields.TextField(required=False)
+
+    def validate(self) -> None:
+        if self.out_of_scope_ignore_imports_alerting != AlertLevel.NONE:
+            raise InvalidContractOptions(
+                {
+                    "out_of_scope_ignore_imports_alerting": (
+                        "The out_of_scope_ignore_imports_alerting option is not supported "
+                        "for acyclic_siblings contracts."
+                    )
+                }
+            )
 
     def check(self, graph: grimp.ImportGraph, verbose: bool) -> ContractCheck:
         self._check_no_ancestors_and_descendant_expressions_are_the_same()

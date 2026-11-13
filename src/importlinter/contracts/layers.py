@@ -157,6 +157,9 @@ class LayersContract(Contract):
     containers = fields.ListField(subfield=fields.ModuleExpressionField(), required=False)
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
+    out_of_scope_ignore_imports_alerting = fields.EnumField(
+        AlertLevel, default=AlertLevel.NONE, required=False
+    )
     exhaustive = fields.BooleanField(default=False)
     exhaustive_ignores = fields.SetField(subfield=fields.StringField(), required=False)
     broken_contract_guidance = fields.TextField(required=False)
@@ -188,6 +191,16 @@ class LayersContract(Contract):
                 {
                     "exhaustive": (
                         "The exhaustive option is not supported for contracts without containers."
+                    )
+                }
+            )
+
+        if self.out_of_scope_ignore_imports_alerting != AlertLevel.NONE:
+            raise InvalidContractOptions(
+                {
+                    "out_of_scope_ignore_imports_alerting": (
+                        "The out_of_scope_ignore_imports_alerting option is not supported "
+                        "for layers contracts."
                     )
                 }
             )

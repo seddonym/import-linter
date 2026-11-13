@@ -118,6 +118,7 @@ External packages may also be protected. (Be sure to [configure Import Linter to
 - `allowed_importers`: The only modules allowed to import the target modules. Supports [wildcards](index.md#wildcards).
 - `ignore_imports`: See [shared options](index.md#options-used-by-multiple-contracts).
 - `unmatched_ignore_imports_alerting`: See [shared options](index.md#options-used-by-multiple-contracts).
+- `out_of_scope_ignore_imports_alerting`: See [shared options](index.md#options-used-by-multiple-contracts).
 - `as_packages`: Whether to treat the source and forbidden modules as packages. If `False`, each of the modules
   passed in will be treated as a module rather than a package. Default behaviour is `True` (treat modules as
   packages).

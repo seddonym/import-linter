@@ -170,6 +170,7 @@ This situation is most likely to occur when using wildcards.
   the top level configuration must have `include_external_packages = True`. Supports [wildcards](index.md#wildcards).
 - `ignore_imports`: See [shared options](index.md#options-used-by-multiple-contracts).
 - `unmatched_ignore_imports_alerting`: See [shared options](index.md#options-used-by-multiple-contracts).
+- `out_of_scope_ignore_imports_alerting`: See [shared options](index.md#options-used-by-multiple-contracts).
 - `allow_indirect_imports`: If `True`, allow indirect imports to forbidden modules without interpreting them
   as a reason to mark the contract broken. (Optional.)
 - `as_packages`: Whether to treat the source and forbidden modules as packages. If `False`, each of the modules

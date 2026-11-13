@@ -8,7 +8,7 @@ from grimp import ImportGraph
 from importlinter.application import contract_utils, output
 from importlinter.application.contract_utils import AlertLevel
 from importlinter.domain import fields
-from importlinter.domain.contract import Contract, ContractCheck
+from importlinter.domain.contract import Contract, ContractCheck, InvalidContractOptions
 from importlinter.domain.helpers import module_expressions_to_modules
 from importlinter.domain.imports import Module
 
@@ -51,7 +51,21 @@ class IndependenceContract(Contract):
     modules = fields.SetField(subfield=fields.ModuleExpressionField())
     ignore_imports = fields.SetField(subfield=fields.ImportExpressionField(), required=False)
     unmatched_ignore_imports_alerting = fields.EnumField(AlertLevel, default=AlertLevel.ERROR)
+    out_of_scope_ignore_imports_alerting = fields.EnumField(
+        AlertLevel, default=AlertLevel.NONE, required=False
+    )
     broken_contract_guidance = fields.TextField(required=False)
+
+    def validate(self) -> None:
+        if self.out_of_scope_ignore_imports_alerting != AlertLevel.NONE:
+            raise InvalidContractOptions(
+                {
+                    "out_of_scope_ignore_imports_alerting": (
+                        "The out_of_scope_ignore_imports_alerting option is not supported "
+                        "for independence contracts."
+                    )
+                }
+            )
 
     def check(self, graph: ImportGraph, verbose: bool) -> ContractCheck:
         import_removal = contract_utils.remove_ignored_imports_and_report(

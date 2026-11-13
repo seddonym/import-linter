@@ -2,6 +2,7 @@
 
 ## latest
 
+* Add `out_of_scope_ignore_imports_alerting` option for `forbidden` and `protected` contracts.
 * Accept multiple configuration files as positional arguments to `lint-imports` / `import-linter lint`.
   Deprecate the `--config` option.
 * Error if two contracts in the same file share an id, or if a contract id contains a colon.

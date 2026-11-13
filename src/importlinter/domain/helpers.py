@@ -15,6 +15,10 @@ class MissingImport(Exception):
     pass
 
 
+class OutOfScopeImport(Exception):
+    pass
+
+
 def pop_imports(graph: ImportGraph, imports: Iterable[DirectImport]) -> list[DetailedImport]:
     """
     Removes the supplied direct imports from the graph.

@@ -6,6 +6,7 @@ from importlinter.application.output import console
 from importlinter.configuration import settings
 from importlinter.contracts.forbidden import ForbiddenContract
 from importlinter.domain.contract import ContractCheck
+from importlinter.domain.helpers import OutOfScopeImport
 from tests.adapters.timing import FakeTimer
 
 
@@ -708,6 +709,155 @@ class TestForbiddenContract:
             "No matches for ignored import mypackage.*.nonexistent -> mypackage.three.",
         }
 
+    def test_out_of_scope_ignore_imports_error(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            source_modules=("mypackage.one",),
+            forbidden_modules=("mypackage.green",),
+            ignore_imports=(
+                "mypackage.two -> mypackage.utils",
+                "mypackage.three -> sqlalchemy",
+            ),
+            out_of_scope_ignore_imports_alerting="error",
+        )
+
+        with pytest.raises(OutOfScopeImport) as exc_info:
+            contract.check(graph=graph, verbose=False)
+
+        assert str(exc_info.value) == (
+            "Ignored import mypackage.three -> sqlalchemy is outside the scope of the contract.\n"
+            "Ignored import mypackage.two -> mypackage.utils is outside the scope of the contract."
+        )
+
+    def test_out_of_scope_ignore_imports_warn(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            source_modules=("mypackage.one",),
+            forbidden_modules=("mypackage.green",),
+            ignore_imports=("mypackage.two -> mypackage.utils",),
+            out_of_scope_ignore_imports_alerting="warn",
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+
+        assert check.warnings == [
+            "Ignored import mypackage.two -> mypackage.utils is outside the scope of the contract.",
+        ]
+
+    def test_out_of_scope_ignore_imports_none_default(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            source_modules=("mypackage.one",),
+            forbidden_modules=("mypackage.green",),
+            ignore_imports=("mypackage.two -> mypackage.utils",),
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+
+        assert check.warnings == []
+
+    def test_in_scope_direct_ignore_import_passes_with_error_alerting(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            source_modules=("mypackage.one",),
+            forbidden_modules=("mypackage.green",),
+            ignore_imports=(
+                "mypackage.one.alpha -> mypackage.green.beta",
+                "mypackage.one.alpha.circle -> mypackage.green.beta.sphere",
+            ),
+            out_of_scope_ignore_imports_alerting="error",
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+
+        assert check.kept
+        assert check.warnings == []
+
+    def test_in_scope_indirect_ignore_import_passes(self):
+        graph = self._build_graph()
+        # mypackage.two -> mypackage.utils -> mypackage.purple
+        contract = self._build_contract(
+            source_modules=("mypackage.two",),
+            forbidden_modules=("mypackage.purple",),
+            ignore_imports=("mypackage.utils -> mypackage.purple",),
+            allow_indirect_imports=False,
+            out_of_scope_ignore_imports_alerting="error",
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+
+        assert check.kept
+        assert check.warnings == []
+
+    def test_indirect_ignore_out_of_scope_when_allow_indirect_imports_true(self):
+        graph = self._build_graph()
+        # When allow_indirect_imports is True, only direct imports from source to forbidden are forbidden.
+        # mypackage.utils -> mypackage.purple is not a direct import from mypackage.two to mypackage.purple.
+        contract = self._build_contract(
+            source_modules=("mypackage.two",),
+            forbidden_modules=("mypackage.purple",),
+            ignore_imports=("mypackage.utils -> mypackage.purple",),
+            allow_indirect_imports=True,
+            out_of_scope_ignore_imports_alerting="error",
+        )
+
+        with pytest.raises(OutOfScopeImport) as exc_info:
+            contract.check(graph=graph, verbose=False)
+
+        assert str(exc_info.value) == (
+            "Ignored import mypackage.utils -> mypackage.purple is outside the scope of the contract."
+        )
+
+    def test_wildcard_ignore_in_scope_if_at_least_one_matched_is_in_scope(self):
+        graph = self._build_graph()
+        # mypackage.*.alpha -> mypackage.*.beta matches mypackage.one.alpha -> mypackage.green.beta
+        contract = self._build_contract(
+            source_modules=("mypackage.one",),
+            forbidden_modules=("mypackage.green",),
+            ignore_imports=("mypackage.*.alpha -> mypackage.*.beta",),
+            out_of_scope_ignore_imports_alerting="error",
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+        assert check.warnings == []
+
+    def test_wildcard_ignore_out_of_scope_if_no_matched_in_scope(self):
+        graph = self._build_graph()
+        # matches mypackage.two -> mypackage.utils which is not between one and green
+        contract = self._build_contract(
+            source_modules=("mypackage.one",),
+            forbidden_modules=("mypackage.green",),
+            ignore_imports=("mypackage.two -> mypackage.*",),
+            out_of_scope_ignore_imports_alerting="error",
+        )
+
+        with pytest.raises(OutOfScopeImport) as exc_info:
+            contract.check(graph=graph, verbose=False)
+
+        assert str(exc_info.value) == (
+            "Ignored import mypackage.two -> mypackage.* is outside the scope of the contract."
+        )
+
+    def test_unmatched_and_out_of_scope_alerts_together_as_warnings(self):
+        graph = self._build_graph()
+        contract = self._build_contract(
+            source_modules=("mypackage.one",),
+            forbidden_modules=("mypackage.green",),
+            ignore_imports=(
+                "mypackage.one -> mypackage.nonexistent",
+                "mypackage.two -> mypackage.utils",
+            ),
+            unmatched_ignore_imports_alerting="warn",
+            out_of_scope_ignore_imports_alerting="warn",
+        )
+
+        check = contract.check(graph=graph, verbose=False)
+
+        assert set(check.warnings) == {
+            "No matches for ignored import mypackage.one -> mypackage.nonexistent.",
+            "Ignored import mypackage.two -> mypackage.utils is outside the scope of the contract.",
+        }
+
     @pytest.mark.parametrize(
         "as_packages",
         (False, True),
@@ -818,6 +968,8 @@ class TestForbiddenContract:
         allow_indirect_imports=None,
         source_modules=None,
         as_packages=True,
+        out_of_scope_ignore_imports_alerting=None,
+        unmatched_ignore_imports_alerting=None,
     ):
         session_options = {"root_packages": ["mypackage"]}
         if include_external_packages:
@@ -835,6 +987,14 @@ class TestForbiddenContract:
                 "true" if allow_indirect_imports else "false"
             )
         contract_options["as_packages"] = "true" if as_packages else "false"
+        if out_of_scope_ignore_imports_alerting is not None:
+            contract_options["out_of_scope_ignore_imports_alerting"] = (
+                out_of_scope_ignore_imports_alerting
+            )
+        if unmatched_ignore_imports_alerting is not None:
+            contract_options["unmatched_ignore_imports_alerting"] = (
+                unmatched_ignore_imports_alerting
+            )
 
         return ForbiddenContract(
             name="Forbid contract",
