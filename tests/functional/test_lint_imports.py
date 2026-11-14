@@ -18,6 +18,7 @@ multipleroots_directory = assets_directory / "multipleroots"
 unmatched_ignore_imports_directory = testpackage_directory / "unmatched_ignore_imports_alerting"
 namespace_packages_directory = assets_directory / "namespacepackages"
 cyclicpackage_directory = assets_directory / "cycles"
+privatemodules_directory = assets_directory / "privatemodules"
 
 # Add namespace packages to Python path
 sys.path.extend(
@@ -77,6 +78,9 @@ sys.path.extend(
         # Type checking imports
         (testpackage_directory, ".typecheckkeptcontract.ini", cli.EXIT_STATUS_SUCCESS),
         (testpackage_directory, ".typecheckbrokencontract.ini", cli.EXIT_STATUS_ERROR),
+        # Private modules
+        (privatemodules_directory, ".keptcontract.ini", cli.EXIT_STATUS_SUCCESS),
+        (privatemodules_directory, ".brokencontract.ini", cli.EXIT_STATUS_ERROR),
         # Acyclic siblings
         (cyclicpackage_directory, ".keptcontract.ini", cli.EXIT_STATUS_SUCCESS),
         (cyclicpackage_directory, ".brokencontract.ini", cli.EXIT_STATUS_ERROR),
@@ -102,6 +106,18 @@ def test_lint_imports_renders_broken_contract_guidance_for_broken_contract(capsy
     captured = capsys.readouterr()
     assert "Use the testpackage.high top-level interface." in captured.out
     assert "More information here: http://docs.example.com/high" in captured.out
+
+
+def test_lint_imports_renders_private_modules_contract_violations(capsys):
+    os.chdir(privatemodules_directory)
+
+    result = cli.lint_imports(config_filename=".brokencontract.ini")
+
+    assert cli.EXIT_STATUS_ERROR == result
+    captured = capsys.readouterr()
+    assert "Private modules may only be imported from within their parent package:" in captured.out
+    assert "- privatepackage.bar.uses_secret -> privatepackage.foo._secret (l.1)" in captured.out
+    assert "privatepackage.foo.public" not in captured.out
 
 
 def test_lint_imports_raises_clear_error_when_root_package_is_single_file(capsys):

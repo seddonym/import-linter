@@ -125,6 +125,16 @@ Forbid dependency cycles between siblings.
 </div>
 
 <div class="flowcard" markdown>
+:material-lock-outline:{ .lg .middle } __Private modules__
+
+---
+
+Prevent modules whose names begin with an underscore from being imported from outside their parent package.
+
+[:octicons-arrow-right-24: Read more](contract_types/private_modules.md)
+</div>
+
+<div class="flowcard" markdown>
 :material-set-square:{ .lg .middle } __Custom contract types__
 
 ---

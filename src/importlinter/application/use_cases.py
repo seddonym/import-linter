@@ -653,6 +653,7 @@ def _get_built_in_contract_types() -> list[tuple[str, type[Contract]]]:
                 "layers: importlinter.contracts.layers.LayersContract",
                 "independence: importlinter.contracts.independence.IndependenceContract",
                 "protected: importlinter.contracts.protected.ProtectedContract",
+                "private_modules: importlinter.contracts.private_modules.PrivateModulesContract",
                 "acyclic_siblings: importlinter.contracts.acyclic_siblings.AcyclicSiblingsContract",
             ],
         )
