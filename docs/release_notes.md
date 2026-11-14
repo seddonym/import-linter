@@ -6,6 +6,8 @@
   Deprecate the `--config` option.
 * Error if two contracts in the same file share an id, or if a contract id contains a colon.
 * Migrate to import-linter Github organization.
+* Add `private_modules` contract type, for enforcing that modules whose names start with an underscore are only
+  imported from within their parent package.
 
 ## 2.16 (2026-11-06)
 
