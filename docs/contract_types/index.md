@@ -52,6 +52,16 @@ Forbid dependency cycles between siblings.
 [:octicons-arrow-right-24: Read more](acyclic_siblings.md)
 </div>
 
+<div class="flowcard" markdown>
+:material-lock-outline:{ .lg .middle } __Private modules__
+
+---
+
+Prevent modules whose names begin with an underscore from being imported from outside their parent package.
+
+[:octicons-arrow-right-24: Read more](private_modules.md)
+</div>
+
 ## Custom contract types
 
 If none of the built in contract types meets your needs, you can define a custom contract type: see
