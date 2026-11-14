@@ -18,6 +18,7 @@ from importlinter.contracts.acyclic_siblings import AcyclicSiblingsContract
 from importlinter.contracts.forbidden import ForbiddenContract
 from importlinter.contracts.independence import IndependenceContract
 from importlinter.contracts.layers import LayersContract
+from importlinter.contracts.private_modules import PrivateModulesContract
 from importlinter.contracts.protected import ProtectedContract
 
 from . import graph as fake_graph
@@ -145,6 +146,58 @@ class TestIndependence:
         fake_graph.add_imports(
             graph, importer_layer="plugins.red", imported_layer="plugins.green", count=100
         )
+
+        contract = self._build_contract()
+        contract_check = benchmark(contract.check, graph, verbose=False)
+        assert not contract_check.kept
+
+
+class TestPrivateModules:
+    @pytest.fixture
+    def graph(self, graph) -> ImportGraph:
+        """
+        Add a private package to each layer, with a module for each module in the layer.
+
+        Each module imports its private counterpart, which is legal as it's within the parent
+        package of the private module.
+        """
+        for layer in fake_graph._LAYERS:
+            for number in range(fake_graph._MODULES_PER_LAYER):
+                importer = fake_graph._module_name(layer, number)
+                imported = f"{fake_graph._ROOT_PACKAGE}.{layer}._internal.{number:03d}"
+                fake_graph._add_module(graph, imported)
+                graph.add_import(
+                    importer=importer,
+                    imported=imported,
+                    line_number=1,
+                    line_contents=f"import {imported}",
+                )
+        return graph
+
+    @staticmethod
+    def _build_contract() -> PrivateModulesContract:
+        return PrivateModulesContract(
+            name="Private modules are private",
+            session_options={"root_packages": [fake_graph._ROOT_PACKAGE]},
+            contract_options={},
+        )
+
+    def test_kept(self, graph, benchmark):
+        contract = self._build_contract()
+        contract_check = benchmark(contract.check, graph, verbose=False)
+        assert contract_check.kept
+
+    def test_broken(self, graph, benchmark):
+        # Add violations: modules in the domain layer importing the private modules of the data
+        # layer.
+        for number in range(100):
+            imported = f"{fake_graph._ROOT_PACKAGE}.data._internal.{number:03d}"
+            graph.add_import(
+                importer=fake_graph._module_name("domain", number),
+                imported=imported,
+                line_number=2,
+                line_contents=f"import {imported}",
+            )
 
         contract = self._build_contract()
         contract_check = benchmark(contract.check, graph, verbose=False)
